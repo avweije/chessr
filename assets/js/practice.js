@@ -14,6 +14,16 @@ import {
 
 import "../styles/repertoire.css";
 
+/*
+
+- 
+- add functions like nextVariation, nextLine, nextMove, etc ?
+- update status text, 1 more, multiple moves
+- update board styling, highlight last move? etc..
+- 
+
+*/
+
 var Practice = {
   board: null,
   game: new Chess(),
@@ -21,8 +31,6 @@ var Practice = {
   lastMove: [],
 
   statusField: null,
-  fenField: null,
-  pgnField: null,
 
   color: "white",
   startPracticeButton: null,
@@ -46,8 +54,6 @@ var Practice = {
   init: function () {
     // get the status fields
     this.statusField = document.getElementById("statusField");
-    this.fenField = document.getElementById("fenField");
-    this.pgnField = document.getElementById("pgnField");
     // get the save practice button
     this.startPracticeButton = document.getElementById("startPracticeButton");
     // get the board element
@@ -150,9 +156,6 @@ var Practice = {
         promotion: "q", // NOTE: always promote to a queen for example simplicity
       });
 
-      // remember the last move made
-      this.lastMove = event;
-
       // add
       //this.board.removeMarkers();
       //this.board.addMarker(MARKER_TYPE.frame, event.squareTo);
@@ -161,14 +164,18 @@ var Practice = {
       console.log(this.practiceLineMoves);
       console.log(event);
 
-      var last = this.game.history({ verbose: true }).pop();
+      this.lastMove = this.game.history({ verbose: true }).pop().san;
 
-      console.log(last);
+      console.log("last move: " + this.lastMove);
 
       // is this the correct repertoire move?
-      //var isCorrect = this.correctMoves.includes(this.lastMove);
-      var isCorrect = this.practiceLineMoves.includes(last.san);
+      var isCorrect = this.practiceLineMoves.includes(this.lastMove);
 
+      //
+      // check if we already have this move ??
+      //
+
+      // if this is the correct move
       if (isCorrect) {
         console.log("That's the CORRECT move!!");
 
@@ -195,6 +202,9 @@ var Practice = {
         // highlight as error ?
         // timeout pause..
         // undo last move
+
+        // update the status
+        this.updateStatus("That's not the correct move. Try again.");
 
         // highlight the error move
         this.board.removeMarkers();
@@ -267,16 +277,27 @@ var Practice = {
   },
 
   // split the repertoire into practice lines
-  getPracticeLines: function (lines, color = "", lineMoves = [], add = true) {
+  getPracticeLines: function (
+    lines,
+    color = "",
+    lineMoves = [],
+    add = true,
+    isVariation = false
+  ) {
     for (var i = 0; i < lines.length; i++) {
+      //
+      if (color != "") {
+        lines[i].color = color;
+        lines[i].line = lineMoves;
+      }
+
       // add this line
       if (add) {
-        //
-        if (color != "") {
-          lines[i].color = color;
-          lines[i].line = lineMoves;
+        // if this is a variation
+        if (isVariation) {
+          lines[i].variation = true;
         }
-
+        // add the practice line
         this.practiceLines.push(lines[i]);
       }
       // if this line has moves that follow
@@ -285,17 +306,20 @@ var Practice = {
         if (lines[i].color != "") {
           color = lines[i].color;
         }
-        //
+
+        // add this move to the line moves array
         var line = lineMoves.slice(0);
         if (lines[i].move) {
           line.push(lines[i].move);
         }
+
         // get the practice lines
         this.getPracticeLines(
           lines[i].moves,
           color,
           line,
-          lines[i].moves.length > 1
+          lines[i].moves.length > 1,
+          true
         );
       }
     }
@@ -311,8 +335,14 @@ var Practice = {
     if (this.practiceLineIdx >= this.practiceLines.length) {
       console.log("all lines completed!");
 
+      // update the status
+      this.updateStatus("You completed all the lines.");
+
       return;
     }
+
+    // update the status
+    this.updateStatus("");
 
     console.log(this.practiceLines[this.practiceLineIdx]);
 
@@ -372,11 +402,18 @@ var Practice = {
             this.game.move(this.practiceLines[this.practiceLineIdx].line[i]);
           }
 
+          // if this line is a variation
+          if (this.practiceLines[this.practiceLineIdx].variation) {
+            // make the 1st move of the variation, that was the point we left off
+            this.game.move(this.practiceLines[this.practiceLineIdx].move);
+          }
+
           // so we can get the moves
           var history = this.game.history({ verbose: true });
 
           console.log("history moves:");
           console.log(history);
+          console.log(this.practiceLineIdx, this.practiceMoveIdx);
 
           // disable board move input
           this.disableMoveInput();
@@ -385,6 +422,7 @@ var Practice = {
           await this.animateMoves(history);
 
           console.log("animate done..");
+          console.log(this.practiceLineIdx, this.practiceMoveIdx);
 
           // enable board move input
           this.enableMoveInput();
@@ -401,11 +439,18 @@ var Practice = {
     if (moves.length > 1) {
       console.log("multiple correct moves are possible..");
 
+      // update the status
+      this.updateStatus("You have " + moves.length + " possible moves here.");
+
       console.log("remember current fen position");
 
       this.practiceFenPosition = this.game.fen();
     } else {
       console.log("only 1 correct move here..");
+      console.log(moves);
+
+      // update the status
+      this.updateStatus("Play your move.");
     }
 
     // wait on the next move
@@ -419,6 +464,7 @@ var Practice = {
     console.log(
       "- get moves : " + this.practiceLineIdx + " :: " + this.practiceMoveIdx
     );
+    console.log(this.practiceLines[this.practiceLineIdx]);
 
     var temp = this.practiceLines[this.practiceLineIdx];
     for (var i = 0; i < this.practiceMoveIdx; i++) {
@@ -446,6 +492,7 @@ var Practice = {
 
   // do we need to auto-move?
   isAutoMove: function () {
+    //console.log(this.practiceLineColor, this.game.turn());
     return (
       (this.practiceLineColor == "white" && this.game.turn() == "b") ||
       (this.practiceLineColor == "black" && this.game.turn() == "w")
@@ -453,15 +500,21 @@ var Practice = {
   },
 
   // auto-move
-  autoMove: function () {
+  autoMove: function (next = false) {
     // if we have multiple moves from here
     if (this.practiceLineMultiple > 1) {
+      console.log("** autoMove: multiple moves **");
+
       // goto the next line
       this.practiceLineIdx++;
       this.practiceMoveIdx = 0;
     } else {
+      console.log("** autoMove top single-move :: practiceMoveIdx++");
+
       // goto the next move
-      this.practiceMoveIdx++;
+      if (next) {
+        this.practiceMoveIdx++;
+      }
     }
 
     // get the next moves
@@ -472,7 +525,7 @@ var Practice = {
 
     // if any moves to play
     if (moves.length > 0) {
-      console.log("auto-moving: " + moves[0]);
+      console.log("** auto-moving: " + moves[0]);
 
       // make the move
       this.game.move(moves[0]);
@@ -494,6 +547,8 @@ var Practice = {
       } else {
         // goto the next move
         this.practiceMoveIdx++;
+
+        console.log("** autoMove single-move :: practiceMoveIdx++");
 
         console.log("goto next move in line: " + this.practiceMoveIdx);
       }
@@ -521,31 +576,41 @@ var Practice = {
     console.log("-- auto-move : " + this.isAutoMove());
     console.log("multiple = " + this.practiceLineMultiple);
 
-    // if we need to auto-move
-    if (this.isAutoMove()) {
-      // auto-move (for other color)
-      this.autoMove();
-
-      return;
-    }
-
     // if we have multiple correct moves
     if (this.practiceLineMultiple) {
-      this.practiceLineMovesPlayed.push("x");
+      console.log("** correctMovePlayed: multiple moves **");
+      console.log(this.lastMove);
+      console.log(this.practiceLineMoves);
 
+      // if this move was already played
+      if (this.practiceLineMovesPlayed.includes(this.lastMove)) {
+        // update status
+        this.updateStatus(
+          "This move was already played, play the next correct move."
+        );
+
+        // undo the last move
+        this.game.undo();
+        this.board.setPosition(this.game.fen());
+
+        return;
+      }
+
+      // add the move to the correctly played moves
+      this.practiceLineMovesPlayed.push(this.lastMove);
+
+      // if all correct moves have been played
       if (
         this.practiceLineMovesPlayed.length == this.practiceLineMoves.length
       ) {
         console.log("all the possible correct moves have been played");
 
         // reset board to previous position, start with next line
-        console.log("reset board to previous position (ANIMATE TO FALSE");
-        console.log(this.practiceFenPosition);
 
         this.practiceLineIdx++;
         this.practiceMoveIdx = 0;
 
-        this.practiceAnimateToPostion = false;
+        this.practiceAnimateToPostion = true;
 
         this.runPractice();
       } else {
@@ -556,15 +621,33 @@ var Practice = {
         // undo ?
         // setPosition ?
 
+        // undo the last move
+        this.game.undo();
+        this.board.setPosition(this.game.fen());
+
+        // update the status
+        this.updateStatus("Correct! Now play the next move.");
+
         //this.correctMovePlayed();
         // wait on the next move
         this.waitOnMove();
       }
     } else {
+      // if we need to auto-move
+      if (this.isAutoMove()) {
+        // auto-move (for other color)
+        this.autoMove(true);
+
+        return;
+      }
+
+      // if we have more moves in this line
       if (this.practiceLines[this.practiceLineIdx].moves.length > 0) {
         console.log("play the next move in the line");
 
         this.practiceMoveIdx++;
+
+        console.log("** correctMovePlayed - moves left : practiceMoveIdx++");
 
         this.runPractice();
       } else {
@@ -636,40 +719,14 @@ var Practice = {
     this.updateStatus();
   },
 
-  updateStatus: function () {
-    var status = "";
-
+  // update the status
+  updateStatus: function (status) {
     var moveColor = "White";
     if (this.game.turn() === "b") {
       moveColor = "Black";
     }
 
-    // checkmate?
-    if (this.game.isCheckmate()) {
-      status = "Game over, " + moveColor + " is in checkmate.";
-    }
-
-    // draw?
-    else if (this.game.isDraw()) {
-      status = "Game over, drawn position";
-    }
-
-    // game still on
-    else {
-      status = moveColor + " to move";
-
-      // check?
-      if (this.game.isCheck()) {
-        status += ", " + moveColor + " is in check";
-      }
-    }
-
-    this.statusField.innerHTML = status;
-    this.fenField.innerHTML = this.game.fen();
-    this.pgnField.innerHTML = this.game.pgn();
-
-    // get the moves for the new position
-    //this.getMoves();
+    this.statusField.innerHTML = status + "&nbsp;";
   },
 };
 
