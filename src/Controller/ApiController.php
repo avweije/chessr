@@ -3,9 +3,11 @@
 namespace App\Controller;
 
 use App\Entity\ECO;
+use App\Entity\Moves;
 use App\Entity\Repertoire;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Request;
@@ -27,6 +29,58 @@ class ApiController extends AbstractController
 
         // get the ECO codes for this position and the next move
         $codes = $this->em->getRepository(ECO::class)->findBybyPgn($data['pgn']);
+
+        // get the most played moves for this position
+        $qb = $this->em->createQueryBuilder();
+        $qb->select('m')
+            ->from('App\Entity\Moves', 'm')
+            ->where('m.Fen = :fen')
+            ->orderBy('m.Wins + m.Draws + m.Losses', 'DESC')
+            ->setParameter('fen', $data['fen']);
+
+        $res = $qb->getQuery()->getResult();
+
+        $games = ['total' => 0, 'moves' => [], 'fen' => $data['fen']];
+
+        foreach ($res as $mov) {
+            // get the total
+            $total = $mov->getWins() + $mov->getDraws() + $mov->getLosses();
+            // add to grand total
+            $games['total'] += $total;
+            // add the move
+            $games['moves'][] = [
+                'move' => $mov->getMove(),
+                'eco' => '',
+                'name' => '',
+                'repertoire' => 0,
+                'percentage' => 0,
+                'total' => $total,
+                'wins' => $mov->getWins(),
+                'draws' => $mov->getDraws(),
+                'losses' => $mov->getLosses()
+            ];
+        }
+
+        // if we have moves
+        if ($games['total'] > 0) {
+            // set the percentage each move is played
+            for ($i = 0; $i < count($games['moves']); $i++) {
+                $games['moves'][$i]['percentage'] = (int) round(($games['moves'][$i]['total'] / $games['total']) * 100, 0);
+            }
+        }
+
+        // get the current PGN
+        $current = $codes['pgn'];
+        // if it's white to move
+        if ($codes['halfmove'] % 2 == 1) {
+            // add the move number to the PGN
+            $current = $current . ($current != "" ? " " : "") . (($codes['halfmove'] + 1) / 2) . ". ";
+        }
+
+        //print "Pgn: " . $codes['pgn'] . "<br>";
+        //print "Current: $current<br>";
+
+        //dd($played);
 
         // get the repository
         $repository = $this->em->getRepository(Repertoire::class);
@@ -66,7 +120,24 @@ class ApiController extends AbstractController
             $reps[] = $move;
         }
 
-        return new JsonResponse(['eco' => $codes, 'repertoire' => $reps, 'saved' => $saved]);
+        // find the ECO codes for the moves and see if we have them in our repertoire
+        for ($i = 0; $i < count($games['moves']); $i++) {
+            // find the ECO code
+            foreach ($codes['next'] as $code) {
+                if ($code['PGN'] == ($current . $games['moves'][$i]['move'])) {
+                    $games['moves'][$i]['eco'] = $code['Code'];
+                    $games['moves'][$i]['name'] = $code['Name'];
+                }
+            }
+            // see if we have this move in our repertoire
+            foreach ($res as $rep) {
+                if ($rep->getMove() == $games['moves'][$i]['move']) {
+                    $games['moves'][$i]['repertoire'] = 1;
+                }
+            }
+        }
+
+        return new JsonResponse(['eco' => $codes, 'games' => $games, 'repertoire' => $reps, 'saved' => $saved]);
     }
 
     #[Route('/api/repertoire', methods: ['POST'], name: 'app_api_repertoire')]

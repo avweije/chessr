@@ -1,12 +1,5 @@
-import { Chess } from "chess.js/dist/esm/chess.js";
-import { Chessboard, FEN } from "cm-chessboard/src/Chessboard.js";
-import {
-  ChessboardView,
-  COLOR,
-  INPUT_EVENT_TYPE,
-  BORDER_TYPE,
-  POINTER_EVENTS,
-} from "cm-chessboard/src/view/ChessboardView.js";
+import { MyChessBoard } from "./chessboard.js";
+import { COLOR } from "cm-chessboard/src/view/ChessboardView.js";
 import {
   MARKER_TYPE,
   Markers,
@@ -24,34 +17,30 @@ import "../styles/repertoire.css";
 
 */
 
-var Practice = {
-  board: null,
-  game: new Chess(),
+class Practice extends MyChessBoard {
+  statusField = null;
 
-  lastMove: [],
+  color = "white";
+  startPracticeButton = null;
 
-  statusField: null,
+  inPractice = false;
 
-  color: "white",
-  startPracticeButton: null,
+  repertoire = [];
 
-  inPractice: false,
+  correctMoves = [];
 
-  repertoire: [],
+  practiceLines = [];
+  practiceLineIdx = 0;
+  practiceMoveIdx = 0;
+  practiceLineColor = "";
+  practiceLineMoves = [];
+  practiceLineMultiple = false;
+  practiceLineMovesPlayed = [];
+  practiceFenPosition = "";
+  practiceAnimateToPostion = true;
 
-  correctMoves: [],
-
-  practiceLines: [],
-  practiceLineIdx: 0,
-  practiceMoveIdx: 0,
-  practiceLineColor: "",
-  practiceLineMoves: [],
-  practiceLineMultiple: false,
-  practiceLineMovesPlayed: [],
-  practiceFenPosition: "",
-  practiceAnimateToPostion: true,
-
-  init: function () {
+  constructor() {
+    super();
     // get the status fields
     this.statusField = document.getElementById("statusField");
     // get the save practice button
@@ -68,101 +57,23 @@ var Practice = {
     );
 
     // create the chess board
-    this.board = new Chessboard(el, {
-      position: FEN.start,
-      orientation:
-        this.color && this.color == "white" ? COLOR.white : COLOR.black,
-      assetsUrl: "/build/", // wherever you copied the assets folder to, could also be in the node_modules folder
-      style: {
-        cssClass: "default", // set the css theme of the board, try "green", "blue" or "chess-club"
-        showCoordinates: true, // show ranks and files
-        aspectRatio: 1, // height/width of the board
-        animationDuration: 300, // pieces animation duration in milliseconds. Disable all animations with `0`
-      },
-      extensions: [{ class: Markers }],
-    });
+    this.init(
+      el,
+      this.color && this.color == "white" ? COLOR.white : COLOR.black
+    );
 
     // disable move input
     this.disableMoveInput();
 
     // get the entire repertoire
     this.getRepertoire();
-  },
+  }
 
-  // enable move input for the board
-  enableMoveInput: function () {
-    this.board.enableMoveInput(this.inputHandler.bind(this));
-  },
-
-  // disable move input for the board
-  disableMoveInput: function () {
-    this.board.disableMoveInput();
-  },
-
-  inputHandler: function (event) {
-    switch (event.type) {
-      case INPUT_EVENT_TYPE.moveInputStarted:
-        return this.moveInputStarted(event);
-      case INPUT_EVENT_TYPE.validateMoveInput:
-        return this.validateMoveInput(event);
-      case INPUT_EVENT_TYPE.moveInputCanceled:
-        this.moveInputCancelled(event);
-        break;
-      case INPUT_EVENT_TYPE.moveInputFinished:
-        this.moveInputFinished(event);
-        break;
-      case INPUT_EVENT_TYPE.movingOverSquare:
-        break;
-    }
-  },
-
-  moveInputStarted: function (event) {
-    // do not pick up pieces if the game is over
-    if (this.game.isGameOver()) return false;
-
-    var piece = this.board.getPiece(event.squareFrom);
-
-    // only pick up pieces for the side to move
-    if (
-      (this.game.turn() === "w" && piece.search(/^b/) !== -1) ||
-      (this.game.turn() === "b" && piece.search(/^w/) !== -1)
-    ) {
-      return false;
-    }
-
-    var moves = [];
-    for (const move of this.game.moves({ square: event.squareFrom })) {
-      // remove the piece notation and other characters to just get the square
-      var t = move
-        .replace(/^[RNBKQ]x?/, "")
-        .replace("!", "")
-        .replace("#", "");
-
-      moves.push({ from: event.squareFrom, to: t });
-    }
-
-    // show the legal moves
-    this.board.addLegalMovesMarkers(moves);
-
-    return true;
-  },
-
-  validateMoveInput: function (event) {
+  onValidateMove(move) {
     try {
-      // see if the move is legal
-      var move = this.game.move({
-        from: event.squareFrom,
-        to: event.squareTo,
-        promotion: "q", // NOTE: always promote to a queen for example simplicity
-      });
-
-      // add
-      //this.board.removeMarkers();
-      //this.board.addMarker(MARKER_TYPE.frame, event.squareTo);
-
-      console.log("validateMoveInput:");
+      console.log("onValidateMove:");
       console.log(this.practiceLineMoves);
-      console.log(event);
+      console.log(move);
 
       this.lastMove = this.game.history({ verbose: true }).pop().san;
 
@@ -181,15 +92,15 @@ var Practice = {
 
         // highlight the correct move
         this.board.removeMarkers();
-        this.board.addMarker(MARKER_TYPE.framePrimary, event.squareTo);
+        this.board.addMarker(MARKER_TYPE.framePrimary, move.to);
 
-        this.board.disableMoveInput();
+        this.disableMoveInput();
 
         setTimeout(() => {
           // remove markers
           this.board.removeMarkers();
           // enable move input
-          this.board.enableMoveInput(this.inputHandler.bind(this));
+          this.enableMoveInput();
 
           // continue on to the next practice... ?
           this.correctMovePlayed();
@@ -208,7 +119,7 @@ var Practice = {
 
         // highlight the error move
         this.board.removeMarkers();
-        this.board.addMarker(MARKER_TYPE.frameDanger, event.squareTo);
+        this.board.addMarker(MARKER_TYPE.frameDanger, move.to);
 
         this.disableMoveInput();
 
@@ -231,26 +142,9 @@ var Practice = {
 
       return false;
     }
-  },
+  }
 
-  moveInputCancelled: function (event) {
-    // remove the legal move markers
-    this.board.removeLegalMovesMarkers();
-  },
-
-  moveInputFinished: function (event) {
-    console.log("-- moveInputFinished:");
-    console.log(event);
-
-    // remove the legal move markers
-    this.board.removeLegalMovesMarkers();
-
-    // process the move
-    this.afterMakeMove();
-  },
-
-  // fetch the user repertoire
-  getRepertoire: function () {
+  getRepertoire() {
     var url = "/api/practice";
 
     fetch(url, {
@@ -265,19 +159,19 @@ var Practice = {
         this.testPractice(response);
       })
       .catch((error) => console.error("Error:", error));
-  },
+  }
 
   // setup the practice run
-  testPractice: function (json) {
+  testPractice(json) {
     this.repertoire = json;
 
     // reset the board
     this.game.reset();
     this.board.setPosition(this.game.fen());
-  },
+  }
 
   // split the repertoire into practice lines
-  getPracticeLines: function (
+  getPracticeLines(
     lines,
     color = "",
     lineMoves = [],
@@ -323,10 +217,10 @@ var Practice = {
         );
       }
     }
-  },
+  }
 
   // run the practice
-  runPractice: async function () {
+  async runPractice() {
     console.log(
       "run practice: " + this.practiceLineIdx + " / " + this.practiceMoveIdx
     );
@@ -450,15 +344,15 @@ var Practice = {
       console.log(moves);
 
       // update the status
-      this.updateStatus("Play your move.");
+      this.updateStatus("Play the correct move.");
     }
 
     // wait on the next move
     this.waitOnMove();
-  },
+  }
 
   // get the moves for a certain line/move
-  getMoves: function () {
+  getMoves() {
     var moves = [];
 
     console.log(
@@ -476,10 +370,10 @@ var Practice = {
     }
 
     return moves;
-  },
+  }
 
   // wait on next move (use auto-play if needed)
-  waitOnMove: function () {
+  waitOnMove() {
     console.log("waiting on move..");
     console.log("-- auto-move : " + this.isAutoMove());
 
@@ -488,19 +382,19 @@ var Practice = {
       // auto-move (for other color)
       this.autoMove();
     }
-  },
+  }
 
   // do we need to auto-move?
-  isAutoMove: function () {
+  isAutoMove() {
     //console.log(this.practiceLineColor, this.game.turn());
     return (
       (this.practiceLineColor == "white" && this.game.turn() == "b") ||
       (this.practiceLineColor == "black" && this.game.turn() == "w")
     );
-  },
+  }
 
   // auto-move
-  autoMove: function (next = false) {
+  autoMove(next = false) {
     // if we have multiple moves from here
     if (this.practiceLineMultiple > 1) {
       console.log("** autoMove: multiple moves **");
@@ -567,7 +461,7 @@ var Practice = {
     this.runPractice();
 
     return;
-  },
+  }
 
   // called when the correct move was played
   correctMovePlayed() {
@@ -659,10 +553,10 @@ var Practice = {
         this.runPractice();
       }
     }
-  },
+  }
 
   // start the practice
-  onStartPractice: async function () {
+  async onStartPractice() {
     console.log("startPractice:");
 
     this.practiceLines = [];
@@ -686,10 +580,10 @@ var Practice = {
     this.runPractice();
 
     return;
-  },
+  }
 
   // animate the moves 1 by 1
-  animateMoves: async function (moves) {
+  async animateMoves(moves) {
     console.log("animateMoves:");
     console.log(moves);
 
@@ -699,38 +593,25 @@ var Practice = {
 
       await this.board.movePiece(moves[i]["from"], moves[i]["to"], true);
     }
-  },
+  }
 
-  // make a move on the board
-  makeMove: function (move) {
-    console.log("make move: " + move);
-
-    // make the move
-    this.game.move(move);
-    // set the new position
-    this.board.setPosition(this.game.fen());
-
-    // process the move
-    this.afterMakeMove();
-  },
-
-  afterMakeMove: function () {
+  afterMove() {
     // update the status, get the ECO codes for next position.. etc
     this.updateStatus();
-  },
+  }
 
   // update the status
-  updateStatus: function (status) {
+  updateStatus(status = "") {
     var moveColor = "White";
     if (this.game.turn() === "b") {
       moveColor = "Black";
     }
 
     this.statusField.innerHTML = status + "&nbsp;";
-  },
-};
+  }
+}
 
 // initialise the Practice object once the page is loaded
 document.addEventListener("DOMContentLoaded", (event) => {
-  Practice.init();
+  var practice = new Practice();
 });

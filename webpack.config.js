@@ -26,6 +26,7 @@ Encore
    * and one CSS file (e.g. app.css) if your JavaScript imports CSS.
    */
   .addEntry("app", "./assets/app.js")
+  .addEntry("chessboard", "./assets/js/chessboard.js")
   .addEntry("repertoire", "./assets/js/repertoire.js")
   .addEntry("practice", "./assets/js/practice.js")
 
@@ -98,6 +99,12 @@ Encore
     from: "./assets/markers",
     to: "extensions/markers/[name].[ext]",
     pattern: /\.(svg)$/,
+  })
+
+  .copyFiles({
+    from: "./assets/uploads",
+    to: "uploads/[name].[ext]",
+    pattern: /\.(pgn)$/,
   });
 
 module.exports = Encore.getWebpackConfig();

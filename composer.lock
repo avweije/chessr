@@ -4,8 +4,46 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2b37e261e0a16b889dbbef3c6b7f2652",
+    "content-hash": "f251d701aecc678b8d2ebe3c2a4f750e",
     "packages": [
+        {
+            "name": "amyboyd/pgn-parser",
+            "version": "0.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/amyboyd/pgn-parser.git",
+                "reference": "557426dfbda3ec2081b1ed678d4d72ce033be04f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/amyboyd/pgn-parser/zipball/557426dfbda3ec2081b1ed678d4d72ce033be04f",
+                "reference": "557426dfbda3ec2081b1ed678d4d72ce033be04f",
+                "shasum": ""
+            },
+            "require-dev": {
+                "phpunit/phpunit": "~5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-0": {
+                    "AmyBoyd\\PgnParser\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "authors": [
+                {
+                    "name": "Amy Boyd",
+                    "email": "amy@amyboyd.co.uk"
+                }
+            ],
+            "description": "A PHP parser for the chess game notation format, PGN. There are no external dependencies. It's simple to use, namespaced and testable.",
+            "support": {
+                "issues": "https://github.com/amyboyd/pgn-parser/issues",
+                "source": "https://github.com/amyboyd/pgn-parser/tree/0.4"
+            },
+            "abandoned": true,
+            "time": "2021-07-23T01:21:37+00:00"
+        },
         {
             "name": "beberlei/doctrineextensions",
             "version": "v1.5.0",
@@ -1365,6 +1403,52 @@
                 "source": "https://github.com/doctrine/sql-formatter/tree/1.4.0"
             },
             "time": "2024-05-08T08:12:09+00:00"
+        },
+        {
+            "name": "onspli/chess",
+            "version": "v0.2.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/onspli/chess.git",
+                "reference": "a8749162fbacac5fc2d3080dd47465f13f5b4a6a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/onspli/chess/zipball/a8749162fbacac5fc2d3080dd47465f13f5b4a6a",
+                "reference": "a8749162fbacac5fc2d3080dd47465f13f5b4a6a",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.2|^8.0"
+            },
+            "require-dev": {
+                "onspli/phpdoc-markdown": "dev-master",
+                "php-coveralls/php-coveralls": "^2.4",
+                "phpbench/phpbench": "^1.1",
+                "phpunit/phpunit": "^9.5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Onspli\\Chess\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Ondřej Šplíchal",
+                    "email": "ondrej.splichal@gmail.com"
+                }
+            ],
+            "description": "PHP library for reading and editing FEN and PGN chess formats.",
+            "support": {
+                "issues": "https://github.com/onspli/chess/issues",
+                "source": "https://github.com/onspli/chess/tree/v0.2.0"
+            },
+            "time": "2022-05-27T11:54:09+00:00"
         },
         {
             "name": "psr/cache",

@@ -25,6 +25,16 @@ class ECORepository extends ServiceEntityRepository
             $spaces++;
         }
 
+        // spaces, white to move: 0 (1), 3 (3), 6 (5), 9 (7)
+        // spaces, black to move: 1 (2), 4 (4), 7 (6), 10 (8)
+        $halfmove = ($spaces % 3 == 0) ? ($spaces / 3) * 2 + 1 : (($spaces - 1) / 3) * 2 + 2;
+
+        // '1. e4 e5'
+        // '1. e4 e5 2. a4'
+        // '1. e4 e5 2. e4 e5'
+        // '1. e4 e5 2. e4 e5 3. e4'
+        // '1. e4 e5 2. e4 e5 3. e4 e5'
+
         // build the query
         $qb = $this->createQueryBuilder('ECO')
             ->andWhere('ECO.PGN LIKE \'' . $pgn . '%\'')
@@ -33,7 +43,7 @@ class ECORepository extends ServiceEntityRepository
             //->orderBy('LENGTH(ECO.PGN)', 'ASC')
             ->getQuery();
 
-        $resp = array('current' => '', 'spaces' => $spaces, 'next' => []);
+        $resp = array('current' => '', 'pgn' => $pgn, 'halfmove' => $halfmove, 'spaces' => $spaces, 'next' => []);
 
         foreach ($qb->getArrayResult() as $r) {
             if ($pgn == $r['PGN']) {

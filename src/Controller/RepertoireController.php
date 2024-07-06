@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use App\Entity\ECO;
+use App\Entity\Moves;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;

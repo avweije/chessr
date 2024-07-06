@@ -1,13 +1,17 @@
 doctrine:
   dbal:
-    url: "%env(resolve:DATABASE_URL)%"
+    default_connection: main
+    connections:
+      main:
+        url: "%env(resolve:DATABASE_URL)%"
 
-    # IMPORTANT: You MUST configure your server version,
-    # either here or in the DATABASE_URL env var (see .env file)
-    #server_version: '16'
+        # IMPORTANT: You MUST configure your server version,
+        # either here or in the DATABASE_URL env var (see .env file)
+        #server_version: '16'
 
-    profiling_collect_backtrace: "%kernel.debug%"
-    use_savepoints: true
+        profiling_collect_backtrace: "%kernel.debug%"
+        use_savepoints: true
+        profiling: false
   orm:
     auto_generate_proxy_classes: true
     enable_lazy_ghost_objects: true
