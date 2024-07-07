@@ -165,6 +165,7 @@ class ApiController extends AbstractController
             // check to see if we already saved this move
             $data = $repository->findBy([
                 'User' => $this->getUser(),
+                'Color' => $color,
                 'FenBefore' => $move['before'],
                 'Move' => $move['san']
             ]);
@@ -227,6 +228,7 @@ class ApiController extends AbstractController
                 $lines[0]['moves'][] = [
                     'color' => $rep->getColor(),
                     'move' => $rep->getMove(),
+                    'halfmove' => $rep->getHalfMove(),
                     'before' => $rep->getFenBefore(),
                     'after' => $rep->getFenAfter(),
                     'new' => $rep->getPracticeCount() == 0 ? 1 : 0,
@@ -310,6 +312,8 @@ class ApiController extends AbstractController
     {
 
         $moves = [];
+        $validated = [];
+
         // find the follow up moves for a certain color and position
         foreach ($res as $rep) {
             if ($rep->getColor() == $color && $rep->getFenBefore() == $fen) {
@@ -330,6 +334,7 @@ class ApiController extends AbstractController
 
         // if we have any moves
         if (count($moves) > 0) {
+
             // get the complete lines
             for ($i = 0; $i < count($moves); $i++) {
 
@@ -337,10 +342,25 @@ class ApiController extends AbstractController
                 $temp = array_merge($lineMoves, [$moves[$i]['move']]);
 
                 $moves[$i]['moves'] = $this->getLines($color, $moves[$i]['after'], $res, $temp, $step + 1);
+
+                /*
+
+                If there are no child moves for this move and this move is not our move (=black move for white repertoire)
+                we need to remove this move from the line, since we shouldn't end on the opponent's move..
+
+                */
+
+                // is this our move
+                $ourMove = ($color == "white" && $moves[$i]['halfmove'] % 2 == 1) || ($color == "black" && $moves[$i]['halfmove'] % 2 == 0);
+
+                // add this move if its our move or there are child moves
+                if ($ourMove || count($moves[$i]['moves']) > 0) {
+                    $validated[] = $moves[$i];
+                }
             }
         }
 
-        return $moves;
+        return $validated;
     }
 
     // find the lines of a certain type

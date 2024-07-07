@@ -21,8 +21,6 @@ export class MyChessBoard {
   board = null;
   game = null;
 
-  lastMove = "";
-
   constructor() {
     this.game = new Chess();
   }
@@ -57,12 +55,24 @@ export class MyChessBoard {
 
   // enable move input
   enableMoveInput() {
-    this.board.enableMoveInput(this.moveInputHandler.bind(this));
+    console.log("enableMoveInput");
+
+    try {
+      this.board.enableMoveInput(this.moveInputHandler.bind(this));
+    } catch (err) {
+      console.log(err);
+    }
   }
 
   // disable move input
   disableMoveInput() {
-    this.board.disableMoveInput();
+    console.log("disableMoveInput");
+
+    try {
+      this.board.disableMoveInput();
+    } catch (err) {
+      console.log(err);
+    }
   }
 
   // make a move
@@ -73,8 +83,9 @@ export class MyChessBoard {
       // set the new position
       this.board.setPosition(this.game.fen());
 
-      // remember the last move ?
-
+      // process the move
+      this.afterMakeMove();
+      // call the after move event
       this.afterMove(move);
     } catch (err) {
       console.log(err);
@@ -93,12 +104,10 @@ export class MyChessBoard {
         this.game.move(moves[i].san);
       }
 
-      // remember last move
-      this.lastMove = moves[index].san;
-
       // set the board position
       this.board.setPosition(this.game.fen());
 
+      // call the after move event
       this.afterMove(moves[index]);
     } catch (err) {
       console.log(err);
@@ -172,6 +181,8 @@ export class MyChessBoard {
   }
 
   validateMoveInput(event) {
+    console.log("validateMoveInput:");
+    console.log(event);
     try {
       // see if the move is legal
       var move = this.game.move({
@@ -181,13 +192,8 @@ export class MyChessBoard {
       });
 
       if (this.onValidateMove(move)) {
-        // remember the last move made
-        this.lastMove = event.squareFrom + event.squareTo;
-
         // set the board position
         this.board.setPosition(this.game.fen());
-
-        this.afterMove();
 
         return true;
       } else {
@@ -209,20 +215,33 @@ export class MyChessBoard {
   }
 
   moveInputFinished(event) {
+    console.log("moveInputFinished:");
+    console.log(event);
+
     // process the move
     this.afterMakeMove();
+    // if this was a legal move
+    if (event.legalMove) {
+      // call the after move event
+      this.afterMove(this.game.history({ verbose: true }).pop());
+    }
   }
 
   // called after a move was made
   afterMakeMove() {
+    console.log("afterMakeMove:");
+
     // remove the legal move markers
     this.board.removeLegalMovesMarkers();
 
     // get the last move
     var last = this.game.history({ verbose: true }).pop();
+
     // add marker for last move
     this.board.removeMarkers();
-    this.board.addMarker(MARKER_TYPE.square, last.from);
-    this.board.addMarker(MARKER_TYPE.square, last.to);
+    if (last) {
+      this.board.addMarker(MARKER_TYPE.square, last.from);
+      this.board.addMarker(MARKER_TYPE.square, last.to);
+    }
   }
 }

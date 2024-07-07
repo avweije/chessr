@@ -7,23 +7,33 @@ class Repertoire extends MyChessBoard {
   previewMove = "";
 
   statusField = null;
-  fenField = null;
   pgnField = null;
 
   color = "white";
   saveRepertoireButton = null;
   movesTable = null;
 
+  repertoireContainer = null;
+  repertoireNameInput = null;
+  repertoireGroupInput = null;
+  repertoireGroupDataList = null;
+
   constructor() {
     super();
     // get the status fields
     this.statusField = document.getElementById("statusField");
-    this.fenField = document.getElementById("fenField");
     this.pgnField = document.getElementById("pgnField");
     // get the save repertoire button
     this.saveRepertoireButton = document.getElementById("saveRepertoireButton");
     // get the moves table
     this.movesTable = document.getElementById("movesTable");
+    // get the repertoire container and elements
+    this.repertoireContainer = document.getElementById("repertoireContainer");
+    this.repertoireNameInput = document.getElementById("repertoireNameInput");
+    this.repertoireGroupInput = document.getElementById("repertoireGroupInput");
+    this.repertoireGroupDataList = document.getElementById(
+      "repertoireGroupDataList"
+    );
     // get the board element
     var el = document.getElementById("board");
     // get the repertoire color
@@ -81,10 +91,25 @@ class Repertoire extends MyChessBoard {
         console.log("before toggle: ");
         console.log(response["saved"]);
 
-        // toggle the save repertoire button
-        this.toggleSaveRepertoire(response["saved"] == 1 ? false : true);
+        // toggle the buttons
+        this.toggleButtons(response["saved"]);
       })
       .catch((error) => console.error("Error:", error));
+  }
+
+  // toggle the buttons
+  toggleButtons(saved) {
+    this.toggleSaveRepertoire(!saved);
+
+    var ourTurn =
+      (this.color == "white" && this.game.turn() == "w") ||
+      (this.color == "black" && this.game.turn() == "b");
+
+    if (saved && !ourTurn) {
+      this.showRepertoireDetails();
+    } else {
+      this.hideRepertoireDetails();
+    }
   }
 
   // toggle the save repertoire button
@@ -133,10 +158,20 @@ class Repertoire extends MyChessBoard {
       .then((response) => {
         console.log("Success:", JSON.stringify(response));
 
-        // toggle the save repertoire button
-        this.toggleSaveRepertoire(false);
+        // toggle the buttons
+        this.toggleButtons(true);
       })
       .catch((error) => console.error("Error:", error));
+  }
+
+  // show the repertoire details
+  showRepertoireDetails() {
+    this.repertoireContainer.classList.remove("hidden");
+  }
+
+  // hide the repertoire details
+  hideRepertoireDetails() {
+    this.repertoireContainer.classList.add("hidden");
   }
 
   // clear the moves table
@@ -369,21 +404,16 @@ class Repertoire extends MyChessBoard {
 
   // make a move from the moves list
   clickMove(move) {
-    // if this move is not the current preview move
-    if (move != this.previewMove) {
-      // if there was a preview move, undo it
-      if (this.previewMove != "") {
-        this.game.undo();
-      }
-
-      // make the move
-      this.makeMove(move);
-    } else {
-      this.afterMove(move);
+    // if there was a preview move, undo it
+    if (this.previewMove != "") {
+      this.game.undo();
     }
 
     // clear the preview move
     this.previewMove = "";
+
+    // make the move
+    this.makeMove(move);
   }
 
   // event handler
@@ -425,7 +455,6 @@ class Repertoire extends MyChessBoard {
     }
 
     this.statusField.innerHTML = status;
-    this.fenField.innerHTML = this.game.fen();
     this.pgnField.innerHTML = "";
 
     // get the PGN
@@ -444,16 +473,16 @@ class Repertoire extends MyChessBoard {
       for (var i = 0; i < moves.length; i++) {
         if (i % 2 == 0) {
           var sp = document.createElement("span");
-          sp.className = "inline-block pr-1";
-          sp.innerHTML = i / 2 + 1 + ". ";
+          sp.className = "inline-block px-0.5";
+          sp.innerHTML = i / 2 + 1 + ".";
 
           this.pgnField.appendChild(sp);
         }
         var sp = document.createElement("span");
         sp.className =
-          "inline-block pr-1 rounded" +
+          "inline-block px-0.5 rounded border border-transparent" +
           (i + 1 < moves.length
-            ? " cursor-pointer hover:text-gray-600 hover:bg-slate-100"
+            ? " cursor-pointer hover:text-gray-600 hover:bg-slate-100 hover:border hover:border-slate-300"
             : "");
         sp.innerHTML = moves[i]["san"];
         sp.setAttribute("data-move", i);

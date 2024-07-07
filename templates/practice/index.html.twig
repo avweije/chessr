@@ -24,7 +24,7 @@
 	</div>
 
 	<div class="flex justify-end mt-0 mb-4">
-		<button type="button" id="startPracticeButton" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:text-black disabled:bg-gray-300 disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none">
+		<button type="button" id="startPracticeButton" disabled class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:text-black disabled:bg-gray-300 disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none">
 			Start your practice
 		</button>
 	</div>
@@ -35,17 +35,66 @@
 		</div>
 		<div class="flex-auto w-1/2 border border-slate-300 bg-slate-200 rounded p-2">
 
+			<div class="border rounded border-slate-300 text-sm bg-white">
+				<div class="flex justify-between items-center border-b border-slate-200">
+					<p class="block text-sm font-bold text-gray-900 p-3 border-b border-slate-200">Practice</p>
+					<div id="practiceCountersContainer" class="hidden flex items-center m-1.5">
+						<div class="flex items-center bg-indigo-500 rounded-md">
+							<div class="flex items-center justify-center bg-white rounded-full w-5 h-5 m-1.5">
+								<svg class="w-3.5 h-3.5 fill-current stroke-current text-indigo-500" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19.189,18.757a1,1,0,0,0-.97-.757h-.933c-1.644-1.726-2.235-4.918-2.449-7H9.163c-.214,2.082-.8,5.274-2.449,7H5.781a1,1,0,0,0-.97.757L4,22H20Z"/><path d="M8,9h8a1,1,0,0,0,0-2h-.635a3.523,3.523,0,0,0,.278-1.357,3.643,3.643,0,0,0-7.286,0A3.523,3.523,0,0,0,8.635,7H8A1,1,0,0,0,8,9Z"/></svg>
+							</div>
+							<div id="practiceMoveCounter" class="text-sm text-center font-semibold text-white ml-0.5 mr-3">128</div>
+						</div>
+						<div class="flex items-center bg-emerald-500 rounded-md mx-1">
+							<div class="flex items-center justify-center bg-white rounded-full w-5 h-5 m-1.5">
+								<svg class="w-4 h-4 fill-current text-emerald-500" viewbox="-3.5 0 19 19" xmlns="http://www.w3.org/2000/svg"><path d="M4.63 15.638a1.028 1.028 0 0 1-.79-.37L.36 11.09a1.03 1.03 0 1 1 1.58-1.316l2.535 3.043L9.958 3.32a1.029 1.029 0 0 1 1.783 1.03L5.52 15.122a1.03 1.03 0 0 1-.803.511.89.89 0 0 1-.088.004z"/></svg>
+							</div>
+							<div id="practiceCorrectCounter" class="text-sm text-center font-semibold text-white ml-0.5 mr-3">89</div>
+						</div>
+						<div class="flex items-center bg-red-500 rounded-md">
+							<div class="flex items-center justify-center bg-white rounded-full w-5 h-5 m-1.5">
+								<svg class="w-5 h-5 stroke-current text-red-500" viewbox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+									<g id="Menu / Close_SM">
+										<path id="Vector" d="M16 16L12 12M12 12L8 8M12 12L16 8M12 12L8 16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+									</g>
+								</svg>
+							</div>
+							<div id="practiceFailedCounter" class="text-sm text-center font-semibold text-white ml-0.5 mr-3">14</div>
+						</div>
+					</div>
+				</div>
 
-			<div class="flex border rounded border-slate-300 p-2 text-sm bg-white">
-				<label class="font-bold w-20">Practice:</label>
-				<div>[moves in this line / left] [correct] [mistakes]</div>
+				<div class="p-3">
+
+					<div id="infoContainer" class="flex items-center rounded p-3 bg-indigo-100 text-indigo-700 border border-indigo-400" role="alert">
+						<svg stroke-width="1.5" stroke="currentColor" class="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"/>
+						</svg>
+						<span class="text-base font-medium px-3 block sm:inline">To start your practice, click the button above.</span>
+					</div>
+					<div id="confirmContainer" class="hidden flex items-center rounded p-3 bg-emerald-100 text-emerald-700 border border-emerald-400" role="alert">
+						<svg stroke-width="1.5" stroke="currentColor" class="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"/>
+						</svg>
+						<span class="text-base font-medium px-3 block sm:inline">That's correct! Play the next move that's in your repertoire.</span>
+					</div>
+					<div id="warningContainer" class="hidden flex items-center rounded p-3 bg-red-100 text-red-700 border border-red-400" role="alert">
+						<svg stroke-width="1.5" stroke="currentColor" class="w-7 h-7" xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+						</svg>
+						<span class="text-base font-medium px-3 block sm:inline">That's not the right move, try again.</span>
+					</div>
+
+				</div>
+
 			</div>
 
-			<div class="flex border rounded border-slate-300 p-2 text-sm bg-white">
-				<div id="statusField" class="text-lg font-medium p-2">Start your practice by clicking the button.</div>
-			</div>
-			<div class="flex border rounded border-slate-300 p-2 text-sm bg-white">
-				<div id="moveField" class="text-lg font-medium p-2">1. .. (show correctly played move(s) here - short pause)</div>
+			<div id="playedMovesContainer" class="hidden border rounded border-slate-300 text-sm bg-white">
+				<p class="block text-sm font-bold text-gray-900 p-3 border-b border-slate-200">Moves</p>
+				<div id="playedMovesList" class="p-2 text-sm bg-white">
+					<div class="text-base border-b border-slate-200 p-2">1. _</div>
+					<div class="text-base p-2">1. _</div>
+				</div>
 			</div>
 		</div>
 	</div>
