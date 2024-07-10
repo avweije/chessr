@@ -6,6 +6,7 @@ use App\Entity\Moves;
 use App\Entity\Repertoire;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -18,15 +19,21 @@ class PracticeController extends AbstractController
         $this->em = $em;
     }
 
-    #[Route('/practice', name: 'app_practice')]
-    public function index(): Response
+    #[Route([
+        '/practice',
+        '/practice/white',
+        '/practice/black',
+        '/practice/new',
+        '/practice/recommended'
+    ], name: 'app_practice')]
+    public function index(Request $request): Response
     {
+        // get the practice repertoire type
+        $type = str_replace("/", "", str_replace("/practice", "", $request->getRequestUri()));
+        if ($type == "") {
+            $type = "all";
+        }
 
-        // get the repository
-        //$repository = $this->em->getRepository(Repertoire::class);
-
-        //$res = $repository->findBy(['Color' => 'white'], ['HalfMove' => 'ASC']);
-
-        return $this->render('practice/index.html.twig');
+        return $this->render('practice/index.html.twig', ['repertoireType' => $type]);
     }
 }

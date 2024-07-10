@@ -70,11 +70,11 @@ class ApiController extends AbstractController
         }
 
         // get the current PGN
-        $current = $codes['pgn'];
+        $current = $codes['pgn'] . ($codes['pgn'] != "" ? " " : "");
         // if it's white to move
         if ($codes['halfmove'] % 2 == 1) {
             // add the move number to the PGN
-            $current = $current . ($current != "" ? " " : "") . (($codes['halfmove'] + 1) / 2) . ". ";
+            $current = $current . (($codes['halfmove'] + 1) / 2) . ". ";
         }
 
         //print "Pgn: " . $codes['pgn'] . "<br>";
@@ -137,7 +137,7 @@ class ApiController extends AbstractController
             }
         }
 
-        return new JsonResponse(['eco' => $codes, 'games' => $games, 'repertoire' => $reps, 'saved' => $saved]);
+        return new JsonResponse(['eco' => $codes, 'games' => $games, 'repertoire' => $reps, 'saved' => $saved, 'current' => $current]);
     }
 
     #[Route('/api/repertoire', methods: ['POST'], name: 'app_api_repertoire')]
@@ -215,17 +215,30 @@ class ApiController extends AbstractController
         $res = $repository->findBy(['User' => $this->getUser()], ['HalfMove' => 'ASC']);
 
         // the lines
-        $lines = [];
+        $lines = [
+            ['color' => 'white', 'before' => '', 'after' => '', 'new' => 1, 'recommended' => 1, 'moves' => []],
+            ['color' => 'black', 'before' => '', 'after' => '', 'new' => 1, 'recommended' => 1, 'moves' => []]
+        ];
         // find the 1st moves
         foreach ($res as $rep) {
             // if this is a 1st move
             if ($rep->getHalfMove() == 1) {
+                /*
                 // see if we already have the starting position entry
                 if (count($lines) == 0) {
-                    $lines[] = ['before' => $rep->getFenBefore(), 'after' => $rep->getFenAfter(), 'moves' => []];
+                    //$lines[] = ['before' => $rep->getFenBefore(), 'after' => $rep->getFenAfter(), 'moves' => []];
+                    $lines[] = ['before' => $rep->getFenBefore(), 'moves' => []];
                 }
+                */
+
+                // set the FEN before/after for white & black
+                $lines[0]['before'] = $rep->getFenBefore();
+                $lines[0]['after'] = $rep->getFenBefore();
+                $lines[1]['before'] = $rep->getFenBefore();
+                $lines[1]['after'] = $rep->getFenBefore();
+
                 // add the move
-                $lines[0]['moves'][] = [
+                $lines[($rep->getColor() == 'white' ? 0 : 1)]['moves'][] = [
                     'color' => $rep->getColor(),
                     'move' => $rep->getMove(),
                     'halfmove' => $rep->getHalfMove(),
@@ -240,11 +253,33 @@ class ApiController extends AbstractController
             }
         }
 
+
+        /*
+
+        We need to disregard the opposite color moves in these filters..
+
+        If it's a white repertoire, only white recommended/new/etc counts, not for the black moves..
+
+        */
+
         // now add the lines based off the 1st moves (so we can have transpositions)
         for ($i = 0; $i < count($lines); $i++) {
+
+            $lines[$i]['moves'] = $this->getLines($lines[$i]['color'], $lines[$i]['after'], $res, []);
+            $lines[$i]['multiple'] = [];
+
+            // if we have multiple moves here, add them to an array
+            if (count($lines[$i]['moves']) > 1) {
+                foreach ($lines[$i]['moves'] as $move) {
+                    $lines[$i]['multiple'][] = $move['move'];
+                }
+            }
+
+            /*
             for ($x = 0; $x < count($lines[$i]['moves']); $x++) {
                 $lines[$i]['moves'][$x]['moves'] = $this->getLines($lines[$i]['moves'][$x]['color'], $lines[$i]['moves'][$x]['after'], $res, [$lines[$i]['moves'][$x]['move']]);
             }
+            */
         }
 
         //dd($lines);
@@ -254,6 +289,7 @@ class ApiController extends AbstractController
 
         // if we have a repertoire
         if (count($lines) > 0) {
+            /*
             // get the white lines
             $resp['white'] = $this->findLines($lines[0]['moves'], 'white', false, false);
             // get the black lines
@@ -261,14 +297,66 @@ class ApiController extends AbstractController
             // find the new lines
             $resp['new'] = $this->findLines($lines[0]['moves'], '', true, false);
             // find the recommended lines
+            //$resp['recommended'] = $this->findLines($lines[0]['moves'], '', false, true);
             $resp['recommended'] = $this->findLines($lines[0]['moves'], '', false, true);
+            */
+
+            // get the white lines
+            $resp['white'] = $this->findLines($lines, 'white', false, false);
+            // get the black lines
+            $resp['black'] = $this->findLines($lines, 'black', false, false);
+            // find the new lines
+            $resp['new'] = $this->findLines($lines, '', true, false);
+            // find the recommended lines
+            $resp['recommended'] = $this->findLines($lines, '', false, true);
+
+            //dd($lines, $resp['new']);
+
+            //print "Recommended:<br>";
+            //dd($res, $lines, $resp['recommended']);
+
+            //$temp = [...$resp['new']];
+
+            //
+            /*
+
+            Move 1. e4 = recommended: < 5 practices
+            Move 3. Nc6 (1. e4 f5 2. e5 Nc6) = recommended: Failed 6/8 == this is a black move!! not included!!
+
+            findLines is incorrect for recommended, only includes the 1. e4 move
+            should also include 3. Nc6 move with line: [E4, f5, e5]
+
+            */
+            //
 
             // group the lines per starting position / color
             $resp['white'] = $this->groupByPosition($resp['white']);
             $resp['black'] = $this->groupByPosition($resp['black']);
             $resp['new'] = $this->groupByPosition($resp['new']);
             $resp['recommended'] = $this->groupByPosition($resp['recommended']);
+
+            //print "New:<br>";
+            //dd($resp['new']);
         }
+
+        //
+
+        //print "New:<br>";
+        //dd($res, $resp['recommended']);
+
+        //
+
+
+        /*
+
+        
+        -- added: "multiple: []" array with all the moves for that position. 
+        -- only the moves that match the criteria (new, recommended) are included in "moves: []"
+        -- we can use this in the front-end to show other moves for that position (that dont need to be played --
+        -- but should instead immediately be shown in the moves list as if they were played already)
+
+        
+        */
 
         //dd($resp);
 
@@ -288,10 +376,19 @@ class ApiController extends AbstractController
                 }
             }
 
+            // if we don't  have this FEN position yet
             if ($idx == -1) {
-                $temp[] = ['fen' => $line['before'], 'color' => $line['color'], 'line' => $line['line'], 'moves' => [$line]];
+                // if this is not the starting position
+                $temp[] = [
+                    'fen' => $line['before'],
+                    'color' => $line['color'],
+                    'line' => isset($line['line']) ? $line['line'] : [],
+                    'moves' => $line['before'] == $line['after'] ? $line['moves'] : [$line],
+                    'multiple' => $line['before'] == $line['after'] ? $line['multiple'] : [$line['move']]
+                ];
             } else {
                 $temp[$idx]['moves'][] = $line;
+                $temp[$idx]['multiple'][] = $line['move'];
             }
         }
 
@@ -303,6 +400,10 @@ class ApiController extends AbstractController
         // get the fail percentage
         $failPct = $practiceCount < 5 ? 1 : $practiceFailed / $practiceCount;
 
+        if ($practiceFailed > 0) {
+            //print "PracticeFailed: $practiceCount / $practiceFailed / $practiceInARow = $failPct = " . ($practiceCount == 0 ? false : $practiceInARow < $failPct * 8) . "<br>";
+        }
+
         return $practiceCount == 0 ? false : $practiceInARow < $failPct * 8;
         //return $practiceCount == 0 ? false : true;
     }
@@ -310,9 +411,7 @@ class ApiController extends AbstractController
     // get the complete lines for a certain color and starting position
     private function getLines(string $color, string $fen, array $res, $lineMoves = [], int $step = 1): array
     {
-
         $moves = [];
-        $validated = [];
 
         // find the follow up moves for a certain color and position
         foreach ($res as $rep) {
@@ -327,14 +426,14 @@ class ApiController extends AbstractController
                     'failPercentage' => $rep->getPracticeCount() < 5 ? 1 : $rep->getPracticeFailed() / $rep->getPracticeCount(),
                     'recommended' => $this->isRecommended($rep->getPracticeCount(), $rep->getPracticeFailed(), $rep->getPracticeInARow()) ? 1 : 0,
                     'line' => $lineMoves,
-                    'moves' => []
+                    'moves' => [],
+                    'multiple' => []
                 ];
             }
         }
 
         // if we have any moves
         if (count($moves) > 0) {
-
             // get the complete lines
             for ($i = 0; $i < count($moves); $i++) {
 
@@ -343,30 +442,24 @@ class ApiController extends AbstractController
 
                 $moves[$i]['moves'] = $this->getLines($color, $moves[$i]['after'], $res, $temp, $step + 1);
 
-                /*
-
-                If there are no child moves for this move and this move is not our move (=black move for white repertoire)
-                we need to remove this move from the line, since we shouldn't end on the opponent's move..
-
-                */
-
-                // is this our move
-                $ourMove = ($color == "white" && $moves[$i]['halfmove'] % 2 == 1) || ($color == "black" && $moves[$i]['halfmove'] % 2 == 0);
-
-                // add this move if its our move or there are child moves
-                if ($ourMove || count($moves[$i]['moves']) > 0) {
-                    $validated[] = $moves[$i];
+                // if we have multiple moves here, add them to an array
+                if (count($moves[$i]['moves']) > 1) {
+                    foreach ($moves[$i]['moves'] as $move) {
+                        $moves[$i]['multiple'][] = $move['move'];
+                    }
                 }
             }
         }
 
-        return $validated;
+        return $moves;
     }
 
     // find the lines of a certain type
     private function findLines(array $lines, string $color = "", bool $isNew = false, bool $isRecommended = false, string $rootColor = "", int $level = 1): array
     {
         $res = [];
+
+        //dd($lines);
 
         // find the starting points for the lines
         foreach ($lines as $line) {
@@ -375,22 +468,30 @@ class ApiController extends AbstractController
                 $line['color'] = $rootColor;
             }
 
+            // is this our move?
+            //$ourMove = ($line["color"] == "white" && $level % 2 == 1) || ($line["color"] == "black" && $level % 2 == 0);
+            //$ourMove = ($line["color"] == "white" && $level % 2 == 0) || ($line["color"] == "black" && $level % 2 == 1);
+            $ourMove = isset($line['halfmove']) ? (($line['color'] == "white" && $line['halfmove'] % 2 == 1) || ($line['color'] == "black" && $line['halfmove'] % 2 == 0)) : $line['color'] == "white";
+
             // if we need a certain color and this is a match
-            if ($color != "" && $line['color'] == $color) {
+            if ($ourMove && $color != "" && $line['color'] == $color) {
                 // add to the lines
                 $res[] = $line;
 
                 continue;
             }
             // if we need the new lines and this is a match
-            if ($isNew && $line['new'] == 1) {
+            if ($ourMove && $isNew && $line['new'] == 1) {
                 // add to the lines
                 $res[] = $line;
 
                 continue;
             }
             // if we need the recommended lines and this is a match
-            if ($isRecommended && $line['recommended'] == 1) {
+            if ($ourMove && $isRecommended && $line['recommended'] == 1) {
+
+                //print "- level (recommended): $level <br>";
+
                 // add to the lines
                 $res[] = $line;
 
@@ -406,17 +507,25 @@ class ApiController extends AbstractController
 
         // at top level of this function, return the lines until
         if ($level == 1) {
+
+            //dd($lines, $res);
+
             // we need to split the lines into parts (that match the criteria)
             $parts = [];
             // split the lines at the part(s) where it stops matching (and later in the line matches again)
             foreach ($res as $line) {
+
                 $temp = $this->splitLine($line, $color, $isNew, $isRecommended);
+
+                //dd($line, $temp);
 
                 $parts[] = $line;
                 foreach ($temp as $t) {
                     $parts[] = $t;
                 }
             }
+
+            //dd($parts);
 
             $linesUntil = [];
 
@@ -426,6 +535,8 @@ class ApiController extends AbstractController
                 $linesUntil[] = $parts[$i];
             }
 
+            //dd($parts, $linesUntil);
+
             return $linesUntil;
         } else {
             // return the line back to the findLines internal call
@@ -434,32 +545,72 @@ class ApiController extends AbstractController
     }
 
     // split the line into parts that match
-    private function splitLine($line, string $color = "", bool $isNew = false, bool $isRecommended = false, bool $match = true): array
+    private function splitLine($line, string $color = "", bool $isNew = false, bool $isRecommended = false, bool $match = true, $level = 1): array
     {
         $parts = [];
 
+        // is this our move?
+        $ourMove = ($line['color'] == "white" && $level % 2 == 1) || ($line['color'] == "black" && $level % 2 == 0);
+        //$ourMove = ($color == "white" && $level % 2 == 0) || ($color == "black" && $level % 2 == 1);
+
+        if ($line['color'] == "white" && $level == 1 && $isRecommended) {
+            //print "level: $level - ourMove: " . $ourMove . "<br>";
+        }
+
         foreach ($line['moves'] as $move) {
             $temp = [];
+
+            if ($line['color'] == "white" && $isRecommended) {
+                //print "level: $level - move: " . $move['move'] . " - " . $ourMove . "<br>";
+            }
+
             // if the last move was a match
             if ($match) {
                 // if this move matches also
-                if (($color != '' && $move['color'] == $color) || ($isNew && $move['new'] == 1) || ($isRecommended && $move['recommended'] == 1)) {
+                if (!$ourMove || ($color != '' && $move['color'] == $color) || ($isNew && $move['new'] == 1) || ($isRecommended && $move['recommended'] == 1)) {
+
+                    if ($line['color'] == "white" && $isRecommended) {
+                        //print "--1<br>";
+                    }
+
                     // check next move for a non-match
-                    $temp = $this->splitLine($move, $color, $isNew, $isRecommended, true);
+                    $temp = $this->splitLine($move, $color, $isNew, $isRecommended, true, $level + 1);
                 } else {
+
+                    if ($line['color'] == "white" && $isRecommended) {
+                        //print "--2<br>";
+                    }
+
                     // check next move for match
-                    $temp = $this->splitLine($move, $color, $isNew, $isRecommended, false);
+                    $temp = $this->splitLine($move, $color, $isNew, $isRecommended, false, $level + 1);
                 }
             } else {
                 // if this move matches
-                if (($color != '' && $move['color'] == $color) || ($isNew && $move['new'] == 1) || ($isRecommended && $move['recommended'] == 1)) {
+                if ($ourMove && (($color != '' && $move['color'] == $color) || ($isNew && $move['new'] == 1) || ($isRecommended && $move['recommended'] == 1))) {
+
+                    if ($line['color'] == "white" && $isRecommended) {
+                        //print "--3<br>";
+                    }
+
                     // add this this line as a part
                     $parts[] = $move;
                 } else {
+
+                    if ($line['color'] == "white" && $isRecommended) {
+                        //print "--4<br>";
+                    }
+
                     // check next move for match
-                    $temp = $this->splitLine($move, $color, $isNew, $isRecommended, false);
+                    $temp = $this->splitLine($move, $color, $isNew, $isRecommended, false, $level + 1);
                 }
             }
+
+
+            if ($line['color'] == "white" && $level == 1 && $isRecommended) {
+                //print_r($temp);
+                //print "<br><br>";
+            }
+
 
             $parts = array_merge($parts, $temp);
         }
@@ -472,15 +623,47 @@ class ApiController extends AbstractController
     {
         $line = [];
 
+        // is this our move
+        //$ourMove = ($color == "white" && $level % 2 == 1) || ($color == "black" && $level % 2 == 0);
+
         // check the line to see if it matches
         foreach ($moves as $move) {
+
+            // is this our move
+            //$ourMove = ($move['color'] == "white" && $level % 2 == 1) || ($move['color'] == "black" && $level % 2 == 0);
+            $ourMove = isset($move['halfmove']) ? (($move['color'] == "white" && $move['halfmove'] % 2 == 1) || ($move['color'] == "black" && $move['halfmove'] % 2 == 0)) : $move['color'] == "white";
+
+            //print "- level: " . $level . " / move: " . $move['move'] . " / ourMove: " . $ourMove . "<br>";
+            if ($move['move'] == 'Nxa6') {
+                //print "- level: " . $level . " / halfmove: " . $move['halfmove'] . "/ move: " . $move['move'] . " / " . $move['color'] . " / ourMove: " . $ourMove . "<br>";
+            }
+
             // if this move matches the criteria
-            if (($color != '' && $move['color'] == $color) || ($isNew && $move['new'] == 1) || ($isRecommended && $move['recommended'] == 1)) {
-                // add to the lines
-                $line[] = [
-                    'move' => $move['move'],
-                    'moves' => $this->getLineUntil($move['moves'], $color, $isNew, $isRecommended, $level + 1)
-                ];
+            if (!$ourMove || (($color != '' && $move['color'] == $color) || ($isNew && $move['new'] == 1) || ($isRecommended && $move['recommended'] == 1))) {
+                // get the rest of the line
+                $temp = $this->getLineUntil($move['moves'], $color, $isNew, $isRecommended, $level + 1);
+
+                // add this move if its our move or there are child moves
+                if ($ourMove || count($temp) > 0) {
+
+                    //print "- adding..<br>";
+
+                    // add to the lines
+                    $line[] = [
+                        'move' => $move['move'],
+                        'moves' => $temp,
+                        'multiple' => $move['multiple']
+                    ];
+                } else {
+
+                    //print "Not added:<br>";
+                    //print_r($temp);
+                    //print "<br><br>";
+                    //dd($temp);
+                }
+            } else {
+
+                //print "- no match..<br>";
             }
         }
 

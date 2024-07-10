@@ -75,6 +75,32 @@ export class MyChessBoard {
     }
   }
 
+  // get the correct FEN notation (en passant rule not included if not actually possible, should always be included if pawn moved 2 squares)
+  getFen() {
+    console.log("getFEN:");
+
+    // the en passant notation
+    var enPassant = "-";
+    // get the last move
+    var last = this.game.history({ verbose: true }).pop();
+    // if the last move was a pawn move
+    if (last && last.piece == "p") {
+      // if the pawn moved 2 squares
+      if (last.from.charAt(1) == "2" && last.to.charAt(1) == "4") {
+        enPassant = last.from.charAt(0) + "3";
+      } else if (last.from.charAt(1) == "7" && last.to.charAt(1) == "5") {
+        enPassant = last.from.charAt(0) + "6";
+      }
+    }
+
+    // split the game FEN
+    var fenParts = this.game.fen().split(" ");
+    // override the en passant part
+    fenParts[3] = enPassant;
+
+    return fenParts.join(" ");
+  }
+
   // make a move
   makeMove(move) {
     try {
@@ -82,6 +108,9 @@ export class MyChessBoard {
       this.game.move(move);
       // set the new position
       this.board.setPosition(this.game.fen());
+
+      console.log("makeMove (getFEN):");
+      console.log(this.getFen());
 
       // process the move
       this.afterMakeMove();

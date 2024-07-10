@@ -68,7 +68,8 @@ class Repertoire extends MyChessBoard {
     var url = "/api/moves";
     var data = {
       color: this.color,
-      fen: this.game.fen(),
+      //fen: this.game.fen(),
+      fen: this.getFen(),
       pgn: this.game.pgn(),
       turn: this.game.turn(),
       moveNumber: this.game.moveNumber(),
