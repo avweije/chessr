@@ -51,7 +51,20 @@ class AdminController extends AbstractController
         // set the upload folder
         $folder = './build/uploads/';
         // set the PGN files array
-        $files = ['lichess_elite_2023-01-1st-10-games.pgn'];
+        //$files = ['lichess_elite_2023-01-1st-10-games.pgn'];
+
+        // done
+        //$files = ['lichess_elite_2023-01-1st-500k-lines.pgn'];
+        //$files = ['lichess_elite_2023-01-500k-b.pgn'];
+        // todo
+        $files = ['lichess_elite_2023-01-500k-c.pgn'];
+        //$files = ['lichess_elite_2023-01-500k-d.pgn'];
+        //$files = ['lichess_elite_2023-01-500k-e.pgn'];
+        //$files = ['lichess_elite_2023-01-500k-f.pgn'];
+        //$files = ['lichess_elite_2023-01-500k-g.pgn'];
+        //$files = ['lichess_elite_2023-01-500k-h.pgn'];
+
+        //exit;
 
         $totals = [];
 
@@ -93,12 +106,23 @@ class AdminController extends AbstractController
 
                 $usage = memory_get_usage() / 1024 / 1024;
 
-                //if ($usage > 64 || count($totals) > 50) {
-                //if ($usage > 64 || ($gameCount % 50 == 0)) {
-                if ($usage > 64 || $gameCount % 10 == 0) {
+                // every 50k games or when memory is low
+                if ($usage > 64 || $gameCount % 50000 == 0) {
 
-                    dd($totals);
-                    exit;
+                    //dd($totals);
+                    //exit;
+
+                    //print "--process<br>";
+                    /*
+                    $seconds = time() - $time;
+
+                    $hours = floor($seconds / 3600);
+                    $minutes = floor(($seconds - $hours * 3600) / 60);
+                    $seconds = floor($seconds - ($hours * 3600) - ($minutes * 60));
+
+                    //
+                    print "Duration of the script until processMoves: " . $hours . "h " . $minutes . "m " . $seconds . "s<br>";
+                    */
 
                     // process the moves
                     $this->processMoves($totals);
@@ -117,8 +141,10 @@ class AdminController extends AbstractController
         // process the moves that haven't been processed yet
         if (count($totals) > 0) {
 
-            dd($totals);
-            exit;
+            //dd($totals);
+            //exit;
+
+            //print "--end ($gameCount)<br>";
 
             //
             $this->processMoves($totals);
@@ -211,7 +237,8 @@ class AdminController extends AbstractController
 
             // store all in array, save once per file ? - testing..
             if (!isset($totals[$fenstr])) {
-                $totals[$fenstr] = ['pgn' => $pgn];
+                //$totals[$fenstr] = ['pgn' => $pgn];
+                $totals[$fenstr] = [];
             }
 
             //
@@ -250,7 +277,6 @@ class AdminController extends AbstractController
         //  $this->conn->connect();
         //}
 
-
         //$em = $this->doctrine->getManager();
         //$repo = $em->getRepository('App\Entity\Moves');
 
@@ -272,12 +298,18 @@ class AdminController extends AbstractController
         $stmtUpdate = $this->conn->prepare($sql);
 
         //$repository = $this->em->getRepository(Moves::class);
+        $i = 0;
 
-        foreach ($moves as $fen => $moves) {
+        foreach ($moves as $fen => $fenMoves) {
             // reset the time limit so we don't timeout on large files
             set_time_limit(300);
 
-            foreach ($moves as $move => $score) {
+            foreach ($fenMoves as $move => $score) {
+
+                // skip the 'pgn' field, not an actual move..
+                if ($move == 'pgn') {
+                    continue;
+                }
 
                 $stmtFind->bindValue('fen', $fen);
                 $stmtFind->bindValue('move', $move);
@@ -301,11 +333,10 @@ class AdminController extends AbstractController
                     //
                     if ($affected == 0) {
 
-                        print "No rows affected rows after insert:<br>";
+                        print "-- No rows affected rows after insert:<br>";
 
                         print "fen: " . $fen . "<br>";
                         print "move: " . $move . "<br>";
-                        print_r($score);
                         exit;
                     }
                 } else {
@@ -326,7 +357,6 @@ class AdminController extends AbstractController
 
                         print "fen: " . $fen . "<br>";
                         print "move: " . $move . "<br>";
-                        print_r($score);
                         exit;
                     }
                 }
@@ -357,6 +387,8 @@ class AdminController extends AbstractController
                 $test->persist($item);
                 */
             }
+
+            $i++;
 
             // save the move
             //$test->flush();
