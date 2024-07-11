@@ -5,6 +5,29 @@ namespace App\Service;
 use AmyBoyd\PgnParser\Game;
 //use AmyBoyd\PgnParser\PgnParser;
 
+class MyGame extends Game
+{
+    protected $fen;
+
+    /**
+     * Set initial FEN
+     * @param string $date
+     */
+    public function setFen($fen)
+    {
+        $this->fen = $fen;
+    }
+
+    /**
+     * Get initial FEN
+     * @return string
+     */
+    public function getFen()
+    {
+        return $this->fen;
+    }
+}
+
 class MyPgnParser
 {
     /**
@@ -28,7 +51,7 @@ class MyPgnParser
 
     private function createCurrentGame()
     {
-        $game = new Game();
+        $game = new MyGame();
         $game->setFromPgnDatabase($this->fileName);
         $this->multiLineAnnotationDepth = 0;
 
@@ -91,6 +114,58 @@ class MyPgnParser
         yield $game;
     }
 
+    public function parsePgnString($pgnString)
+    {
+
+        $lines = explode("\n", $pgnString);
+        //dd($lines);
+
+        $game = new MyGame();
+
+        //$this->createCurrentGame();
+        $pgnBuffer = null;
+        $haveMoves = false;
+        foreach ($lines as $line) {
+            // When reading files line-by-line, there is a \n at the end, so remove it.
+            $line = trim($line);
+            if (empty($line)) {
+                continue;
+            }
+
+            if (strpos($line, '[') === 0 && $this->multiLineAnnotationDepth === 0) {
+                // Starts with [ so must be meta-data.
+                // If already have meta-data AND moves, then we are now at the end of a game's
+                // moves and this is the start of a new game.
+                if ($haveMoves) {
+
+                    $this->completeCurrentGame($game, $pgnBuffer);
+
+                    // yield the game (for the iterator)
+                    //yield $this->currentGame;
+                    yield $game;
+
+                    $game = $this->createCurrentGame();
+
+                    $haveMoves = false;
+                    $pgnBuffer = null;
+                }
+
+                $this->addMetaData($game, $line);
+                $pgnBuffer .= $line . "\n";
+            } else {
+                // This is a line of moves.
+                $this->addMoves($game, $line);
+                $haveMoves = true;
+                $pgnBuffer .= "\n" . $line;
+            }
+        }
+
+        $this->completeCurrentGame($game, $pgnBuffer);
+
+        // yield the game (for the iterator)
+        //yield $this->currentGame;
+        yield $game;
+    }
     private function removeAnnotations($line)
     {
         $result = null;
@@ -125,6 +200,9 @@ class MyPgnParser
         switch ($key) {
             case 'result':
                 $game->setResult($val);
+                break;
+            case 'fen':
+                $game->setFen($val);
                 break;
             default:
                 // Ignore others
