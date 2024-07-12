@@ -20,7 +20,7 @@
 			<label class="block text-sm font-medium text-gray-900">Username</label>
 		</div>
 		<div class="mx-3">
-			<input id="repertoireNameInput" type="text" name="username" size="40" placeholder="Enter your account name.." class="block w-full rounded-md border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+			<input id="repertoireNameInput" type="text" name="username" size="40" value="avweije" placeholder="Enter your account name.." class="block w-full rounded-md border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
 		</div>
 		<div>
 			<button type="button" id="connectButton" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:text-black disabled:bg-gray-300 disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none">
@@ -33,17 +33,15 @@
 
 	<div class="p-3">
 
-		<p class="text-base text-gray-900 p-3">Connect to your account to show the archives.</p>
+		<p id="archivesDisabledText" class="text-base text-gray-900 p-3">Connect to your account to show the archives.</p>
 
-		<div class="flex items-center p-3">
+		<div id="archivesContainer" class="hidden flex items-center p-3">
 			<div>
 				<label class="block text-sm font-medium text-gray-900">Year</label>
 			</div>
 			<div class="mx-3">
 				<div class="relative">
-					<select name="" id="" class="appearance-none inline-block rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-						<option value="">2024</option>
-					</select>
+					<select id="archiveYearSelect" name="archive_year" class="appearance-none inline-block rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></select>
 					<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
 						<svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
 					</div>
@@ -54,12 +52,7 @@
 			</div>
 			<div class="mx-3">
 				<div class="relative">
-					<select name="" id="" class="appearance-none inline-block rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-						<option value="">January</option>
-						<option value="">February</option>
-						<option value="">March</option>
-						<option value="">April</option>
-					</select>
+					<select id="archiveMonthSelect" name="archive_month" class="appearance-none inline-block rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></select>
 					<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
 						<svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
 					</div>
@@ -78,21 +71,15 @@
 
 	<div class="p-3">
 
-		<p class="text-base text-gray-900 p-3">Download the games to show the totals.</p>
+		<p id="gamesDisabledText" class="text-base text-gray-900 p-3">Download the games to show the totals.</p>
 
-
-		<div class="flex items-center p-3">
+		<div id="gamesContainer" class="hidden flex items-center p-3">
 			<div>
 				<label class="block text-sm font-medium text-gray-900">Time Control</label>
 			</div>
 			<div class="mx-3">
 				<div class="relative">
-					<select name="" id="" class="appearance-none inline-block rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-						<option value="">Bullet</option>
-						<option value="" selected>Blitz</option>
-						<option value="">Rapid</option>
-						<option value="">Daily</option>
-					</select>
+					<select id="gameTypeSelect" name="game_type" class="appearance-none inline-block rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></select>
 					<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
 						<svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
 					</div>

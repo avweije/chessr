@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\ECO;
 use App\Entity\Moves;
 use App\Entity\Repertoire;
+use App\Library\GameDownloader;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
@@ -201,6 +202,36 @@ class ApiController extends AbstractController
         }
 
         return $saved;
+    }
+
+    #[Route('/api/download/archives', methods: ['GET'], name: 'app_api_download_archives')]
+    public function apiDownloadArchives(Request $request): JsonResponse
+    {
+        $downloader = new GameDownloader();
+
+        $archives = $downloader->downloadArchives();
+
+        // $games = $downloader->downloadGames(2024, 1);
+
+        // set the JSON response
+        $resp = ['archives' => $downloader->getArchiveYearsMonths()];
+
+        return new JsonResponse($resp);
+    }
+
+    #[Route('/api/download/games/{year}/{month}', methods: ['GET'], name: 'app_api_download_games')]
+    public function apiDownloadGames(Request $request, $year, $month): JsonResponse
+    {
+        $downloader = new GameDownloader();
+
+        //$archives = $downloader->downloadArchives();
+
+        $games = $downloader->downloadGames($year, $month);
+
+        // set the JSON response
+        $resp = ['games' => $downloader->getTotals()];
+
+        return new JsonResponse($resp);
     }
 
     #[Route('/api/practice', methods: ['GET'], name: 'app_api_practice')]

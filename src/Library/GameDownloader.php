@@ -121,6 +121,12 @@ class GameDownloader
         return isset($this->archivesYearsMonths[$year]) ? $this->archivesYearsMonths[$year] : [];
     }
 
+    // return the archive months per years
+    public function getArchiveYearsMonths(): array
+    {
+        return $this->archivesYearsMonths;
+    }
+
     // return the distinct game types in our downloaded games
     public function getTypes(): array
     {
