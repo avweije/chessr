@@ -28,9 +28,7 @@ class UCI
     {
         // initialise vars
         $this->resource = null;
-        print "CWD: " . getcwd() . "<br>";
         $this->path = realpath("./build/stockfish/stockfish-windows-x86-64.exe");
-        print "path: " . $this->path . "<br>";
         // open the process
         $this->open();
     }
@@ -251,88 +249,6 @@ class UCI
         $this->skill    = (int) $level;
     }
 
-    /**
-     *
-     * @param array $moves Algebraic notation moves
-     * @param array Assoc. array of additional properties to pass to "go" function
-     *	(e.g. wtime => 50000)
-     */
-    public function getBestMove(array $moves, array $properties = array())
-    {
-        $moves    = implode(" ", $moves);
-
-        if (!is_resource($this->resource)) {
-            $this->open();
-        }
-
-        // $pipes now looks like this:
-        // 0 => writeable handle connected to child stdin
-        // 1 => readable handle connected to child stdout
-        // Any error output will be appended to /tmp/error-output.txt
-
-
-        fwrite($this->pipes[0], "uci\n");
-        fwrite($this->pipes[0], "ucinewgame\n");
-        //		fwrite($this->pipes[0], "setoption name Skill Level value {$this->skill}\n");
-        fwrite($this->pipes[0], "isready\n");
-        usleep(500);
-
-
-        if (empty($moves)) {
-            fwrite($this->pipes[0], "position startpos\n");
-        } else {
-            fwrite($this->pipes[0], "position startpos moves $moves\n");
-        }
-
-        //		echo "\n\n----------------\n\n$moves\n\n---------------\n\n"; die();
-
-        $go_modifiers = "";
-
-        if (!empty($properties)) {
-            foreach ($properties as $name => $value) {
-                $go_modifiers .= "$name $value ";
-            }
-        }
-
-        if (!isset($properties['movetime'])) {
-            $go_modifiers    .= "movetime 500 ";
-        }
-
-        //		echo "go $go_modifiers\n\n<br/>";
-
-        fwrite($this->pipes[0], "go $go_modifiers\n");
-        fclose($this->pipes[0]);
-
-        $start_thinking_time    = time();
-
-        while (true) {
-
-            $return = stream_get_contents($this->pipes[1]);
-
-            //			echo "\n\n --- $return \n\n";
-
-            if (preg_match("/bestmove\s(?P<bestmove>[a-h]\d[a-h]\dq?)/i", $return, $matches)) {
-                break;
-            } elseif (preg_match("/bestmove\s\(none\)/i", $return)) {
-                //				$this->shutDown();
-
-                return null;
-            } else if ((time() - $start_thinking_time) > UCI_MAX_THINK_TIME) {
-                //				$this->shutDown();
-
-                throw new \Exception("UCI didn't respond after time limit ! Halting !");
-            } else {
-                usleep(500);
-
-                continue;
-            }
-        }
-
-        //		$this->shutDown();
-
-        return $matches;
-    }
-
     public function __destruct()
     {
         $this->close();
@@ -340,8 +256,6 @@ class UCI
 
     protected function close()
     {
-        print "Closing.<br>";
-
         @fclose($this->pipes[0]);
         @fclose($this->pipes[1]);
         @fclose($this->pipes[2]);

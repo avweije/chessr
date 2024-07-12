@@ -2,31 +2,7 @@
 
 namespace App\Service;
 
-use AmyBoyd\PgnParser\Game;
-//use AmyBoyd\PgnParser\PgnParser;
-
-class MyGame extends Game
-{
-    protected $fen;
-
-    /**
-     * Set initial FEN
-     * @param string $date
-     */
-    public function setFen($fen)
-    {
-        $this->fen = $fen;
-    }
-
-    /**
-     * Get initial FEN
-     * @return string
-     */
-    public function getFen()
-    {
-        return $this->fen;
-    }
-}
+use App\Library\MyGame;
 
 class MyPgnParser
 {
@@ -65,7 +41,7 @@ class MyPgnParser
 
         $handle = fopen($filePath, "r");
 
-        $game = new Game();
+        $game = new MyGame();
 
         //$this->createCurrentGame();
         $pgnBuffer = null;
@@ -114,7 +90,7 @@ class MyPgnParser
         yield $game;
     }
 
-    public function parsePgnString($pgnString)
+    public function parsePgnString($pgnString, $singleGame = false)
     {
 
         $lines = explode("\n", $pgnString);
@@ -138,16 +114,20 @@ class MyPgnParser
                 // moves and this is the start of a new game.
                 if ($haveMoves) {
 
+                    // we want only 1 game
+                    break;
+
+                    /*
                     $this->completeCurrentGame($game, $pgnBuffer);
 
                     // yield the game (for the iterator)
-                    //yield $this->currentGame;
                     yield $game;
 
                     $game = $this->createCurrentGame();
 
                     $haveMoves = false;
                     $pgnBuffer = null;
+                    */
                 }
 
                 $this->addMetaData($game, $line);
@@ -162,9 +142,8 @@ class MyPgnParser
 
         $this->completeCurrentGame($game, $pgnBuffer);
 
-        // yield the game (for the iterator)
-        //yield $this->currentGame;
-        yield $game;
+        // return the game
+        return $game;
     }
     private function removeAnnotations($line)
     {

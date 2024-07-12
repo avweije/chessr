@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Library\UCI;
 use App\Library\ChessJs;
+use App\Library\GameDownloader;
 use App\Service\MyPgnParser;
 use App\Service\MyGame;
 use Doctrine\DBAL\Connection;
@@ -12,6 +13,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Onspli\Chess\FEN;
 use Onspli\Chess\PGN;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -21,16 +23,14 @@ class AdminController extends AbstractController
     private $em;
     private $doctrine;
     private $conn;
-    private $client;
     private $myPgnParser;
 
-    public function __construct(Connection $conn, ManagerRegistry $doctrine, EntityManagerInterface $em, MyPgnParser $myPgnParser, HttpClientInterface $client)
+    public function __construct(Connection $conn, ManagerRegistry $doctrine, EntityManagerInterface $em, MyPgnParser $myPgnParser)
     {
         $this->em = $em;
         $this->myPgnParser = $myPgnParser;
         $this->doctrine = $doctrine;
         $this->conn = $conn;
-        $this->client = $client;
 
         // disable the logger for this process
         //$this->em->getConnection()->getConfiguration()->setMiddlewares([new \Doctrine\DBAL\Logging\Middleware(new \Psr\Log\NullLogger())]);
@@ -56,234 +56,70 @@ class AdminController extends AbstractController
         ]);
     }
 
-    private function getChessGames($user = 'avweije', $year = '2024', $month = '07')
-    {
-
-        $url = "https://api.chess.com/pub/player/" . $user . "/games/" . $year . "/" . $month;
-
-        $response = $this->client->request('GET', $url);
-
-        $statusCode = $response->getStatusCode();
-        $contentType = $response->getHeaders()['content-type'][0];
-        $content = $response->getContent();
-        $content = $response->toArray();
-
-        return $content;
-    }
-
     #[Route('/admin/engine', name: 'app_admin_engine')]
     public function testStockfish()
     {
 
         print "Testing UCI class.<br>";
 
-        $games = $this->getChessGames()['games'];
+        $downloader = new GameDownloader();
 
-        //dd($games);
+        $archives = $downloader->downloadArchives();
 
-        print count($games) . " games found (chess.com).<br>";
+        $games = $downloader->downloadGames(2024, 1);
+
+        //dd($games, $downloader->getGames());
+
+        //dd($downloader->games, $downloader->getGames("blitz", [2024 => [2, 3]]));
+
 
         /*
 
-        1) Not working yet for games with an initial starting position.
-
-        Need to test this, would be good if it would work also.
-
-        Seems to be working now.. need to check with chess.com analyse.
-
-        2) Need to check for user color, currently always checking for white.
+        1) Need to check for user color, currently always checking for white.
         Make it possible to check for white or black, based on user.
 
         */
 
+        //dd($games);
 
-        $thisGame = null;
-        foreach ($games as $game) {
+        print count($games) . " games in total.<br>";
+        print "Analysis takes about 16s per game on average.<br>";
+        print "Estimated time for all games: " . $this->getDuration(count($games) * 16) . "<br>";
 
-            $thisGame = $game;
-            break;
-
-            if ($game['initial_setup'] == "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1") {
-                $thisGame = $game;
-                break;
-            }
-        }
-
-        //dd($thisGame);
-
-        //$fen = $thisGame["initial_setup"];
-        $fen = "";
-        $rawPgn = $thisGame["pgn"];
-
-        $gameMoves = [];
-        $gamePgn = "";
-
-        foreach ($this->myPgnParser->parsePgnString($rawPgn) as $game) {
-            print "-- game parsed<br>";
-
-            $gameMoves = $game->getMovesArray();
-            $gamePgn = $game->getPgn();
-            $fen = $game->getFen();
-
-            break;
-        }
-
-        print "Fen: $fen<br>";
-        print "Pgn: " . $rawPgn . "<br>";
+        exit;
 
 
-        //dd($gameMoves);
-
-        //
-        $chess = new ChessJs($fen);
-
-        //dd($chess->validateFen($fen));
-
-        //$chess->load($fen);
-        //$chess = new ChessJs();
-
-        //print "halfMove: ".$chess->getHalfmo
-        //dd($chess->export());
-
-        //print "before loadPgn<br>";
-
-        foreach ($gameMoves as $move) {
-            $chess->move($move);
-        }
-
-        //dd($gamePgn);
-
-        //$chess->loadPgn($rawPgn);
-
-        //print "after loadPgn<br>";
-
-        $history = $chess->history(['verbose' => true]);
-
-        //dd($history);
-
-        $gameMoves = [];
-        foreach ($history as $move) {
-            $gameMoves[] = [
-                'uci' => $move['from'] . $move['to'] . ($move['promotion'] !== null ? $move['promotion'] : ""),
-                'san' => $move['san']
-            ];
-        }
-
-        //dd($gameMoves);
-
+        // start the UCI component
         $uci = new UCI();
 
-        $uci->newGame();
-        //$uci->isReady();
-
+        // request the 3 best moves
         $uci->setOption("MultiPV", 3);
 
-        //$gameMoves = ["e2e4", "e7e5", "g1f3"];
-        /*
-        $gameMoves = [
-            "d2d4", "e7e6", "c2c4", "d7d5", "b1c3", "g8f6", "c1g5",
-            "f8e7", "e2e3", "c7c6", "g1f3", "h7h6", "g5h4",
-            "b8d7", "d1c2", "a7a6", "h2h3", "b7b5", "c4d5", "c6d5", "a2a3",
-            "d7b6", "f3e5", "c8b7", "f1d3", "g7g5", "h4g3", "f6h5", "e5f7", "h5g3", "f7d8"
-        ];
-        */
+        $i = 0;
 
+        $time = microtime(true);
 
-        $moves = [];
+        // analyse the games
+        foreach ($games as $val) {
 
-        $bestMoves = $uci->setPosition($fen);
-        $bestCp = $bestMoves[1]["cp"];
+            // parse the game
+            $game = $this->myPgnParser->parsePgnString($val["pgn"], true);
 
-        print "Starting CP: $bestCp (" . $bestMoves[1]["move"] . ")<br>";
+            // analyse the game
+            $mistakes = $this->analyseGame($uci, $game);
 
-        $white = true;
-        $prevWinPct = (50 + 50 * (2 / (1 + exp(-0.00368208 * $bestCp)) - 1));
-        $accuracy = [];
+            print "Game " . ($i + 1) . " Mistakes:<br>";
+            print_r($mistakes);
+            print "<br><br>";
 
-        $mistakes = [];
-        $includeInnacuracies = true;
+            print "Duration so far: " . $this->getDuration(microtime(true) - $time) . "<br><br>";
 
-        $halfMove = 1;
-        $linePgn = "";
-        $lineMoves = [];
+            $i++;
 
-        foreach ($gameMoves as $move) {
-
-            $moves[] = $move['uci'];
-
-            $bestMoves = $uci->setPosition("", $moves);
-
-            $white = !$white;
-
-            //print "Best Move: " . $bestMoves[1]["move"] . " (" . $bestMoves[1]["cp"] . ")<br>";
-
-            $moveCp = $white ? $bestMoves[1]["cp"] : $bestMoves[1]["cp"] * -1;
-
-            // if we played a white move and have the black move evaluations
-            if (!$white) {
-                $cpLoss = max(0, $bestCp - $moveCp);
-
-                $winPct = (50 + 50 * (2 / (1 + exp(-0.00368208 * $moveCp)) - 1));
-
-                $pctLoss = $prevWinPct == -1 ? 0 : max(0, ($prevWinPct - $winPct) / 100);
-
-                $acc = 103.1668 * exp(-0.04354 * ($prevWinPct - min($prevWinPct, $winPct))) - 3.1669;
-                $accuracy[] = $acc;
-
-                print "Move '" . $move['uci'] . "' (" . round($acc, 2) . " -- " . $pctLoss . ") = ";
-
-                if ($pctLoss == 0) {
-                    print "Best move<br>";
-                } else if ($pctLoss < .02) {
-                    print "Excellent move<br>";
-                } else if ($pctLoss < .05) {
-                    print "** Good move<br>";
-                } else if ($pctLoss < .1) {
-                    print "** Inaccuracy [" . $moveCp . " " . $winPct . "% / " . $prevWinPct . "%]<br>";
-
-                    if ($includeInnacuracies) {
-                        $mistakes[] = ["move" => $move['san'], "line" => ["pgn" => $linePgn, "moves" => $lineMoves], "type" => "inaccuracy"];
-                    }
-                } else if ($pctLoss < .2) {
-                    print "** Mistake [" . $moveCp . " " . $winPct . "% / " . $prevWinPct . "%]<br>";
-
-                    $mistakes[] = ["move" => $move['san'], "line" => ["pgn" => $linePgn, "moves" => $lineMoves], "type" => "mistake"];
-                } else {
-                    print "** Blunder [" . $moveCp . " " . $winPct . "% / " . $prevWinPct . "%]<br>";
-
-                    $mistakes[] = ["move" => $move['san'], "line" => ["pgn" => $linePgn, "moves" => $lineMoves], "type" => "blunder"];
-                }
-
-                //print "<br>Move: " . $move . "<br>";
-                //print "pctLoss: " . $pctLoss . "<br>";
-                //print "CP loss (win %): " . $cpLoss . " (" . $winPct . "%)<br>";
-            } else {
-                //
-                $prevWinPct = (50 + 50 * (2 / (1 + exp(-0.00368208 * $moveCp)) - 1));
-            }
-
-            $bestCp = $moveCp;
-
-            $linePgn .= ($linePgn != "" ? " " : "") . ($halfMove % 2 == 1 ? ceil($halfMove / 2) . ". " : "") . $move['san'];
-            $lineMoves[] = $move['san'];
-
-            $halfMove++;
-
-            // max 15 moves?
-            if ($halfMove >= 30) {
+            if ($i > 2) {
                 break;
             }
         }
-
-        print "line: $linePgn<br>";
-
-        $acc = array_sum($accuracy) / count($accuracy);
-
-        print "<br><b>Accuracy:</b> " . round($acc, 2) . "%s<br>";
-
-        print "Mistakes:<br>";
-        print_r($mistakes);
-        print "<br>";
 
         //$bestMoves = $uci->setPosition("rnbqkb1r/pp1ppppp/5n2/2p5/4P3/2PB4/PP1P1PPP/RNBQK1NR b KQkq - 2 3");
         //rnbqkb1r/pp1ppppp/5n2/2p5/4P3/2PB4/PP1P1PPP/RNBQK1NR b KQkq - 2 3
@@ -406,6 +242,110 @@ class AdminController extends AbstractController
 
             print "bestmove: " . $str[0] . $str[1] . "-" . $str[2] . $str[3] . "<br>";
         }
+    }
+
+    private function analyseGame($uci, $game): array
+    {
+        $moves = [];
+
+        $gameMoves = $game->getUciMoves();
+        $gamePgn = $game->getPgn();
+        $fen = $game->getFen();
+
+        // start a new game
+        $uci->newGame();
+
+        // set the initial position
+        $bestMoves = $uci->setPosition($fen);
+        // get the current best move
+        $bestCp = $bestMoves[1]["cp"];
+
+        //print "Starting CP: $bestCp (" . $bestMoves[1]["move"] . ")<br>";
+
+        $white = true;
+
+        $prevWinPct = (50 + 50 * (2 / (1 + exp(-0.00368208 * $bestCp)) - 1));
+        $accuracy = [];
+
+        $mistakes = [];
+        $includeInnacuracies = true;
+
+        $halfMove = 1;
+        $linePgn = "";
+        $lineMoves = [];
+
+        foreach ($gameMoves as $move) {
+
+            $moves[] = $move['uci'];
+
+            $bestMoves = $uci->setPosition("", $moves);
+
+            $white = !$white;
+
+            /*
+
+            Determine which color we are.
+
+            Base analysis off that color, currently always for white.
+
+            */
+
+            //print "Best Move: " . $bestMoves[1]["move"] . " (" . $bestMoves[1]["cp"] . ")<br>";
+
+            $moveCp = $white ? $bestMoves[1]["cp"] : $bestMoves[1]["cp"] * -1;
+
+            // if we played a white move and have the black move evaluations
+            if (!$white) {
+                $cpLoss = max(0, $bestCp - $moveCp);
+
+                $winPct = (50 + 50 * (2 / (1 + exp(-0.00368208 * $moveCp)) - 1));
+
+                $pctLoss = $prevWinPct == -1 ? 0 : max(0, ($prevWinPct - $winPct) / 100);
+
+                $acc = 103.1668 * exp(-0.04354 * ($prevWinPct - min($prevWinPct, $winPct))) - 3.1669;
+                $accuracy[] = $acc;
+
+                $mistake = ["move" => $move["san"], "type" => "", "line" => ["pgn" => $linePgn, "moves" => $lineMoves]];
+
+                if ($pctLoss == 0) {
+                    // best move
+                } else if ($pctLoss < .02) {
+                    // excellent move
+                } else if ($pctLoss < .05) {
+                    // good move
+                } else if ($pctLoss < .1) {
+                    // inaccuracy
+                    if ($includeInnacuracies) {
+                        $mistake["type"] = "inaccuracy";
+                        $mistakes[] = $mistake;
+                    }
+                } else if ($pctLoss < .2) {
+                    // mistake
+                    $mistake["type"] = "mistake";
+                    $mistakes[] = $mistake;
+                } else {
+                    // blunder
+                    $mistake["type"] = "blunder";
+                    $mistakes[] = $mistake;
+                }
+            } else {
+                $prevWinPct = (50 + 50 * (2 / (1 + exp(-0.00368208 * $moveCp)) - 1));
+            }
+
+            $bestCp = $moveCp;
+
+            $linePgn .= ($linePgn != "" ? " " : "") . ($halfMove % 2 == 1 ? ceil($halfMove / 2) . ". " : "") . $move['san'];
+            $lineMoves[] = $move['san'];
+
+            $halfMove++;
+
+            // max 15 moves?
+            if ($halfMove >= 30) {
+                break;
+            }
+        }
+
+        return $mistakes;
     }
 
     #[Route('/admin/import', name: 'app_admin_import')]
@@ -789,5 +729,20 @@ class AdminController extends AbstractController
         //$test = $this->getDoctrine();
 
         //dd($test);
+    }
+
+    // returns the duration in text, based off of microseconds
+    public function getDuration($ms)
+    {
+        $seconds = round($ms, 3);
+
+        print "-- duration: $ms -- --";
+
+
+        $hours = floor($seconds / 3600);
+        $minutes = floor(($seconds - $hours * 3600) / 60);
+        $seconds = floor($seconds - ($hours * 3600) - ($minutes * 60));
+
+        return ($hours > 0 ? $hours . "h " : "") . ($hours > 0 || $minutes > 0 ? $minutes . "m " : "") . $seconds . "s";
     }
 }
