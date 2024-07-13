@@ -61,14 +61,17 @@ class GameDownloader
             }
         }
 
-        //dd($this->archivesYearsMonths);
-
         return $this->archives;
     }
 
     // download the games from chess.com
     public function downloadGames($year, $month): array
     {
+        // download the archives first, if needed
+        if (count($this->archives) == 0) {
+            $this->downloadArchives();
+        }
+
         // pad the month
         $month = str_pad($month, 2, '0', STR_PAD_LEFT);
         // set the url
@@ -207,11 +210,11 @@ class GameDownloader
                     // if we have any games
                     if (isset($this->games[$year][$month])) {
                         foreach ($this->games[$year][$month] as $game) {
-
-                            // match on game type..
-
-                            // add the game
-                            $games[] = $game;
+                            // if the type matches
+                            if ($filterType == "all" || $filterType == $game['time_class']) {
+                                // add the game
+                                $games[] = $game;
+                            }
                         }
                     }
                 }

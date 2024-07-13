@@ -75,6 +75,17 @@ class AdminController extends AbstractController
 
         /*
 
+        Make a test with Downloads entity.
+
+        Only allow next analysis if none is currently running.
+
+        Check this by checking for record in Downloads for User & Type based on Status & DateTime fields.
+
+        */
+
+
+        /*
+
         1) Need to check for user color, currently always checking for white.
         Make it possible to check for white or black, based on user.
 

@@ -106,6 +106,12 @@ Encore
     from: "./assets/uploads",
     to: "uploads/[name].[ext]",
     pattern: /\.(pgn)$/,
+  })
+
+  .copyFiles({
+    from: "./assets/stockfish",
+    to: "stockfish/[name].[ext]",
+    pattern: /\.(exe)$/,
   });
 
 module.exports = Encore.getWebpackConfig();

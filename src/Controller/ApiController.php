@@ -2,10 +2,15 @@
 
 namespace App\Controller;
 
+use App\Config\DownloadSite;
+use App\Config\DownloadStatus;
+use App\Config\DownloadType;
+use App\Entity\Downloads;
 use App\Entity\ECO;
 use App\Entity\Moves;
 use App\Entity\Repertoire;
 use App\Library\GameDownloader;
+use DateTime;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
@@ -232,6 +237,236 @@ class ApiController extends AbstractController
         $resp = ['games' => $downloader->getTotals()];
 
         return new JsonResponse($resp);
+    }
+
+    #[Route('/api/analyse/{type}/{year}/{month}', methods: ['GET'], name: 'app_api_analyse')]
+    public function apiAnalyseGames(Request $request, $type, $year, $month): JsonResponse
+    {
+
+        // validate the type - return error
+        $downloadType = DownloadType::tryFrom(ucfirst($type));
+
+        $resp = ['type' => $type, 'year' => $year, 'month' => $month];
+
+        if ($downloadType == null) {
+
+            $resp['test'] = 'testing 411 response with symfony';
+
+            // testing..
+
+            $jsonResponse = new JsonResponse(['error' => "Invalid type given."]);
+
+            $jsonResponse->setStatusCode(411);
+
+            return $jsonResponse;
+        }
+
+
+        // validate no current downloads going on - return error
+
+        // get the repository
+        $repository = $this->em->getRepository(Downloads::class);
+
+        // find the download record
+        $rec = $repository->findOneBy([
+            'User' => $this->getUser(),
+            'Type' => $type,
+            'Year' => $year,
+            'Month' => $month
+        ]);
+
+        // the UUID of the last game we processed
+        $lastUUID = "";
+
+        // if there is a download record
+        if ($rec !== null) {
+
+            print "Download record found.<br>";
+
+            // depending the status
+            switch ($rec->getStatus()) {
+                case DownloadStatus::Downloading:
+
+                    print "Status = downloading.<br>";
+
+                    // check the datetime
+                    $now = new DateTime();
+                    $diff = $rec->getDateTime()->diff($now);
+
+                    $secs =  $now->getTimestamp() - $rec->getDateTime()->getTimestamp();
+
+                    $mins = floor($secs / 60);
+
+                    print "Checking datetime diff: $secs seconds, $mins minutes<br>";
+
+                    //dd($diff);
+
+                    // if 5 minutes ago or more
+                    //if ($mins > 4) {
+                    if (true) {
+
+                        // continue..
+
+
+                        // temporary - update status for record..
+
+                        $rec->setStatus(DownloadStatus::Partial);
+                        $rec->setDateTime(new DateTime());
+
+                        $this->em->persist($rec);
+
+                        // actually executes the queries (i.e. the INSERT query)
+                        $this->em->flush();
+
+                        print "Download reccord updated.<br>";
+                    } else {
+
+                        // please wait..
+
+                        $jsonResponse = new JsonResponse(['error' => "Downloading already in progress, please try again later."]);
+
+                        $jsonResponse->setStatusCode(409);
+
+                        return $jsonResponse;
+                    }
+
+                    break;
+                case DownloadStatus::Completed:
+
+                    print "Status = Completed.<br>";
+
+                    $jsonResponse = new JsonResponse(['error' => "Download already completed."]);
+
+                    $jsonResponse->setStatusCode(409);
+
+                    return $jsonResponse;
+
+                    break;
+                case DownloadStatus::Partial:
+
+                    print "Status = Partial.<br>";
+
+                    // update the status
+                    $rec->setStatus(DownloadStatus::Downloading);
+                    $rec->setDateTime(new DateTime());
+
+                    $this->em->persist($rec);
+                    $this->em->flush();
+
+                    break;
+            }
+
+            // get the last UUID
+            $lastUUID = $rec->getLastUUID();
+            if ($lastUUID == null) {
+                $lastUUID = "";
+            } else {
+
+                print "Last UUID is: " . $lastUUID . "<br>";
+            }
+        } else {
+
+            // add download record
+            $rec = new Downloads();
+            $rec->setUser($this->getUser());
+            $rec->setSite(DownloadSite::ChessDotCom);
+            $rec->setYear($year);
+            $rec->setMonth($month);
+            $rec->setType($downloadType->value);
+            $rec->setStatus(DownloadStatus::Downloading);
+            $rec->setDateTime(new DateTime());
+
+            $this->em->persist($rec);
+
+            // actually executes the queries (i.e. the INSERT query)
+            $this->em->flush();
+
+            print "Download reccord added.<br>";
+        }
+
+
+        print "Downloading and analysing may proceed.<br>";
+
+
+        //exit;
+
+        $downloader = new GameDownloader();
+
+        $downloader->downloadGames($year, $month);
+
+        $games = $downloader->getGames($type);
+
+        // get the games of the right type
+
+        //print "Games of type '$type':<br>";
+
+        //dd($downloader->getTotals(), $games);
+
+
+        $lastUUIDFound = false;
+
+        // the max games to process
+        $maxGames = 4;
+        $processed = 0;
+        $completed = false;
+
+        // loop through them
+
+        $cnt = count($games);
+
+        print "Looping through games ($cnt).<br>";
+
+        for ($i = 0; $i < $cnt; $i++) {
+            // do something..
+
+            if ($lastUUID == "" || $lastUUIDFound) {
+
+                print "Processing game " . ($processed + 1) . ".<br>";
+                print $games[$i]['uuid'] . "<br>";
+
+                // analyse game..
+
+                $processed++;
+
+                // update download record..
+
+                // update the last UUID
+                $rec->setDateTime(new DateTime());
+                $rec->setLastUUID($games[$i]['uuid']);
+
+                $this->em->persist($rec);
+                $this->em->flush();
+            } else if ($lastUUID != "") {
+
+                $lastUUIDFound = $lastUUID == $games[$i]['uuid'];
+
+                if ($lastUUIDFound) {
+
+                    print "Last UUID found.<br>";
+                }
+            }
+
+            // completed all games
+            $completed = $i + 1 == $cnt;
+
+            // stop when we've reached the max
+            if ($processed >= $maxGames) {
+
+                print "Maximum games to process reached.<br>";
+
+                break;
+            }
+        }
+
+        print "Analysis done, completed = " . ($completed ? "yes" : "no") . "<br>";
+
+        // update the status
+        $rec->setStatus($completed ? DownloadStatus::Completed : DownloadStatus::Partial);
+        $rec->setDateTime(new DateTime());
+
+        exit;
+
+        return new JsonResponse(['status' => 'Analysis done.', 'processed' => $processed]);
     }
 
     #[Route('/api/practice', methods: ['GET'], name: 'app_api_practice')]
