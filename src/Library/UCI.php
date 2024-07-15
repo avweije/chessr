@@ -2,11 +2,7 @@
 
 namespace App\Library;
 
-use AmyBoyd\PgnParser\Game;
-//use AmyBoyd\PgnParser\PgnParser;
-
 define("UCI_MAX_THINK_TIME", 5);
-
 
 class UCI
 {
@@ -69,8 +65,6 @@ class UCI
     public function newGame()
     {
         $bool = $this->writeCommand("ucinewgame", $response);
-
-        print "-- newGame ($bool): $response<br>";
     }
 
     public function limitStrength($elo)
@@ -150,31 +144,14 @@ class UCI
 
             // read the next line
             $line = fgets($this->pipes[1]);
-
-            if ($line == "") {
-                print "-- no line..<br>";
-            } else if ($line == false) {
-                print "-- fgets failed..<br>";
-            }
-
             // if we have the response
             if ($line != "") {
-
-                //print "[LINE] " . $line . "<br>";
-
                 // if we need to stop reading the stream
                 if (strpos($line, $stopReadingMatch) === 0) {
-
-                    //print "-- '" . $stopReadingMatch . "' found, stop reading stream--<br>";
-
-                    //
+                    // if this was the go command
                     if ($goCommand) {
-
+                        // parse the lines
                         $response = $this->parsePrincipalVariations($lines);
-                    } else {
-                        //print "Response:<br>";
-                        //print nl2br($response);
-                        //print "<br>";
                     }
 
                     break;
@@ -189,15 +166,8 @@ class UCI
             // if we've waited long enough
             if ((time() - $start_thinking_time) > UCI_MAX_THINK_TIME) {
 
-                print "-- waiting too long for response..<br>";
-
-                //throw new \Exception("UCI didn't respond after time limit ! Halting !");
-
                 return false;
             } else if ($line === false) {
-
-                print "-- no response yet, sleep-500<br>";
-
                 // no response yet, keep trying
                 usleep(500);
 
@@ -210,12 +180,16 @@ class UCI
 
     private function parsePrincipalVariations($data)
     {
-        //
         $lines = [];
-        //
+        // loop through the data
         foreach ($data as $line) {
             $parts = explode(" ", $line);
             if ($parts[0] == "info" && $parts[1] == "depth") {
+
+                // if not enough parts (could be mate)
+                if (count($parts) < 7) {
+                    break;
+                }
 
                 $bestMoveIdx = $parts[6];
 
@@ -230,9 +204,8 @@ class UCI
                     }
                 }
 
-                //print $line . "<br>";
-
-                $lines[$bestMoveIdx] = [
+                // add the bestmove
+                $lines[$bestMoveIdx - 1] = [
                     "depth" => $parts[2],
                     "cp" => $parts[9],
                     "move" => count($moves) > 0 ? $moves[0] : "",
@@ -246,7 +219,7 @@ class UCI
 
     public function setSkillLevel($level)
     {
-        $this->skill    = (int) $level;
+        $this->skill = (int) $level;
     }
 
     public function __destruct()

@@ -3,6 +3,7 @@
 namespace App\Library;
 
 use AmyBoyd\PgnParser\Game;
+use Onspli\Chess\FEN;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
@@ -104,6 +105,54 @@ class GameDownloader
         }
 
         return [];
+    }
+
+    // get an evaluation from lichess
+    public function getEvaluation($fen): ?array
+    {
+
+        //https://lichess.org/api/cloud-eval
+
+        // set the url
+        $url = "https://lichess.org/api/cloud-eval?fen=" . $fen . "&multiPv=3";
+        //$url = "https://lichess.org/api/cloud-eval?fen=" . $fen;
+
+        // get the archives
+        $response = $this->client->request('GET', $url);
+
+        //$contentType = $response->getHeaders()['content-type'][0];
+        //$content = $response->getContent();
+
+        $eval = null;
+
+        // if response is ok
+        switch ($response->getStatusCode()) {
+            case 200:
+                // get the evaluation
+                $eval = $response->toArray();
+                break;
+            case 404:
+                break;
+            default:
+                // 429: too many requests ?
+
+                /*
+
+                Lichess suggests to take a 1 min break after receiving a 429.
+
+                We need to keep this into account.
+
+                Maybe we need to download the eval database after all ??
+
+                - when analysing a lot, we will keep running into this.
+
+                - we can try keeping a cache of evals per fen?
+
+                */
+                break;
+        }
+
+        return $eval;
     }
 
     // return the downloaded archives

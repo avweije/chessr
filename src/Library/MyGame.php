@@ -12,10 +12,11 @@ use AmyBoyd\PgnParser\Game;
 class MyGame extends Game
 {
     protected $fen;
+    protected $link;
 
     /**
      * Set initial FEN
-     * @param string $date
+     * @param string $fen
      */
     public function setFen($fen)
     {
@@ -29,6 +30,24 @@ class MyGame extends Game
     public function getFen()
     {
         return $this->fen;
+    }
+
+    /**
+     * Set game link
+     * @param string $link
+     */
+    public function setLink($link)
+    {
+        $this->link = $link;
+    }
+
+    /**
+     * Get game link
+     * @return string
+     */
+    public function getLink()
+    {
+        return $this->link;
     }
 
     public function getUciMoves(): array

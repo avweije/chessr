@@ -7,9 +7,13 @@ use App\Config\DownloadStatus;
 use App\Config\DownloadType;
 use App\Entity\Downloads;
 use App\Entity\ECO;
+use App\Entity\Mistake;
 use App\Entity\Moves;
 use App\Entity\Repertoire;
+use App\Library\ChessJs;
 use App\Library\GameDownloader;
+use App\Library\UCI;
+use App\Service\MyPgnParser;
 use DateTime;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Doctrine\ORM\EntityManagerInterface;
@@ -22,10 +26,12 @@ use Symfony\Component\HttpFoundation\Response;
 class ApiController extends AbstractController
 {
     private $em;
+    private $myPgnParser;
 
-    public function __construct(EntityManagerInterface $em)
+    public function __construct(EntityManagerInterface $em, MyPgnParser $myPgnParser)
     {
         $this->em = $em;
+        $this->myPgnParser = $myPgnParser;
     }
 
     #[Route('/api/moves', name: 'app_api_moves')]
@@ -280,51 +286,26 @@ class ApiController extends AbstractController
 
         // if there is a download record
         if ($rec !== null) {
-
-            print "Download record found.<br>";
-
             // depending the status
             switch ($rec->getStatus()) {
                 case DownloadStatus::Downloading:
-
-                    print "Status = downloading.<br>";
-
                     // check the datetime
                     $now = new DateTime();
-                    $diff = $rec->getDateTime()->diff($now);
 
                     $secs =  $now->getTimestamp() - $rec->getDateTime()->getTimestamp();
-
                     $mins = floor($secs / 60);
 
-                    print "Checking datetime diff: $secs seconds, $mins minutes<br>";
-
-                    //dd($diff);
-
                     // if 5 minutes ago or more
-                    //if ($mins > 4) {
-                    if (true) {
-
-                        // continue..
-
-
-                        // temporary - update status for record..
-
+                    if ($mins > 4) {
+                        // update status for record
                         $rec->setStatus(DownloadStatus::Partial);
                         $rec->setDateTime(new DateTime());
 
                         $this->em->persist($rec);
-
-                        // actually executes the queries (i.e. the INSERT query)
                         $this->em->flush();
-
-                        print "Download reccord updated.<br>";
                     } else {
-
-                        // please wait..
-
+                        // send an error response
                         $jsonResponse = new JsonResponse(['error' => "Downloading already in progress, please try again later."]);
-
                         $jsonResponse->setStatusCode(409);
 
                         return $jsonResponse;
@@ -332,20 +313,14 @@ class ApiController extends AbstractController
 
                     break;
                 case DownloadStatus::Completed:
-
-                    print "Status = Completed.<br>";
-
+                    // send an error response
                     $jsonResponse = new JsonResponse(['error' => "Download already completed."]);
-
                     $jsonResponse->setStatusCode(409);
 
                     return $jsonResponse;
 
                     break;
                 case DownloadStatus::Partial:
-
-                    print "Status = Partial.<br>";
-
                     // update the status
                     $rec->setStatus(DownloadStatus::Downloading);
                     $rec->setDateTime(new DateTime());
@@ -360,9 +335,6 @@ class ApiController extends AbstractController
             $lastUUID = $rec->getLastUUID();
             if ($lastUUID == null) {
                 $lastUUID = "";
-            } else {
-
-                print "Last UUID is: " . $lastUUID . "<br>";
             }
         } else {
 
@@ -377,58 +349,90 @@ class ApiController extends AbstractController
             $rec->setDateTime(new DateTime());
 
             $this->em->persist($rec);
-
-            // actually executes the queries (i.e. the INSERT query)
             $this->em->flush();
-
-            print "Download reccord added.<br>";
         }
 
-
-        print "Downloading and analysing may proceed.<br>";
-
-
-        //exit;
-
+        // get the game downloader
         $downloader = new GameDownloader();
-
+        // download the games
         $downloader->downloadGames($year, $month);
-
+        // get the games of the right type
         $games = $downloader->getGames($type);
 
-        // get the games of the right type
+        // start the engine
+        $uci = new UCI();
 
-        //print "Games of type '$type':<br>";
+        // request the 3 best moves
+        $uci->setOption("MultiPV", 3);
+        // request only the best move
+        //$uci->setOption("MultiPV", 1);
 
-        //dd($downloader->getTotals(), $games);
-
+        // keep track of the duration
+        $time = microtime(true);
 
         $lastUUIDFound = false;
 
         // the max games to process
         $maxGames = 4;
+        //$maxGames = 1;
         $processed = 0;
         $completed = false;
 
-        // loop through them
+        $mistakes = [];
 
         $cnt = count($games);
 
-        print "Looping through games ($cnt).<br>";
-
         for ($i = 0; $i < $cnt; $i++) {
-            // do something..
-
+            // if we can process this game
             if ($lastUUID == "" || $lastUUIDFound) {
 
-                print "Processing game " . ($processed + 1) . ".<br>";
-                print $games[$i]['uuid'] . "<br>";
+                // safety check..
+                if (!isset($games[$i]["pgn"])) {
+                    print "PGN not set:<br>";
+                    dd($games[$i]);
+                }
 
-                // analyse game..
+                // parse the game
+                $game = $this->myPgnParser->parsePgnString($games[$i]["pgn"], true);
+
+                // analyse the game
+                $temp = $this->analyseGame($uci, $game);
+
+                // if there are any mistakes
+                if (count($temp) > 0) {
+                    // add them to the array
+                    $mistakes[] = [
+                        "white" => $game->getWhite(),
+                        "black" => $game->getBlack(),
+                        "link" => $game->getLink(),
+                        "mistakes" => $temp
+                    ];
+
+                    // add them to the database
+                    foreach ($temp as $mistake) {
+                        // add the mistake
+                        $rc = new Mistake();
+
+                        $rc->setUser($this->getUser());
+                        $rc->setWhite($game->getWhite());
+                        $rc->setBlack($game->getBlack());
+                        $rc->setLink($game->getLink());
+                        $rc->setType($mistake["type"]);
+                        $rc->setFen($mistake["fen"]);
+                        $rc->setPgn($mistake["line"]["pgn"]);
+                        $rc->setMove($mistake["move"]);
+                        $bms = [];
+                        foreach ($mistake["bestmoves"] as $bm) {
+                            $bms[] = $bm["san"];
+                        }
+                        $rc->setBestMoves(join(" ", $bms));
+
+                        // save it
+                        $this->em->persist($rc);
+                    }
+                }
 
                 $processed++;
-
-                // update download record..
 
                 // update the last UUID
                 $rec->setDateTime(new DateTime());
@@ -437,13 +441,8 @@ class ApiController extends AbstractController
                 $this->em->persist($rec);
                 $this->em->flush();
             } else if ($lastUUID != "") {
-
+                // match the last UUID we processed
                 $lastUUIDFound = $lastUUID == $games[$i]['uuid'];
-
-                if ($lastUUIDFound) {
-
-                    print "Last UUID found.<br>";
-                }
             }
 
             // completed all games
@@ -451,22 +450,41 @@ class ApiController extends AbstractController
 
             // stop when we've reached the max
             if ($processed >= $maxGames) {
-
-                print "Maximum games to process reached.<br>";
-
                 break;
             }
         }
-
-        print "Analysis done, completed = " . ($completed ? "yes" : "no") . "<br>";
 
         // update the status
         $rec->setStatus($completed ? DownloadStatus::Completed : DownloadStatus::Partial);
         $rec->setDateTime(new DateTime());
 
-        exit;
+        $this->em->persist($rec);
+        $this->em->flush();
 
-        return new JsonResponse(['status' => 'Analysis done.', 'processed' => $processed]);
+        // set the totals
+        $totals = ["inaccuracies" => 0, "mistakes" => 0, "blunders" => 0];
+
+        foreach ($mistakes as $mistake) {
+            foreach ($mistake["mistakes"] as $mis) {
+                switch ($mis["type"]) {
+                    case "inaccuracy":
+                        $totals["inaccuracies"]++;
+                        break;
+                    case "mistake":
+                        $totals["mistakes"]++;
+                        break;
+                    case "blunder":
+                        $totals["blunders"]++;
+                        break;
+                }
+            }
+        }
+
+        return new JsonResponse([
+            'status' => 'Analysis done.',
+            'processed' => $processed,
+            'totals' => $totals
+        ]);
     }
 
     #[Route('/api/practice', methods: ['GET'], name: 'app_api_practice')]
@@ -934,5 +952,279 @@ class ApiController extends AbstractController
         }
 
         return $line;
+    }
+
+    // analyse a game
+    private function analyseGame($uci, $game): array
+    {
+        $moves = [];
+
+        // get the game moves and initial FEN
+        $gameMoves = $game->getUciMoves();
+        $fen = $game->getFen();
+
+        // create a new game
+        $chess = new ChessJs($fen);
+        // get the FEN
+        $fen = $chess->fen();
+
+        // start a new UCI game
+        $uci->newGame();
+
+        // get the game downloader
+        $downloader = new GameDownloader();
+
+        //
+        // temporarily disable: 429 - too many requests..
+        //
+
+        //$eval = $downloader->getEvaluation($fen);
+        $eval = null;
+
+        if ($eval !== null) {
+            $bestMoves = [];
+            //for ($i = 0; $i < 3; $i++) {
+            $pv = explode(" ", $eval["pvs"][0]["moves"]);
+            $bestMoves[] = ["move" => $pv[0], "cp" => $eval["pvs"][0]["cp"], "line" => $pv];
+            //}
+        } else {
+            // set the initial position and get the best moves from the engine
+            $bestMoves = $uci->setPosition($fen);
+        }
+
+        // get the current best move
+        $bestCp = $bestMoves[0]["cp"];
+        // white to move
+        $whiteToMove = true;
+
+        // need to change this to user setting?
+        $analyseForBlack = $game->getBlack() == "avweije";
+
+
+        //print "Players: " . $game->getWhite() . " vs " . $game->getBlack() . "<br>";
+        //print "Analysing for: " . ($analyseForBlack ? "Black" : "White") . "<br>";
+
+        // get the intial win percentage
+        $prevWinPct = (50 + 50 * (2 / (1 + exp(-0.00368208 * $bestCp)) - 1));
+        $accuracy = [];
+        $mistakes = [];
+
+        // need to add this to settings?
+        $includeInnacuracies = true;
+
+        $halfMove = 1;
+        $linePgn = "";
+        $lineMoves = [];
+
+        foreach ($gameMoves as $move) {
+            // add the UCI move
+            $moves[] = $move['uci'];
+            // get the FEN before this move
+            $fenBefore = $chess->fen();
+            // remember the best moves for this move
+            $bestMovesBefore = [...$bestMoves];
+
+            // play the move
+            $chess->move($move["san"]);
+
+            // if the game is over, we can stop the analysis
+            if ($chess->gameOver()) {
+                break;
+            }
+
+
+            /*
+
+            Stockfish returns CP based on the color:
+
+            - White +.5 = 50
+            - Black +.5 = 50
+
+            Lichess evals returns CP for white:
+
+            - White +.5 = 50
+            - Black +.5 = -50
+
+            We always want the CP for white. In case of stockfish we need to multiple with -1 for the black moves.
+
+            */
+
+
+            //
+            // temporarily disable: 429 - too many requests..
+            //
+
+            $eval = null;
+            //$eval = $downloader->getEvaluation($chess->fen());
+            if ($eval !== null) {
+                $bestMoves = [];
+                //for ($i = 0; $i < 3; $i++) {
+                $pv = explode(" ", $eval["pvs"][0]["moves"]);
+                $bestMoves[] = ["move" => $pv[0], "cp" => $eval["pvs"][0]["cp"], "line" => $pv];
+                //}
+            } else {
+                // set the position and get the best moves from the engine
+                $bestMoves = $uci->setPosition("", $moves);
+
+                // if these evals are for a black move
+                if ($whiteToMove) {
+                    // uno reverse the cp value
+                    for ($i = 0; $i < count($bestMoves); $i++) {
+                        $bestMoves[$i]["cp"] = $bestMoves[$i]["cp"] * -1;
+                    }
+                }
+            }
+
+            $whiteToMove = !$whiteToMove;
+
+            // get the current best move centipawn value
+            $moveCp = $bestMoves[0]["cp"];
+
+            // if we need to check the CP loss
+            if ((!$whiteToMove && !$analyseForBlack) || ($whiteToMove && $analyseForBlack)) {
+
+                // not using the centipawn for now, but keep it in..
+                if ($analyseForBlack) {
+                    $cpLoss = $bestCp < $moveCp ? max(0, abs($bestCp - $moveCp)) : 0;
+                } else {
+                    $cpLoss = $bestCp > $moveCp ? max(0, abs($bestCp - $moveCp)) : 0;
+                }
+
+                // get the current win percentage
+                $winPct = (50 + 50 * (2 / (1 + exp(-0.00368208 * $moveCp)) - 1));
+                if ($analyseForBlack) {
+                    $winPct = 100 - $winPct;
+                }
+
+                // calculate the percentage loss for this move
+                $pctLoss = $prevWinPct == -1 ? 0 : max(0, ($prevWinPct - $winPct) / 100);
+
+                // calculate the accuracy for this move (not used for now, but keep it in)
+                $acc = 103.1668 * exp(-0.04354 * ($prevWinPct - min($prevWinPct, $winPct))) - 3.1669;
+                $accuracy[] = $acc;
+
+                // set the mistake array
+                $mistake = ["move" => $move["san"], "type" => "", "bestmoves" => [], "fen" => $fenBefore, "line" => ["pgn" => $linePgn, "moves" => $lineMoves]];
+
+                // check the move quality
+                if ($pctLoss == 0) {
+                    // best move
+                } else if ($pctLoss < .02) {
+                    // excellent move
+                } else if ($pctLoss < .05) {
+                    // good move
+                } else if ($pctLoss < .1) {
+                    // inaccuracy
+                    if ($includeInnacuracies) {
+                        $mistake["type"] = "inaccuracy";
+                    }
+                } else if ($pctLoss < .2) {
+                    // mistake
+                    $mistake["type"] = "mistake";
+                } else {
+                    // blunder
+                    $mistake["type"] = "blunder";
+                }
+
+                // if we have a mistake
+                if ($mistake["type"] !== "") {
+                    // undo the current move so we can test the best moves
+                    $chess->undo();
+
+                    foreach ($bestMovesBefore as $bm) {
+                        // get the move details
+                        $fromSquare = substr($bm["move"], 0, 2);
+                        $toSquare = substr($bm["move"], 2, 2);
+                        $promotion = strlen($bm["move"] == 5) ? substr($bm["move"], 5) : "";
+                        // make the move
+                        $ret = $chess->move(["from" => $fromSquare, "to" => $toSquare, "promotion" => $promotion]);
+                        if ($ret == null) {
+
+                            // invalid move.. ? do something.. ?
+
+                        } else {
+                            // get the last move
+                            $history = $chess->history(['verbose' => true]);
+                            $last = array_pop($history);
+                            // undo the last move
+                            $chess->undo();
+
+                            /*
+
+                            For 2nd and 3rd best moves:
+                            
+                            - we need to check if the move itself is not a mistake... 
+                            - if it is, we would be suggesting a slightly worse mistake instead of the mistake made
+                            - check using win pct??
+
+                            */
+
+                            // if this is the move we made (2nd or 3rd best)
+                            if ($move["san"] == $last["san"]) {
+                                // we have all the better moves, exit foreach
+                                break;
+                            }
+
+                            // add the move
+                            $add = true;
+
+                            // if this is not the 1st best move
+                            if (count($mistake["bestmoves"]) > 0) {
+                                // calculate the win percentage for this move
+                                $moveWinPct = (50 + 50 * (2 / (1 + exp(-0.00368208 * $bm["cp"])) - 1));
+                                if ($analyseForBlack) {
+                                    $moveWinPct = 100 - $moveWinPct;
+                                }
+
+                                // calculate the move percentage loss
+                                $movePctLoss = $prevWinPct == -1 ? 0 : max(0, ($prevWinPct - $moveWinPct) / 100);
+                                // add if not an inaccuracy or worse
+                                $add = $movePctLoss < .1;
+                            }
+
+                            // add to the bestmoves
+                            if ($add) {
+                                $mistake["bestmoves"][] = ["move" => $bm["move"], "san" => $last["san"], "cp" => $bm["cp"]];
+                            }
+                        }
+                    }
+
+                    // redo the current move
+                    $chess->move($move["san"]);
+
+
+                    /*
+
+                    If no best moves known, do we need to add?
+                    Not sure how this could happen, but as safety measure perhaps.. ?
+
+                    */
+
+
+                    // add the mistake
+                    $mistakes[] = $mistake;
+                }
+            } else {
+                // calculate the win percentage for the previous move (for next loop)
+                $prevWinPct = (50 + 50 * (2 / (1 + exp(-0.00368208 * $moveCp)) - 1));
+                if ($analyseForBlack) {
+                    $prevWinPct = 100 - $prevWinPct;
+                }
+            }
+
+            $bestCp = $moveCp;
+
+            $linePgn .= ($linePgn != "" ? " " : "") . ($halfMove % 2 == 1 ? ceil($halfMove / 2) . ". " : "") . $move['san'];
+            $lineMoves[] = $move['san'];
+
+            $halfMove++;
+
+            // max 15 moves?
+            if ($halfMove >= 30) {
+                break;
+            }
+        }
+
+        return $mistakes;
     }
 }

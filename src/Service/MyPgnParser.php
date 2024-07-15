@@ -180,8 +180,23 @@ class MyPgnParser
             case 'result':
                 $game->setResult($val);
                 break;
+            case 'white':
+                $game->setWhite($val);
+                break;
+            case 'black':
+                $game->setBlack($val);
+                break;
+            case 'whiteelo':
+                $game->setWhiteElo($val);
+                break;
+            case 'blackelo':
+                $game->setBlackElo($val);
+                break;
             case 'fen':
                 $game->setFen($val);
+                break;
+            case 'link':
+                $game->setLink($val);
                 break;
             default:
                 // Ignore others

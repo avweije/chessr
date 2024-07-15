@@ -1022,6 +1022,20 @@ class ChessJs
         } else if (is_array($sanOrArray)) {
             $sanOrArray['promotion'] = isset($sanOrArray['promotion']) ? $sanOrArray['promotion'] : null;
 
+            if ($sanOrArray["from"] == "d8" && $sanOrArray["to"] == "a5") {
+                /*
+                print "San:<br>";
+                print_r($sanOrArray);
+                print "<br>";
+                print "Moves:<br>";
+                //print_r($moves);
+                foreach ($moves as $move) {
+                    print "From: " . self::algebraic($move['from']) . " to " . self::algebraic($move['to']) . "<br>";
+                }
+                print "<br><br>";
+                */
+            }
+
             foreach ($moves as $move) {
                 $move['promotion'] = isset($move['promotion']) ? $move['promotion'] : null;
                 if (
