@@ -24,7 +24,8 @@ class PracticeController extends AbstractController
         '/practice/white',
         '/practice/black',
         '/practice/new',
-        '/practice/recommended'
+        '/practice/recommended',
+        '/practice/analysis'
     ], name: 'app_practice')]
     public function index(Request $request): Response
     {

@@ -2,6 +2,7 @@
     "devDependencies": {
         "@babel/core": "^7.17.0",
         "@babel/preset-env": "^7.16.0",
+        "@iconify/tailwind": "^1.1.1",
         "@symfony/webpack-encore": "^4.0.0",
         "assert": "^2.1.0",
         "autoprefixer": "^10.4.19",
@@ -36,6 +37,8 @@
     },
     "dependencies": {
         "@chrisoakman/chessboardjs": "^1.0.0",
+        "@iconify-json/mdi": "^1.1.67",
+        "@iconify-json/svg-spinners": "^1.1.2",
         "@lubert/node-uci-engine": "^1.13.1",
         "chess.js": "^1.0.0-beta.8",
         "child_process": "^1.0.2",

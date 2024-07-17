@@ -21,6 +21,18 @@ export class MyChessBoard {
   board = null;
   game = null;
 
+  // the custom markers
+  markers = {
+    checkmark: {
+      class: "marker-checkmark",
+      slice: "markerCheckmark",
+    },
+    cancel: {
+      class: "marker-cancel",
+      slice: "markerCancel",
+    },
+  };
+
   constructor() {
     this.game = new Chess();
   }
@@ -45,7 +57,12 @@ export class MyChessBoard {
         aspectRatio: 1, // height/width of the board
         animationDuration: 300, // pieces animation duration in milliseconds. Disable all animations with `0`
       },
-      extensions: [{ class: Markers }],
+      extensions: [
+        {
+          class: Markers,
+          props: { sprite: "/build/extensions/markers/markers.svg" },
+        },
+      ],
     });
   }
 

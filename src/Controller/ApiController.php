@@ -218,7 +218,7 @@ class ApiController extends AbstractController
     #[Route('/api/download/archives', methods: ['GET'], name: 'app_api_download_archives')]
     public function apiDownloadArchives(Request $request): JsonResponse
     {
-        $downloader = new GameDownloader();
+        $downloader = new GameDownloader($this->em, $this->getUser());
 
         $archives = $downloader->downloadArchives();
 
@@ -233,7 +233,7 @@ class ApiController extends AbstractController
     #[Route('/api/download/games/{year}/{month}', methods: ['GET'], name: 'app_api_download_games')]
     public function apiDownloadGames(Request $request, $year, $month): JsonResponse
     {
-        $downloader = new GameDownloader();
+        $downloader = new GameDownloader($this->em, $this->getUser());
 
         //$archives = $downloader->downloadArchives();
 
@@ -353,7 +353,7 @@ class ApiController extends AbstractController
         }
 
         // get the game downloader
-        $downloader = new GameDownloader();
+        $downloader = new GameDownloader($this->em, $this->getUser());
         // download the games
         $downloader->downloadGames($year, $month);
         // get the games of the right type
@@ -492,7 +492,7 @@ class ApiController extends AbstractController
     {
         $data = $request->getPayload()->all();
 
-        // get the repository
+        // get the repertoire repository
         $repository = $this->em->getRepository(Repertoire::class);
 
         // get the saved repository moves for this user
@@ -569,7 +569,7 @@ class ApiController extends AbstractController
         //dd($lines);
 
         // the response
-        $resp = ['white' => [], 'black' => [], 'new' => [], 'recommended' => []];
+        $resp = ['white' => [], 'black' => [], 'new' => [], 'recommended' => [], "analysis" => []];
 
         // if we have a repertoire
         if (count($lines) > 0) {
@@ -623,7 +623,43 @@ class ApiController extends AbstractController
             //dd($resp['new']);
         }
 
-        //
+        // get the mistake repository
+        $repository = $this->em->getRepository(Mistake::class);
+        // get the mistakes for this user
+        $res = $repository->findBy(['User' => $this->getUser()], ['Link' => 'ASC', 'Pgn' => 'ASC']);
+        // add them
+        foreach ($res as $rec) {
+            $multiple = explode(" ", $rec->getBestMoves());
+            $moves = [];
+            foreach ($multiple as $move) {
+                $moves[] = ["move" => $move];
+            }
+            $resp["analysis"][] = [
+                "color" => $rec->getWhite() == "avweije" ? "white" : "black",
+                "white" => $rec->getWhite(),
+                "black" => $rec->getBlack(),
+                "link" => $rec->getLink(),
+                "type" => $rec->getType(),
+                "fen" => $rec->getFen(),
+                "pgn" => $rec->getPgn(),
+                "move" => $rec->getMove(),
+                "moves" => $moves,
+                "multiple" => $multiple
+            ];
+        }
+
+        // sort by color, link, pgn
+        usort($resp["analysis"], function ($a, $b) {
+            $ret = $b['color'] <=> $a['color'];
+            if ($ret == 0) {
+                $ret = $a['link'] <=> $b['link'];
+            }
+            if ($ret == 0) {
+                $ret = $a['pgn'] <=> $b['pgn'];
+            }
+
+            return $ret;
+        });
 
         //print "New:<br>";
         //dd($res, $resp['recommended']);
@@ -972,7 +1008,7 @@ class ApiController extends AbstractController
         $uci->newGame();
 
         // get the game downloader
-        $downloader = new GameDownloader();
+        $downloader = new GameDownloader($this->em, $this->getUser());
 
         //
         // temporarily disable: 429 - too many requests..

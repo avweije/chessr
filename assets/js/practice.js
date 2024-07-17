@@ -35,6 +35,9 @@ class Practice extends MyChessBoard {
   playedMovesContainer = null;
   playedMovesList = null;
 
+  analysisGameContainer = null;
+  analysisGameFields = null;
+
   inPractice = false;
 
   repertoire = [];
@@ -79,6 +82,11 @@ class Practice extends MyChessBoard {
     // get the played moves container & list
     this.playedMovesContainer = document.getElementById("playedMovesContainer");
     this.playedMovesList = document.getElementById("playedMovesList");
+    // get the analysis game container & fields
+    this.analysisGameContainer = document.getElementById(
+      "analysisGameContainer"
+    );
+    this.analysisGameFields = document.getElementById("analysisGameFields");
     // get the board element
     var el = document.getElementById("board");
 
@@ -155,31 +163,37 @@ class Practice extends MyChessBoard {
     this.practiceRepertoireButtons.children[0].addEventListener(
       "click",
       (event) => {
-        window.location.href = "/practice";
+        window.location.href = "/practice/white";
       }
     );
     this.practiceRepertoireButtons.children[1].addEventListener(
       "click",
       (event) => {
-        window.location.href = "/practice/white";
+        window.location.href = "/practice/black";
       }
     );
     this.practiceRepertoireButtons.children[2].addEventListener(
       "click",
       (event) => {
-        window.location.href = "/practice/black";
+        window.location.href = "/practice/new";
       }
     );
     this.practiceRepertoireButtons.children[3].addEventListener(
       "click",
       (event) => {
-        window.location.href = "/practice/new";
+        window.location.href = "/practice/recommended";
       }
     );
     this.practiceRepertoireButtons.children[4].addEventListener(
       "click",
       (event) => {
-        window.location.href = "/practice/recommended";
+        window.location.href = "/practice";
+      }
+    );
+    this.practiceRepertoireButtons.children[5].addEventListener(
+      "click",
+      (event) => {
+        window.location.href = "/practice/analysis";
       }
     );
   }
@@ -188,20 +202,27 @@ class Practice extends MyChessBoard {
   toggleRepertoireButtons() {
     // toggle the repertoire type buttons
     this.practiceRepertoireButtons.children[0].disabled =
-      this.repertoire.white.length == 0 && this.repertoire.black.length == 0;
-    this.practiceRepertoireButtons.children[1].disabled =
       this.repertoire.white.length == 0;
-    this.practiceRepertoireButtons.children[2].disabled =
+    this.practiceRepertoireButtons.children[1].disabled =
       this.repertoire.black.length == 0;
-    this.practiceRepertoireButtons.children[3].disabled =
+    this.practiceRepertoireButtons.children[2].disabled =
       this.repertoire.new.length == 0;
-    this.practiceRepertoireButtons.children[4].disabled =
+    this.practiceRepertoireButtons.children[3].disabled =
       this.repertoire.recommended.length == 0;
+    this.practiceRepertoireButtons.children[4].disabled =
+      this.repertoire.white.length == 0 && this.repertoire.black.length == 0;
+    this.practiceRepertoireButtons.children[5].disabled =
+      this.repertoire.analysis.length == 0;
 
     // select the right type
-    var idx = ["all", "white", "black", "new", "recommended"].indexOf(
-      this.type
-    );
+    var idx = [
+      "white",
+      "black",
+      "new",
+      "recommended",
+      "all",
+      "analysis",
+    ].indexOf(this.type);
     // set to "all" if there are no practice lines for this type
     if (idx == -1 || this.practiceRepertoireButtons.children[idx].disabled) {
       idx = 0;
@@ -209,7 +230,7 @@ class Practice extends MyChessBoard {
     }
 
     // show the current type
-    for (var i = 0; i < 5; i++) {
+    for (var i = 0; i < 6; i++) {
       if (i == idx) {
         this.practiceRepertoireButtons.children[i].classList.remove(
           "text-gray-900"
@@ -268,7 +289,11 @@ class Practice extends MyChessBoard {
       var ourMove = depth % 2 == 0;
 
       // the total moves for this line
-      var lineMoveTotal = ourMove ? lines[i].moves.length : 0;
+      var lineMoveTotal = ourMove
+        ? this.type == "analysis"
+          ? 1
+          : lines[i].moves.length
+        : 0;
 
       // if we need to add this line
       if (add) {
@@ -281,7 +306,7 @@ class Practice extends MyChessBoard {
       }
 
       // if this line has moves that follow
-      if (lines[i].moves.length > 0) {
+      if (this.type != "analysis" && lines[i].moves.length > 0) {
         // add this move to the line moves array
         var line = lineMoves.slice(0);
         if (lines[i].move) {
@@ -388,11 +413,31 @@ class Practice extends MyChessBoard {
       // load the PGN
       //this.game.loadPgn(pgn);
 
-      // if we have moves to make to get to this line
-      if (
+      // if this is an analysis line
+      if (this.type == "analysis") {
+        // set the starting position for this line
+        this.game.reset();
+        this.game.load(this.practiceLines[this.practiceLineIdx].fen);
+        this.board.setPosition(this.game.fen());
+        // update the analysis game fields
+        this.analysisGameFields.children[1].innerHTML =
+          this.practiceLines[this.practiceLineIdx].color == "white"
+            ? this.practiceLines[this.practiceLineIdx].black
+            : this.practiceLines[this.practiceLineIdx].white;
+        this.analysisGameFields.children[3].innerHTML =
+          this.practiceLines[this.practiceLineIdx].move +
+          " (" +
+          this.practiceLines[this.practiceLineIdx].type +
+          ")";
+        this.analysisGameFields.children[5].href =
+          this.practiceLines[this.practiceLineIdx].link;
+        this.analysisGameFields.children[5].innerHTML =
+          this.practiceLines[this.practiceLineIdx].link;
+      } else if (
         this.practiceLines[this.practiceLineIdx].line.length > 0 ||
         this.practiceLines[this.practiceLineIdx].variation
       ) {
+        // if we have moves to make to get to this line
         if (this.practiceAnimateToPostion) {
           // reset the game & board
           this.game.reset();
@@ -444,6 +489,19 @@ class Practice extends MyChessBoard {
       //}
     }
 
+    // if this is an analysis line
+    if (this.type == "analysis") {
+      // make the move that was played (the mistake)
+      this.game.move(this.practiceLines[this.practiceLineIdx].move);
+      // get the last move
+      var last = this.game.history({ verbose: true }).pop();
+      // undo the move
+      this.game.undo();
+      // mark the move that was played
+      this.board.addMarker(MARKER_TYPE.square, last.from);
+      this.board.addMarker(MARKER_TYPE.square, last.to);
+    }
+
     // if we have multiple moves
     if (moves.length > 1 || multiple.length > 1) {
       // update the status
@@ -456,9 +514,20 @@ class Practice extends MyChessBoard {
             " in your repertoire here."
         );
       } else {
-        this.showInfo(
-          "You have " + moves.length + " moves in your repertoire here."
-        );
+        // update the status
+        if (this.type == "analysis") {
+          this.showInfo(
+            "You played the move <b>" +
+              this.practiceLines[this.practiceLineIdx].move +
+              "</b>. Try to find the best " +
+              moves.length +
+              " moves."
+          );
+        } else {
+          this.showInfo(
+            "You have " + moves.length + " moves in your repertoire here."
+          );
+        }
       }
 
       // show the played moves container
@@ -482,7 +551,15 @@ class Practice extends MyChessBoard {
       this.practiceFenPosition = this.game.fen();
     } else {
       // update the status
-      this.showInfo("Play the move that's in your repertoire.");
+      if (this.type == "analysis") {
+        this.showInfo(
+          "You played the move <b>" +
+            this.practiceLines[this.practiceLineIdx].move +
+            "</b>. Try to find the best move."
+        );
+      } else {
+        this.showInfo("Play the move that's in your repertoire.");
+      }
 
       // hide the played moves
       this.hidePlayedMoves();
@@ -497,8 +574,10 @@ class Practice extends MyChessBoard {
     var moves = [];
 
     var temp = this.practiceLines[this.practiceLineIdx];
-    for (var i = 0; i < this.practiceMoveIdx; i++) {
-      temp = temp.moves[0];
+    if (this.type != "analysis") {
+      for (var i = 0; i < this.practiceMoveIdx; i++) {
+        temp = temp.moves[0];
+      }
     }
 
     for (var i = 0; i < temp.moves.length; i++) {
@@ -520,7 +599,7 @@ class Practice extends MyChessBoard {
       if (isCorrect) {
         // highlight the correct move
         this.board.removeMarkers();
-        this.board.addMarker(MARKER_TYPE.framePrimary, move.to);
+        this.board.addMarker(this.markers.checkmark, move.to);
 
         // handle the next steps
         this.correctMovePlayed();
@@ -584,7 +663,7 @@ class Practice extends MyChessBoard {
 
         // highlight the error move
         this.board.removeMarkers();
-        this.board.addMarker(MARKER_TYPE.frameDanger, move.to);
+        this.board.addMarker(this.markers.cancel, move.to);
 
         // pause the board for a moment
         this.pauseBoard(() => {
@@ -623,7 +702,20 @@ class Practice extends MyChessBoard {
 
   // auto-move
   autoMove(next = false) {
-    // if we have multiple moves from here
+    // if this is an analysis line
+    if (this.type == "analysis") {
+      // goto the next line
+      this.practiceLineIdx++;
+      this.practiceMoveIdx = 0;
+
+      this.practiceAnimateToPostion = false;
+
+      this.runPractice();
+
+      return;
+    }
+
+    // if we have multiple moves from here or this is an analysis
     if (this.practiceLineMultiple > 1) {
       // goto the next line
       this.practiceLineIdx++;
@@ -635,6 +727,9 @@ class Practice extends MyChessBoard {
 
     // get the next moves
     var [moves, multiple] = this.getMoves();
+
+    console.log(moves);
+    console.log(multiple);
 
     // if any moves to play
     if (moves.length > 0) {
@@ -673,7 +768,7 @@ class Practice extends MyChessBoard {
   }
 
   // disables the board for a short time and then executes a function
-  pauseBoard(func, ms = 500) {
+  pauseBoard(func, ms = 800) {
     // disable the board
     this.disableMoveInput();
 
@@ -757,12 +852,10 @@ class Practice extends MyChessBoard {
           console.log("runPractice-3");
 
           this.runPractice();
-        });
+        }, 1500);
       } else {
         // update the status
-        this.showConfirm(
-          "That's correct! Now play the next move that's in your repertoire."
-        );
+        this.showConfirm("That's correct! Now play the next move.");
 
         // pause the board for a moment
         this.pauseBoard(() => {
@@ -831,7 +924,7 @@ class Practice extends MyChessBoard {
 
         // continue the practice run
         this.runPractice();
-      });
+      }, 1500);
     }
   }
 
@@ -855,6 +948,11 @@ class Practice extends MyChessBoard {
     // enable board move input
     this.disableMoveInput();
     this.enableMoveInput();
+
+    // show the analysis game container
+    if (this.type == "analysis") {
+      this.analysisGameContainer.classList.remove("hidden");
+    }
 
     console.log("runPractice-5");
 

@@ -3,8 +3,12 @@
 namespace App\Library;
 
 use AmyBoyd\PgnParser\Game;
+use App\Entity\Downloads;
+use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\EntityManagerInterface;
 use Onspli\Chess\FEN;
 use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
@@ -12,17 +16,20 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
  */
 class GameDownloader
 {
+    private $em;
     private $client;
+    private $user;
     private $settings = ['chess.com' => ['user' => 'avweije'], 'lichess' => ['user' => '']];
 
     private $archives = [];
     private $archivesYearsMonths = [];
     public $games = [];
 
-    public function __construct()
+    public function __construct(EntityManagerInterface $em, UserInterface $user)
     {
-        // create the HTTP client component
         $this->client = HttpClient::create();
+        $this->em = $em;
+        $this->user = $user;
     }
 
     // download archives from chess.com
@@ -205,19 +212,47 @@ class GameDownloader
      */
     public function getTotals(): array
     {
-        $totals = ["all" => 0];
+        // get the repository
+        $repository = $this->em->getRepository(Downloads::class);
+        // the last UUID's
+        $lastUUIDs = [];
+
+        //$totals = ["all" => 0];
         foreach ($this->games as $year => $months) {
             foreach ($months as $month => $games) {
                 foreach ($games as $game) {
                     if (isset($game["time_class"])) {
-                        if (!isset($totals[$game["time_class"]])) {
-                            $totals[$game["time_class"]] = 0;
+                        // check to see if we have the last UUID already
+                        if (!isset($lastUUIDs[$game["time_class"]])) {
+                            $lastUUIDs[$game["time_class"]] = ["uuid" => "", "found" => false];
+
+                            // find the download record
+                            $rec = $repository->findOneBy([
+                                'User' => $this->user,
+                                'Type' => $game["time_class"],
+                                'Year' => $year,
+                                'Month' => $month
+                            ]);
+                            if ($rec) {
+                                $lastUUIDs[$game["time_class"]]["uuid"] = $rec->getLastUUID();
+                            }
                         }
 
-                        $totals[$game["time_class"]]++;
+                        if (!isset($totals[$game["time_class"]])) {
+                            $totals[$game["time_class"]] = ["total" => 0, "processed" => 0];
+                        }
+
+                        $totals[$game["time_class"]]["total"]++;
+
+                        // if we haven't found the last processed UUID yet
+                        if ($lastUUIDs[$game["time_class"]]["uuid"] != "" && !$lastUUIDs[$game["time_class"]]["found"]) {
+
+                            $totals[$game["time_class"]]["processed"]++;
+                            $lastUUIDs[$game["time_class"]]["found"] = $game["uuid"] == $lastUUIDs[$game["time_class"]]["uuid"];
+                        }
                     }
 
-                    $totals["all"]++;
+                    //$totals["all"]++;
                 }
             }
         }

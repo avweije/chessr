@@ -30,4 +30,12 @@ Author: shaack (https://shaack.com)
     <g id="markerSquare">
         <rect x="0" y="0" width="40" height="40"/>
     </g>
+    <g id="markerCheckmark" fill="#56b814">
+        <rect x="5" y="5" width="14" height="14" fill="white" transform="translate(22, -6)"/>
+        <path d="M18 3H6a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3m-1.7 6.61l-4.57 6a1 1 0 0 1-.79.39a1 1 0 0 1-.79-.38l-2.44-3.11a1 1 0 0 1 1.58-1.23l1.63 2.08l3.78-5a1 1 0 1 1 1.6 1.22Z" transform="translate(22, -6)"/>
+    </g>
+    <g id="markerCancel" fill="#f23636">
+        <rect x="5" y="5" width="14" height="14" fill="white" transform="translate(22, -6)"/>
+        <path d="M18 3H6a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3m-3.29 10.29a1 1 0 0 1 0 1.42a1 1 0 0 1-1.42 0L12 13.41l-1.29 1.3a1 1 0 0 1-1.42 0a1 1 0 0 1 0-1.42l1.3-1.29l-1.3-1.29a1 1 0 0 1 1.42-1.42l1.29 1.3l1.29-1.3a1 1 0 0 1 1.42 1.42L13.41 12Z" transform="translate(22, -6)"/>
+    </g>
 </svg>

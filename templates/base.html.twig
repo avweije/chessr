@@ -3,16 +3,18 @@
 	<head>
 		<meta charset="UTF-8">
 		<title>
-			{% block title %}Welcome!
+			{% block title %}Chess Repertoire
 			{% endblock %}
 		</title>
 		<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text></svg>">
-		{% block stylesheets %}<link rel="stylesheet" href="{{ asset('build/app.css') }}">
+		<link rel="stylesheet" href="/build/app.css">
+		{% block stylesheets %}
+			{{ encore_entry_link_tags('app') }}
+			{{ encore_entry_link_tags('markers') }}
 		{% endblock %}
 		{% block javascripts %}
 			{{ encore_entry_script_tags('app') }}
 		{% endblock %}
-		<script src="https://cdn.tailwindcss.com"></script>
 		<script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.3.5/dist/alpine.min.js" defer></script>
 	</head>
 	<body class="bg-gray-100 h-screen antialiased leading-none font-sans min-h-screen">
@@ -41,19 +43,19 @@
 								class="list-style-none me-auto mr-20 flex ps-0 mt-1 flex-row" data-twe-navbar-nav-ref>
 								<!-- Home -->
 								<li class="mb-0 pe-1 ps-0" data-twe-nav-item-ref>
-									<a href="/" class="p-0 text-black/60 transition duration-200 hover:text-black/80 hover:ease-in-out focus:text-black/80 active:text-black/80 motion-reduce:transition-none dark:text-white/60 dark:hover:text-white/80 dark:focus:text-white/80 dark:active:text-white/80 lg:px-2" data-twe-nav-link-ref>
+									<a href="/" class="p-0 px-1 text-black/60 transition duration-200 hover:text-black/80 hover:ease-in-out focus:text-black/80 active:text-black/80 motion-reduce:transition-none dark:text-white/60 dark:hover:text-white/80 dark:focus:text-white/80 dark:active:text-white/80 lg:px-2" data-twe-nav-link-ref>
 										Home
 									</a>
 								</li>
 								<!-- Repertoire -->
 								<li class="mb-0 pe-1 ps-0" data-twe-nav-item-ref>
-									<a href="/repertoire" class="p-0 text-black/60 transition duration-200 hover:text-black/80 hover:ease-in-out focus:text-black/80 active:text-black/80 motion-reduce:transition-none dark:text-white/60 dark:hover:text-white/80 dark:focus:text-white/80 dark:active:text-white/80 lg:px-2" data-twe-nav-link-ref>
+									<a href="/repertoire" class="p-0 px-1 text-black/60 transition duration-200 hover:text-black/80 hover:ease-in-out focus:text-black/80 active:text-black/80 motion-reduce:transition-none dark:text-white/60 dark:hover:text-white/80 dark:focus:text-white/80 dark:active:text-white/80 lg:px-2" data-twe-nav-link-ref>
 										Repertoire
 									</a>
 								</li>
 								<!-- Practice -->
 								<li class="mb-0 pe-1 ps-0" data-twe-nav-item-ref>
-									<a href="/practice" class="p-0 text-black/60 transition duration-200 hover:text-black/80 hover:ease-in-out focus:text-black/80 active:text-black/80 motion-reduce:transition-none dark:text-white/60 dark:hover:text-white/80 dark:focus:text-white/80 dark:active:text-white/80 lg:px-2" data-twe-nav-link-ref>
+									<a href="/practice" class="p-0 px-1 text-black/60 transition duration-200 hover:text-black/80 hover:ease-in-out focus:text-black/80 active:text-black/80 motion-reduce:transition-none dark:text-white/60 dark:hover:text-white/80 dark:focus:text-white/80 dark:active:text-white/80 lg:px-2" data-twe-nav-link-ref>
 										Practice
 									</a>
 								</li>

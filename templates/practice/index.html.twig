@@ -5,9 +5,6 @@
 	<div class="w-4/5 m-auto text-center p-4">
 		<div id="practiceRepertoireButtons" class="inline-flex rounded-md shadow-sm">
 			<button disabled class="text-gray-900 disabled:text-gray-300 bg-white px-4 py-2 text-sm font-medium border border-gray-200 rounded-s-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white">
-				All
-			</button>
-			<button disabled class="text-gray-900 disabled:text-gray-300 bg-white px-4 py-2 text-sm font-medium border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white">
 				White
 			</button>
 			<button disabled class="text-gray-900 disabled:text-gray-300 bg-white px-4 py-2 text-sm font-medium border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white">
@@ -16,8 +13,14 @@
 			<button disabled class="text-gray-900 disabled:text-gray-300 bg-white px-4 py-2 text-sm font-medium border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white">
 				New
 			</button>
-			<button disabled class="text-gray-900 disabled:text-gray-300 bg-white px-4 py-2 text-sm font-medium border border-gray-200 rounded-e-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white">
+			<button disabled class="text-gray-900 disabled:text-gray-300 bg-white px-4 py-2 text-sm font-medium border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white">
 				Recommended
+			</button>
+			<button disabled class="text-gray-900 disabled:text-gray-300 bg-white px-4 py-2 text-sm font-medium border border-gray-200 hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white">
+				Entire Repertoire
+			</button>
+			<button disabled class="text-gray-900 disabled:text-gray-300 bg-white px-4 py-2 text-sm font-medium border border-gray-200 rounded-e-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white">
+				Analysis
 			</button>
 		</div>
 
@@ -30,10 +33,10 @@
 	</div>
 
 	<div class="flex items-stretch">
-		<div class="flex-auto self-start w-1/2 border border-slate-300 bg-slate-200 rounded p-2 mr-2" style="max-width: 70vh;">
+		<div class="flex-auto self-start w-1/2 p-1 mr-2" style="max-width: 68vh;">
 			<div id="board" class="border border-slate-300" data-type="{{ repertoireType }}"></div>
 		</div>
-		<div class="flex-auto w-1/2 border border-slate-300 bg-slate-200 rounded p-2">
+		<div class="flex-auto w-1/2 p-1">
 
 			<div class="border rounded border-slate-300 text-sm bg-white">
 				<div class="flex justify-between items-center border-b border-slate-200">
@@ -96,12 +99,27 @@
 					<div class="text-base p-2">1. _</div>
 				</div>
 			</div>
+
+			<div id="analysisGameContainer" class="hidden border rounded border-slate-300 text-sm bg-white">
+				<p class="block text-sm font-bold text-gray-900 p-3 border-b border-slate-200">Game</p>
+				<div id="analysisGameFields" class="grid grid-cols-[_auto_1fr] p-2">
+					<label class="p-2 text-base font-semibold text-gray-700 whitespace-nowrap">Opponent:</label>
+					<p class="p-2 text-base w-full truncate font-semibold text-gray-700"></p>
+					<label class="p-2 text-base font-semibold text-gray-700 whitespace-nowrap">Move:</label>
+					<p class="p-2 text-base w-full truncate font-semibold text-gray-700"></p>
+					<label class="p-2 text-base font-semibold text-gray-700 whitespace-nowrap">Link:</label>
+					<a href="#" target="_blank" class="p-2 text-base w-full truncate font-semibold text-gray-700"></a>
+				</div>
+			</div>
 		</div>
 	</div>
 
 {% endblock %}
 
-{% block stylesheets %}<link rel="stylesheet" href="{{ asset('build/repertoire.css') }}">
+{% block stylesheets %}
+	{{ parent() }}
+
+	<link rel="stylesheet" href="{{ asset('build/repertoire.css') }}">
 {% endblock %}
 {% block javascripts %}
 	{{ encore_entry_script_tags('practice') }}

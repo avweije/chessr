@@ -1,3 +1,5 @@
+import { Modal } from "./modal.js";
+
 class Analyse {
   // the elements
   connectButton = null;
@@ -12,6 +14,22 @@ class Analyse {
   gamesDisabledText = null;
   gamesContainer = null;
   gameTypeSelect = null;
+
+  analyseDialog = {
+    modal: null,
+    typeField: null,
+    gamesField: null,
+    elapsedTimeField: null,
+    estimatedTimeField: null,
+    stopButton: null,
+    closeButton: null,
+    startTime: null,
+    intervalId: null,
+    inProgress: false,
+    isCancelled: false,
+    processed: 0,
+    totals: [],
+  };
 
   // the data
   archives = [];
@@ -49,6 +67,38 @@ class Analyse {
       "change",
       this.onArchiveYearChange.bind(this)
     );
+
+    // get the modal elements
+    this.analyseDialog.modal = document.getElementById("analyseModal");
+
+    var fields = this.analyseDialog.modal.getElementsByTagName("p");
+
+    this.analyseDialog.typeField = fields[0];
+    this.analyseDialog.gamesField = fields[1];
+    this.analyseDialog.elapsedTimeField = fields[2];
+    this.analyseDialog.estimatedTimeField = fields[3];
+    this.analyseDialog.stopButton = document.getElementById(
+      "analyseModalStopButton"
+    );
+    this.analyseDialog.closeButton = document.getElementById(
+      "analyseModalCloseButton"
+    );
+
+    // register the modal
+    Modal.register(
+      this.analyseDialog.modal,
+      [
+        {
+          element: this.analyseDialog.closeButton,
+          action: "close",
+        },
+        {
+          element: this.analyseDialog.stopButton,
+          action: "close",
+        },
+      ],
+      this.onCloseDialog.bind(this)
+    );
   }
 
   // get the repertoire
@@ -56,6 +106,9 @@ class Analyse {
     console.log("getArchives:");
 
     var url = "/api/download/archives";
+
+    // show the spinner
+    this.connectButton.children[0].classList.remove("hidden");
 
     fetch(url, {
       method: "GET",
@@ -65,10 +118,18 @@ class Analyse {
         console.log("Success:");
         console.log(response);
 
+        // hide the spinner
+        this.connectButton.children[0].classList.add("hidden");
+
         // handle the response
         this.onGetArchives(response);
       })
-      .catch((error) => console.error("Error:", error));
+      .catch((error) => {
+        console.error("Error:", error);
+
+        // hide the spinner
+        this.connectButton.children[0].classList.add("hidden");
+      });
   }
 
   // show the archives, enable download
@@ -148,6 +209,9 @@ class Analyse {
     console.log(this.archiveYearSelect.value);
     console.log(this.archiveMonthSelect.value);
 
+    // show the spinner
+    this.downloadButton.children[0].classList.remove("hidden");
+
     //var url = "/api/download/games/{year}/{month}";
     var url =
       "/api/download/games/" +
@@ -163,10 +227,18 @@ class Analyse {
         console.log("Success:");
         console.log(response);
 
+        // hide the spinner
+        this.downloadButton.children[0].classList.add("hidden");
+
         // handle the response
         this.onGetGames(response);
       })
-      .catch((error) => console.error("Error:", error));
+      .catch((error) => {
+        console.error("Error:", error);
+
+        // hide the spinner
+        this.downloadButton.children[0].classList.add("hidden");
+      });
   }
 
   // show the totals, enable analyse
@@ -180,27 +252,221 @@ class Analyse {
       this.gameTypeSelect.removeChild(this.gameTypeSelect.lastChild);
     }
 
+    // reset the totals per type
+    this.analyseDialog.totals = [];
+
     // fill the type select
-    for (var [key, value] of Object.entries(this.games)) {
+    for (var [key, totals] of Object.entries(this.games)) {
       var opt = document.createElement("option");
       opt.value = key;
       opt.text =
-        key.charAt(0).toUpperCase() + key.slice(1) + " (" + value + ")";
+        key.charAt(0).toUpperCase() +
+        key.slice(1) +
+        " (" +
+        (totals.total - totals.processed) +
+        ")";
 
       this.gameTypeSelect.appendChild(opt);
+
+      // keep track of the totals for this type
+      this.analyseDialog.totals[key] = totals;
     }
 
     // enable the analyse button
-    this.analyseButton.disabled = false;
+    if (!this.analyseDialog.inProgress) {
+      this.analyseButton.disabled = false;
+    }
 
     // hide the text, show the container
     this.gamesDisabledText.classList.add("hidden");
     this.gamesContainer.classList.remove("hidden");
   }
 
-  //
+  // start analysing the games
   analyseGames() {
     console.log("analyseGames:");
+
+    console.log("cancelled: " + this.analyseDialog.isCancelled);
+    console.log(this.gameTypeSelect.value);
+    console.log(this.archiveYearSelect.value);
+    console.log(this.archiveMonthSelect.value);
+
+    // show the spinner
+    this.analyseButton.children[0].classList.remove("hidden");
+
+    // disable the analyse button
+    this.analyseButton.disabled = true;
+
+    // if the last run is still in progress
+    if (this.analyseDialog.inProgress) {
+      return false;
+    }
+
+    // initialise the analyse process
+    this.analyseDialog.isCancelled = false;
+    this.analyseDialog.inProgress = true;
+    this.analyseDialog.processed = 0;
+
+    // set the type of games
+    this.analyseDialog.typeField.innerHTML =
+      this.gameTypeSelect.value.charAt(0).toUpperCase() +
+      this.gameTypeSelect.value.slice(1);
+
+    // set the estimated time
+
+    // set the stop button text
+    this.analyseDialog.stopButton.innerHTML = "Stop analysing";
+
+    // open the dialog
+    Modal.open(this.analyseDialog.modal);
+
+    // get the start time
+    this.analyseDialog.startTime = new Date().getTime();
+
+    // update the elapsed time
+    this.analyseDialog.intervalId = setInterval(() => {
+      var seconds =
+        (new Date().getTime() - this.analyseDialog.startTime) / 1000;
+
+      this.analyseDialog.elapsedTimeField.innerHTML = this.getDuration(seconds);
+    }, 1000);
+
+    // start analysing
+    this.analyseNext();
+  }
+
+  // called when the dialog gets closed (return false to cancel)
+  onCloseDialog() {
+    // stop the interval timer
+    if (this.analyseDialog.intervalId) {
+      clearInterval(this.analyseDialog.intervalId);
+      this.analyseDialog.intervalId = null;
+    }
+
+    this.analyseDialog.isCancelled = true;
+
+    return true;
+  }
+
+  // analyse the next set of games
+  analyseNext() {
+    console.log("analyseNext:");
+
+    console.log("cancelled: " + this.analyseDialog.isCancelled);
+    console.log(this.archiveYearSelect.value);
+    console.log(this.archiveMonthSelect.value);
+
+    // if cancelled, don't proceed
+    if (this.analyseDialog.isCancelled) {
+      // no longer in progress
+      this.analyseDialog.inProgress = false;
+      // enable the analyse button
+      this.analyseButton.disabled = false;
+      // hide the spinner
+      this.analyseButton.children[0].classList.add("hidden");
+
+      // get the games
+      this.getGames();
+
+      return false;
+    }
+
+    // if we have no more games left to process
+    if (
+      this.analyseDialog.totals[this.gameTypeSelect.value].processed ==
+      this.analyseDialog.totals[this.gameTypeSelect.value].total
+    ) {
+      // update the games field
+      this.analyseDialog.gamesField.innerHTML =
+        "All games have been processed.";
+      // clear the interval
+      if (this.analyseDialog.intervalId) {
+        clearInterval(this.analyseDialog.intervalId);
+        this.analyseDialog.intervalId = null;
+      }
+
+      // update the stop button text
+      this.analyseDialog.stopButton.innerHTML = "Close";
+      // enable the analyse button
+      this.analyseButton.disabled = false;
+      // hide the spinner
+      this.analyseButton.children[0].classList.add("hidden");
+
+      return;
+    }
+
+    // update the games field
+    this.analyseDialog.gamesField.innerHTML =
+      this.analyseDialog.totals[this.gameTypeSelect.value].total +
+      " in total, " +
+      (this.analyseDialog.totals[this.gameTypeSelect.value].total -
+        this.analyseDialog.totals[this.gameTypeSelect.value].processed) +
+      " remaining";
+
+    // get the elapsed time so far
+    var elapsed = (new Date().getTime() - this.analyseDialog.startTime) / 1000;
+    // get the average time per game
+    var estimate =
+      this.analyseDialog.processed > 0
+        ? elapsed / this.analyseDialog.processed
+        : 15;
+    // update the estimated time left field
+    this.analyseDialog.estimatedTimeField.innerHTML = this.getDuration(
+      estimate *
+        (this.analyseDialog.totals[this.gameTypeSelect.value].total -
+          this.analyseDialog.totals[this.gameTypeSelect.value].processed)
+    );
+
+    console.log("elapsed: " + elapsed);
+    console.log("estimate per game: " + estimate);
+    console.log(
+      "games left: " +
+        (this.analyseDialog.totals[this.gameTypeSelect.value].total -
+          this.analyseDialog.totals[this.gameTypeSelect.value].processed)
+    );
+
+    //var url = "/api/download/games/{year}/{month}";
+    var url =
+      "/api/analyse/" +
+      this.gameTypeSelect.value +
+      "/" +
+      this.archiveYearSelect.value +
+      "/" +
+      this.archiveMonthSelect.value;
+
+    fetch(url, {
+      method: "GET",
+    })
+      .then((res) => res.json())
+      .then((response) => {
+        console.log("Success:");
+        console.log(response);
+
+        // update the totals
+        this.analyseDialog.processed =
+          this.analyseDialog.processed + response.processed;
+        this.analyseDialog.totals[this.gameTypeSelect.value].processed =
+          this.analyseDialog.totals[this.gameTypeSelect.value].processed +
+          response.processed;
+
+        // analyse the next set of games
+        this.analyseNext();
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+
+        // hide the spinner
+        this.analyseButton.children[0].classList.add("hidden");
+      });
+  }
+
+  // get a printable duration for a number of seconds (2h 14m 32s)
+  getDuration(seconds) {
+    var h = Math.floor(seconds / 3600);
+    var m = Math.floor((seconds - h * 3600) / 60);
+    var s = Math.floor(seconds - h * 3600 - m * 60);
+
+    return (h > 0 ? h + "h " : "") + (h > 0 || m > 0 ? m + "m " : "") + s + "s";
   }
 }
 

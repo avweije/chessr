@@ -45,11 +45,11 @@ class AdminController extends AbstractController
     {
 
         // test PGN parser
-        //$this->importPgnFiles();
+        $this->importPgnFiles();
 
         //$this->testStockfish();
 
-        //exit;
+        exit;
 
         return $this->render('admin/index.html.twig', [
             'controller_name' => 'AdminController',
@@ -59,18 +59,8 @@ class AdminController extends AbstractController
     #[Route('/admin/import', name: 'app_admin_import')]
     public function importPgnFiles()
     {
-
-
-        //$repository = $this->em->getRepository(Moves::class);
-
-        // set memory limit
-        //ini_set('memory_limit', '512M');
-
         // set the upload folder
         $folder = './build/uploads/';
-        // set the PGN files array
-        //$files = ['lichess_elite_2023-01-1st-10-games.pgn'];
-
 
         // done
         //$files = ['lichess_elite_2023-01-1st-500k-lines.pgn'];
@@ -85,12 +75,6 @@ class AdminController extends AbstractController
         //$files = ['lichess_elite_2023-01-500k-h.pgn'];
 
 
-        print "disabled..<br>";
-
-        $files = [];
-        exit;
-
-
         $totals = [];
 
         //
@@ -98,34 +82,17 @@ class AdminController extends AbstractController
         $moveCount = 0;
         $processCount = 0;
 
-
         //
         $time = time();
 
-
-        //$files = ['lichess_elite_2023-01-a.pgn', 'lichess_elite_2023-01-b.pgn'];
         // loop through the files
         foreach ($files as $file) {
-
-            //print "Parsing: " . $folder . $file . ":<br>";
-
-            //$this->parsePgn($folder . $file);
-
             foreach ($this->myPgnParser->parsePgn($folder . $file) as $game) {
-
                 // reset the time limit so we don't timeout on large files
                 set_time_limit(300);
 
                 // process the game, pass the totals & movecount as reference
                 $this->processGame($game, $totals, $moveCount);
-
-                // process the moves
-                //$this->processMoves($totals);
-
-                //$processCount++;
-
-                // free the memory
-                //$totals = [];
 
                 $gameCount++;
 
@@ -133,22 +100,6 @@ class AdminController extends AbstractController
 
                 // every 50k games or when memory is low
                 if ($usage > 64 || $gameCount % 50000 == 0) {
-
-                    //dd($totals);
-                    //exit;
-
-                    //print "--process<br>";
-                    /*
-                    $seconds = time() - $time;
-
-                    $hours = floor($seconds / 3600);
-                    $minutes = floor(($seconds - $hours * 3600) / 60);
-                    $seconds = floor($seconds - ($hours * 3600) - ($minutes * 60));
-
-                    //
-                    print "Duration of the script until processMoves: " . $hours . "h " . $minutes . "m " . $seconds . "s<br>";
-                    */
-
                     // process the moves
                     $this->processMoves($totals);
 
@@ -160,37 +111,27 @@ class AdminController extends AbstractController
             }
         }
 
-        //print "end of script<br>";
-        //exit;
-
         // process the moves that haven't been processed yet
         if (count($totals) > 0) {
-
-            //dd($totals);
-            //exit;
-
-            //print "--end ($gameCount)<br>";
-
-            //
+            // process the moves
             $this->processMoves($totals);
 
             $processCount++;
 
+            // free the memory
             $totals = [];
         }
 
-        //
         $seconds = time() - $time;
 
         $hours = floor($seconds / 3600);
         $minutes = floor(($seconds - $hours * 3600) / 60);
         $seconds = floor($seconds - ($hours * 3600) - ($minutes * 60));
-        //
+
         print $gameCount . " games processed.<br>";
         print $moveCount . " moves processed.<br>";
         print $processCount . " calls to the processMoves function.<br>";
 
-        //
         print "Duration of the script: " . $hours . "h " . $minutes . "m " . $seconds . "s<br>";
 
         $usage = memory_get_usage() / 1024 / 1024;
