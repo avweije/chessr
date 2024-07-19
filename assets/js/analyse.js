@@ -287,6 +287,7 @@ class Analyse {
     console.log("analyseGames:");
 
     console.log("cancelled: " + this.analyseDialog.isCancelled);
+    console.log("inProgress: " + this.analyseDialog.inProgress);
     console.log(this.gameTypeSelect.value);
     console.log(this.archiveYearSelect.value);
     console.log(this.archiveMonthSelect.value);
@@ -387,6 +388,8 @@ class Analyse {
 
       // update the stop button text
       this.analyseDialog.stopButton.innerHTML = "Close";
+      this.analyseDialog.stopButton.classList.remove("btn-warning");
+      this.analyseDialog.stopButton.classList.add("btn-primary");
       // enable the analyse button
       this.analyseButton.disabled = false;
       // hide the spinner
@@ -412,9 +415,7 @@ class Analyse {
         : 15;
     // update the estimated time left field
     this.analyseDialog.estimatedTimeField.innerHTML = this.getDuration(
-      estimate *
-        (this.analyseDialog.totals[this.gameTypeSelect.value].total -
-          this.analyseDialog.totals[this.gameTypeSelect.value].processed)
+      estimate * this.analyseDialog.totals[this.gameTypeSelect.value].total
     );
 
     console.log("elapsed: " + elapsed);

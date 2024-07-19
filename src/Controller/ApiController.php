@@ -8,20 +8,18 @@ use App\Config\DownloadType;
 use App\Entity\Downloads;
 use App\Entity\ECO;
 use App\Entity\Mistake;
-use App\Entity\Moves;
 use App\Entity\Repertoire;
 use App\Library\ChessJs;
 use App\Library\GameDownloader;
 use App\Library\UCI;
-use App\Service\MyPgnParser;
+use App\Service\MyPgnParser\MyGame;
+use App\Service\MyPgnParser\MyPgnParser;
 use DateTime;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 
 class ApiController extends AbstractController
 {
@@ -40,7 +38,7 @@ class ApiController extends AbstractController
         $data = $request->getPayload()->all();
 
         // get the ECO codes for this position and the next move
-        $codes = $this->em->getRepository(ECO::class)->findBybyPgn($data['pgn']);
+        $codes = $this->em->getRepository(ECO::class)->findByPgn($data['pgn']);
 
         // get the most played moves for this position
         $qb = $this->em->createQueryBuilder();
@@ -149,7 +147,7 @@ class ApiController extends AbstractController
             }
         }
 
-        return new JsonResponse(['eco' => $codes, 'games' => $games, 'repertoire' => $reps, 'saved' => $saved, 'current' => $current]);
+        return new JsonResponse(['eco' => $codes, 'games' => $games, 'repertoire' => $reps, 'saved' => $saved]);
     }
 
     #[Route('/api/repertoire', methods: ['POST'], name: 'app_api_repertoire')]
@@ -388,12 +386,11 @@ class ApiController extends AbstractController
 
                 // safety check..
                 if (!isset($games[$i]["pgn"])) {
-                    print "PGN not set:<br>";
-                    dd($games[$i]);
+                    continue;
                 }
 
                 // parse the game
-                $game = $this->myPgnParser->parsePgnString($games[$i]["pgn"], true);
+                $game = $this->myPgnParser->parsePgnFromText($games[$i]["pgn"], true);
 
                 // analyse the game
                 $temp = $this->analyseGame($uci, $game);
@@ -991,16 +988,24 @@ class ApiController extends AbstractController
     }
 
     // analyse a game
-    private function analyseGame($uci, $game): array
+    private function analyseGame($uci, MyGame $game): array
     {
         $moves = [];
 
-        // get the game moves and initial FEN
-        $gameMoves = $game->getUciMoves();
-        $fen = $game->getFen();
-
         // create a new game
-        $chess = new ChessJs($fen);
+        $chess = new ChessJs($game->getFen());
+        // add te moves
+        foreach ($game->getMovesArray() as $move) {
+            $chess->move($move);
+        }
+        // get the UCI moves
+        $uciMoves = $chess->getUciMoves();
+
+        // reset the game
+        $chess->reset();
+        if ($game->getFen()) {
+            $chess->load($game->getFen());
+        }
         // get the FEN
         $fen = $chess->fen();
 
@@ -1052,7 +1057,7 @@ class ApiController extends AbstractController
         $linePgn = "";
         $lineMoves = [];
 
-        foreach ($gameMoves as $move) {
+        foreach ($uciMoves as $move) {
             // add the UCI move
             $moves[] = $move['uci'];
             // get the FEN before this move

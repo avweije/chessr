@@ -1,12 +1,13 @@
 import { MyChessBoard } from "./chessboard.js";
 import { COLOR } from "cm-chessboard/src/view/ChessboardView.js";
 
-import "../styles/repertoire.css";
+import "../styles/chessboard.css";
 
 class Repertoire extends MyChessBoard {
   previewMove = "";
 
   statusField = null;
+  ecoField = null;
   pgnField = null;
 
   color = "white";
@@ -22,6 +23,7 @@ class Repertoire extends MyChessBoard {
     super();
     // get the status fields
     this.statusField = document.getElementById("statusField");
+    this.ecoField = document.getElementById("ecoField");
     this.pgnField = document.getElementById("pgnField");
     // get the save repertoire button
     this.saveRepertoireButton = document.getElementById("saveRepertoireButton");
@@ -100,6 +102,10 @@ class Repertoire extends MyChessBoard {
 
   // toggle the buttons
   toggleButtons(saved) {
+    console.log("toggleButtons: " + saved);
+    console.log(this.color);
+    console.log(this.game.turn());
+
     this.toggleSaveRepertoire(!saved);
 
     var ourTurn =
@@ -123,7 +129,7 @@ class Repertoire extends MyChessBoard {
     console.log("saveRepertoire-x:");
 
     var pgn = "";
-    var moves = this.game.history({ verbose: true });
+    var moves = this.historyWithCorrectFen();
     for (var i = 0; i < moves.length; i++) {
       pgn += " ";
       if (i % 2 == 0) {
@@ -184,6 +190,13 @@ class Repertoire extends MyChessBoard {
   // load the moves table
   loadMovesTable(data) {
     console.log("load moves table:");
+
+    console.log(this.ecoField);
+    console.log(data);
+
+    // set the current ECO code
+    this.ecoField.innerHTML =
+      data.eco.current && data.eco.current.name ? data.eco.current.name : "";
 
     // remove all current moves
     while (this.movesTable.tBodies[0].rows.length > 0) {

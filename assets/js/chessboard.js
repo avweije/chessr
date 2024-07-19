@@ -12,7 +12,7 @@ import {
   Markers,
 } from "cm-chessboard/src/extensions/markers/Markers.js";
 
-import "../styles/repertoire.css";
+import "../styles/chessboard.css";
 
 /*
 MyChessBoard Class - Integrates Chess.js with cm-chessboard, validates moves, adds markers, etc.
@@ -116,6 +116,52 @@ export class MyChessBoard {
     fenParts[3] = enPassant;
 
     return fenParts.join(" ");
+  }
+
+  // get the history(verbose=true) with the corrent FEN's
+  historyWithCorrectFen() {
+    var updatedFen = "";
+    // get the history
+    var history = this.game.history({ verbose: true });
+    for (var i = 0; i < history.length; i++) {
+      // if the previous fen was updated
+      if (updatedFen != "") {
+        history[i].before = updatedFen;
+
+        updatedFen = "";
+      }
+
+      // if the move was a pawn move
+      if (history[i].piece == "p") {
+        // the en passant notation
+        var enPassant = "-";
+        // if the pawn moved 2 squares
+        if (
+          history[i].from.charAt(1) == "2" &&
+          history[i].to.charAt(1) == "4"
+        ) {
+          enPassant = history[i].from.charAt(0) + "3";
+        } else if (
+          history[i].from.charAt(1) == "7" &&
+          history[i].to.charAt(1) == "5"
+        ) {
+          enPassant = history[i].from.charAt(0) + "6";
+        }
+
+        // if we have an en passant move
+        if (enPassant != "-") {
+          // split the game FEN
+          var fenParts = history[i].after.split(" ");
+          // override the en passant part
+          fenParts[3] = enPassant;
+          // update the FEN
+          updatedFen = fenParts.join(" ");
+          history[i].after = updatedFen;
+        }
+      }
+    }
+
+    return history;
   }
 
   // make a move

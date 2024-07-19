@@ -2,54 +2,36 @@
 
 namespace App\Controller;
 
-use App\Library\UCI;
-use App\Library\ChessJs;
+use App\Entity\ECO;
 use App\Library\GameDownloader;
-use App\Service\MyPgnParser;
-use App\Service\MyGame;
+use App\Repository\ECORepository;
+use App\Service\MyPgnParser\MyPgnParser;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\Persistence\ManagerRegistry;
 use Onspli\Chess\FEN;
-use Onspli\Chess\PGN;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class AdminController extends AbstractController
 {
     private $em;
-    private $doctrine;
     private $conn;
     private $myPgnParser;
 
-    public function __construct(Connection $conn, ManagerRegistry $doctrine, EntityManagerInterface $em, MyPgnParser $myPgnParser)
+    public function __construct(Connection $conn, EntityManagerInterface $em, MyPgnParser $myPgnParser)
     {
         $this->em = $em;
         $this->myPgnParser = $myPgnParser;
-        $this->doctrine = $doctrine;
         $this->conn = $conn;
-
-        // disable the logger for this process
-        //$this->em->getConnection()->getConfiguration()->setMiddlewares([new \Doctrine\DBAL\Logging\Middleware(new \Psr\Log\NullLogger())]);
-        //$this->conn->getConfiguration()->setMiddlewares([new \Doctrine\DBAL\Logging\Middleware(new \Psr\Log\NullLogger())]);
-
-        //$config = $this->conn->getConfiguration();
-        //$config->set
     }
 
     #[Route('/admin', name: 'app_admin')]
     public function index(): Response
     {
+        $pgn = "1. e4 c5 2. c3 d5";
 
-        // test PGN parser
-        $this->importPgnFiles();
-
-        //$this->testStockfish();
-
-        exit;
+        $code = $this->em->getRepository(ECO::class)->findCodeByPgn($pgn);
 
         return $this->render('admin/index.html.twig', [
             'controller_name' => 'AdminController',
@@ -57,6 +39,35 @@ class AdminController extends AbstractController
     }
 
     #[Route('/admin/import', name: 'app_admin_import')]
+    public function import()
+    {
+
+        gc_enable();
+
+        gc_collect_cycles();
+
+        //exit;
+
+
+        $time = time();
+
+
+        // process the games from the pgn files and import the move totals
+        $this->importPgnFiles();
+
+        $seconds = time() - $time;
+
+        $hours = floor($seconds / 3600);
+        $minutes = floor(($seconds - $hours * 3600) / 60);
+        $seconds = floor($seconds - ($hours * 3600) - ($minutes * 60));
+
+        print "Duration of the script: " . $hours . "h " . $minutes . "m " . $seconds . "s<br>";
+
+        gc_collect_cycles();
+
+        exit;
+    }
+
     public function importPgnFiles()
     {
         // set the upload folder
@@ -65,14 +76,16 @@ class AdminController extends AbstractController
         // done
         //$files = ['lichess_elite_2023-01-1st-500k-lines.pgn'];
         //$files = ['lichess_elite_2023-01-500k-b.pgn'];
+        //$files = ['lichess_elite_2023-01-500k-c.pgn'];
+        //$files = ['lichess_elite_2023-01-500k-d.pgn'];
 
         // todo
-        $files = ['lichess_elite_2023-01-500k-c.pgn'];
-        //$files = ['lichess_elite_2023-01-500k-d.pgn'];
-        //$files = ['lichess_elite_2023-01-500k-e.pgn'];
+        $files = ['lichess_elite_2023-01-500k-e.pgn'];
         //$files = ['lichess_elite_2023-01-500k-f.pgn'];
         //$files = ['lichess_elite_2023-01-500k-g.pgn'];
         //$files = ['lichess_elite_2023-01-500k-h.pgn'];
+
+        exit;
 
 
         $totals = [];
@@ -81,9 +94,7 @@ class AdminController extends AbstractController
         $gameCount = 0;
         $moveCount = 0;
         $processCount = 0;
-
-        //
-        $time = time();
+        $queryCount = 0;
 
         // loop through the files
         foreach ($files as $file) {
@@ -96,12 +107,15 @@ class AdminController extends AbstractController
 
                 $gameCount++;
 
-                $usage = memory_get_usage() / 1024 / 1024;
+                //$usage = memory_get_usage() / 1024 / 1024;
 
                 // every 50k games or when memory is low
-                if ($usage > 64 || $gameCount % 50000 == 0) {
+                //if ($usage > 256 || $gameCount % 50000 == 0) {
+                if ($gameCount % 50000 == 0) {
                     // process the moves
-                    $this->processMoves($totals);
+                    $cnt = $this->processMoves($totals);
+
+                    $queryCount = $queryCount + $cnt;
 
                     $processCount++;
 
@@ -114,7 +128,9 @@ class AdminController extends AbstractController
         // process the moves that haven't been processed yet
         if (count($totals) > 0) {
             // process the moves
-            $this->processMoves($totals);
+            $cnt = $this->processMoves($totals);
+
+            $queryCount = $queryCount + $cnt;
 
             $processCount++;
 
@@ -122,17 +138,10 @@ class AdminController extends AbstractController
             $totals = [];
         }
 
-        $seconds = time() - $time;
-
-        $hours = floor($seconds / 3600);
-        $minutes = floor(($seconds - $hours * 3600) / 60);
-        $seconds = floor($seconds - ($hours * 3600) - ($minutes * 60));
-
         print $gameCount . " games processed.<br>";
         print $moveCount . " moves processed.<br>";
         print $processCount . " calls to the processMoves function.<br>";
-
-        print "Duration of the script: " . $hours . "h " . $minutes . "m " . $seconds . "s<br>";
+        print $queryCount . " number of queries executed.<br>";
 
         $usage = memory_get_usage() / 1024 / 1024;
 
@@ -231,9 +240,11 @@ class AdminController extends AbstractController
 
             $moveCount++;
         }
+
+        $fen = null;
     }
 
-    private function processMoves($moves)
+    private function processMoves($moves): int
     {
 
 
@@ -263,6 +274,7 @@ class AdminController extends AbstractController
 
         //$repository = $this->em->getRepository(Moves::class);
         $i = 0;
+        $queryCount = 0;
 
         foreach ($moves as $fen => $fenMoves) {
             // reset the time limit so we don't timeout on large files
@@ -274,6 +286,12 @@ class AdminController extends AbstractController
                 if ($move == 'pgn') {
                     continue;
                 }
+
+                //
+
+                $queryCount++;
+
+                //continue;
 
                 $stmtFind->bindValue('fen', $fen);
                 $stmtFind->bindValue('move', $move);
@@ -324,60 +342,15 @@ class AdminController extends AbstractController
                         //exit;
                     }
                 }
-
-                /*
-                // find the move for this position
-                $item = $repository->findOneBy([
-                    'Fen' => $fen,
-                    'Move' => $move
-                ]);
-
-                // if this is an existing move
-                if ($item) {
-                    $item->setWins($item->getWins() + $score[0]);
-                    $item->setDraws($item->getDraws() + $score[1]);
-                    $item->setLosses($item->getLosses() + $score[2]);
-                } else {
-                    // create it
-                    $item = new Moves();
-                    $item->setFen($fen);
-                    $item->setMove($move);
-                    $item->setWins($score[0]);
-                    $item->setDraws($score[1]);
-                    $item->setLosses($score[2]);
-                }
-
-                // persist the move
-                $test->persist($item);
-                */
             }
 
             $i++;
-
-            // save the move
-            //$test->flush();
-
-            // batch processing??
-            //$test->clear();
-
-            //$this->em->getUnitOfWork()->clear();
         }
 
-        // close the prepared statements
-        //$stmtFind = null;
-        //$stmtInsert = null;
-        //$stmtUpdate = null;
+        // free memory
+        gc_collect_cycles();
 
-        //$this->conn->close();
-
-
-        //gc_enable();
-        //gc_collect_cycles();
-
-
-        //$test = $this->getDoctrine();
-
-        //dd($test);
+        return $queryCount;
     }
 
     // returns the duration in text, based off of microseconds

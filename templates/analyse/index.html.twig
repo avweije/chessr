@@ -23,7 +23,7 @@
 			<input id="repertoireNameInput" type="text" name="username" size="40" value="avweije" placeholder="Enter your account name.." class="block w-full rounded-md border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
 		</div>
 		<div>
-			<button type="button" id="connectButton" class="flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:text-black disabled:bg-gray-300 disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none">
+			<button type="button" id="connectButton" class="btn btn-primary">
 				Connect
 				<span class="hidden inline-block icon-[svg-spinners--90-ring-with-bg] ml-1 w-4 h-4"></span>
 			</button>
@@ -61,7 +61,7 @@
 			</div>
 
 			<div>
-				<button type="button" id="downloadButton" class="flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:text-black disabled:bg-gray-300 disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none">
+				<button type="button" id="downloadButton" class="btn btn-primary">
 					Download games
 					<span class="hidden inline-block icon-[svg-spinners--90-ring-with-bg] ml-1 w-4 h-4"></span>
 				</button>
@@ -89,7 +89,7 @@
 			</div>
 
 			<div>
-				<button type="button" id="analyseButton" class="flex items-center rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:text-black disabled:bg-gray-300 disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none">
+				<button type="button" id="analyseButton" class="btn btn-primary">
 					Analyse games
 					<span class="hidden inline-block icon-[svg-spinners--90-ring-with-bg] ml-1 w-4 h-4"></span>
 				</button>
@@ -115,14 +115,13 @@
 			<p class="w-full text-gray-700">4m 30s</p>
 		</div>
 		<div class="flex justify-center space-x-2 mt-8">
-			<button id="analyseModalStopButton" class="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:text-black disabled:bg-gray-300 disabled:opacity-50 disabled:shadow-none disabled:pointer-events-none">
+			<button id="analyseModalStopButton" class="btn btn-warning">
 				Stop analysing
 			</button>
 		</div>
 	</dialog>
 {% endblock %}
 {% block stylesheets %}
-	<link rel="stylesheet" href="{{ asset('build/repertoire.css') }}">
 	{{ encore_entry_link_tags('modal') }}
 {% endblock %}
 {% block javascripts %}

@@ -16,7 +16,7 @@ class ECORepository extends ServiceEntityRepository
         parent::__construct($registry, ECO::class);
     }
 
-    public function findBybyPgn($pgn): array
+    public function findByPgn($pgn): array
     {
         // we use the number of spaces in the pgn to find the next moves
         $spaces = substr_count($pgn, ' ');
@@ -47,14 +47,56 @@ class ECORepository extends ServiceEntityRepository
 
         foreach ($qb->getArrayResult() as $r) {
             if ($pgn == $r['PGN']) {
-                $resp['current'] = $r;
+                $resp['current'] = ["code" => $r["Code"], "name" => $r["Name"]];
             } else {
                 $resp['next'][] = $r;
             }
         }
 
+        // if we have no current PGN
+        if ($resp['current'] == '') {
+            $curr = $this->findCodeByPgn($pgn);
+            if ($curr) {
+                $resp['current'] = ["code" => $curr["Code"], "name" => $curr["Name"]];
+            }
+        }
+
         return $resp;
     }
+
+    // find the ECO code for a PGN string
+    public function findCodeByPgn($pgn): ?array
+    {
+        $pgns = [];
+        $moves = explode(" ", $pgn);
+
+        // build up a new pgn string
+        $str = "";
+        for ($i = 0; $i < count($moves); $i++) {
+            // add to the pgn string
+            $str .= ($str == "" ? "" : " ") . $moves[$i];
+            // if this is a move number
+            if (preg_match('/^\\d+\\./', $moves[$i]) !== 1) {
+                // add to the pgns
+                $pgns[] = $str;
+            }
+        }
+
+        //dd($pgns);
+
+        // build the query
+        $qb = $this->createQueryBuilder('ECO');
+        $query = $qb->add('where', $qb->expr()->in('ECO.PGN', '?1'))
+            ->setParameter('1', $pgns)
+            ->orderBy('ECO.PGN', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery();
+
+        $res = $query->getArrayResult();
+
+        return count($res) > 0 ? $res[0] : null;
+    }
+
     //    /**
     //     * @return ECO[] Returns an array of ECO objects
     //     */

@@ -1,8 +1,6 @@
 <?php
 
-namespace App\Service;
-
-use App\Library\MyGame;
+namespace App\Service\MyPgnParser;
 
 class MyPgnParser
 {
@@ -34,17 +32,20 @@ class MyPgnParser
         return $game;
     }
 
-    public function parsePgn($filePath)
+    public function parsePgn($filePath, $asText = false)
     {
         $this->filePath = $filePath;
         $this->fileName = basename($filePath);
 
         $handle = fopen($filePath, "r");
 
-        $game = new MyGame();
+        if (!$asText) {
+            $game = new MyGame();
+        }
 
         //$this->createCurrentGame();
         $pgnBuffer = null;
+        $movesBuffer = null;
         $haveMoves = false;
         while (($line = fgets($handle, 4096)) !== false) {
             // When reading files line-by-line, there is a \n at the end, so remove it.
@@ -59,40 +60,57 @@ class MyPgnParser
                 // moves and this is the start of a new game.
                 if ($haveMoves) {
 
-                    $this->completeCurrentGame($game, $pgnBuffer);
+                    if (!$asText) {
+                        $this->completeCurrentGame($game, $pgnBuffer);
+                    }
 
                     // yield the game (for the iterator)
-                    //yield $this->currentGame;
-                    yield $game;
+                    if ($asText) {
+                        yield ["pgn" => $pgnBuffer, "moves" => $movesBuffer];
+                    } else {
+                        yield $game;
+                    }
 
-                    $game = $this->createCurrentGame();
+                    if (!$asText) {
+                        $game = $this->createCurrentGame();
+                    }
 
                     $haveMoves = false;
                     $pgnBuffer = null;
+                    $movesBuffer = null;
                 }
 
-                $this->addMetaData($game, $line);
+                if (!$asText) {
+                    $this->addMetaData($game, $line);
+                }
                 $pgnBuffer .= $line . "\n";
             } else {
                 // This is a line of moves.
-                $this->addMoves($game, $line);
+                if (!$asText) {
+                    $this->addMoves($game, $line);
+                }
                 $haveMoves = true;
                 $pgnBuffer .= "\n" . $line;
+                $movesBuffer .= $line . "\n";
             }
         }
 
-        $this->completeCurrentGame($game, $pgnBuffer);
+        if (!$asText) {
+            $this->completeCurrentGame($game, $pgnBuffer);
+        }
 
         fclose($handle);
 
         // yield the game (for the iterator)
-        //yield $this->currentGame;
-        yield $game;
+        if ($asText) {
+            yield ["pgn" => $pgnBuffer, "moves" => $movesBuffer];
+        } else {
+            yield $game;
+        }
     }
 
-    public function parsePgnString($pgnString, $singleGame = false)
+    public function parsePgnFromText($pgnString, $singleGame = false)
     {
-
         $lines = explode("\n", $pgnString);
         //dd($lines);
 
@@ -166,7 +184,7 @@ class MyPgnParser
     /**
      * @param string $line "[Date "1953.??.??"]"
      */
-    private function addMetaData($game, $line)
+    private function addMetaData(MyGame $game, $line)
     {
         if (strpos($line, ' ') === false) {
             throw new \Exception("Invalid metadata: " . $line);
@@ -206,7 +224,7 @@ class MyPgnParser
     /**
      * @param string $line "Qe7 22. Nhg4 Nxg4 23. Nxg4 Na5 24. b3 Nc6"
      */
-    private function addMoves($game, $line)
+    private function addMoves(MyGame $game, $line)
     {
         $line = $this->removeAnnotations($line);
 
@@ -229,7 +247,7 @@ class MyPgnParser
         $game->setMoves($game->getMoves() ? $game->getMoves() . " " . $line : $line);
     }
 
-    private function completeCurrentGame($game, $pgn)
+    private function completeCurrentGame(MyGame $game, $pgn)
     {
         $game->setPgn($pgn);
         $this->multiLineAnnotationDepth = 0;

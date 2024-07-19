@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Library;
+namespace App\Service\MyPgnParser;
 
 use AmyBoyd\PgnParser\Game;
 
@@ -50,29 +50,39 @@ class MyGame extends Game
         return $this->link;
     }
 
-    public function getUciMoves(): array
+    /**
+     * Set white
+     * @param string $white
+     */
+    public function setWhite($white)
     {
-        //
-        $chess = new ChessJs($this->getFen());
+        $this->white = MyUtil::normalizePlayerName($white);
+    }
 
-        foreach ($this->getMovesArray() as $move) {
-            $chess->move($move);
-        }
+    /**
+     * Get white
+     * @return string
+     */
+    public function getWhite()
+    {
+        return $this->white;
+    }
 
-        //dd($gamePgn);
+    /**
+     * Set black
+     * @param string $black
+     */
+    public function setBlack($black)
+    {
+        $this->black = MyUtil::normalizePlayerName($black);
+    }
 
-        $history = $chess->history(['verbose' => true]);
-
-        //dd($history);
-
-        $uciMoves = [];
-        foreach ($history as $move) {
-            $uciMoves[] = [
-                'uci' => $move['from'] . $move['to'] . ($move['promotion'] !== null ? $move['promotion'] : ""),
-                'san' => $move['san']
-            ];
-        }
-
-        return $uciMoves;
+    /**
+     * Get black
+     * @return string
+     */
+    public function getBlack()
+    {
+        return $this->black;
     }
 }

@@ -1,0 +1,34 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+
+	<div class="m-auto text-center p-4">
+		{% block board_header %}{% endblock %}
+	</div>
+
+	<div class="flex justify-center">
+		<div>
+
+			<div class="flex justify-end mt-0 mb-1 mr-1">
+				{% block board_top %}{% endblock %}
+			</div>
+
+			<div class="flex">
+				<div class="p-1 mr-2" style="width: 45vw; max-width: 68vh;">
+					{% block board_left %}{% endblock %}
+				</div>
+				<div class="p-1" style="width: 45vw; min-width: min-content; max-width: 68vh;">
+					{% block board_right %}{% endblock %}
+				</div>
+			</div>
+		</div>
+	</div>
+
+{% endblock %}
+
+{% block stylesheets %}
+	{{ parent() }}
+
+	{{ encore_entry_link_tags('chessboard') }}
+	{{ encore_entry_link_tags('markers') }}
+{% endblock %}

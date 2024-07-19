@@ -1462,4 +1462,21 @@ class ChessJs
         else
             return compact('nodes', 'captures', 'enPassants', 'castles', 'promotions', 'checks', 'checkmates');
     }
+
+
+    // return the moves in UCI notation
+    public function getUciMoves(): array
+    {
+        $history = $this->history(['verbose' => true]);
+
+        $uciMoves = [];
+        foreach ($history as $move) {
+            $uciMoves[] = [
+                'uci' => $move['from'] . $move['to'] . ($move['promotion'] !== null ? $move['promotion'] : ""),
+                'san' => $move['san']
+            ];
+        }
+
+        return $uciMoves;
+    }
 }

@@ -7,10 +7,10 @@
 			{% endblock %}
 		</title>
 		<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text></svg>">
+		<script src="https://cdn.tailwindcss.com"></script>
 		<link rel="stylesheet" href="/build/app.css">
 		{% block stylesheets %}
 			{{ encore_entry_link_tags('app') }}
-			{{ encore_entry_link_tags('markers') }}
 		{% endblock %}
 		{% block javascripts %}
 			{{ encore_entry_script_tags('app') }}
@@ -70,7 +70,7 @@
 									<a href="/login" class="rounded-md px-3 py-2 text-sm uppercase font-semibold text-indigo-500 shadow-sm">
 										Login
 									</a>
-									<a href="/register" class="rounded-md bg-indigo-600 px-3 py-2 text-sm uppercase font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+									<a href="/register" class="btn btn-primary uppercase">
 										Sign up for free
 									</a>
 								{% endif %}
