@@ -4,10 +4,10 @@
 
 	<div class="w-4/5 m-auto text-center p-4">
 		<div id="practiceRepertoireButtons" class="inline-flex rounded-md shadow-sm">
-			<button class="text-blue-700 disabled:text-gray-300 bg-gray-50 px-4 py-2 text-sm font-medium border border-gray-200 rounded-s-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white">
+			<button class="text-primary-700 disabled:text-gray-300 bg-gray-50 px-4 py-2 text-sm font-medium border border-gray-200 rounded-s-lg hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-2 focus:ring-primary-700 focus:text-primary-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-primary-500 dark:focus:text-white">
 				Chess.com
 			</button>
-			<button class="text-gray-900 disabled:text-gray-300 bg-white px-4 py-2 text-sm font-medium border border-gray-200 rounded-e-lg hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white">
+			<button class="text-gray-900 disabled:text-gray-300 bg-white px-4 py-2 text-sm font-medium border border-gray-200 rounded-e-lg hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-2 focus:ring-primary-700 focus:text-primary-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-primary-500 dark:focus:text-white">
 				Lichess
 			</button>
 		</div>
@@ -122,8 +122,12 @@
 	</dialog>
 {% endblock %}
 {% block stylesheets %}
+	{{ parent() }}
+
 	{{ encore_entry_link_tags('modal') }}
 {% endblock %}
 {% block javascripts %}
+	{{ parent() }}
+
 	{{ encore_entry_script_tags('analyse') }}
 {% endblock %}

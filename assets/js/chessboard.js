@@ -199,6 +199,8 @@ export class MyChessBoard {
       // set the board position
       this.board.setPosition(this.game.fen());
 
+      // process the move
+      this.afterMakeMove();
       // call the after move event
       this.afterMove(moves[index]);
     } catch (err) {

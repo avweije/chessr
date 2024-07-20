@@ -3,11 +3,11 @@
 {% block board_header %}
 
 	<div class="inline-flex rounded-md shadow-sm">
-		<a href="/repertoire/white" class="px-4 py-2 text-sm font-medium {{ repertoireColor == 'white' ? 'text-blue-700' : 'text-gray-900 hover:text-blue-700' }} bg-white border border-gray-200 rounded-s-lg hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white">
-			White
+		<a href="/repertoire/white" class="px-4 py-2 text-sm font-medium {{ repertoireColor == 'white' ? 'text-primary-500' : 'text-gray-900 hover:text-primary-500' }} bg-white border border-gray-200 rounded-s-lg hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-primary-700 focus:text-primary-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-primary-500 dark:focus:text-white">
+			White Repertoire
 		</a>
-		<a href="/repertoire/black" class="px-4 py-2 text-sm font-medium {{ repertoireColor == 'black' ? 'text-blue-700' : 'text-gray-900 hover:text-blue-700' }} bg-white border border-gray-200 rounded-e-lg hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-blue-700 focus:text-blue-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-blue-500 dark:focus:text-white">
-			Black
+		<a href="/repertoire/black" class="px-4 py-2 text-sm font-medium {{ repertoireColor == 'black' ? 'text-primary-500' : 'text-gray-900 hover:text-primary-500' }} bg-white border border-gray-200 rounded-e-lg hover:bg-gray-100 focus:z-10 focus:ring-2 focus:ring-primary-700 focus:text-primary-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-primary-500 dark:focus:text-white">
+			Black Repertoire
 		</a>
 	</div>
 {% endblock %}
@@ -16,7 +16,6 @@
 	<button type="button" id="saveRepertoireButton" disabled class="btn btn-primary">
 		Save to your repertoire
 	</button>
-
 {% endblock %}
 
 {% block board_left %}
@@ -41,7 +40,7 @@
 		</div>
 
 		<div style="overflow-y: auto; max-height: 50vh;">
-			<div class="p-3">
+			<div class="p-1">
 				<p class="block text-base text-gray-900 p-2 hidden">No repertoire moves or book moves found.</p>
 
 				<table id="movesTable" class="table-fixed min-w-full m-0">
@@ -57,31 +56,21 @@
 			<div class="pr-2"></div>
 		</div>
 
-		<div class="flex items-center p-3">
-			<div>
-				<label class="block text-sm font-medium text-gray-900">Name:</label>
-			</div>
-			<div class="w-full mx-3">
-				<input id="repertoireNameInput" type="text" name="repertoire_name" class="block w-full rounded-md border-0 py-1 px-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-			</div>
-			<div>
+		<div class="grid grid-cols-[_auto_1fr] gap-1 items-center p-3">
+			<div class="mr-3">
 				<label class="block text-sm font-medium text-gray-900">Group:</label>
 			</div>
-			<div class="w-full ml-3">
-				<input id="repertoireGroupInput" list="repertoireGroupDataList" name="repertoire_group" class="block w-full rounded-md border-0 py-1 px-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
-				<datalist id="repertoireGroupDataList">
-					<option value="Gambits"></option>
-					<option value="Another group"></option>
-				</datalist>
+			<div class="w-full">
+				<input id="repertoireGroupInput" list="repertoireGroupDataList" name="repertoire_group" placeholder="Add to group (select from list or press Enter to add)" class="block w-full rounded-md border-0 py-1 px-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+				<datalist id="repertoireGroupDataList"></datalist>
 			</div>
+			<div></div>
+			<div id="repertoireGroupTagsContainer" class="flex flex-wrap"></div>
 		</div>
 
 		<div class="flex justify-end p-3 pt-0">
-			<button type="button" id="updateRepertoireButton" disabled class="btn btn-primary mr-1">
-				Save details
-			</button>
 			<button type="button" id="removeRepertoireButton" class="btn btn-primary">
-				Remove this line
+				Remove from your repertoire
 			</button>
 		</div>
 	</div>
@@ -92,8 +81,17 @@
 		<div id="fenField" class="p-3"></div>
 	</div>
 
+	{{ include('repertoire/dialogs/confirm.html.twig') }}
+{% endblock %}
+
+{% block stylesheets %}
+	{{ parent() }}
+
+	{{ encore_entry_link_tags('modal') }}
 {% endblock %}
 
 {% block javascripts %}
+	{{ parent() }}
+
 	{{ encore_entry_script_tags('repertoire') }}
 {% endblock %}

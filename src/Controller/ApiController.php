@@ -7,8 +7,10 @@ use App\Config\DownloadStatus;
 use App\Config\DownloadType;
 use App\Entity\Downloads;
 use App\Entity\ECO;
-use App\Entity\Mistake;
+use App\Entity\Group;
+use App\Entity\Analysis;
 use App\Entity\Repertoire;
+use App\Entity\RepertoireGroup;
 use App\Library\ChessJs;
 use App\Library\GameDownloader;
 use App\Library\UCI;
@@ -31,6 +33,122 @@ class ApiController extends AbstractController
         $this->em = $em;
         $this->myPgnParser = $myPgnParser;
     }
+
+    #[Route('/api/groups', name: 'app_api_groups')]
+    public function apiGroups(Request $request): JsonResponse
+    {
+        // get the ECO codes for this position and the next move
+        $repo = $this->em->getRepository(Group::class);
+
+        $res = [];
+        foreach ($repo->findBy([], ['Name' => 'ASC']) as $rec) {
+            $res[] = ["id" => $rec->getId(), "name" => $rec->getName()];
+        }
+
+        return new JsonResponse(["groups" => $res]);
+    }
+
+    #[Route('/api/repertoire/group', methods: ['POST'], name: 'app_api_repertoire_group_add')]
+    public function apiRepertoireGroupAdd(Request $request): JsonResponse
+    {
+        $data = $request->getPayload()->all();
+
+        $message = "";
+
+        $repo = $this->em->getRepository(Repertoire::class);
+        $rep = $repo->findOneBy(['id' => $data["repertoire"]]);
+        if ($rep) {
+            $repo = $this->em->getRepository(Group::class);
+            // find the group
+            $grp = $repo->findOneBy(['Name' => $data["group"]]);
+            if ($grp) {
+                // make sure this group isnt already linked to the repertoire
+                $repo = $this->em->getRepository(RepertoireGroup::class);
+                $repg = $repo->findOneBy(['Repertoire' => $data["repertoire"], 'Grp' => $grp->getId()]);
+                if ($repg) {
+                    $message = "Repertoire already part of group.";
+                } else {
+                    // save the move to the repertoire
+                    $repg = new RepertoireGroup();
+                    $repg->setRepertoire($rep);
+                    $repg->setGrp($grp);
+
+                    $this->em->persist($repg);
+                    $this->em->flush();
+
+                    $message = "Repertoire added to existing group.";
+                }
+            } else {
+                // add the group
+                $grp = new Group();
+                $grp->setName($data["group"]);
+
+                $this->em->persist($grp);
+                $this->em->flush();
+
+                // save the move to the repertoire
+                $repg = new RepertoireGroup();
+                $repg->setRepertoire($rep);
+                $repg->setGrp($grp);
+
+                $this->em->persist($repg);
+                $this->em->flush();
+
+                $message = "Repertoire added to new group.";
+            }
+        } else {
+            $message = "Repertoire not found.";
+        }
+
+        return new JsonResponse(["message" => $message]);
+    }
+
+    #[Route('/api/repertoire/group', methods: ['DELETE'], name: 'app_api_repertoire_group_delete')]
+    public function apiRepertoireGroupDelete(Request $request): JsonResponse
+    {
+        $data = $request->getPayload()->all();
+
+        //
+        // make sure the repertoire is from the current user..
+        //
+
+        //
+        $repo = $this->em->getRepository(Group::class);
+        $repo2 = $this->em->getRepository(RepertoireGroup::class);
+
+        // find the group
+        $res = $repo->findBy(['Name' => $data["group"]]);
+        foreach ($res as $grp) {
+
+            $groups[] = $grp->getId();
+
+            $qb = $this->em->createQueryBuilder();
+
+            $query = $qb->delete('App\Entity\RepertoireGroup', 'rg')
+                ->where('rg.Repertoire = :rep AND rg.Grp = :grp')
+                ->setParameter('rep', $data["repertoire"])
+                ->setParameter('grp', $grp->getId())
+                ->getQuery();
+
+            $query->execute();
+
+            //
+            $res = $repo2->findBy(['Grp' => $grp->getId()]);
+            if (count($res) == 0) {
+                $qb = $this->em->createQueryBuilder();
+
+                $query = $qb->delete('App\Entity\Group', 'g')
+                    ->where('g.id = :id')
+                    ->setParameter('id', $grp->getId())
+                    ->getQuery();
+
+                $query->execute();
+            }
+        }
+
+        return new JsonResponse(["message" => "Repertoire removed from group.", "repertoire" => $data["repertoire"], "groups" => $groups]);
+    }
+
 
     #[Route('/api/moves', name: 'app_api_moves')]
     public function apiMoves(Request $request): JsonResponse
@@ -95,8 +213,11 @@ class ApiController extends AbstractController
         // get the repository
         $repository = $this->em->getRepository(Repertoire::class);
 
-        // see if we have the current position saved
-        $saved = 1;
+        // the groups for this repertoire
+        $groups = [];
+
+        // get the repertoire id, if we've saved it
+        $repertoireId = 0;
         if ($data['pgn'] != '') {
             $res = $repository->findOneBy([
                 'User' => $this->getUser(),
@@ -104,7 +225,12 @@ class ApiController extends AbstractController
                 'FenAfter' => $data['fen']
             ]);
 
-            $saved = $res ? 1 : 0;
+            if ($res) {
+                $repertoireId = $res->getId();
+                foreach ($res->getRepertoireGroups() as $grp) {
+                    $groups[] = ["id" => $grp->getGrp()->getId(), "name" => $grp->getGrp()->getName()];
+                }
+            }
         }
 
         // find the saved repository moves from this position
@@ -147,11 +273,11 @@ class ApiController extends AbstractController
             }
         }
 
-        return new JsonResponse(['eco' => $codes, 'games' => $games, 'repertoire' => $reps, 'saved' => $saved]);
+        return new JsonResponse(['eco' => $codes, 'games' => $games, 'repertoire' => $reps, 'repertoireId' => $repertoireId, 'groups' => $groups]);
     }
 
-    #[Route('/api/repertoire', methods: ['POST'], name: 'app_api_repertoire')]
-    public function apiRepertoire(Request $request): JsonResponse
+    #[Route('/api/repertoire', methods: ['POST'], name: 'app_api_repertoire_save')]
+    public function apiRepertoireSave(Request $request): JsonResponse
     {
         // get the data
         $data = $request->getPayload()->all();
@@ -159,6 +285,80 @@ class ApiController extends AbstractController
         $saved = $this->saveRepertoire($data['color'], $data['moves']);
 
         return new JsonResponse($saved);
+    }
+
+    #[Route('/api/repertoire', methods: ['DELETE'], name: 'app_api_repertoire_delete')]
+    public function apiRepertoireDelete(Request $request): JsonResponse
+    {
+        // get the data
+        $data = $request->getPayload()->all();
+
+        // delete the repertoire move
+        $this->deleteRepertoire($data["color"], $data["fen"], $data["move"]);
+
+        return new JsonResponse(["message" => "The move has been deleted from the repertoire."]);
+    }
+
+    // delete a move and it's children
+    private function deleteRepertoire(string $color, $fenAfter, $move)
+    {
+        $repository = $this->em->getRepository(Repertoire::class);
+
+        // get the moves that follow this move
+        $res = $repository->findBy([
+            'User' => $this->getUser(),
+            'Color' => $color,
+            'FenBefore' => $fenAfter
+        ]);
+
+        // delete the child moves
+        foreach ($res as $rec) {
+            $this->deleteRepertoire($color, $rec->getFenAfter(), $rec->getMove());
+        }
+
+        // find this move
+        $rec = $repository->findOneBy([
+            'User' => $this->getUser(),
+            'Color' => $color,
+            'FenAfter' => $fenAfter,
+            'Move' => $move
+        ]);
+
+        if ($rec) {
+            // get the fen before
+            $fenBefore = $rec->getFenBefore();
+            // delete it
+            $this->em->remove($rec);
+            // delete the moves
+            $this->em->flush();
+
+            // if this is a black repertoire
+            if ($color == "black") {
+                // find sibling moves
+                $rec = $repository->findBy([
+                    'User' => $this->getUser(),
+                    'Color' => $color,
+                    'FenBefore' => $fenBefore
+                ]);
+
+                // if no sibling moves, we can remove the parent (white) move
+                if (count($rec) == 0) {
+                    $parent = $repository->findOneBy([
+                        'User' => $this->getUser(),
+                        'Color' => $color,
+                        'FenAfter' => $fenBefore
+                    ]);
+
+                    if ($parent) {
+                        // delete it
+                        $this->em->remove($parent);
+                    }
+                }
+            }
+        }
+
+        // delete the moves
+        $this->em->flush();
     }
 
     // save a repertoire
@@ -407,8 +607,8 @@ class ApiController extends AbstractController
 
                     // add them to the database
                     foreach ($temp as $mistake) {
-                        // add the mistake
-                        $rc = new Mistake();
+                        // add the analysis
+                        $rc = new Analysis();
 
                         $rc->setUser($this->getUser());
                         $rc->setWhite($game->getWhite());
@@ -620,8 +820,8 @@ class ApiController extends AbstractController
             //dd($resp['new']);
         }
 
-        // get the mistake repository
-        $repository = $this->em->getRepository(Mistake::class);
+        // get the analysis repository
+        $repository = $this->em->getRepository(Analysis::class);
         // get the mistakes for this user
         $res = $repository->findBy(['User' => $this->getUser()], ['Link' => 'ASC', 'Pgn' => 'ASC']);
         // add them
@@ -1146,6 +1346,18 @@ class ApiController extends AbstractController
 
                 // set the mistake array
                 $mistake = ["move" => $move["san"], "type" => "", "bestmoves" => [], "fen" => $fenBefore, "line" => ["pgn" => $linePgn, "moves" => $lineMoves]];
+
+                /*
+
+                - check if this fen is in our repertoire
+                - if it is and the move is correct = no mistake
+                - if it is and te move is not correct = mistake (even if good move)
+
+                - if in repertoire, still store engine bestmoves
+                - while fetching analysis records, check if we have fen in repertoire and add boolean to json response
+                - we can add repertoire moves also..
+
+                */
 
                 // check the move quality
                 if ($pctLoss == 0) {

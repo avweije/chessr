@@ -15,6 +15,9 @@ class Analyse {
   gamesContainer = null;
   gameTypeSelect = null;
 
+  archiveYear = 0;
+  archiveMonth = 0;
+
   analyseDialog = {
     modal: null,
     typeField: null,
@@ -28,6 +31,8 @@ class Analyse {
     inProgress: false,
     isCancelled: false,
     processed: 0,
+    year: 0,
+    month: 0,
     totals: [],
   };
 
@@ -109,6 +114,7 @@ class Analyse {
 
     // show the spinner
     this.connectButton.children[0].classList.remove("hidden");
+    this.connectButton.disabled = true;
 
     fetch(url, {
       method: "GET",
@@ -120,6 +126,7 @@ class Analyse {
 
         // hide the spinner
         this.connectButton.children[0].classList.add("hidden");
+        this.connectButton.disabled = false;
 
         // handle the response
         this.onGetArchives(response);
@@ -129,6 +136,7 @@ class Analyse {
 
         // hide the spinner
         this.connectButton.children[0].classList.add("hidden");
+        this.connectButton.disabled = false;
       });
   }
 
@@ -206,11 +214,12 @@ class Analyse {
     console.log("getGames:");
 
     // get the year & month
-    console.log(this.archiveYearSelect.value);
-    console.log(this.archiveMonthSelect.value);
+    this.archiveYear = this.archiveYearSelect.value;
+    this.archiveMonth = this.archiveMonthSelect.value;
 
     // show the spinner
     this.downloadButton.children[0].classList.remove("hidden");
+    this.downloadButton.disabled = true;
 
     //var url = "/api/download/games/{year}/{month}";
     var url =
@@ -229,6 +238,7 @@ class Analyse {
 
         // hide the spinner
         this.downloadButton.children[0].classList.add("hidden");
+        this.downloadButton.disabled = false;
 
         // handle the response
         this.onGetGames(response);
@@ -238,14 +248,18 @@ class Analyse {
 
         // hide the spinner
         this.downloadButton.children[0].classList.add("hidden");
+        this.downloadButton.disabled = false;
       });
   }
 
   // show the totals, enable analyse
-  onGetGames(json) {
+  onGetGames(json, rememberSelected = false) {
     this.games = json["games"];
 
-    // show the archives container..
+    // if we need to remember the currently selected value
+    var selectedValue = rememberSelected
+      ? this.gameTypeSelect.options[this.gameTypeSelect.selectedIndex].value
+      : "";
 
     // clear the type select
     while (this.gameTypeSelect.firstChild) {
@@ -255,25 +269,44 @@ class Analyse {
     // reset the totals per type
     this.analyseDialog.totals = [];
 
+    // the number of types with games to analyse
+    var cnt = 0;
+
     // fill the type select
     for (var [key, totals] of Object.entries(this.games)) {
-      var opt = document.createElement("option");
-      opt.value = key;
-      opt.text =
-        key.charAt(0).toUpperCase() +
-        key.slice(1) +
-        " (" +
-        (totals.total - totals.processed) +
-        ")";
+      if (totals.total - totals.processed > 0) {
+        var opt = document.createElement("option");
+        opt.value = key;
+        opt.text =
+          key.charAt(0).toUpperCase() +
+          key.slice(1) +
+          " (" +
+          (totals.total - totals.processed) +
+          ")";
 
-      this.gameTypeSelect.appendChild(opt);
+        if (rememberSelected && key == selectedValue) {
+          opt.selected = true;
+        }
+
+        this.gameTypeSelect.appendChild(opt);
+
+        cnt++;
+      }
 
       // keep track of the totals for this type
       this.analyseDialog.totals[key] = totals;
     }
 
+    // if no games to analyse
+    if (cnt == 0) {
+      var opt = document.createElement("option");
+      opt.text = "No games left to analyse";
+
+      this.gameTypeSelect.appendChild(opt);
+    }
+
     // enable the analyse button
-    if (!this.analyseDialog.inProgress) {
+    if (!this.analyseDialog.inProgress && cnt > 0) {
       this.analyseButton.disabled = false;
     }
 
@@ -294,8 +327,6 @@ class Analyse {
 
     // show the spinner
     this.analyseButton.children[0].classList.remove("hidden");
-
-    // disable the analyse button
     this.analyseButton.disabled = true;
 
     // if the last run is still in progress
@@ -312,8 +343,6 @@ class Analyse {
     this.analyseDialog.typeField.innerHTML =
       this.gameTypeSelect.value.charAt(0).toUpperCase() +
       this.gameTypeSelect.value.slice(1);
-
-    // set the estimated time
 
     // set the stop button text
     this.analyseDialog.stopButton.innerHTML = "Stop analysing";
@@ -333,7 +362,7 @@ class Analyse {
     }, 1000);
 
     // start analysing
-    this.analyseNext();
+    this.analyseNext(this.archiveYear, this.archiveMonth);
   }
 
   // called when the dialog gets closed (return false to cancel)
@@ -350,24 +379,25 @@ class Analyse {
   }
 
   // analyse the next set of games
-  analyseNext() {
+  analyseNext(year, month) {
     console.log("analyseNext:");
 
     console.log("cancelled: " + this.analyseDialog.isCancelled);
-    console.log(this.archiveYearSelect.value);
-    console.log(this.archiveMonthSelect.value);
+    console.log(year);
+    console.log(month);
 
     // if cancelled, don't proceed
     if (this.analyseDialog.isCancelled) {
       // no longer in progress
       this.analyseDialog.inProgress = false;
-      // enable the analyse button
-      this.analyseButton.disabled = false;
       // hide the spinner
       this.analyseButton.children[0].classList.add("hidden");
+      this.analyseButton.disabled = false;
 
-      // get the games
-      this.getGames();
+      // reload the games dropdown (if they same year & month are still showing)
+      if (year == this.archiveYear && month == this.archiveMonth) {
+        this.onGetGames({ games: this.games }, true);
+      }
 
       return false;
     }
@@ -390,10 +420,14 @@ class Analyse {
       this.analyseDialog.stopButton.innerHTML = "Close";
       this.analyseDialog.stopButton.classList.remove("btn-warning");
       this.analyseDialog.stopButton.classList.add("btn-primary");
-      // enable the analyse button
-      this.analyseButton.disabled = false;
       // hide the spinner
       this.analyseButton.children[0].classList.add("hidden");
+      this.analyseButton.disabled = false;
+
+      // reload the games dropdown (if they same year & month are still showing)
+      if (year == this.archiveYear && month == this.archiveMonth) {
+        this.onGetGames({ games: this.games }, true);
+      }
 
       return;
     }
@@ -415,7 +449,9 @@ class Analyse {
         : 15;
     // update the estimated time left field
     this.analyseDialog.estimatedTimeField.innerHTML = this.getDuration(
-      estimate * this.analyseDialog.totals[this.gameTypeSelect.value].total
+      estimate *
+        (this.analyseDialog.totals[this.gameTypeSelect.value].total -
+          this.analyseDialog.totals[this.gameTypeSelect.value].processed)
     );
 
     console.log("elapsed: " + elapsed);
@@ -451,13 +487,14 @@ class Analyse {
           response.processed;
 
         // analyse the next set of games
-        this.analyseNext();
+        this.analyseNext(year, month);
       })
       .catch((error) => {
         console.error("Error:", error);
 
         // hide the spinner
         this.analyseButton.children[0].classList.add("hidden");
+        this.analyseButton.disabled = false;
       });
   }
 

@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\RepertoireRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: RepertoireRepository::class)]
@@ -43,6 +45,17 @@ class Repertoire
 
     #[ORM\Column]
     private ?int $PracticeInARow = null;
+
+    /**
+     * @var Collection<int, RepertoireGroup>
+     */
+    #[ORM\OneToMany(targetEntity: RepertoireGroup::class, mappedBy: 'Repertoire', orphanRemoval: true)]
+    private Collection $repertoireGroups;
+
+    public function __construct()
+    {
+        $this->repertoireGroups = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -165,6 +178,36 @@ class Repertoire
     public function setPracticeInARow(int $PracticeInARow): static
     {
         $this->PracticeInARow = $PracticeInARow;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, RepertoireGroup>
+     */
+    public function getRepertoireGroups(): Collection
+    {
+        return $this->repertoireGroups;
+    }
+
+    public function addRepertoireGroup(RepertoireGroup $repertoireGroup): static
+    {
+        if (!$this->repertoireGroups->contains($repertoireGroup)) {
+            $this->repertoireGroups->add($repertoireGroup);
+            $repertoireGroup->setRepertoire($this);
+        }
+
+        return $this;
+    }
+
+    public function removeRepertoireGroup(RepertoireGroup $repertoireGroup): static
+    {
+        if ($this->repertoireGroups->removeElement($repertoireGroup)) {
+            // set the owning side to null (unless already changed)
+            if ($repertoireGroup->getRepertoire() === $this) {
+                $repertoireGroup->setRepertoire(null);
+            }
+        }
 
         return $this;
     }

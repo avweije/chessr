@@ -2,44 +2,47 @@
 @tailwind components;
 @tailwind utilities;
 
-.text-primary {
-  @apply text-blue-500;
-}
+@layer utilities {
+  .btn {
+    @apply inline-flex items-center rounded-md px-4 py-2 text-sm font-semibold shadow-sm;
+  }
+  .btn:focus-visible {
+    @apply outline outline-2 outline-offset-2;
+  }
+  .btn:disabled {
+    @apply text-black bg-gray-300 opacity-50 shadow-none pointer-events-none;
+  }
 
-.bg-primary {
-  @apply bg-blue-500;
-}
+  .btn-primary {
+    @apply bg-blue-500 text-white;
+  }
+  .btn-primary:hover {
+    @apply bg-blue-400;
+  }
+  .btn-primary:focus-visible {
+    @apply outline-blue-500;
+  }
 
-.btn {
-  @apply inline-flex items-center rounded-md px-4 py-2 text-sm font-semibold shadow-sm;
-}
-.btn:focus-visible {
-  @apply outline outline-2 outline-offset-2;
-}
-.btn:disabled {
-  @apply text-black bg-gray-300 opacity-50 shadow-none pointer-events-none;
-}
+  .btn-warning {
+    @apply bg-red-500 text-white;
+  }
+  .btn-warning:hover {
+    @apply bg-red-400;
+  }
+  .btn-warning:focus-visible {
+    @apply outline-red-500;
+  }
 
-.btn-primary {
-  @apply bg-blue-500 text-white;
+  .btn-outline {
+    @apply bg-gray-50 text-gray-700 border border-gray-200;
+  }
+  .btn-outline:hover {
+    @apply bg-gray-100 text-gray-500;
+  }
+  .btn-outline:focus-visible {
+    @apply outline-blue-300;
+  }
 }
-.btn-primary:hover {
-  @apply bg-blue-400;
-}
-.btn-primary:focus-visible {
-  @apply outline-blue-500;
-}
-
-.btn-warning {
-  @apply bg-red-500 text-white;
-}
-.btn-warning:hover {
-  @apply bg-red-400;
-}
-.btn-warning:focus-visible {
-  @apply outline-red-500;
-}
-
 /*
 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm 
 hover:bg-indigo-500 

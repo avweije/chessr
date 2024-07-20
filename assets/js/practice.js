@@ -4,6 +4,7 @@ import {
   MARKER_TYPE,
   Markers,
 } from "cm-chessboard/src/extensions/markers/Markers.js";
+import { Modal } from "./modal.js";
 
 import "../styles/chessboard.css";
 
@@ -41,9 +42,6 @@ class Practice extends MyChessBoard {
   playedMovesContainer = null;
   playedMovesList = null;
 
-  analysisGameContainer = null;
-  analysisGameFields = null;
-
   inPractice = false;
 
   repertoire = [];
@@ -67,8 +65,24 @@ class Practice extends MyChessBoard {
 
   hintCounter = 0;
 
+  analysis = {
+    container: null,
+    fields: null,
+    saveButton: null,
+    ignoreButton: null,
+    discardButton: null,
+    saveDialog: null,
+    ignoreDialog: {},
+  };
+
   constructor() {
     super();
+
+    // get the board element
+    var el = document.getElementById("board");
+    // get the practice type
+    this.type = el.getAttribute("data-type");
+
     // get the practice type buttons
     this.buttons.repertoireType = document.getElementById(
       "practiceRepertoireButtons"
@@ -99,16 +113,6 @@ class Practice extends MyChessBoard {
     // get the played moves container & list
     this.playedMovesContainer = document.getElementById("playedMovesContainer");
     this.playedMovesList = document.getElementById("playedMovesList");
-    // get the analysis game container & fields
-    this.analysisGameContainer = document.getElementById(
-      "analysisGameContainer"
-    );
-    this.analysisGameFields = document.getElementById("analysisGameFields");
-    // get the board element
-    var el = document.getElementById("board");
-
-    // get the practice type
-    this.type = el.getAttribute("data-type");
 
     // attach click handler to the repertoire type buttons
     this.initRepertoireButtons();
@@ -129,6 +133,149 @@ class Practice extends MyChessBoard {
 
     // get the entire repertoire
     this.getRepertoire();
+
+    // if this are ethe analysis lines
+    if (this.type == "analysis") {
+      // get the elements
+      this.analysis.container = document.getElementById(
+        "analysisGameContainer"
+      );
+      this.analysis.fields = document.getElementById("analysisGameFields");
+      this.analysis.saveButton = document.getElementById("analysisSaveButton");
+      this.analysis.ignoreButton = document.getElementById(
+        "analysisIgnoreButton"
+      );
+      this.analysis.discardButton = document.getElementById(
+        "analysisDiscardButton"
+      );
+
+      // get the modal elements
+      this.analysis.ignoreDialog.modal = document.getElementById("ignoreModal");
+      this.analysis.ignoreDialog.closeButton = document.getElementById(
+        "ignoreModalCloseButton"
+      );
+      this.analysis.ignoreDialog.cancelButton = document.getElementById(
+        "ignoreModalCancelButton"
+      );
+      this.analysis.ignoreDialog.confirmButton = document.getElementById(
+        "ignoreModalConfirmButton"
+      );
+
+      // add the event listeners
+      this.analysis.saveButton.addEventListener(
+        "click",
+        this.onAnalysisSave.bind(this)
+      );
+      this.analysis.ignoreButton.addEventListener(
+        "click",
+        this.onAnalysisIgnore.bind(this)
+      );
+      this.analysis.discardButton.addEventListener(
+        "click",
+        this.onAnalysisDiscard.bind(this)
+      );
+
+      // register the modal
+      Modal.register(this.analysis.ignoreDialog.modal, [
+        {
+          element: this.analysis.ignoreDialog.closeButton,
+          action: "close",
+        },
+        {
+          element: this.analysis.ignoreDialog.cancelButton,
+          action: "close",
+        },
+        {
+          element: this.analysis.ignoreDialog.confirmButton,
+          action: "handler",
+          handler: this.onAnalysisIgnoreConfirmed.bind(this),
+        },
+      ]);
+    }
+  }
+
+  // fired when the analysis save to repertoire button is clicked
+  onAnalysisSave(event) {
+    console.log("onAnalysisSave:");
+  }
+
+  // fired when the analysis ignore button is clicked
+  onAnalysisIgnore(event) {
+    console.log("onAnalysisIgnore:");
+
+    // show the modal
+    Modal.open(this.analysis.ignoreDialog.modal);
+  }
+
+  // fired when the analysis discard button is clicked
+  onAnalysisDiscard(event, removeFromDb = true) {
+    console.log("onAnalysisDiscard:");
+    console.log(this.practice.lines[this.practice.lineIdx]);
+    console.log(this.practice);
+
+    // reduce by number of moves counter
+    var reduceBy = 0;
+    for (var i = 0; i < this.practice.lines.length; i++) {
+      // if this is the same move
+      if (
+        this.practice.lines[i].fen ==
+          this.practice.lines[this.practice.lineIdx].fen &&
+        this.practice.lines[i].move ==
+          this.practice.lines[this.practice.lineIdx].move
+      ) {
+        // increase the reduce by counter by the number of moves we're skipping
+        reduceBy =
+          reduceBy +
+          (i == this.practice.lineIdx
+            ? this.practice.lineMoves.length -
+              this.practice.lineMovesPlayed.length
+            : this.practice.lines[i].lineMoves.length);
+
+        // remove this line
+        this.practice.lines.splice(i, 1);
+        // adjust the current line index if this line comes before it
+        if (i < this.practice.lineIdx) {
+          this.practice.lineIdx = this.practice.lineIdx - 1;
+        }
+      }
+    }
+
+    // update the move counter
+    if (reduceBy > 0) {
+      this.practice.moveCount = this.practice.moveCount - reduceBy;
+      this.reduceMoveCount(reduceBy);
+    } else {
+      // proceed to the next line
+      this.practice.lineIdx++;
+      this.practice.moveIdx = 0;
+    }
+
+    // if we need to remove this move from the database
+    if (removeFromDb) {
+      //
+      // call the api to remove this move (check for multiple based on fen/move in the api)
+      //
+    }
+
+    // run the next practice
+    this.practice.animateToPosition = true;
+
+    this.runPractice();
+  }
+
+  // fired when the ignore dialog is confirmed
+  onAnalysisIgnoreConfirmed() {
+    console.log("onAnalysisIgnoreConfirmed:");
+
+    //
+    // call api to add to ignore list (and delete the move)
+    //
+
+    // remove from the current practice lines
+    this.onAnalysisDiscard(null, false);
+
+    // close the modal
+    Modal.close(this.analysis.ignoreDialog.modal);
   }
 
   // get the repertoire
@@ -256,11 +403,13 @@ class Practice extends MyChessBoard {
           "text-gray-900"
         );
         this.buttons.repertoireType.children[i].classList.remove("bg-white");
-        this.buttons.repertoireType.children[i].classList.add("text-blue-700");
+        this.buttons.repertoireType.children[i].classList.add(
+          "text-primary-700"
+        );
         this.buttons.repertoireType.children[i].classList.add("bg-gray-50");
       } else {
         this.buttons.repertoireType.children[i].classList.remove(
-          "text-blue-700"
+          "text-primary-700"
         );
         this.buttons.repertoireType.children[i].classList.remove("bg-gray-50");
         this.buttons.repertoireType.children[i].classList.add("text-gray-900");
@@ -448,18 +597,18 @@ class Practice extends MyChessBoard {
         this.game.load(this.practice.lines[this.practice.lineIdx].fen);
         this.board.setPosition(this.game.fen());
         // update the analysis game fields
-        this.analysisGameFields.children[1].innerHTML =
+        this.analysis.fields.children[1].innerHTML =
           this.practice.lines[this.practice.lineIdx].color == "white"
             ? this.practice.lines[this.practice.lineIdx].black
             : this.practice.lines[this.practice.lineIdx].white;
-        this.analysisGameFields.children[3].innerHTML =
+        this.analysis.fields.children[3].innerHTML =
           this.practice.lines[this.practice.lineIdx].move +
           " (" +
           this.practice.lines[this.practice.lineIdx].type +
           ")";
-        this.analysisGameFields.children[5].href =
+        this.analysis.fields.children[5].href =
           this.practice.lines[this.practice.lineIdx].link;
-        this.analysisGameFields.children[5].innerHTML =
+        this.analysis.fields.children[5].innerHTML =
           this.practice.lines[this.practice.lineIdx].link;
       } else if (
         this.practice.lines[this.practice.lineIdx].line.length > 0 ||
@@ -1034,9 +1183,11 @@ class Practice extends MyChessBoard {
     this.disableMoveInput();
     this.enableMoveInput();
 
-    // show the analysis game container
+    // enable the analysis buttons
     if (this.type == "analysis") {
-      this.analysisGameContainer.classList.remove("hidden");
+      this.analysis.saveButton.disabled = false;
+      this.analysis.ignoreButton.disabled = false;
+      this.analysis.discardButton.disabled = false;
     }
 
     console.log("runPractice-5");
@@ -1070,9 +1221,9 @@ class Practice extends MyChessBoard {
   }
 
   // reduce the move count
-  reduceMoveCount() {
+  reduceMoveCount(count = 1) {
     this.containers.moveCounter.innerHTML =
-      parseInt(this.containers.moveCounter.innerHTML) - 1;
+      parseInt(this.containers.moveCounter.innerHTML) - count;
   }
 
   // add to the correct count
@@ -1271,6 +1422,11 @@ class Practice extends MyChessBoard {
     console.log("skipMove:");
     console.log("Multiple: " + this.practice.isMultiple);
 
+    // update the move counter
+    this.reduceMoveCount(
+      this.practice.lineMoves.length - this.practice.lineMovesPlayed.length
+    );
+
     // if we have multiple moves from here or this is an analysis
     if (this.practice.isMultiple) {
       // goto the next line
@@ -1280,9 +1436,6 @@ class Practice extends MyChessBoard {
       // goto the next move
       this.practice.moveIdx++;
     }
-
-    // update the move counter
-    this.reduceMoveCount();
 
     // run the next practice
     this.runPractice();
