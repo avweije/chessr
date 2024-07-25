@@ -4,6 +4,7 @@ import {
   MARKER_TYPE,
   Markers,
 } from "cm-chessboard/src/extensions/markers/Markers.js";
+import { Utils } from "./utils.js";
 import { Modal } from "./modal.js";
 
 import "../styles/chessboard.css";
@@ -20,6 +21,7 @@ import "../styles/chessboard.css";
 
 class Practice extends MyChessBoard {
   type = "all";
+  types = ["white", "black", "new", "recommended", "all", "analysis"];
 
   buttons = {
     repertoireType: null,
@@ -57,10 +59,13 @@ class Practice extends MyChessBoard {
     lineColor: "",
     lineMoves: [],
     lineMovesMultiple: [],
+    lineMovesPlayable: [],
     isMultiple: false,
     lineMovesPlayed: [],
     fenPosition: "",
     animateToPosition: true,
+    paused: false,
+    pausedFen: "",
   };
 
   hintCounter = 0;
@@ -73,10 +78,14 @@ class Practice extends MyChessBoard {
     discardButton: null,
     saveDialog: null,
     ignoreDialog: {},
+    saveDialog: {},
   };
 
   constructor() {
     super();
+
+    // show the page loader
+    Utils.showLoading();
 
     // get the board element
     var el = document.getElementById("board");
@@ -126,7 +135,7 @@ class Practice extends MyChessBoard {
     this.buttons.skipMove.addEventListener("click", this.skipMove.bind(this));
 
     // create the chess board
-    this.init(el, COLOR.white);
+    this.init(el, this.type == "black" ? COLOR.black : COLOR.white);
 
     // disable move input
     this.disableMoveInput();
@@ -134,674 +143,131 @@ class Practice extends MyChessBoard {
     // get the entire repertoire
     this.getRepertoire();
 
-    // if this are ethe analysis lines
-    if (this.type == "analysis") {
-      // get the elements
-      this.analysis.container = document.getElementById(
-        "analysisGameContainer"
-      );
-      this.analysis.fields = document.getElementById("analysisGameFields");
-      this.analysis.saveButton = document.getElementById("analysisSaveButton");
-      this.analysis.ignoreButton = document.getElementById(
-        "analysisIgnoreButton"
-      );
-      this.analysis.discardButton = document.getElementById(
-        "analysisDiscardButton"
-      );
+    // initialise the analysis elements
+    this.initAnalysis();
 
-      // get the modal elements
-      this.analysis.ignoreDialog.modal = document.getElementById("ignoreModal");
-      this.analysis.ignoreDialog.closeButton = document.getElementById(
-        "ignoreModalCloseButton"
-      );
-      this.analysis.ignoreDialog.cancelButton = document.getElementById(
-        "ignoreModalCancelButton"
-      );
-      this.analysis.ignoreDialog.confirmButton = document.getElementById(
-        "ignoreModalConfirmButton"
-      );
+    // initialise the dialogs
+    this.initDialogs();
 
-      // add the event listeners
-      this.analysis.saveButton.addEventListener(
-        "click",
-        this.onAnalysisSave.bind(this)
-      );
-      this.analysis.ignoreButton.addEventListener(
-        "click",
-        this.onAnalysisIgnore.bind(this)
-      );
-      this.analysis.discardButton.addEventListener(
-        "click",
-        this.onAnalysisDiscard.bind(this)
-      );
-
-      // register the modal
-      Modal.register(this.analysis.ignoreDialog.modal, [
-        {
-          element: this.analysis.ignoreDialog.closeButton,
-          action: "close",
-        },
-        {
-          element: this.analysis.ignoreDialog.cancelButton,
-          action: "close",
-        },
-        {
-          element: this.analysis.ignoreDialog.confirmButton,
-          action: "handler",
-          handler: this.onAnalysisIgnoreConfirmed.bind(this),
-        },
-      ]);
-    }
+    // hide the page loader
+    Utils.hideLoading();
   }
 
-  // fired when the analysis save to repertoire button is clicked
-  onAnalysisSave(event) {
-    console.log("onAnalysisSave:");
-  }
+  initAnalysis() {
+    // get the elements
+    this.analysis.container = document.getElementById("analysisGameContainer");
+    this.analysis.fields = document.getElementById("analysisGameFields");
+    this.analysis.saveButton = document.getElementById("analysisSaveButton");
+    this.analysis.ignoreButton = document.getElementById(
+      "analysisIgnoreButton"
+    );
+    this.analysis.discardButton = document.getElementById(
+      "analysisDiscardButton"
+    );
 
-  // fired when the analysis ignore button is clicked
-  onAnalysisIgnore(event) {
-    console.log("onAnalysisIgnore:");
-
-    // show the modal
-    Modal.open(this.analysis.ignoreDialog.modal);
-  }
-
-  // fired when the analysis discard button is clicked
-  onAnalysisDiscard(event, removeFromDb = true) {
-    console.log("onAnalysisDiscard:");
-    console.log(this.practice.lines[this.practice.lineIdx]);
-    console.log(this.practice);
-
-    // reduce by number of moves counter
-    var reduceBy = 0;
-    for (var i = 0; i < this.practice.lines.length; i++) {
-      // if this is the same move
-      if (
-        this.practice.lines[i].fen ==
-          this.practice.lines[this.practice.lineIdx].fen &&
-        this.practice.lines[i].move ==
-          this.practice.lines[this.practice.lineIdx].move
-      ) {
-        // increase the reduce by counter by the number of moves we're skipping
-        reduceBy =
-          reduceBy +
-          (i == this.practice.lineIdx
-            ? this.practice.lineMoves.length -
-              this.practice.lineMovesPlayed.length
-            : this.practice.lines[i].lineMoves.length);
-
-        // remove this line
-        this.practice.lines.splice(i, 1);
-        // adjust the current line index if this line comes before it
-        if (i < this.practice.lineIdx) {
-          this.practice.lineIdx = this.practice.lineIdx - 1;
-        }
-      }
-    }
-
-    // update the move counter
-    if (reduceBy > 0) {
-      this.practice.moveCount = this.practice.moveCount - reduceBy;
-      this.reduceMoveCount(reduceBy);
-    } else {
-      // proceed to the next line
-      this.practice.lineIdx++;
-      this.practice.moveIdx = 0;
-    }
-
-    // if we need to remove this move from the database
-    if (removeFromDb) {
-      //
-      // call the api to remove this move (check for multiple based on fen/move in the api)
-      //
-    }
-
-    // run the next practice
-    this.practice.animateToPosition = true;
-
-    this.runPractice();
-  }
-
-  // fired when the ignore dialog is confirmed
-  onAnalysisIgnoreConfirmed() {
-    console.log("onAnalysisIgnoreConfirmed:");
-
-    //
-    // call api to add to ignore list (and delete the move)
-    //
-
-    // remove from the current practice lines
-    this.onAnalysisDiscard(null, false);
-
-    // close the modal
-    Modal.close(this.analysis.ignoreDialog.modal);
-  }
-
-  // get the repertoire
-  getRepertoire() {
-    var url = "/api/practice";
-
-    fetch(url, {
-      method: "GET",
-    })
-      .then((res) => res.json())
-      .then((response) => {
-        console.log("Success:");
-        console.log(response);
-
-        // enable the practice
-        this.onGetRepertoire(response);
-      })
-      .catch((error) => console.error("Error:", error));
-  }
-
-  // enable the practice
-  onGetRepertoire(json) {
-    this.repertoire = json;
-    // enable the start practice button
-    this.buttons.startPractice.disabled = false;
-    // toggle the repertoire type buttons
-    this.toggleRepertoireButtons();
-
-    // get the right repertoire
-    var rep =
-      this.type == "all"
-        ? [...this.repertoire["white"], ...this.repertoire["black"]]
-        : this.repertoire[this.type];
-
-    console.log("REP [" + this.type + "]:");
-    console.log(rep);
-
-    this.practice.lines = [];
-
-    // get the practice lines
-    this.practice.moveCount = this.getPracticeLines(rep);
-
-    console.log("practiceLines: " + this.practice.moveCount);
-    console.log(this.practice.lines);
-
-    // show the counters
-    this.showCounters(this.practice.moveCount);
-  }
-
-  // add event listeners to the repertoire type buttons
-  initRepertoireButtons() {
-    this.buttons.repertoireType.children[0].addEventListener(
+    // add the event listeners
+    this.analysis.saveButton.addEventListener(
       "click",
-      (event) => {
-        window.location.href = "/practice/white";
-      }
+      this.onAnalysisSave.bind(this)
     );
-    this.buttons.repertoireType.children[1].addEventListener(
+    this.analysis.ignoreButton.addEventListener(
       "click",
-      (event) => {
-        window.location.href = "/practice/black";
-      }
+      this.onAnalysisIgnore.bind(this)
     );
-    this.buttons.repertoireType.children[2].addEventListener(
+    this.analysis.discardButton.addEventListener(
       "click",
-      (event) => {
-        window.location.href = "/practice/new";
-      }
-    );
-    this.buttons.repertoireType.children[3].addEventListener(
-      "click",
-      (event) => {
-        window.location.href = "/practice/recommended";
-      }
-    );
-    this.buttons.repertoireType.children[4].addEventListener(
-      "click",
-      (event) => {
-        window.location.href = "/practice";
-      }
-    );
-    this.buttons.repertoireType.children[5].addEventListener(
-      "click",
-      (event) => {
-        window.location.href = "/practice/analysis";
-      }
+      this.onAnalysisDiscard.bind(this)
     );
   }
 
-  // toggle the repertoire type buttons
-  toggleRepertoireButtons() {
-    // toggle the repertoire type buttons
-    this.buttons.repertoireType.children[0].disabled =
-      this.repertoire.white.length == 0;
-    this.buttons.repertoireType.children[1].disabled =
-      this.repertoire.black.length == 0;
-    this.buttons.repertoireType.children[2].disabled =
-      this.repertoire.new.length == 0;
-    this.buttons.repertoireType.children[3].disabled =
-      this.repertoire.recommended.length == 0;
-    this.buttons.repertoireType.children[4].disabled =
-      this.repertoire.white.length == 0 && this.repertoire.black.length == 0;
-    this.buttons.repertoireType.children[5].disabled =
-      this.repertoire.analysis.length == 0;
-
-    // select the right type
-    var idx = [
-      "white",
-      "black",
-      "new",
-      "recommended",
-      "all",
-      "analysis",
-    ].indexOf(this.type);
-    // set to "all" if there are no practice lines for this type
-    if (idx == -1 || this.buttons.repertoireType.children[idx].disabled) {
-      idx = 0;
-      this.type = "all";
-    }
-
-    // show the current type
-    for (var i = 0; i < 6; i++) {
-      if (i == idx) {
-        this.buttons.repertoireType.children[i].classList.remove(
-          "text-gray-900"
-        );
-        this.buttons.repertoireType.children[i].classList.remove("bg-white");
-        this.buttons.repertoireType.children[i].classList.add(
-          "text-primary-700"
-        );
-        this.buttons.repertoireType.children[i].classList.add("bg-gray-50");
-      } else {
-        this.buttons.repertoireType.children[i].classList.remove(
-          "text-primary-700"
-        );
-        this.buttons.repertoireType.children[i].classList.remove("bg-gray-50");
-        this.buttons.repertoireType.children[i].classList.add("text-gray-900");
-        this.buttons.repertoireType.children[i].classList.add("bg-white");
-      }
-    }
-  }
-
-  // save move counters
-  saveMoveCounters(moves) {
-    console.log("saveMoveCounters:");
-    console.log(moves);
-  }
-
-  // split the repertoire into practice lines
-  getPracticeLines(
-    lines,
-    color = "",
-    lineMoves = [],
-    add = true,
-    isVariation = false,
-    depth = 0
-  ) {
-    // keep track of how many moves there are for us
-    var ourMoveTotal = 0;
-
-    for (var i = 0; i < lines.length; i++) {
-      // if a color is given
-      if (color != "") {
-        lines[i].color = color;
-        lines[i].line = lineMoves;
-      } else {
-        lineMoves = lines[i].line;
-      }
-
-      // is this our move or not
-      //var ourMove =
-      //(lines[i].color == "white" && depth % 2 == 0) ||
-      //(lines[i].color == "black" && depth % 2 == 1);
-      var ourMove = depth % 2 == 0;
-
-      // the total moves for this line
-      //var lineMoveTotal = ourMove ? this.type == "analysis" ? 1 : lines[i].moves.length : 0;
-      var lineMoveTotal = ourMove ? lines[i].moves.length : 0;
-
-      // if we need to add this line
-      if (add) {
-        // if this is a variation
-        if (isVariation) {
-          lines[i].variation = true;
-        }
-        // add the practice line
-        this.practice.lines.push(lines[i]);
-      }
-
-      // if this line has moves that follow
-      if (this.type != "analysis" && lines[i].moves.length > 0) {
-        // add this move to the line moves array
-        var line = lineMoves.slice(0);
-        if (lines[i].move) {
-          line.push(lines[i].move);
-        }
-
-        // get the practice lines
-        var sub = this.getPracticeLines(
-          lines[i].moves,
-          lines[i].color != "" ? lines[i].color : color,
-          line,
-          lines[i].moves.length > 1,
-          true,
-          depth + 1
-        );
-
-        // if these are not split lines, include the total our moves
-        if (lines[i].moves.length == 1) {
-          lineMoveTotal += sub;
-        } else {
-          ourMoveTotal += sub;
-        }
-      }
-
-      lines[i]["ourMoves"] = lineMoveTotal;
-
-      ourMoveTotal += lineMoveTotal;
-    }
-
-    return ourMoveTotal;
-  }
-
-  // run the practice
-  async runPractice() {
-    console.log(
-      "run practice: " + this.practice.lineIdx + " / " + this.practice.moveIdx
+  initDialogs() {
+    // get the save modal elements
+    this.analysis.saveDialog.modal = document.getElementById("saveModal");
+    this.analysis.saveDialog.closeButton = document.getElementById(
+      "saveModalCloseButton"
+    );
+    this.analysis.saveDialog.cancelButton = document.getElementById(
+      "saveModalCancelButton"
+    );
+    this.analysis.saveDialog.confirmButton = document.getElementById(
+      "saveModalConfirmButton"
     );
 
-    //
-    if (this.practice.lineIdx >= this.practice.lines.length) {
-      // update the status
-      this.showInfo("You completed all the lines in this repertoire.");
-      // disable move input
-      this.disableMoveInput();
-
-      // toggle the buttons
-      this.buttons.startPractice.disabled = false;
-      this.buttons.startPractice.classList.remove("hidden");
-      this.buttons.startPractice.innerHTML = "Start again";
-      this.buttons.giveHint.disabled = true;
-      this.buttons.giveHint.classList.add("hidden");
-      this.buttons.skipMove.disabled = true;
-      this.buttons.skipMove.classList.add("hidden");
-
-      return;
-    }
-
-    // hide the status message
-    //this.hideStatus();
-
-    console.log(this.practice.lines[this.practice.lineIdx]);
-
-    // if the line color changed, we need to reset the board
-    var colorChanged =
-      this.practice.lineColor !=
-      this.practice.lines[this.practice.lineIdx].color;
-
-    // get the line color
-    this.practice.lineColor = this.practice.lines[this.practice.lineIdx].color;
-
-    // get the next moves
-    var [moves, multiple] = this.getMoves();
-
-    console.log("moves:");
-    console.log(moves);
-    console.log(multiple);
-
-    // if no more moves or next move for analysis line..
-    if (
-      moves.length == 0 ||
-      (this.type == "analysis" && this.practice.moveIdx > 0)
-    ) {
-      // move onto next line..
-      this.practice.lineIdx++;
-      this.practice.moveIdx = 0;
-
-      this.practice.animateToPosition = true;
-
-      console.log("runPractice-1");
-
-      this.runPractice();
-
-      return;
-    }
-
-    // set the practice line vars
-    this.practice.isMultiple = moves.length > 1;
-    this.practice.lineMoves = moves;
-    this.practice.lineMovesMultiple = multiple;
-    this.practice.lineMovesPlayed = [];
-    this.practice.failedCount = 0;
-    // reset the hint counter
-    this.hintCounter = 0;
-
-    // if this is the 1st move in the line
-    if (this.practice.moveIdx == 0) {
-      console.log(
-        "animate to starting position of line: " +
-          this.practice.animateToPosition
-      );
-
-      console.log(this.practice.lines[this.practice.lineIdx]);
-
-      // set the orientation of the board
-      var orient =
-        this.practice.lineColor == "white" ? COLOR.white : COLOR.black;
-      if (this.board.getOrientation() != orient) {
-        this.board.setOrientation(orient);
-      }
-
-      // load the PGN
-      //this.game.loadPgn(pgn);
-
-      // if this is an analysis line
-      if (this.type == "analysis") {
-        // set the starting position for this line
-        this.game.reset();
-        this.game.load(this.practice.lines[this.practice.lineIdx].fen);
-        this.board.setPosition(this.game.fen());
-        // update the analysis game fields
-        this.analysis.fields.children[1].innerHTML =
-          this.practice.lines[this.practice.lineIdx].color == "white"
-            ? this.practice.lines[this.practice.lineIdx].black
-            : this.practice.lines[this.practice.lineIdx].white;
-        this.analysis.fields.children[3].innerHTML =
-          this.practice.lines[this.practice.lineIdx].move +
-          " (" +
-          this.practice.lines[this.practice.lineIdx].type +
-          ")";
-        this.analysis.fields.children[5].href =
-          this.practice.lines[this.practice.lineIdx].link;
-        this.analysis.fields.children[5].innerHTML =
-          this.practice.lines[this.practice.lineIdx].link;
-      } else if (
-        this.practice.lines[this.practice.lineIdx].line.length > 0 ||
-        this.practice.lines[this.practice.lineIdx].variation
-      ) {
-        // if we have moves to make to get to this line
-        if (this.practice.animateToPosition) {
-          // reset the game & board
-          this.game.reset();
-          this.board.setPosition(this.game.fen());
-
-          for (
-            var i = 0;
-            i < this.practice.lines[this.practice.lineIdx].line.length;
-            i++
-          ) {
-            this.game.move(this.practice.lines[this.practice.lineIdx].line[i]);
-          }
-
-          // if this line is a variation
-          if (this.practice.lines[this.practice.lineIdx].variation) {
-            // make the 1st move of the variation, that was the point we left off
-            this.game.move(this.practice.lines[this.practice.lineIdx].move);
-          }
-
-          // so we can get the moves
-          var history = this.game.history({ verbose: true });
-
-          console.log("history moves:");
-          console.log(history);
-          console.log(this.practice.lineIdx, this.practice.moveIdx);
-
-          // disable board move input
-          this.disableMoveInput();
-
-          // animate to this position
-          await this.animateMoves(history);
-
-          console.log("animate done..");
-          console.log(this.practice.lineIdx, this.practice.moveIdx);
-
-          // enable board move input
-          this.enableMoveInput();
-        } else {
-          /*
-
-          New: make the move here? only if autoMove ?
-
-          */
-
-          // if this line is a variation
-          if (this.practice.lines[this.practice.lineIdx].variation) {
-            // make the 1st move of the variation, that was the point we left off
-            this.game.move(this.practice.lines[this.practice.lineIdx].move);
-            // get the last move
-            var last = this.game.history({ verbose: true }).pop();
-
-            // animate the move
-            this.board.movePiece(last.from, last.to, true);
-          }
-        }
-      } else if (colorChanged) {
-        // reset the game & board
-        this.game.reset();
-        this.board.setPosition(this.game.fen());
-      }
-
-      // highlight last move
-      //if (moves.length > 1) {
-      //this.board.removeMarkers();
-      //this.board.addMarker(MARKER_TYPE.square, moves[moves.length - 2].to);
-      //}
-    }
-
-    // if this is an analysis line
-    if (this.type == "analysis") {
-      // make the move that was played (the mistake)
-      this.game.move(this.practice.lines[this.practice.lineIdx].move);
-      // get the last move
-      var last = this.game.history({ verbose: true }).pop();
-      // undo the move
-      this.game.undo();
-      // mark the move that was played
-      this.board.removeMarkers();
-      this.board.addMarker(MARKER_TYPE.square, last.from);
-      this.board.addMarker(MARKER_TYPE.square, last.to);
-    }
-
-    // if we have multiple moves
-    if (moves.length > 1 || multiple.length > 1) {
-      // update the status
-      if (moves.length < multiple.length) {
-        this.showInfo(
-          "You have " +
-            (multiple.length - moves.length) +
-            " more move" +
-            (multiple.length - moves.length > 1 ? "s" : "") +
-            " in your repertoire here."
-        );
-      } else {
-        // update the status
-        if (this.type == "analysis") {
-          this.showInfo(
-            "You played the move <b>" +
-              this.practice.lines[this.practice.lineIdx].move +
-              "</b>, which is " +
-              (this.practice.lines[this.practice.lineIdx].type == "inaccuracy"
-                ? "an"
-                : "a") +
-              " " +
-              this.practice.lines[this.practice.lineIdx].type +
-              ". There are " +
-              moves.length +
-              " good moves here."
-          );
-        } else {
-          this.showInfo(
-            "You have " + moves.length + " moves in your repertoire here."
-          );
-        }
-      }
-
-      // show the played moves container
-      this.showPlayedMoves(multiple.length);
-
-      // if we need to add moves to already played moves
-      if (moves.length < multiple.length) {
-        for (var i = 0; i < multiple.length; i++) {
-          if (!moves.includes(multiple[i])) {
-            // add the move to the played moves list
-            this.setPlayedMove(
-              this.practice.lineMovesPlayed.length,
-              multiple[i]
-            );
-            this.practice.lineMovesPlayed.push(multiple[i]);
-          }
-        }
-      }
-
-      // remember the current FEN position
-      this.practice.fenPosition = this.game.fen();
-    } else {
-      // update the status
-      if (this.type == "analysis") {
-        this.showInfo(
-          "You played the move <b>" +
-            this.practice.lines[this.practice.lineIdx].move +
-            "</b>, which is " +
-            (this.practice.lines[this.practice.lineIdx].type == "inaccuracy"
-              ? "an"
-              : "a") +
-            " " +
-            this.practice.lines[this.practice.lineIdx].type +
-            ". Try to find the best move."
-        );
-      } else {
-        this.showInfo("Play the move that's in your repertoire.");
-      }
-
-      // hide the played moves
-      this.hidePlayedMoves();
-    }
-
-    // wait on the next move
-    this.waitOnMove();
-  }
-
-  // get the moves for a certain line/move
-  getMoves() {
-    var moves = [];
-
-    console.log(
-      "getMoves: " + this.practice.lineIdx + " / " + this.practice.moveIdx
+    this.analysis.saveDialog.textOneMove = document.getElementById(
+      "saveModalTextOneMove"
     );
-    console.log(this.type);
-    console.log(this.practice.lines[this.practice.lineIdx]);
+    this.analysis.saveDialog.textMultipleMoves = document.getElementById(
+      "saveModalTextMultipleMoves"
+    );
+    this.analysis.saveDialog.movesList =
+      document.getElementById("saveModalMovesList");
 
-    var temp = this.practice.lines[this.practice.lineIdx];
-    if (this.type != "analysis") {
-      for (var i = 0; i < this.practice.moveIdx; i++) {
-        temp = temp.moves[0];
-      }
-    }
+    this.analysis.saveDialog.radioTopMove = document.getElementById(
+      "saveModalRadioTopMove"
+    );
+    this.analysis.saveDialog.radioTop2 =
+      document.getElementById("saveModalRadioTop2");
+    this.analysis.saveDialog.radioTop3 =
+      document.getElementById("saveModalRadioTop3");
 
-    for (var i = 0; i < temp.moves.length; i++) {
-      moves.push(temp.moves[i]["move"]);
-    }
+    // register the modal
+    Modal.register(this.analysis.saveDialog.modal, [
+      {
+        element: this.analysis.saveDialog.closeButton,
+        action: "close",
+      },
+      {
+        element: this.analysis.saveDialog.cancelButton,
+        action: "close",
+      },
+      {
+        element: this.analysis.saveDialog.confirmButton,
+        action: "handler",
+        handler: this.onAnalysisSaveConfirmed.bind(this),
+      },
+    ]);
 
-    return [moves, temp.multiple];
+    // get the ignore modal elements
+    this.analysis.ignoreDialog.modal = document.getElementById("ignoreModal");
+    this.analysis.ignoreDialog.closeButton = document.getElementById(
+      "ignoreModalCloseButton"
+    );
+    this.analysis.ignoreDialog.cancelButton = document.getElementById(
+      "ignoreModalCancelButton"
+    );
+    this.analysis.ignoreDialog.confirmButton = document.getElementById(
+      "ignoreModalConfirmButton"
+    );
+
+    // register the modal
+    Modal.register(this.analysis.ignoreDialog.modal, [
+      {
+        element: this.analysis.ignoreDialog.closeButton,
+        action: "close",
+      },
+      {
+        element: this.analysis.ignoreDialog.cancelButton,
+        action: "close",
+      },
+      {
+        element: this.analysis.ignoreDialog.confirmButton,
+        action: "handler",
+        handler: this.onAnalysisIgnoreConfirmed.bind(this),
+      },
+    ]);
   }
+
+  /**
+   * chessboard.js event handlers
+   */
 
   afterMove(move) {
     try {
+      // if practice is paused..
+      if (this.practice.paused) {
+        return true;
+      }
+
       // get the last move as SAN code
       this.lastMove = this.game.history({ verbose: true }).pop().san;
 
@@ -850,6 +316,7 @@ class Practice extends MyChessBoard {
           } else {
             // add the move
             failed.push({
+              color: this.practice.lineColor,
               fen: fen,
               move: this.practice.lineMoves[0],
               failed: 1,
@@ -896,12 +363,1203 @@ class Practice extends MyChessBoard {
     }
   }
 
+  /**
+   * Analysis functions.
+   * - showAnalysis
+   * - hideAnalysis
+   * - onAnalysisSave
+   * - onAnalysisSaveConfirmed
+   * - onAnalysisIgnore
+   * - onAnalysisIgnoreConfirmed
+   * - onAnalysisDiscard
+   * - analysisFieldsUpdate
+   */
+
+  showAnalysis() {
+    // show the analysis container
+    this.analysis.container.classList.remove("hidden");
+    // enable the buttons
+    this.analysis.saveButton.disabled = false;
+    this.analysis.ignoreButton.disabled = false;
+    this.analysis.discardButton.disabled = false;
+  }
+
+  hideAnalysis() {
+    // hide the analysis container
+    this.analysis.container.classList.add("hidden");
+    // disable the buttons
+    this.analysis.saveButton.disabled = true;
+    this.analysis.ignoreButton.disabled = true;
+    this.analysis.discardButton.disabled = true;
+  }
+
+  // fired when the analysis save to repertoire button is clicked
+  onAnalysisSave(event) {
+    console.log("onAnalysisSave:");
+    console.log(this.practice.lines[this.practice.lineIdx]);
+
+    // configure the save dialog
+    switch (this.practice.lines[this.practice.lineIdx].moves.length) {
+      case 1:
+        this.analysis.saveDialog.textOneMove.classList.remove("hidden");
+        this.analysis.saveDialog.textMultipleMoves.classList.add("hidden");
+        this.analysis.saveDialog.movesList.classList.add("hidden");
+        this.analysis.saveDialog.movesList.classList.add("sm:hidden");
+        break;
+      case 2:
+        this.analysis.saveDialog.textOneMove.classList.add("hidden");
+        this.analysis.saveDialog.textMultipleMoves.classList.remove("hidden");
+        this.analysis.saveDialog.movesList.classList.remove("hidden");
+        this.analysis.saveDialog.movesList.classList.remove("sm:hidden");
+        this.analysis.saveDialog.radioTop2.parentNode.parentNode.classList.remove(
+          "hidden"
+        );
+        this.analysis.saveDialog.radioTop3.parentNode.parentNode.classList.add(
+          "hidden"
+        );
+        break;
+      case 3:
+        this.analysis.saveDialog.textOneMove.classList.add("hidden");
+        this.analysis.saveDialog.textMultipleMoves.classList.remove("hidden");
+        this.analysis.saveDialog.movesList.classList.remove("hidden");
+        this.analysis.saveDialog.movesList.classList.remove("sm:hidden");
+        this.analysis.saveDialog.radioTop2.parentNode.parentNode.classList.remove(
+          "hidden"
+        );
+        this.analysis.saveDialog.radioTop3.parentNode.parentNode.classList.remove(
+          "hidden"
+        );
+        break;
+    }
+
+    this.analysis.saveDialog.radioTopMove.checked = true;
+
+    // show the modal
+    Modal.open(this.analysis.saveDialog.modal);
+  }
+
+  // fired when the save dialog is confirmed
+  onAnalysisSaveConfirmed() {
+    console.log("onAnalysisSaveConfirmed:");
+    console.log(this.practice.lines[this.practice.lineIdx]);
+
+    // get the moves
+    var pgn = "";
+    var moves = this.historyWithCorrectFen();
+    for (var i = 0; i < moves.length; i++) {
+      if (i % 2 == 0) {
+        pgn += i / 2 + 1 + ". ";
+      }
+      pgn += moves[i]["san"];
+
+      moves[i]["pgn"] = pgn;
+      moves[i]["autoplay"] = true;
+
+      pgn += " ";
+    }
+
+    // add the engine moves
+    var addIf = [
+      true,
+      this.analysis.saveDialog.radioTop2.checked ||
+        this.analysis.saveDialog.radioTop3.checked,
+      this.analysis.saveDialog.radioTop3.checked,
+    ];
+    var engineMoves = [];
+    for (
+      var i = 0;
+      i < this.practice.lines[this.practice.lineIdx].moves.length;
+      i++
+    ) {
+      // if we need to add this move
+      if (addIf[i]) {
+        // make the move
+        this.game.move(
+          this.practice.lines[this.practice.lineIdx].moves[i].move
+        );
+        // get the move details
+        var last = this.historyWithCorrectFen().pop();
+        // set the PGN value
+        last["pgn"] = pgn + last["san"];
+        // add to the engine moves array
+        engineMoves.push(last);
+        // undo the move
+        this.game.undo();
+      }
+    }
+
+    console.log("Moves:");
+    console.log(engineMoves);
+
+    // add the engine moves
+    moves.push({ moves: engineMoves });
+
+    // set the API url
+    var url = "/api/analysis/save";
+
+    // set the data object
+    var data = {
+      color: this.practice.lines[this.practice.lineIdx].color,
+      initialFen: this.practice.lines[this.practice.lineIdx].initialFen,
+      fen: this.practice.lines[this.practice.lineIdx].fen,
+      move: this.practice.lines[this.practice.lineIdx].move,
+      moves: moves,
+    };
+
+    console.log(data);
+
+    // delete the analysis move
+    fetch(url, {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((res) => res.json())
+      .then((response) => {
+        console.log("Success:");
+        console.log(response);
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
+
+    // remove from the current practice lines
+    this.onAnalysisDiscard(null, false);
+
+    // close the modal
+    Modal.close(this.analysis.saveDialog.modal);
+  }
+
+  // fired when the analysis ignore button is clicked
+  onAnalysisIgnore(event) {
+    console.log("onAnalysisIgnore:");
+
+    // show the modal
+    Modal.open(this.analysis.ignoreDialog.modal);
+  }
+
+  // fired when the ignore dialog is confirmed
+  onAnalysisIgnoreConfirmed() {
+    console.log("onAnalysisIgnoreConfirmed:");
+
+    // set the API url
+    var url = "/api/analysis/ignore";
+    // set the data
+    var data = {
+      fen: this.practice.lines[this.practice.lineIdx].fen,
+      move: this.practice.lines[this.practice.lineIdx].move,
+    };
+
+    // delete the analysis move
+    fetch(url, {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((res) => res.json())
+      .then((response) => {
+        console.log("Success:");
+        console.log(response);
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
+
+    // remove from the current practice lines
+    this.onAnalysisDiscard(null, false);
+
+    // close the modal
+    Modal.close(this.analysis.ignoreDialog.modal);
+  }
+
+  // fired when the analysis discard button is clicked
+  onAnalysisDiscard(event, removeFromDb = true) {
+    // if we need to remove this move from the database
+    if (removeFromDb) {
+      // set the API url
+      var url = "/api/analysis";
+      // set the data
+      var data = {
+        fen: this.practice.lines[this.practice.lineIdx].fen,
+        move: this.practice.lines[this.practice.lineIdx].move,
+      };
+
+      // delete the analysis move
+      fetch(url, {
+        method: "DELETE",
+        body: JSON.stringify(data),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((res) => res.json())
+        .then((response) => {
+          console.log("Success:");
+          console.log(response);
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+        });
+    }
+
+    console.log(
+      "onDiscard: " + this.practice.lineIdx + " / " + this.practice.moveIdx
+    );
+
+    // reduce by number of moves counter
+    var reduceBy = 0;
+    for (var i = 0; i < this.practice.lines.length; i++) {
+      // if this is the same move
+      if (
+        this.practice.lines[i].fen ==
+          this.practice.lines[this.practice.lineIdx].fen &&
+        this.practice.lines[i].move ==
+          this.practice.lines[this.practice.lineIdx].move
+      ) {
+        // increase the reduce by counter by the number of moves we're skipping
+        reduceBy =
+          reduceBy +
+          (i == this.practice.lineIdx
+            ? this.practice.lineMoves.length -
+              this.practice.lineMovesPlayed.length
+            : this.practice.lines[i].lineMoves.length);
+
+        // remove this line
+        this.practice.lines.splice(i, 1);
+        // adjust the current line index if this line comes before it
+        if (i < this.practice.lineIdx) {
+          this.practice.lineIdx = this.practice.lineIdx - 1;
+        }
+      }
+    }
+
+    console.log("reduceBy: " + reduceBy);
+
+    // update the move counter
+    if (reduceBy > 0) {
+      this.practice.moveCount = this.practice.moveCount - reduceBy;
+      this.reduceMoveCount(reduceBy);
+    }
+
+    // proceed to the 1st move of the next line (current line was removed, so no need to increase line index)
+    this.practice.moveIdx = 0;
+
+    // animate to the next position
+    this.practice.animateToPosition = true;
+
+    // continue the practice
+    this.continuePractice(false);
+  }
+
+  // update the analysis game fields
+  analysisFieldsUpdate() {
+    // set the opponent name
+    this.analysis.fields.children[1].innerHTML =
+      this.practice.lines[this.practice.lineIdx].color == "white"
+        ? this.practice.lines[this.practice.lineIdx].black
+        : this.practice.lines[this.practice.lineIdx].white;
+    // set the move that was played
+    this.analysis.fields.children[3].innerHTML =
+      this.practice.lines[this.practice.lineIdx].move +
+      " (" +
+      this.practice.lines[this.practice.lineIdx].type +
+      ")";
+    // set the game link
+    this.analysis.fields.children[7].href =
+      this.practice.lines[this.practice.lineIdx].link;
+    this.analysis.fields.children[7].innerHTML =
+      this.practice.lines[this.practice.lineIdx].link;
+
+    // if we have an initial fen
+    if (
+      this.practice.lines[this.practice.lineIdx].initialFen &&
+      this.practice.lines[this.practice.lineIdx].initialFen != ""
+    ) {
+      // show the initial fen fields
+      this.analysis.fields.children[4].classList.remove("hidden");
+      this.analysis.fields.children[5].classList.remove("hidden");
+
+      // set the initial fen
+      this.analysis.fields.children[5].innerHTML =
+        this.practice.lines[this.practice.lineIdx].initialFen;
+    } else {
+      // hide the initial fen fields
+      this.analysis.fields.children[4].classList.add("hidden");
+      this.analysis.fields.children[5].classList.add("hidden");
+    }
+  }
+
+  /**
+   * Practice handling functions.
+   * - onMoveFinished
+   * - pausePractice
+   * - continuePractice
+   * - gotoNextMove
+   * - gotoNextLine
+   * - onFinishPractice
+   */
+
+  /**
+   * Called once a move is finished. If there is only 1 move for a position, it's called after that move
+   * is played correctly. If there are multiple correct moves for this position, this function is called once
+   * all those moves have been played correctly.
+   *
+   * Here you decide what to do next:
+   * - goto the next move (or line)
+   * - pause until the user says to continue
+   * - etc
+   *
+   * @memberof Practice
+   */
+  onMoveFinished(action = "pause") {
+    // if this is an analysis line
+    if (this.type == "analysis") {
+      // wait before proceeding to the next line
+      action = "wait";
+
+      // remember the current position
+      this.practice.pausedFen = this.game.fen();
+
+      // undo the current move after a short pause (unless the user already continued)
+      this.pauseBoard(() => {
+        // if still paused
+        if (this.practice.paused) {
+          // if we still have the last position
+          //if (this.practice.pausedFen == this.game.fen()) {
+          // undo the last move
+          //this.game.undo();
+          //this.board.setPosition(this.game.fen());
+          //}
+          // remove markers
+          this.board.removeMarkers();
+        }
+      });
+    }
+
+    switch (action) {
+      case "continue":
+        // continue the practice
+        this.continuePractice();
+        break;
+      case "wait":
+        // wait for user interaction before continueing
+        this.pausePractice();
+        break;
+      default:
+        // pause for a moment before continueing
+        this.pauseBoard(() => {
+          // continue the practice
+          this.continuePractice();
+        }, 1500);
+        break;
+    }
+  }
+
+  // pause the practice
+  pausePractice() {
+    this.practice.paused = true;
+
+    // set the skip move button text
+    this.buttons.skipMove.innerHTML = "Continue";
+  }
+
+  // continue the practice
+  continuePractice(gotoNext = true) {
+    // if practice was paused
+    if (this.practice.paused) {
+      // set the skip move button text
+      this.buttons.skipMove.innerHTML = "Skip this move";
+    }
+
+    this.practice.paused = false;
+
+    // hide the played moves list
+    this.hidePlayedMoves();
+    // remove markers
+    this.board.removeMarkers();
+
+    console.log("continuePractice: gotoNext = " + gotoNext);
+    console.log(
+      "line, move: " + this.practice.lineIdx + " / " + this.practice.moveIdx
+    );
+
+    // goto the next move or line
+    if (gotoNext) {
+      if (this.practice.isMultiple) {
+        this.gotoNextLine(true);
+      } else {
+        this.gotoNextMove(true);
+      }
+    } else {
+      this.runPractice();
+    }
+  }
+
+  // goto the next move
+  gotoNextMove(animate = this.practice.animateToPosition) {
+    // goto the next move
+    this.practice.moveIdx++;
+
+    console.log("gotoNextMove: " + this.practice.moveIdx);
+
+    this.practice.animateToPosition = animate;
+
+    this.runPractice();
+  }
+
+  // goto the next line
+  gotoNextLine(animate = this.practice.animateToPosition) {
+    // goto the next line
+    this.practice.lineIdx++;
+    this.practice.moveIdx = 0;
+
+    console.log(
+      "gotoNextLine: " +
+        this.practice.lineIdx +
+        " / " +
+        this.practice.moveIdx +
+        " -- animate: " +
+        animate
+    );
+
+    this.practice.animateToPosition = animate;
+
+    this.runPractice();
+  }
+
+  // called when a practice is finished, all moves played
+  // show info ? toggle buttons, etc..
+  onFinishPractice() {}
+
+  /**
+   * Repertoire functions:
+   * - getRepertoire
+   * - onGetRepertoire
+   * - showRepertoireType
+   * - initRepertoireButtons
+   * - toggleRepertoireButtons
+   */
+
+  // get the repertoire
+  getRepertoire() {
+    var url = "/api/practice";
+
+    // show the page loader
+    Utils.showLoading();
+
+    fetch(url, {
+      method: "GET",
+    })
+      .then((res) => res.json())
+      .then((response) => {
+        console.log("Success:");
+        console.log(response);
+
+        // enable the practice
+        this.onGetRepertoire(response);
+      })
+      .catch((error) => console.error("Error:", error))
+      .finally(() => {
+        // hide the page loader
+        Utils.hideLoading();
+      });
+  }
+
+  // enable the practice
+  onGetRepertoire(json) {
+    this.repertoire = json;
+    // enable the start practice button
+    this.buttons.startPractice.disabled = false;
+
+    // get the number of moves (ours) for the different repertoires
+    var moveCounts = ["", "", 0, 0, "", 0];
+    this.practice.lines = [];
+    moveCounts[2] = this.getPracticeLines("new", this.repertoire["new"]);
+    this.practice.lines = [];
+    moveCounts[3] = this.getPracticeLines(
+      "recommended",
+      this.repertoire["recommended"]
+    );
+    this.practice.lines = [];
+    moveCounts[5] = this.getPracticeLines(
+      "analysis",
+      this.repertoire["analysis"]
+    );
+    /*
+    for (var i = 0; i < this.types.length; i++) {
+      this.practice.lines = [];
+      moveCounts[i] = this.getPracticeLines(
+        this.types[i],
+        this.types[i] == "all"
+          ? [...this.repertoire["white"], ...this.repertoire["black"]]
+          : this.repertoire[this.types[i]]
+      );
+    }
+      */
+
+    // toggle the repertoire type buttons
+    this.toggleRepertoireButtons(moveCounts);
+
+    // get the right repertoire
+    var rep =
+      this.type == "all"
+        ? [...this.repertoire["white"], ...this.repertoire["black"]]
+        : this.repertoire[this.type];
+
+    console.log("REP [" + this.type + "]:");
+    console.log(rep);
+
+    this.practice.lines = [];
+
+    // get the practice lines
+    this.practice.moveCount = this.getPracticeLines(this.type, rep);
+
+    console.log("practiceLines: " + this.practice.moveCount);
+    console.log(this.practice.lines);
+
+    // show the counters
+    this.showCounters(this.practice.moveCount);
+  }
+
+  // show a different repertoire type
+  showRepertoireType(type) {
+    // stop the current practice
+    this.stopPractice();
+    // set the type
+    this.type = type;
+    // reset the board
+    this.game.reset();
+    this.board.setPosition(this.game.fen());
+    // set the orientation
+    var orient = this.type == "black" ? COLOR.black : COLOR.white;
+    if (this.board.getOrientation() != orient) {
+      this.board.setOrientation(orient);
+    }
+
+    // disable move input
+    this.disableMoveInput();
+
+    // refresh the repertoire
+    this.getRepertoire();
+  }
+
+  // add event listeners to the repertoire type buttons
+  initRepertoireButtons() {
+    this.buttons.repertoireType.children[0].addEventListener(
+      "click",
+      (event) => {
+        this.showRepertoireType("white");
+      }
+    );
+    this.buttons.repertoireType.children[1].addEventListener(
+      "click",
+      (event) => {
+        this.showRepertoireType("black");
+      }
+    );
+    this.buttons.repertoireType.children[2].addEventListener(
+      "click",
+      (event) => {
+        this.showRepertoireType("new");
+      }
+    );
+    this.buttons.repertoireType.children[3].addEventListener(
+      "click",
+      (event) => {
+        this.showRepertoireType("recommended");
+      }
+    );
+    this.buttons.repertoireType.children[4].addEventListener(
+      "click",
+      (event) => {
+        this.showRepertoireType("all");
+      }
+    );
+    this.buttons.repertoireType.children[5].addEventListener(
+      "click",
+      (event) => {
+        this.showRepertoireType("analysis");
+      }
+    );
+  }
+
+  // toggle the repertoire type buttons
+  toggleRepertoireButtons(moveCounts) {
+    // toggle the repertoire type buttons
+    this.buttons.repertoireType.children[0].disabled =
+      this.repertoire.white.length == 0;
+    this.buttons.repertoireType.children[1].disabled =
+      this.repertoire.black.length == 0;
+    this.buttons.repertoireType.children[2].disabled =
+      this.repertoire.new.length == 0;
+    this.buttons.repertoireType.children[3].disabled =
+      this.repertoire.recommended.length == 0;
+    this.buttons.repertoireType.children[4].disabled =
+      this.repertoire.white.length == 0 && this.repertoire.black.length == 0;
+    this.buttons.repertoireType.children[5].disabled =
+      this.repertoire.analysis.length == 0;
+
+    this.buttons.repertoireType.children[2].children[0].innerHTML =
+      moveCounts[2];
+    this.buttons.repertoireType.children[3].children[0].innerHTML =
+      moveCounts[3];
+    this.buttons.repertoireType.children[5].children[0].innerHTML =
+      moveCounts[5];
+
+    // select the right type
+    var idx = this.types.indexOf(this.type);
+    // set to "all" if there are no practice lines for this type
+    if (idx == -1 || this.buttons.repertoireType.children[idx].disabled) {
+      this.type = "all";
+      idx = this.types.indexOf(this.type);
+    }
+
+    // show the current type
+    for (var i = 0; i < 6; i++) {
+      if (i == idx) {
+        this.buttons.repertoireType.children[i].classList.remove(
+          "text-gray-900"
+        );
+        this.buttons.repertoireType.children[i].classList.remove("bg-white");
+        this.buttons.repertoireType.children[i].classList.add(
+          "text-primary-700"
+        );
+        this.buttons.repertoireType.children[i].classList.add("bg-gray-50");
+      } else {
+        this.buttons.repertoireType.children[i].classList.remove(
+          "text-primary-700"
+        );
+        this.buttons.repertoireType.children[i].classList.remove("bg-gray-50");
+        this.buttons.repertoireType.children[i].classList.add("text-gray-900");
+        this.buttons.repertoireType.children[i].classList.add("bg-white");
+      }
+    }
+  }
+
+  // split the repertoire into practice lines
+  getPracticeLines(
+    type,
+    lines,
+    color = "",
+    lineMoves = [],
+    add = true,
+    isVariation = false,
+    depth = 0
+  ) {
+    // keep track of how many moves there are for us
+    var ourMoveTotal = 0;
+
+    for (var i = 0; i < lines.length; i++) {
+      // if a color is given
+      if (color != "") {
+        lines[i].color = color;
+        lines[i].line = lineMoves;
+      } else {
+        lineMoves = lines[i].line;
+      }
+
+      // is this our move or not
+      //var ourMove =
+      //(lines[i].color == "white" && depth % 2 == 0) ||
+      //(lines[i].color == "black" && depth % 2 == 1);
+      var ourMove = depth % 2 == 0;
+
+      var playableCnt = 0;
+      if (ourMove) {
+        for (var x = 0; x < lines[i].moves.length; x++) {
+          if (!lines[i].moves[x].autoplay) {
+            playableCnt++;
+          }
+        }
+      }
+
+      // the total moves for this line
+      //var lineMoveTotal = ourMove ? this.type == "analysis" ? 1 : lines[i].moves.length : 0;
+      var lineMoveTotal = ourMove ? playableCnt : 0;
+
+      // if we need to add this line
+      if (add) {
+        // if this is a variation
+        if (isVariation) {
+          lines[i].variation = true;
+        }
+        // add the practice line
+        this.practice.lines.push(lines[i]);
+      }
+
+      // if this line has moves that follow
+      if (type != "analysis" && lines[i].moves.length > 0) {
+        // add this move to the line moves array
+        var line = lineMoves.slice(0);
+        if (lines[i].move) {
+          line.push(lines[i].move);
+        }
+
+        // get the practice lines
+        var sub = this.getPracticeLines(
+          type,
+          lines[i].moves,
+          lines[i].color != "" ? lines[i].color : color,
+          line,
+          lines[i].moves.length > 1,
+          true,
+          depth + 1
+        );
+
+        // if these are not split lines, include the total our moves
+        if (lines[i].moves.length == 1) {
+          lineMoveTotal += sub;
+        } else {
+          ourMoveTotal += sub;
+        }
+      }
+
+      lines[i]["ourMoves"] = lineMoveTotal;
+
+      ourMoveTotal += lineMoveTotal;
+    }
+
+    return ourMoveTotal;
+  }
+
+  /**
+   * Practice functions.
+   * - onStartPractice
+   * - stopPractice
+   * - runPractice
+   */
+
+  // start the practice
+  async onStartPractice() {
+    console.log("startPractice:");
+
+    // reset vars
+    this.practice.lineIdx = 0;
+    this.practice.moveIdx = 0;
+    this.practice.lineColor = "";
+    this.practice.lineMoves = [];
+    this.practice.lineMovesMultiple = [];
+    this.practice.lineMovesPlayed = [];
+    this.practice.fenPosition = "";
+
+    // toggle the buttons
+    this.buttons.startPractice.disabled = true;
+    this.buttons.startPractice.classList.add("hidden");
+    this.buttons.giveHint.disabled = false;
+    this.buttons.giveHint.classList.remove("hidden");
+    this.buttons.skipMove.disabled = false;
+    this.buttons.skipMove.classList.remove("hidden");
+
+    // reset the counters
+    this.showCounters(this.practice.moveCount);
+
+    // enable board move input
+    this.disableMoveInput();
+    this.enableMoveInput();
+
+    // toggle the analysis container
+    if (this.type == "analysis") {
+      // show the analysis container
+      this.showAnalysis();
+    }
+
+    console.log("runPractice-5");
+
+    // animate to starting position
+    this.practice.animateToPosition = true;
+
+    // run the practice
+    this.runPractice();
+
+    return;
+  }
+
+  // stop a practice (when switching type)
+  stopPractice() {
+    // toggle the buttons
+    this.buttons.startPractice.disabled = false;
+    this.buttons.startPractice.innerHTML = "Start your practice";
+    this.buttons.startPractice.classList.remove("hidden");
+    this.buttons.giveHint.disabled = true;
+    this.buttons.giveHint.classList.add("hidden");
+    this.buttons.skipMove.disabled = true;
+    this.buttons.skipMove.classList.add("hidden");
+
+    // hide the played moves container
+    this.hidePlayedMoves();
+
+    // toggle the analysis container
+    if (this.type == "analysis") {
+      // hide the analysis container
+      this.hideAnalysis();
+    }
+
+    // show info
+    this.showInfo("To start your practice, click the button above.");
+  }
+
+  // run the practice
+  async runPractice() {
+    console.log(
+      "runPractice: lineIdx = " +
+        this.practice.lineIdx +
+        ", moveIdx = " +
+        this.practice.moveIdx +
+        ", animate = " +
+        this.practice.animateToPosition
+    );
+
+    //
+    if (this.practice.lineIdx >= this.practice.lines.length) {
+      // update the status
+      this.showInfo("You completed all the lines in this repertoire.");
+      // disable move input
+      this.disableMoveInput();
+
+      // toggle the buttons
+      this.buttons.startPractice.disabled = false;
+      this.buttons.startPractice.classList.remove("hidden");
+      this.buttons.startPractice.innerHTML = "Start again";
+      this.buttons.giveHint.disabled = true;
+      this.buttons.giveHint.classList.add("hidden");
+      this.buttons.skipMove.disabled = true;
+      this.buttons.skipMove.classList.add("hidden");
+
+      // hide the played moves container
+      if (this.type != "analysis") {
+        this.hidePlayedMoves();
+      }
+
+      return;
+    }
+
+    // hide the status message
+    //this.hideStatus();
+
+    console.log(this.practice.lines[this.practice.lineIdx]);
+
+    // if the line color changed, we need to reset the board
+    var colorChanged =
+      this.practice.lineColor !=
+      this.practice.lines[this.practice.lineIdx].color;
+
+    // get the line color
+    this.practice.lineColor = this.practice.lines[this.practice.lineIdx].color;
+
+    // get the next moves
+    var [moves, multiple, playable] = this.getMoves();
+
+    // if no more moves or next move for analysis line..
+    if (
+      moves.length == 0 ||
+      (this.type == "analysis" && this.practice.moveIdx > 0)
+    ) {
+      console.log("runPractice: gotoNextLine");
+
+      // goto the next line
+      this.gotoNextLine(true);
+
+      return;
+    }
+
+    // set the practice line vars
+    this.practice.isMultiple = moves.length > 1;
+    this.practice.lineMoves = moves;
+    this.practice.lineMovesMultiple = multiple;
+    this.practice.lineMovesPlayable = playable;
+    this.practice.lineMovesPlayed = [];
+    this.practice.failedCount = 0;
+    // reset the hint counter
+    this.hintCounter = 0;
+
+    // if this is the 1st move in the line
+    if (this.practice.moveIdx == 0) {
+      console.log(
+        "animate to starting position of line: " +
+          this.practice.animateToPosition
+      );
+
+      // set the orientation of the board
+      var orient =
+        this.practice.lineColor == "white" ? COLOR.white : COLOR.black;
+      if (this.board.getOrientation() != orient) {
+        this.board.setOrientation(orient);
+      }
+
+      // load the PGN
+      //this.game.loadPgn(pgn);
+
+      /*
+      // if this is an analysis line
+      if (this.type == "analysis") {
+        // set the starting position for this line
+        this.game.reset();
+
+        // if we have an initial starting position
+        if (
+          this.practice.lines[this.practice.lineIdx].initialFen &&
+          this.practice.lines[this.practice.lineIdx].initialFen != ""
+        ) {
+          this.game.load(this.practice.lines[this.practice.lineIdx].initialFen);
+        }
+
+        // make all the line moves
+        for (
+          var i = 0;
+          i < this.practice.lines[this.practice.lineIdx].line.length;
+          i++
+        ) {
+          // safety check (empty move - need to fix this in api)
+          if (this.practice.lines[this.practice.lineIdx].line[i] != "") {
+            this.game.move(this.practice.lines[this.practice.lineIdx].line[i]);
+          }
+        }
+
+        // update the board position
+        this.board.setPosition(this.game.fen());
+
+        // update the analysis game fields
+        this.analysisFieldsUpdate();
+        
+      } else if (*/
+      if (
+        this.type == "analysis" ||
+        this.practice.lines[this.practice.lineIdx].line.length > 0 ||
+        this.practice.lines[this.practice.lineIdx].variation ||
+        (this.practice.lines[this.practice.lineIdx].initialFen &&
+          this.practice.lines[this.practice.lineIdx].initialFen != "")
+      ) {
+        // if we have moves to make to get to this line
+        if (this.type == "analysis" || this.practice.animateToPosition) {
+          // reset the game & board
+          this.game.reset();
+
+          // if we have an initial starting position
+          if (
+            this.practice.lines[this.practice.lineIdx].initialFen &&
+            this.practice.lines[this.practice.lineIdx].initialFen != ""
+          ) {
+            this.game.load(
+              this.practice.lines[this.practice.lineIdx].initialFen
+            );
+          }
+
+          // update the board
+          this.board.setPosition(this.game.fen());
+
+          for (
+            var i = 0;
+            i < this.practice.lines[this.practice.lineIdx].line.length;
+            i++
+          ) {
+            this.game.move(this.practice.lines[this.practice.lineIdx].line[i]);
+          }
+
+          // if this line is a variation
+          if (
+            this.practice.lines[this.practice.lineIdx].variation &&
+            this.type != "analysis"
+          ) {
+            // make the 1st move of the variation, that was the point we left off
+            this.game.move(this.practice.lines[this.practice.lineIdx].move);
+          }
+
+          // so we can get the moves
+          var history = this.game.history({ verbose: true });
+
+          // disable board move input
+          this.disableMoveInput();
+
+          // animate to this position
+          if (this.type == "analysis") {
+            // if there are any moves
+            if (history.length > 0) {
+              // undo the last move
+              var last = history.pop();
+
+              console.log(last);
+
+              // update the board
+              await this.board.setPosition(last.before, true);
+
+              // pauseBoard
+              // animate the last move
+              await this.animateMoves([last]);
+            }
+          } else {
+            await this.animateMoves(history);
+          }
+
+          // enable board move input
+          this.enableMoveInput();
+        } else if (this.practice.lines[this.practice.lineIdx].variation) {
+          // make the 1st move of the variation, that was the point we left off
+          this.game.move(this.practice.lines[this.practice.lineIdx].move);
+          // get the last move
+          var last = this.game.history({ verbose: true }).pop();
+
+          // animate the move
+          await this.board.movePiece(last.from, last.to, true);
+          // update the board (in case of castling)
+          this.board.setPosition(this.game.fen());
+        }
+
+        // if this is an analysis line
+        if (this.type == "analysis") {
+          // update the analysis game fields
+          this.analysisFieldsUpdate();
+        }
+      } else if (colorChanged) {
+        // reset the game & board
+        this.game.reset();
+        this.board.setPosition(this.game.fen());
+      }
+    }
+
+    // if this is an analysis line
+    if (this.type == "analysis") {
+      // make the move that was played (the mistake)
+      this.game.move(this.practice.lines[this.practice.lineIdx].move);
+      // get the last move
+      var last = this.game.history({ verbose: true }).pop();
+      // undo the move
+      this.game.undo();
+      // mark the move that was played
+      this.board.removeMarkers();
+      this.board.addMarker(MARKER_TYPE.square, last.from);
+      this.board.addMarker(MARKER_TYPE.square, last.to);
+    }
+
+    // if we have multiple moves
+    if (moves.length > 1 || multiple.length > 1) {
+      // update the status
+      //if (moves.length < multiple.length) {
+      if (playable.length < multiple.length) {
+        this.showInfo(
+          "You have " +
+            (multiple.length - playable.length) +
+            " more move" +
+            (multiple.length - playable.length > 1 ? "s" : "") +
+            " in your repertoire here."
+        );
+      } else {
+        // update the status
+        if (this.type == "analysis") {
+          this.showInfo(
+            "You played the move <b>" +
+              this.practice.lines[this.practice.lineIdx].move +
+              "</b>, which is " +
+              (this.practice.lines[this.practice.lineIdx].type == "inaccuracy"
+                ? "an"
+                : "a") +
+              " " +
+              this.practice.lines[this.practice.lineIdx].type +
+              ". There are " +
+              moves.length +
+              " good moves here."
+          );
+        } else {
+          this.showInfo(
+            "You have " + moves.length + " moves in your repertoire here."
+          );
+        }
+      }
+
+      // show the played moves container
+      this.showPlayedMoves(multiple.length);
+
+      // if we need to add moves to already played moves
+      //if (moves.length < multiple.length) {
+      if (playable.length < multiple.length) {
+        for (var i = 0; i < multiple.length; i++) {
+          if (!playable.includes(multiple[i])) {
+            // add the move to the played moves list
+            this.setPlayedMove(
+              this.practice.lineMovesPlayed.length,
+              multiple[i]
+            );
+            this.practice.lineMovesPlayed.push(multiple[i]);
+          }
+        }
+      }
+
+      // remember the current FEN position
+      this.practice.fenPosition = this.game.fen();
+    } else {
+      // update the status
+      if (this.type == "analysis") {
+        this.showInfo(
+          "You played the move <b>" +
+            this.practice.lines[this.practice.lineIdx].move +
+            "</b>, which is " +
+            (this.practice.lines[this.practice.lineIdx].type == "inaccuracy"
+              ? "an"
+              : "a") +
+            " " +
+            this.practice.lines[this.practice.lineIdx].type +
+            ". Try to find the best move."
+        );
+      } else if (playable.length > 0) {
+        this.showInfo("Play the move that's in your repertoire.");
+      }
+
+      // hide the played moves
+      this.hidePlayedMoves();
+    }
+
+    // wait on the next move
+    this.waitOnMove();
+  }
+
+  // get the moves for a certain line/move
+  getMoves() {
+    var moves = [];
+
+    console.log(
+      "getMoves (" +
+        this.type +
+        "): " +
+        this.practice.lineIdx +
+        " / " +
+        this.practice.moveIdx
+    );
+    console.log(this.practice.lines[this.practice.lineIdx]);
+
+    var temp = this.practice.lines[this.practice.lineIdx];
+    if (this.type != "analysis") {
+      for (var i = 0; i < this.practice.moveIdx; i++) {
+        temp = temp.moves[0];
+      }
+    }
+
+    for (var i = 0; i < temp.moves.length; i++) {
+      moves.push(temp.moves[i]["move"]);
+    }
+
+    // get the playable moves (not the autoplay moves)
+    var playable = [];
+    for (var i = 0; i < temp.moves.length; i++) {
+      if (!temp.moves[i].autoplay) {
+        playable.push(temp.moves[i].move);
+      }
+    }
+
+    return [moves, temp.multiple, playable];
+  }
+
   // wait on next move (use auto-play if needed)
   waitOnMove() {
     // if we need to auto-move
     if (this.isAutoMove()) {
       // auto-move (for other color)
       this.autoMove();
+    } else {
+      // add last move markers
+      this.afterMakeMove();
     }
   }
 
@@ -912,24 +1570,21 @@ class Practice extends MyChessBoard {
     );
     return (
       (this.practice.lineColor == "white" && this.game.turn() == "b") ||
-      (this.practice.lineColor == "black" && this.game.turn() == "w")
+      (this.practice.lineColor == "black" && this.game.turn() == "w") ||
+      (this.practice.lineMoves.length == 1 &&
+        this.practice.lineMovesPlayable.length == 0)
     );
   }
 
   // auto-move
-  autoMove(next = false) {
+  async autoMove(next = false) {
     console.log("autoMove: " + next);
     console.log(this.type);
 
     // if we have multiple moves or this is an analysis line
     if (this.practice.isMultiple || this.type == "analysis") {
       // goto the next line
-      this.practice.lineIdx++;
-      this.practice.moveIdx = 0;
-
-      this.practice.animateToPosition = false;
-
-      this.runPractice();
+      this.gotoNextLine();
 
       return;
     }
@@ -942,7 +1597,7 @@ class Practice extends MyChessBoard {
     }
 
     // get the next moves
-    var [moves, multiple] = this.getMoves();
+    var [moves, multiple, playable] = this.getMoves();
 
     console.log(moves);
     console.log(multiple);
@@ -955,30 +1610,22 @@ class Practice extends MyChessBoard {
       var last = this.game.history({ verbose: true }).pop();
 
       // animate the move
-      this.board.movePiece(last.from, last.to, true);
+      await this.board.movePiece(last.from, last.to, true);
+      // update the board (in case of castling)
+      this.board.setPosition(this.game.fen());
 
       // if we have multiple moves from here
       if (moves.length > 1) {
         // goto the next line
-        this.practice.lineIdx++;
-        this.practice.moveIdx = 0;
+        this.gotoNextLine(false);
       } else {
         // goto the next move
-        this.practice.moveIdx++;
+        this.gotoNextMove(false);
       }
-
-      this.practice.animateToPosition = false;
     } else {
       // goto the next line
-      this.practice.lineIdx++;
-      this.practice.moveIdx = 0;
-
-      this.practice.animateToPosition = true;
+      this.gotoNextLine(true);
     }
-
-    console.log("runPractice-2");
-
-    this.runPractice();
 
     return;
   }
@@ -1044,7 +1691,12 @@ class Practice extends MyChessBoard {
 
       // update the counters for this move
       this.saveMoveCounters([
-        { fen: this.getFen(), move: this.lastMove, correct: 1 },
+        {
+          color: this.practice.lineColor,
+          fen: this.getFen(),
+          move: this.lastMove,
+          correct: 1,
+        },
       ]);
 
       // set the confirm message
@@ -1063,6 +1715,14 @@ class Practice extends MyChessBoard {
         // update the status
         this.showConfirm(msg);
 
+        //
+        // -- onMoveFinished()
+        //
+        console.log("Call onMoveFinished (next line)");
+
+        this.onMoveFinished();
+
+        /*
         // pause the board for a moment
         this.pauseBoard(() => {
           // hide the played moves list
@@ -1070,16 +1730,10 @@ class Practice extends MyChessBoard {
           // remove markers
           this.board.removeMarkers();
 
-          // move onto the next line
-          this.practice.lineIdx++;
-          this.practice.moveIdx = 0;
-
-          this.practice.animateToPosition = true;
-
-          console.log("runPractice-3");
-
-          this.runPractice();
+          // goto the next line
+          this.gotoNextLine(true);
         }, 1500);
+        */
       } else {
         // update the status
         this.showConfirm(msg + " Try to find the next move.");
@@ -1116,7 +1770,12 @@ class Practice extends MyChessBoard {
 
       // update the counters for this move
       this.saveMoveCounters([
-        { fen: this.getFen(), move: this.practice.lineMoves[0], correct: 1 },
+        {
+          color: this.practice.lineColor,
+          fen: this.getFen(),
+          move: this.practice.lineMoves[0],
+          correct: 1,
+        },
       ]);
 
       // if we need to auto-move
@@ -1131,6 +1790,15 @@ class Practice extends MyChessBoard {
 
         return;
       }
+
+      //
+      // -- onMoveFinished()
+      //
+      console.log("Call onMoveFinished (next more or line)");
+
+      this.onMoveFinished();
+
+      /*
 
       // if we have more moves in this line
       if (this.practice.lines[this.practice.lineIdx].moves.length > 0) {
@@ -1152,59 +1820,33 @@ class Practice extends MyChessBoard {
         // continue the practice run
         this.runPractice();
       }, 1500);
+      */
     }
-  }
-
-  // start the practice
-  async onStartPractice() {
-    console.log("startPractice:");
-
-    // reset vars
-    this.practice.lineIdx = 0;
-    this.practice.moveIdx = 0;
-    this.practice.lineColor = "";
-    this.practice.lineMoves = [];
-    this.practice.lineMultiple = false;
-    this.practice.lineMovesPlayed = [];
-    this.practice.fenPosition = "";
-
-    // toggle the buttons
-    this.buttons.startPractice.disabled = true;
-    this.buttons.startPractice.classList.add("hidden");
-    this.buttons.giveHint.disabled = false;
-    this.buttons.giveHint.classList.remove("hidden");
-    this.buttons.skipMove.disabled = false;
-    this.buttons.skipMove.classList.remove("hidden");
-
-    // reset the counters
-    this.showCounters(this.practice.moveCount);
-
-    // enable board move input
-    this.disableMoveInput();
-    this.enableMoveInput();
-
-    // enable the analysis buttons
-    if (this.type == "analysis") {
-      this.analysis.saveButton.disabled = false;
-      this.analysis.ignoreButton.disabled = false;
-      this.analysis.discardButton.disabled = false;
-    }
-
-    console.log("runPractice-5");
-
-    // run the practice
-    this.runPractice();
-
-    return;
   }
 
   // animate the moves 1 by 1
-  async animateMoves(moves) {
+  async animateMoves(moves, lastOnly = false) {
     // animate the moves 1 by 1 (except for the last move)
     for (var i = 0; i < moves.length; i++) {
-      await this.board.movePiece(moves[i]["from"], moves[i]["to"], true);
+      await this.board.movePiece(
+        moves[i]["from"],
+        moves[i]["to"],
+        lastOnly ? i + 1 == moves.length : true
+      );
+      // update the board (in case of castling)
+      this.board.setPosition(moves[i].after);
     }
   }
+
+  /**
+   * Counters functions.
+   * - showCounters
+   * - hideCounters
+   * - reduceMoveCount
+   * - addCorrectCount
+   * - addFailedCount
+   * - saveMoveCounters
+   */
 
   // show the counters
   showCounters(moveCount) {
@@ -1238,6 +1880,54 @@ class Practice extends MyChessBoard {
       parseInt(this.containers.failedCounter.innerHTML) + 1;
   }
 
+  /**
+   * Saves counters for 1 or multiple moves.
+   *
+   * moves: [{ fen: <fen>, move: <move>, [correct: 1 | failed: 1] }]
+   *
+   * @param {*} moves
+   * @memberof Practice
+   */
+  saveMoveCounters(moves) {
+    console.log("saveMoveCounters: " + this.type);
+    console.log(moves);
+
+    // not for analysis moves
+    if (this.type == "analysis") {
+      return false;
+    }
+
+    // set the url
+    var url = "api/repertoire/counters";
+
+    var data = { moves: moves };
+
+    // update the move counters
+    fetch(url, {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((res) => res.json())
+      .then((response) => {
+        console.log("Success:");
+        console.log(response);
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
+  }
+
+  /**
+   * Info containers functions.
+   * - showInfo
+   * - showConfirm
+   * - showWarning
+   * - hideStatus
+   */
+
   // show an info message
   showInfo(status = "") {
     this.containers.confirm.classList.add("hidden");
@@ -1268,6 +1958,13 @@ class Practice extends MyChessBoard {
     this.containers.confirm.classList.add("hidden");
     this.containers.warning.classList.add("hidden");
   }
+
+  /**
+   * Practice buttons functions.
+   * - giveHint
+   * - getPieceHint
+   * - skipMove
+   */
 
   // give a hint
   giveHint() {
@@ -1418,9 +2115,17 @@ class Practice extends MyChessBoard {
   }
 
   // skip the current move
-  skipMove() {
-    console.log("skipMove:");
+  async skipMove() {
+    console.log("skipMove: " + this.practice.paused);
     console.log("Multiple: " + this.practice.isMultiple);
+
+    // if practice was paused
+    if (this.practice.paused) {
+      // continue practice
+      this.continuePractice();
+
+      return;
+    }
 
     // update the move counter
     this.reduceMoveCount(
@@ -1430,16 +2135,57 @@ class Practice extends MyChessBoard {
     // if we have multiple moves from here or this is an analysis
     if (this.practice.isMultiple) {
       // goto the next line
-      this.practice.lineIdx++;
-      this.practice.moveIdx = 0;
+      this.gotoNextLine(this.practice.animateToPosition);
     } else {
-      // goto the next move
-      this.practice.moveIdx++;
-    }
+      console.log("Skipping to move: " + this.practice.moveIdx);
 
-    // run the next practice
-    this.runPractice();
+      // get the next moves
+      var [moves, multiple, playable] = this.getMoves();
+
+      console.log(moves);
+
+      /*
+
+      - animate this move only if there are followup moves
+      - if not, it animates the move and then goes to the next line
+      - which it animates also, doesnt make sense, the move wasnt really 
+
+      */
+
+      // if we have a move to play (with a move after that)
+      if (
+        moves.length > 0 &&
+        moves[0].moves &&
+        moves[0].moves.length > 0 &&
+        this.type != "analysis"
+      ) {
+        // make the move
+        this.game.move(moves[0]);
+        // get the last move
+        var last = this.game.history({ verbose: true }).pop();
+
+        // animate the move
+        await this.board.movePiece(last.from, last.to, true);
+        // update the board (in case of castling)
+        this.board.setPosition(this.game.fen());
+
+        console.log("Animated to position.");
+
+        // goto the next move
+        this.gotoNextMove(this.practice.animateToPosition);
+      } else {
+        // goto the next line
+        this.gotoNextLine(this.practice.animateToPosition);
+      }
+    }
   }
+
+  /**
+   * Played moves container functions.
+   * - showPlayedMoves
+   * - hidePlayedMoves
+   * - setPlayedMove
+   */
 
   // show the played moves container
   showPlayedMoves(count) {
@@ -1450,9 +2196,6 @@ class Practice extends MyChessBoard {
     while (this.playedMovesList.lastChild) {
       this.playedMovesList.removeChild(this.playedMovesList.firstChild);
     }
-
-    // get the current move number
-    //var moveNr = this.game.moveNumber();
 
     // add the rows for the moves
     for (var i = 0; i < count; i++) {
@@ -1468,6 +2211,11 @@ class Practice extends MyChessBoard {
     this.playedMovesContainer.classList.remove("hidden");
   }
 
+  // hide the played moves container
+  hidePlayedMoves() {
+    this.playedMovesContainer.classList.add("hidden");
+  }
+
   // add a move to the played moves container
   setPlayedMove(index, move) {
     console.log(this.playedMovesList);
@@ -1476,11 +2224,6 @@ class Practice extends MyChessBoard {
     // set the move
     this.playedMovesList.children[index].innerHTML =
       this.game.moveNumber() + ". " + move;
-  }
-
-  // hide the played moves container
-  hidePlayedMoves() {
-    this.playedMovesContainer.classList.add("hidden");
   }
 }
 

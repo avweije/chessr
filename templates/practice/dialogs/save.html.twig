@@ -1,0 +1,43 @@
+<dialog id="saveModal" class="relative p-6 bg-white rounded-lg shadow-lg">
+	<button id="saveModalCloseButton" class="close-button outline-none">
+		<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-gray-700 hover:text-gray-900" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+		</svg>
+	</button>
+	<h2 class="mb-6 mr-32 text-lg font-semibold">Save to repertoire</h2>
+
+	<p id="saveModalTextOneMove" class="hidden text-base text-gray-700 pr-6">This move will be saved to your repertoire.</p>
+
+	<p id="saveModalTextMultipleMoves" class="text-base text-gray-700 pr-6 pb-3">Which moves do you want to save to your repertoire:</p>
+
+	<ul id="saveModalMovesList" class="items-center w-full pb-1 text-sm font-medium text-gray-900 bg-white rounded-lg sm:flex dark:bg-gray-700 dark:text-white">
+		<li class="w-full">
+			<div class="flex items-center ps-3">
+				<input id="saveModalRadioTopMove" type="radio" checked value="" name="list-radio" class="w-6 h-6 text-blue-600 bg-gray-100 border-gray-300 dark:bg-gray-600 dark:border-gray-500">
+				<label for="saveModalRadioTopMove" class="w-full whitespace-nowrap py-3 pr-3 ms-2 text-base font-medium text-gray-900 dark:text-gray-300">Top engine move</label>
+			</div>
+		</li>
+		<li class="w-full">
+			<div class="flex items-center ps-3">
+				<input id="saveModalRadioTop2" type="radio" value="" name="list-radio" class="w-6 h-6 text-blue-600 bg-gray-100 border-gray-300 dark:bg-gray-600 dark:border-gray-500">
+				<label for="saveModalRadioTop2" class="w-full whitespace-nowrap py-3 pr-3 ms-2 text-base font-medium text-gray-900 dark:text-gray-300">Top 2 moves</label>
+			</div>
+		</li>
+		<li class="w-full">
+			<div class="flex items-center ps-3">
+				<input id="saveModalRadioTop3" type="radio" value="" name="list-radio" class="w-6 h-6 text-blue-600 bg-gray-100 border-gray-300 dark:bg-gray-600 dark:border-gray-500">
+				<label for="saveModalRadioTop3" class="w-full whitespace-nowrap py-3 pr-3 ms-2 text-base font-medium text-gray-900 dark:text-gray-300">Top 3 moves</label>
+			</div>
+		</li>
+	</ul>
+
+
+	<div class="flex justify-end space-x-2 mt-8">
+		<button id="saveModalCancelButton" class="btn btn-outline">
+			Cancel
+		</button>
+		<button id="saveModalConfirmButton" class="btn btn-warning">
+			Confirm
+		</button>
+	</div>
+</dialog>

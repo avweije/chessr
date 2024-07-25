@@ -41,6 +41,9 @@ class Analysis
     #[ORM\Column(length: 30)]
     private ?string $BestMoves = null;
 
+    #[ORM\Column(length: 255)]
+    private ?string $InitialFen = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -150,6 +153,18 @@ class Analysis
     public function setBestMoves(string $BestMoves): static
     {
         $this->BestMoves = $BestMoves;
+
+        return $this;
+    }
+
+    public function getInitialFen(): ?string
+    {
+        return $this->InitialFen;
+    }
+
+    public function setInitialFen(string $InitialFen): static
+    {
+        $this->InitialFen = $InitialFen;
 
         return $this;
     }

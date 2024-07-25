@@ -1,5 +1,6 @@
 import { MyChessBoard } from "./chessboard.js";
 import { COLOR } from "cm-chessboard/src/view/ChessboardView.js";
+import { Utils } from "./utils.js";
 import { Modal } from "./modal.js";
 
 import "../styles/chessboard.css";
@@ -38,6 +39,10 @@ class Repertoire extends MyChessBoard {
 
   constructor() {
     super();
+
+    // show the page loader
+    Utils.showLoading();
+
     // get the status fields
     this.statusField = document.getElementById("statusField");
     this.ecoField = document.getElementById("ecoField");
@@ -127,6 +132,9 @@ class Repertoire extends MyChessBoard {
         handler: this.onRemoveLineConfirmed.bind(this),
       },
     ]);
+
+    // hide the page loader
+    Utils.hideLoading();
   }
 
   // fired once the remove repertoire button is clicked
@@ -233,6 +241,9 @@ class Repertoire extends MyChessBoard {
 
   // fetch moves for current position
   getMoves() {
+    // show the page loader
+    Utils.showLoading();
+
     // clear the moves table
     this.clearMovesTable();
 
@@ -266,7 +277,13 @@ class Repertoire extends MyChessBoard {
         // toggle the buttons
         this.toggleButtons(response["repertoireId"] > 0);
       })
-      .catch((error) => console.error("Error:", error));
+      .catch((error) => {
+        console.error("Error:", error);
+      })
+      .finally(() => {
+        // hide the page loader
+        Utils.hideLoading();
+      });
   }
 
   // show the moves, the groups
@@ -528,13 +545,12 @@ class Repertoire extends MyChessBoard {
     var pgn = "";
     var moves = this.historyWithCorrectFen();
     for (var i = 0; i < moves.length; i++) {
-      pgn += " ";
       if (i % 2 == 0) {
         pgn += i / 2 + 1 + ". ";
       }
       pgn += moves[i]["san"];
-
       moves[i]["pgn"] = pgn;
+      pgn += " ";
     }
 
     // set the data object

@@ -19,21 +19,14 @@ class PracticeController extends AbstractController
         $this->em = $em;
     }
 
-    #[Route([
-        '/practice',
-        '/practice/white',
-        '/practice/black',
-        '/practice/new',
-        '/practice/recommended',
-        '/practice/analysis'
-    ], name: 'app_practice')]
+    #[Route('/practice', methods: ['GET', 'POST'], name: 'app_practice')]
     public function index(Request $request): Response
     {
+        // get the payload (if posted)
+        $data = $request->getPayload()->all();
+
         // get the practice repertoire type
-        $type = str_replace("/", "", str_replace("/practice", "", $request->getRequestUri()));
-        if ($type == "") {
-            $type = "all";
-        }
+        $type = isset($data["type"]) ? $data["type"] : "all";
 
         return $this->render('practice/index.html.twig', ['repertoireType' => $type]);
     }

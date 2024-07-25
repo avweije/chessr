@@ -9,6 +9,7 @@ use App\Entity\Downloads;
 use App\Entity\ECO;
 use App\Entity\Group;
 use App\Entity\Analysis;
+use App\Entity\IgnoreList;
 use App\Entity\Repertoire;
 use App\Entity\RepertoireGroup;
 use App\Library\ChessJs;
@@ -41,7 +42,7 @@ class ApiController extends AbstractController
         $repo = $this->em->getRepository(Group::class);
 
         $res = [];
-        foreach ($repo->findBy([], ['Name' => 'ASC']) as $rec) {
+        foreach ($repo->findBy(['User' => $this->getUser()], ['Name' => 'ASC']) as $rec) {
             $res[] = ["id" => $rec->getId(), "name" => $rec->getName()];
         }
 
@@ -60,7 +61,7 @@ class ApiController extends AbstractController
         if ($rep) {
             $repo = $this->em->getRepository(Group::class);
             // find the group
-            $grp = $repo->findOneBy(['Name' => $data["group"]]);
+            $grp = $repo->findOneBy(['User' => $this->getUser(), 'Name' => $data["group"]]);
             if ($grp) {
                 // make sure this group isnt already linked to the repertoire
                 $repo = $this->em->getRepository(RepertoireGroup::class);
@@ -81,6 +82,7 @@ class ApiController extends AbstractController
             } else {
                 // add the group
                 $grp = new Group();
+                $grp->setUser($this->getUser());
                 $grp->setName($data["group"]);
 
                 $this->em->persist($grp);
@@ -108,16 +110,11 @@ class ApiController extends AbstractController
     {
         $data = $request->getPayload()->all();
 
-        //
-        // make sure the repertoire is from the current user..
-        //
-
-        //
         $repo = $this->em->getRepository(Group::class);
         $repo2 = $this->em->getRepository(RepertoireGroup::class);
 
         // find the group
-        $res = $repo->findBy(['Name' => $data["group"]]);
+        $res = $repo->findBy(['User' => $this->getUser(), 'Name' => $data["group"]]);
         foreach ($res as $grp) {
 
             $groups[] = $grp->getId();
@@ -282,7 +279,7 @@ class ApiController extends AbstractController
         // get the data
         $data = $request->getPayload()->all();
         // save the repertoire
-        $saved = $this->saveRepertoire($data['color'], $data['moves']);
+        $saved = $this->saveRepertoire($data['color'], "", $data['moves']);
 
         return new JsonResponse($saved);
     }
@@ -297,6 +294,49 @@ class ApiController extends AbstractController
         $this->deleteRepertoire($data["color"], $data["fen"], $data["move"]);
 
         return new JsonResponse(["message" => "The move has been deleted from the repertoire."]);
+    }
+
+    #[Route('/api/repertoire/counters', methods: ['POST'], name: 'app_api_repertoire_counters')]
+    public function apiRepertoireCounters(Request $request): JsonResponse
+    {
+        // get the data
+        $data = $request->getPayload()->all();
+
+        $repo = $this->em->getRepository(Repertoire::class);
+
+        // loop through the moves
+        foreach ($data["moves"] as $move) {
+
+            // find this move
+            $rec = $repo->findOneBy([
+                'User' => $this->getUser(),
+                'Color' => $move['color'],
+                'FenAfter' => $move['fen'],
+                'Move' => $move['move']
+            ]);
+
+            if ($rec) {
+                // update the counters
+                $rec->setPracticeCount($rec->getPracticeCount() + 1);
+
+                if (isset($move["correct"]) && $move["correct"] == 1) {
+                    $rec->setPracticeInARow($rec->getPracticeInARow() + 1);
+                } else {
+                    $rec->setPracticeInARow(0);
+                }
+
+                if (isset($move["failed"]) && $move["failed"] == 1) {
+                    $rec->setPracticeFailed($rec->getPracticeFailed() + 1);
+                }
+
+                // save the record
+                $this->em->persist($rec);
+            }
+        }
+
+        $this->em->flush();
+
+        return new JsonResponse(["message" => "Counters updated."]);
     }
 
     // delete a move and it's children
@@ -362,46 +402,56 @@ class ApiController extends AbstractController
     }
 
     // save a repertoire
-    private function saveRepertoire(string $color, array $moves): bool
+    private function saveRepertoire(string $color, string $initialFen, array $moves): bool
     {
         $repository = $this->em->getRepository(Repertoire::class);
 
         // any saved?
         $saved = false;
-        $i = 0;
+        $halfMove = 1;
 
         // loop through the moves
-        foreach ($moves as $move) {
-            // check to see if we already saved this move
-            $data = $repository->findBy([
-                'User' => $this->getUser(),
-                'Color' => $color,
-                'FenBefore' => $move['before'],
-                'Move' => $move['san']
-            ]);
+        foreach ($moves as $m) {
+            // the last array item could be an array of multiple moves (= engine moves, through analysis save)
+            $temp = isset($m['moves']) ? $m['moves'] : [$m];
+            foreach ($temp as $move) {
+                // check to see if we already saved this move
+                $data = $repository->findBy([
+                    'User' => $this->getUser(),
+                    'Color' => $color,
+                    'FenBefore' => $move['before'],
+                    'Move' => $move['san']
+                ]);
 
-            $i++;
+                // skip this one if already saved
+                if (count($data) > 0) continue;
 
-            // skip this one if already saved
-            if (count($data) > 0) continue;
+                // save the move to the repertoire
+                $rep = new Repertoire();
+                $rep->setUser($this->getUser());
+                $rep->setColor($color);
+                $rep->setInitialFen($initialFen);
+                $rep->setFenBefore($move['before']);
+                $rep->setFenAfter($move['after']);
+                $rep->setPgn($move['pgn']);
+                $rep->setMove($move['san']);
+                $rep->setAutoPlay(isset($move['autoplay']) ? $move['autoplay'] : false);
+                $rep->setHalfMove($halfMove);
+                $rep->setPracticeCount(0);
+                $rep->setPracticeFailed(0);
+                $rep->setPracticeInARow(0);
 
-            // save the move to the repertoire
-            $rep = new Repertoire();
-            $rep->setUser($this->getUser());
-            $rep->setColor($color);
-            $rep->setFenBefore($move['before']);
-            $rep->setFenAfter($move['after']);
-            $rep->setPgn($move['pgn']);
-            $rep->setMove($move['san']);
-            $rep->setHalfMove($i);
-            $rep->setPracticeCount(0);
-            $rep->setPracticeFailed(0);
-            $rep->setPracticeInARow(0);
+                // tell Doctrine you want to (eventually) save the Product (no queries yet)
+                $this->em->persist($rep);
 
-            // tell Doctrine you want to (eventually) save the Product (no queries yet)
-            $this->em->persist($rep);
+                $saved = true;
+            }
 
-            $saved = true;
+            // if this is not one of the multiple engine moves
+            if (!isset($m['moves'])) {
+                // increase the halfmove
+                $halfMove++;
+            }
         }
 
         // if we actually saved anything
@@ -605,6 +655,9 @@ class ApiController extends AbstractController
                         "mistakes" => $temp
                     ];
 
+                    // get the initial fen
+                    $initialFen = $game->getFen() !== null ? $game->getFen() : "";
+
                     // add them to the database
                     foreach ($temp as $mistake) {
                         // add the analysis
@@ -615,6 +668,7 @@ class ApiController extends AbstractController
                         $rc->setBlack($game->getBlack());
                         $rc->setLink($game->getLink());
                         $rc->setType($mistake["type"]);
+                        $rc->setInitialFen($initialFen);
                         $rc->setFen($mistake["fen"]);
                         $rc->setPgn($mistake["line"]["pgn"]);
                         $rc->setMove($mistake["move"]);
@@ -678,10 +732,94 @@ class ApiController extends AbstractController
         }
 
         return new JsonResponse([
-            'status' => 'Analysis done.',
+            'message' => 'Analysis done.',
             'processed' => $processed,
             'totals' => $totals
         ]);
+    }
+
+    #[Route('/api/analysis', methods: ['DELETE'], name: 'app_api_analysis_delete')]
+    public function apiAnalysisDelete(Request $request): JsonResponse
+    {
+        $data = $request->getPayload()->all();
+
+        $qb = $this->em->createQueryBuilder();
+
+        // delete the analysis for this user, fen & move
+        $query = $qb->delete('App\Entity\Analysis', 'a')
+            ->where('a.User = :user AND a.Fen = :fen AND a.Move = :move')
+            ->setParameter('user', $this->getUser())
+            ->setParameter('fen', $data["fen"])
+            ->setParameter('move', $data["move"])
+            ->getQuery();
+
+        $ret = $query->execute();
+
+        return new JsonResponse(["message" => "Analysis deleted.", "ret" => $ret]);
+    }
+
+    #[Route('/api/analysis/save', methods: ['POST'], name: 'app_api_analysis_save')]
+    public function apiAnalysisSave(Request $request): JsonResponse
+    {
+        $data = $request->getPayload()->all();
+
+        $message = "";
+
+        // save the repertoire
+        $saved = $this->saveRepertoire($data['color'], $data["initialFen"], $data['moves']);
+
+        if ($saved) {
+            $message = "Move saved to your repertoire.";
+        } else {
+            $message = "Move not saved to your repertoire.";
+        }
+
+        // delete the analysis move
+        $resp = $this->apiAnalysisDelete($request);
+
+        // set the JSON response data
+        $resp->setData(["message" => $message . " Analysis deleted.", "data" => $data]);
+
+        return $resp;
+    }
+
+    #[Route('/api/analysis/ignore', methods: ['POST'], name: 'app_api_analysis_ignore')]
+    public function apiAnalysisIgnore(Request $request): JsonResponse
+    {
+        $data = $request->getPayload()->all();
+
+        $message = "";
+
+        $repo = $this->em->getRepository(IgnoreList::class);
+        // make sure we don't already have this move on our ignore list
+        $res = $repo->findOneBy([
+            'User' => $this->getUser(),
+            'Fen' => $data["fen"],
+            'Move' => $data["move"]
+        ]);
+
+        if ($res) {
+            $message = "Move already on the ignore list.";
+        } else {
+            // add the move to the ignore list
+            $rec = new IgnoreList();
+            $rec->setUser($this->getUser());
+            $rec->setFen($data["fen"]);
+            $rec->setMove($data["move"]);
+
+            $this->em->persist($rec);
+            $this->em->flush();
+
+            $message = "Move added to the ignore list.";
+        }
+
+        // delete the analysis move
+        $resp = $this->apiAnalysisDelete($request);
+
+        // set the JSON response data
+        $resp->setData(["message" => $message . " Analysis deleted."]);
+
+        return $resp;
     }
 
     #[Route('/api/practice', methods: ['GET'], name: 'app_api_practice')]
@@ -696,10 +834,13 @@ class ApiController extends AbstractController
         $res = $repository->findBy(['User' => $this->getUser()], ['HalfMove' => 'ASC']);
 
         // the lines
+        /*
         $lines = [
             ['color' => 'white', 'before' => '', 'after' => '', 'new' => 1, 'recommended' => 1, 'moves' => []],
             ['color' => 'black', 'before' => '', 'after' => '', 'new' => 1, 'recommended' => 1, 'moves' => []]
-        ];
+        ];*/
+        $lines = [];
+
         // find the 1st moves
         foreach ($res as $rep) {
             // if this is a 1st move
@@ -712,16 +853,42 @@ class ApiController extends AbstractController
                 }
                 */
 
+                // see if we have this color / starting position already
+                $idx = 0;
+                foreach ($lines as $line) {
+                    if ($line["color"] == $rep->getColor() && $line["before"] == $rep->getFenBefore()) {
+                        break;
+                    }
+                    $idx++;
+                }
+
+                if ($idx >= count($lines)) {
+                    $lines[] = [
+                        'color' => $rep->getColor(),
+                        'initialFen' => $rep->getInitialFen(),
+                        'before' => $rep->getFenBefore(),
+                        'after' => $rep->getFenBefore(),
+                        'new' => 1,
+                        'recommended' => 1,
+                        'moves' => []
+                    ];
+                }
+
                 // set the FEN before/after for white & black
+                /*
                 $lines[0]['before'] = $rep->getFenBefore();
                 $lines[0]['after'] = $rep->getFenBefore();
                 $lines[1]['before'] = $rep->getFenBefore();
                 $lines[1]['after'] = $rep->getFenBefore();
+                */
 
                 // add the move
-                $lines[($rep->getColor() == 'white' ? 0 : 1)]['moves'][] = [
+                //$lines[($rep->getColor() == 'white' ? 0 : 1)]['moves'][] = [
+                $lines[$idx]['moves'][] = [
                     'color' => $rep->getColor(),
+                    'initialFen' => $rep->getInitialFen(),
                     'move' => $rep->getMove(),
+                    'autoplay' => $rep->isAutoPlay(),
                     'halfmove' => $rep->getHalfMove(),
                     'before' => $rep->getFenBefore(),
                     'after' => $rep->getFenAfter(),
@@ -733,7 +900,6 @@ class ApiController extends AbstractController
                 ];
             }
         }
-
 
         /*
 
@@ -763,62 +929,35 @@ class ApiController extends AbstractController
             */
         }
 
-        //dd($lines);
+        //dd($lines[2]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]);
 
         // the response
         $resp = ['white' => [], 'black' => [], 'new' => [], 'recommended' => [], "analysis" => []];
 
         // if we have a repertoire
         if (count($lines) > 0) {
-            /*
-            // get the white lines
-            $resp['white'] = $this->findLines($lines[0]['moves'], 'white', false, false);
-            // get the black lines
-            $resp['black'] = $this->findLines($lines[0]['moves'], 'black', false, false);
-            // find the new lines
-            $resp['new'] = $this->findLines($lines[0]['moves'], '', true, false);
-            // find the recommended lines
-            //$resp['recommended'] = $this->findLines($lines[0]['moves'], '', false, true);
-            $resp['recommended'] = $this->findLines($lines[0]['moves'], '', false, true);
-            */
-
             // get the white lines
             $resp['white'] = $this->findLines($lines, 'white', false, false);
             // get the black lines
             $resp['black'] = $this->findLines($lines, 'black', false, false);
             // find the new lines
             $resp['new'] = $this->findLines($lines, '', true, false);
+
+            //dd($resp['new']);
+
             // find the recommended lines
             $resp['recommended'] = $this->findLines($lines, '', false, true);
 
-            //dd($lines, $resp['new']);
-
-            //print "Recommended:<br>";
-            //dd($res, $lines, $resp['recommended']);
-
-            //$temp = [...$resp['new']];
-
-            //
-            /*
-
-            Move 1. e4 = recommended: < 5 practices
-            Move 3. Nc6 (1. e4 f5 2. e5 Nc6) = recommended: Failed 6/8 == this is a black move!! not included!!
-
-            findLines is incorrect for recommended, only includes the 1. e4 move
-            should also include 3. Nc6 move with line: [E4, f5, e5]
-
-            */
-            //
+            //dd($resp['white'][1]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]);
 
             // group the lines per starting position / color
             $resp['white'] = $this->groupByPosition($resp['white']);
             $resp['black'] = $this->groupByPosition($resp['black']);
             $resp['new'] = $this->groupByPosition($resp['new']);
             $resp['recommended'] = $this->groupByPosition($resp['recommended']);
-
-            //print "New:<br>";
-            //dd($resp['new']);
         }
+
+        //dd($resp['white']);
 
         // get the analysis repository
         $repository = $this->em->getRepository(Analysis::class);
@@ -826,23 +965,52 @@ class ApiController extends AbstractController
         $res = $repository->findBy(['User' => $this->getUser()], ['Link' => 'ASC', 'Pgn' => 'ASC']);
         // add them
         foreach ($res as $rec) {
+            // get the best moves array
             $multiple = explode(" ", $rec->getBestMoves());
             $moves = [];
             foreach ($multiple as $move) {
                 $moves[] = ["move" => $move];
             }
-            $resp["analysis"][] = [
-                "color" => $rec->getWhite() == "avweije" ? "white" : "black",
+
+            // get the color
+            $color = $rec->getWhite() == "avweije" ? "white" : "black";
+
+            // get the line up to this move
+            $line = [];
+            $temp = explode(" ", $rec->getPgn());
+            for ($i = 0; $i < count($temp); $i++) {
+                // if this is not a move number
+                if (preg_match('/^\\d+\\./', $temp[$i]) !== 1) {
+                    if (trim($temp[$i]) != "") {
+                        $line[] = $temp[$i];
+                    }
+                }
+            }
+
+            // the analysis record
+            $analysis = [
+                "color" => $color,
                 "white" => $rec->getWhite(),
                 "black" => $rec->getBlack(),
                 "link" => $rec->getLink(),
                 "type" => $rec->getType(),
+                "initialFen" => $rec->getInitialFen(),
                 "fen" => $rec->getFen(),
                 "pgn" => $rec->getPgn(),
                 "move" => $rec->getMove(),
+                "line" => $line,
                 "moves" => $moves,
                 "multiple" => $multiple
             ];
+
+            // check to see if this position is in our repertoire
+            $move = $this->findPosition($rec->getFen(), $resp[$color]);
+            if ($move !== false) {
+                $analysis["repertoire"] = $move["multiple"];
+            }
+
+            // add the analysis record
+            $resp["analysis"][] = $analysis;
         }
 
         // sort by color, link, pgn
@@ -858,26 +1026,36 @@ class ApiController extends AbstractController
             return $ret;
         });
 
-        //print "New:<br>";
-        //dd($res, $resp['recommended']);
-
-        //
-
-
-        /*
-
-        
-        -- added: "multiple: []" array with all the moves for that position. 
-        -- only the moves that match the criteria (new, recommended) are included in "moves: []"
-        -- we can use this in the front-end to show other moves for that position (that dont need to be played --
-        -- but should instead immediately be shown in the moves list as if they were played already)
-
-        
-        */
-
-        //dd($resp);
-
         return new JsonResponse($resp);
+    }
+
+    // find a position inside a line
+    private function findPosition(string $fen, array $line): mixed
+    {
+        // if this is the top level line
+        if (!isset($line["moves"])) {
+            foreach ($line as $ln) {
+                $ret = $this->findPosition($fen, $ln);
+                if ($ret !== false) {
+                    return $ret;
+                }
+            }
+        } else {
+            // if this is the position
+            if (isset($line["after"]) && $line["after"] == $fen) {
+                return $line;
+            }
+
+            // go through the moves in this line
+            foreach ($line["moves"] as $move) {
+                $ret = $this->findPosition($fen, $move);
+                if ($ret !== false) {
+                    return $ret;
+                }
+            }
+        }
+
+        return false;
     }
 
     // group the lines per starting position/color
@@ -897,8 +1075,9 @@ class ApiController extends AbstractController
             if ($idx == -1) {
                 // if this is not the starting position
                 $temp[] = [
-                    'fen' => $line['before'],
                     'color' => $line['color'],
+                    'initialFen' => isset($line['initialFen']) ? $line['initialFen'] : '',
+                    'fen' => $line['before'],
                     'line' => isset($line['line']) ? $line['line'] : [],
                     'moves' => $line['before'] == $line['after'] ? $line['moves'] : [$line],
                     'multiple' => $line['before'] == $line['after'] ? $line['multiple'] : [$line['move']]
@@ -917,9 +1096,9 @@ class ApiController extends AbstractController
         // get the fail percentage
         $failPct = $practiceCount < 5 ? 1 : $practiceFailed / $practiceCount;
 
-        if ($practiceFailed > 0) {
-            //print "PracticeFailed: $practiceCount / $practiceFailed / $practiceInARow = $failPct = " . ($practiceCount == 0 ? false : $practiceInARow < $failPct * 8) . "<br>";
-        }
+        //if ($practiceFailed > 0) {
+        //print "PracticeFailed: $practiceCount / $practiceFailed / $practiceInARow = $failPct = " . ($practiceCount == 0 ? false : $practiceInARow < $failPct * 8) . "<br>";
+        //}
 
         return $practiceCount == 0 ? false : $practiceInARow < $failPct * 8;
         //return $practiceCount == 0 ? false : true;
@@ -930,12 +1109,22 @@ class ApiController extends AbstractController
     {
         $moves = [];
 
+        //if ($color == "black") {
+        //  print "getLines - $color -- $fen:<br>";
+        //}
+
         // find the follow up moves for a certain color and position
         foreach ($res as $rep) {
+            //if ($color == "black") {
+            //  print "res - " . $rep->getColor() . " -- " . $rep->getFenBefore() . "<br>";
+            //}
+
             if ($rep->getColor() == $color && $rep->getFenBefore() == $fen) {
                 $moves[] = [
                     'color' => $color,
+                    'initialFen' => $rep->getInitialFen(),
                     'move' => $rep->getMove(),
+                    'autoplay' => $rep->isAutoPlay(),
                     'halfmove' => $rep->getHalfMove(),
                     'before' => $rep->getFenBefore(),
                     'after' => $rep->getFenAfter(),
@@ -948,6 +1137,11 @@ class ApiController extends AbstractController
                 ];
             }
         }
+
+        //if ($color == "black") {
+        //  print_r($moves);
+        //print "<br><br>";
+        //}
 
         // if we have any moves
         if (count($moves) > 0) {
@@ -998,14 +1192,14 @@ class ApiController extends AbstractController
                 continue;
             }
             // if we need the new lines and this is a match
-            if ($ourMove && $isNew && $line['new'] == 1) {
+            if ($ourMove && $isNew && $line['new'] == 1 && (!isset($line['autoplay']) || !$line['autoplay'])) {
                 // add to the lines
                 $res[] = $line;
 
                 continue;
             }
             // if we need the recommended lines and this is a match
-            if ($ourMove && $isRecommended && $line['recommended'] == 1) {
+            if ($ourMove && $isRecommended && $line['recommended'] == 1 && (!isset($line['autoplay']) || !$line['autoplay'])) {
 
                 //print "- level (recommended): $level <br>";
 
@@ -1049,7 +1243,9 @@ class ApiController extends AbstractController
             // get the line until
             for ($i = 0; $i < count($parts); $i++) {
                 $parts[$i]['moves'] = $this->getLineUntil($parts[$i]['moves'], $color, $isNew, $isRecommended);
-                $linesUntil[] = $parts[$i];
+                if (isset($parts[$i]["move"]) || count($parts[$i]['moves']) > 0) {
+                    $linesUntil[] = $parts[$i];
+                }
             }
 
             //dd($parts, $linesUntil);
@@ -1070,64 +1266,35 @@ class ApiController extends AbstractController
         $ourMove = ($line['color'] == "white" && $level % 2 == 1) || ($line['color'] == "black" && $level % 2 == 0);
         //$ourMove = ($color == "white" && $level % 2 == 0) || ($color == "black" && $level % 2 == 1);
 
-        if ($line['color'] == "white" && $level == 1 && $isRecommended) {
-            //print "level: $level - ourMove: " . $ourMove . "<br>";
-        }
+        //if ($line['color'] == "white" && $level == 1 && $isRecommended) {
+        //print "level: $level - ourMove: " . $ourMove . "<br>";
+        //}
 
         foreach ($line['moves'] as $move) {
             $temp = [];
 
-            if ($line['color'] == "white" && $isRecommended) {
-                //print "level: $level - move: " . $move['move'] . " - " . $ourMove . "<br>";
-            }
+            $autoplay = isset($move['autoplay']) ? $move['autoplay'] : false;
 
             // if the last move was a match
             if ($match) {
                 // if this move matches also
-                if (!$ourMove || ($color != '' && $move['color'] == $color) || ($isNew && $move['new'] == 1) || ($isRecommended && $move['recommended'] == 1)) {
-
-                    if ($line['color'] == "white" && $isRecommended) {
-                        //print "--1<br>";
-                    }
-
+                if (!$ourMove || ($color != '' && $move['color'] == $color) || ($isNew && $move['new'] == 1 && !$autoplay) || ($isRecommended && $move['recommended'] == 1 && !$autoplay)) {
                     // check next move for a non-match
                     $temp = $this->splitLine($move, $color, $isNew, $isRecommended, true, $level + 1);
                 } else {
-
-                    if ($line['color'] == "white" && $isRecommended) {
-                        //print "--2<br>";
-                    }
-
                     // check next move for match
                     $temp = $this->splitLine($move, $color, $isNew, $isRecommended, false, $level + 1);
                 }
             } else {
                 // if this move matches
-                if ($ourMove && (($color != '' && $move['color'] == $color) || ($isNew && $move['new'] == 1) || ($isRecommended && $move['recommended'] == 1))) {
-
-                    if ($line['color'] == "white" && $isRecommended) {
-                        //print "--3<br>";
-                    }
-
+                if ($ourMove && (($color != '' && $move['color'] == $color) || ($isNew && $move['new'] == 1 && !$autoplay) || ($isRecommended && $move['recommended'] == 1 && !$autoplay))) {
                     // add this this line as a part
                     $parts[] = $move;
                 } else {
-
-                    if ($line['color'] == "white" && $isRecommended) {
-                        //print "--4<br>";
-                    }
-
                     // check next move for match
                     $temp = $this->splitLine($move, $color, $isNew, $isRecommended, false, $level + 1);
                 }
             }
-
-
-            if ($line['color'] == "white" && $level == 1 && $isRecommended) {
-                //print_r($temp);
-                //print "<br><br>";
-            }
-
 
             $parts = array_merge($parts, $temp);
         }
@@ -1151,12 +1318,14 @@ class ApiController extends AbstractController
             $ourMove = isset($move['halfmove']) ? (($move['color'] == "white" && $move['halfmove'] % 2 == 1) || ($move['color'] == "black" && $move['halfmove'] % 2 == 0)) : $move['color'] == "white";
 
             //print "- level: " . $level . " / move: " . $move['move'] . " / ourMove: " . $ourMove . "<br>";
-            if ($move['move'] == 'Nxa6') {
-                //print "- level: " . $level . " / halfmove: " . $move['halfmove'] . "/ move: " . $move['move'] . " / " . $move['color'] . " / ourMove: " . $ourMove . "<br>";
-            }
+            //if ($move['move'] == 'Nxa6') {
+            //print "- level: " . $level . " / halfmove: " . $move['halfmove'] . "/ move: " . $move['move'] . " / " . $move['color'] . " / ourMove: " . $ourMove . "<br>";
+            //}
+
+            $autoplay = isset($move['autoplay']) ? $move['autoplay'] : false;
 
             // if this move matches the criteria
-            if (!$ourMove || (($color != '' && $move['color'] == $color) || ($isNew && $move['new'] == 1) || ($isRecommended && $move['recommended'] == 1))) {
+            if (!$ourMove || (($color != '' && $move['color'] == $color) || ($isNew && $move['new'] == 1 && !$autoplay) || ($isRecommended && $move['recommended'] == 1 && !$autoplay))) {
                 // get the rest of the line
                 $temp = $this->getLineUntil($move['moves'], $color, $isNew, $isRecommended, $level + 1);
 
@@ -1167,7 +1336,9 @@ class ApiController extends AbstractController
 
                     // add to the lines
                     $line[] = [
+                        'initialFen' => isset($move['initialFen']) ? $move['initialFen'] : "",
                         'move' => $move['move'],
+                        'autoplay' => isset($move['autoplay']) ? $move['autoplay'] : false,
                         'moves' => $temp,
                         'multiple' => $move['multiple']
                     ];
@@ -1190,8 +1361,6 @@ class ApiController extends AbstractController
     // analyse a game
     private function analyseGame($uci, MyGame $game): array
     {
-        $moves = [];
-
         // create a new game
         $chess = new ChessJs($game->getFen());
         // add te moves
@@ -1201,10 +1370,49 @@ class ApiController extends AbstractController
         // get the UCI moves
         $uciMoves = $chess->getUciMoves();
 
+        // set the current moves & pgn
+        $moves = [];
+        $halfMove = 1;
+        $linePgn = "";
+        $lineMoves = [];
+
         // reset the game
         $chess->reset();
+        // if we have an initial position for this game (moves already played)
         if ($game->getFen()) {
             $chess->load($game->getFen());
+
+            // get the moves from the pgn
+            //dd($game);
+
+            /*
+
+            - if we decide to keep in games with a fixed starting position (non-default)
+            - there is no way of finding out the intial moves (to get to the starting position)
+            - we can only save from starting position on
+            - so we need to store somehow that this move begins on a certain starting position
+
+            - once in repertoire.. you won't see the 1st move (if it wasnt yet in your repertoire)
+            - you will only find the move once you make the 1st X moves to get to the starting position of the game
+
+            - if you then click save repertoire (after adding a move for instance)
+            - you will now also have the 1st X moves that get to the initial position
+            - and all of a sudden these moves are in your practice runs also.. 
+            - which we don't want i think... ??
+
+            - option to add "autoPlay this move" option for each of our moves in repertoire ??
+            - can also be useful to skip 1. e4 / d4 moves (don't want to play these everytime..)
+
+            - we can use this on the starting moves when they get added
+            - how do we know?
+
+            - if a repertoire gets saved and the 1st X moves arent saved yet ?? 
+            - and there is a record with an initial starting position ??
+
+            - too much?
+            - something simpler.. ?
+
+            */
         }
         // get the FEN
         $fen = $chess->fen();
@@ -1241,6 +1449,8 @@ class ApiController extends AbstractController
         // need to change this to user setting?
         $analyseForBlack = $game->getBlack() == "avweije";
 
+        // get the ignore list repo
+        $repo = $this->em->getRepository(IgnoreList::class);
 
         //print "Players: " . $game->getWhite() . " vs " . $game->getBlack() . "<br>";
         //print "Analysing for: " . ($analyseForBlack ? "Black" : "White") . "<br>";
@@ -1253,10 +1463,6 @@ class ApiController extends AbstractController
         // need to add this to settings?
         $includeInnacuracies = true;
 
-        $halfMove = 1;
-        $linePgn = "";
-        $lineMoves = [];
-
         foreach ($uciMoves as $move) {
             // add the UCI move
             $moves[] = $move['uci'];
@@ -1266,7 +1472,7 @@ class ApiController extends AbstractController
             $bestMovesBefore = [...$bestMoves];
 
             // play the move
-            $chess->move($move["san"]);
+            $ret = $chess->move($move["san"]);
 
             // if the game is over, we can stop the analysis
             if ($chess->gameOver()) {
@@ -1305,7 +1511,8 @@ class ApiController extends AbstractController
                 //}
             } else {
                 // set the position and get the best moves from the engine
-                $bestMoves = $uci->setPosition("", $moves);
+                //$bestMoves = $uci->setPosition("", $moves);
+                $bestMoves = $uci->setPosition($fen, $moves);
 
                 // if these evals are for a black move
                 if ($whiteToMove) {
@@ -1349,13 +1556,14 @@ class ApiController extends AbstractController
 
                 /*
 
-                - check if this fen is in our repertoire
-                - if it is and the move is correct = no mistake
-                - if it is and te move is not correct = mistake (even if good move)
+                - in case of mistake: check to see if move is on ignored list
+                - if it is, do not add as mistake.
 
-                - if in repertoire, still store engine bestmoves
-                - while fetching analysis records, check if we have fen in repertoire and add boolean to json response
-                - we can add repertoire moves also..
+                - in case of mistake (and not on ignored list): check to see if that move is in our repertoire
+                - if it is, do not add as mistake. you played according to repertoire.
+
+                - at what point do we stop analysing?
+                - if we have 3 blunders? 5 mistakes? if eval is below 5?
 
                 */
 
@@ -1380,7 +1588,7 @@ class ApiController extends AbstractController
                 }
 
                 // if we have a mistake
-                if ($mistake["type"] !== "") {
+                if ($mistake["type"] !== "" && !$repo->isOnIgnoreList($this->getUser(), $fenBefore, $move["san"])) {
                     // undo the current move so we can test the best moves
                     $chess->undo();
 
@@ -1392,6 +1600,8 @@ class ApiController extends AbstractController
                         // make the move
                         $ret = $chess->move(["from" => $fromSquare, "to" => $toSquare, "promotion" => $promotion]);
                         if ($ret == null) {
+
+                            //print "Invalid move: " . $bm['move'] . "<br>";
 
                             // invalid move.. ? do something.. ?
 
@@ -1453,7 +1663,6 @@ class ApiController extends AbstractController
 
                     */
 
-
                     // add the mistake
                     $mistakes[] = $mistake;
                 }
@@ -1479,5 +1688,17 @@ class ApiController extends AbstractController
         }
 
         return $mistakes;
+    }
+
+    // check if a move is on the ignore list or not
+    private function isOnIgnoreList($fen, $move, $ignoreList): bool
+    {
+        foreach ($ignoreList as $ignore) {
+            if ($ignore["fen"] == $fen && $ignore["move"] == $move) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

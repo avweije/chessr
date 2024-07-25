@@ -1,11 +1,8 @@
 import { Chess } from "chess.js/dist/esm/chess.js";
 import { Chessboard, FEN } from "cm-chessboard/src/Chessboard.js";
 import {
-  ChessboardView,
   COLOR,
   INPUT_EVENT_TYPE,
-  BORDER_TYPE,
-  POINTER_EVENTS,
 } from "cm-chessboard/src/view/ChessboardView.js";
 import {
   MARKER_TYPE,
@@ -72,8 +69,6 @@ export class MyChessBoard {
 
   // enable move input
   enableMoveInput() {
-    console.log("enableMoveInput");
-
     try {
       this.board.enableMoveInput(this.moveInputHandler.bind(this));
     } catch (err) {
@@ -83,8 +78,6 @@ export class MyChessBoard {
 
   // disable move input
   disableMoveInput() {
-    console.log("disableMoveInput");
-
     try {
       this.board.disableMoveInput();
     } catch (err) {
@@ -94,8 +87,6 @@ export class MyChessBoard {
 
   // get the correct FEN notation (en passant rule not included if not actually possible, should always be included if pawn moved 2 squares)
   getFen() {
-    console.log("getFEN:");
-
     // the en passant notation
     var enPassant = "-";
     // get the last move
@@ -171,10 +162,6 @@ export class MyChessBoard {
       this.game.move(move);
       // set the new position
       this.board.setPosition(this.game.fen());
-
-      console.log("makeMove (getFEN):");
-      console.log(this.getFen());
-
       // process the move
       this.afterMakeMove();
       // call the after move event
@@ -309,9 +296,6 @@ export class MyChessBoard {
   }
 
   moveInputFinished(event) {
-    console.log("moveInputFinished:");
-    console.log(event);
-
     // process the move
     this.afterMakeMove();
     // if this was a legal move
@@ -323,8 +307,6 @@ export class MyChessBoard {
 
   // called after a move was made
   afterMakeMove() {
-    console.log("afterMakeMove:");
-
     // remove the legal move markers
     this.board.removeLegalMovesMarkers();
 

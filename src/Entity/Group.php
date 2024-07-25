@@ -25,6 +25,10 @@ class Group
     #[ORM\OneToMany(targetEntity: RepertoireGroup::class, mappedBy: 'Grp', orphanRemoval: true)]
     private Collection $repertoireGroups;
 
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?User $User = null;
+
     public function __construct()
     {
         $this->repertoireGroups = new ArrayCollection();
@@ -73,6 +77,18 @@ class Group
                 $repertoireGroup->setGrp(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getUser(): ?User
+    {
+        return $this->User;
+    }
+
+    public function setUser(?User $User): static
+    {
+        $this->User = $User;
 
         return $this;
     }

@@ -85,10 +85,17 @@
 
 			</div>
 
+			<!-- loader -->
+			<div id="pageLoadingOverlay" class="hidden w-full h-full fixed top-0 left-0 backdrop-grayscale-[.5] z-50">
+				<div class="flex w-full h-full justify-center items-center">
+					<span class="inline-block icon-[svg-spinners--90-ring-with-bg] w-12 h-12"></span>
+				</div>
+			</div>
+
 			{% block footer %}
 				<footer class="fixed bottom-0 w-full bg-zinc-50 border border-slate-300 py-1 shadow-dark-mild dark:bg-neutral-700 lg:py-2">
 					<p class="m-0 text-center text-base text-sm p-0">
-						Copyright 2024 AvWeije. All Rights Reserved.
+						Copyright 2024 avweije. All Rights Reserved.
 					</p>
 				</footer>
 			{% endblock %}

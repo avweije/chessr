@@ -78,14 +78,24 @@ class AdminController extends AbstractController
         //$files = ['lichess_elite_2023-01-500k-b.pgn'];
         //$files = ['lichess_elite_2023-01-500k-c.pgn'];
         //$files = ['lichess_elite_2023-01-500k-d.pgn'];
-
-        // todo
-        $files = ['lichess_elite_2023-01-500k-e.pgn'];
+        //$files = ['lichess_elite_2023-01-500k-e.pgn'];
         //$files = ['lichess_elite_2023-01-500k-f.pgn'];
         //$files = ['lichess_elite_2023-01-500k-g.pgn'];
         //$files = ['lichess_elite_2023-01-500k-h.pgn'];
 
+
+        // todo
+        $files = [];
+
         exit;
+
+        /*
+
+        - DO NOT SAVE TO DATABASE IF ONLY 1 GAME PLAYED!!
+        - IF WE DO THIS PER 18K GAMES, WE SAVE 80% OR MORE
+        - WILL BE MUCH FASTER.
+
+        */
 
 
         $totals = [];
@@ -284,6 +294,13 @@ class AdminController extends AbstractController
 
                 // skip the 'pgn' field, not an actual move..
                 if ($move == 'pgn') {
+                    continue;
+                }
+
+                //
+                // IF ONLY 1 GAME, SKIP AND DON'T SAVE..
+                //
+                if ($score[0] + $score[1] + $score[2] < 2) {
                     continue;
                 }
 

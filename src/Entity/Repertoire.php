@@ -52,6 +52,12 @@ class Repertoire
     #[ORM\OneToMany(targetEntity: RepertoireGroup::class, mappedBy: 'Repertoire', orphanRemoval: true)]
     private Collection $repertoireGroups;
 
+    #[ORM\Column(length: 255)]
+    private ?string $InitialFen = null;
+
+    #[ORM\Column]
+    private ?bool $AutoPlay = null;
+
     public function __construct()
     {
         $this->repertoireGroups = new ArrayCollection();
@@ -208,6 +214,30 @@ class Repertoire
                 $repertoireGroup->setRepertoire(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getInitialFen(): ?string
+    {
+        return $this->InitialFen;
+    }
+
+    public function setInitialFen(string $InitialFen): static
+    {
+        $this->InitialFen = $InitialFen;
+
+        return $this;
+    }
+
+    public function isAutoPlay(): ?bool
+    {
+        return $this->AutoPlay;
+    }
+
+    public function setAutoPlay(bool $AutoPlay): static
+    {
+        $this->AutoPlay = $AutoPlay;
 
         return $this;
     }

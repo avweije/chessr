@@ -2,23 +2,26 @@
 
 {% block board_header %}
 	<div id="practiceRepertoireButtons" class="inline-flex rounded-md shadow-sm">
-		<button disabled class="text-gray-900 disabled:text-gray-300 bg-white px-4 py-2 text-sm font-medium border border-gray-200 rounded-s-lg hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-2 focus:ring-primary-700 focus:text-primary-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-primary-500 dark:focus:text-white">
+		<button disabled class="text-gray-900 disabled:text-gray-300 bg-white px-4 py-2 text-sm font-medium border border-gray-200 rounded-s-lg hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:text-primary-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:text-white">
 			White
 		</button>
-		<button disabled class="text-gray-900 disabled:text-gray-300 bg-white px-4 py-2 text-sm font-medium border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-2 focus:ring-primary-700 focus:text-primary-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-primary-500 dark:focus:text-white">
+		<button disabled class="text-gray-900 disabled:text-gray-300 bg-white px-4 py-2 text-sm font-medium border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:text-primary-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:text-white">
 			Black
 		</button>
-		<button disabled class="text-gray-900 disabled:text-gray-300 bg-white px-4 py-2 text-sm font-medium border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-2 focus:ring-primary-700 focus:text-primary-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-primary-500 dark:focus:text-white">
+		<button disabled class="text-gray-900 disabled:text-gray-300 bg-white px-4 py-2 text-sm font-medium border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:text-primary-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:text-white">
 			New
+			<sup class="font-normal pl-px"></sup>
 		</button>
-		<button disabled class="text-gray-900 disabled:text-gray-300 bg-white px-4 py-2 text-sm font-medium border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-2 focus:ring-primary-700 focus:text-primary-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-primary-500 dark:focus:text-white">
+		<button disabled class="text-gray-900 disabled:text-gray-300 bg-white px-4 py-2 text-sm font-medium border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:text-primary-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:text-white">
 			Recommended
+			<sup class="font-normal pl-px"></sup>
 		</button>
-		<button disabled class="text-gray-900 disabled:text-gray-300 bg-white px-4 py-2 text-sm font-medium border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-2 focus:ring-primary-700 focus:text-primary-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-primary-500 dark:focus:text-white">
-			Entire Repertoire
+		<button disabled class="text-gray-900 disabled:text-gray-300 bg-white px-4 py-2 text-sm font-medium border border-gray-200 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:text-primary-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:text-white">
+			All
 		</button>
-		<button disabled class="text-gray-900 disabled:text-gray-300 bg-white px-4 py-2 text-sm font-medium border border-gray-200 rounded-e-lg hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-2 focus:ring-primary-700 focus:text-primary-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-primary-500 dark:focus:text-white">
+		<button disabled class="text-gray-900 disabled:text-gray-300 bg-white px-4 py-2 text-sm font-medium border border-gray-200 rounded-e-lg hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:text-primary-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:text-white">
 			Analysis
+			<sup class="font-normal pl-px"></sup>
 		</button>
 	</div>
 {% endblock %}
@@ -89,17 +92,18 @@
 		</div>
 	</div>
 
-	{% if repertoireType == "analysis" %}
-
-		<div id="analysisGameContainer" class="border rounded border-slate-300 text-sm bg-white">
+	<div id="analysisGameContainer" class="hidden">
+		<div class="border rounded border-slate-300 text-sm bg-white">
 			<p class="block text-sm font-bold text-gray-900 p-3 border-b border-slate-200">Game</p>
 			<div id="analysisGameFields" class="grid grid-cols-[_auto_1fr] p-2">
-				<label class="p-2 text-base font-semibold text-gray-700 whitespace-nowrap">Opponent:</label>
-				<p class="p-2 text-base w-full truncate font-semibold text-gray-700"></p>
-				<label class="p-2 text-base font-semibold text-gray-700 whitespace-nowrap">Move:</label>
-				<p class="p-2 text-base w-full truncate font-semibold text-gray-700"></p>
-				<label class="p-2 text-base font-semibold text-gray-700 whitespace-nowrap">Link:</label>
-				<a href="#" target="_blank" class="p-2 text-base w-full truncate font-semibold text-gray-700"></a>
+				<label class="p-2 text-sm font-semibold text-gray-700 whitespace-nowrap">Opponent:</label>
+				<p class="p-2 text-sm w-full truncate font-semibold text-gray-700"></p>
+				<label class="p-2 text-sm font-semibold text-gray-700 whitespace-nowrap">Move:</label>
+				<p class="p-2 text-sm w-full truncate font-semibold text-gray-700"></p>
+				<label class="p-2 text-sm font-semibold text-gray-700 whitespace-nowrap">Start position:</label>
+				<p class="p-2 text-sm w-full truncate font-semibold text-gray-700"></p>
+				<label class="p-2 text-sm font-semibold text-gray-700 whitespace-nowrap">Link:</label>
+				<a href="#" target="_blank" class="p-2 text-sm w-full truncate font-semibold text-gray-700 hover:text-gray-400"></a>
 			</div>
 		</div>
 
@@ -114,12 +118,12 @@
 				Discard
 			</button>
 		</div>
-
-	{% endif %}
+	</div>
 
 {% endblock %}
 
 {% block body_end %}
+	{{ include('practice/dialogs/save.html.twig') }}
 	{{ include('practice/dialogs/ignore.html.twig') }}
 {% endblock %}
 

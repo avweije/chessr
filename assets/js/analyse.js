@@ -325,14 +325,14 @@ class Analyse {
     console.log(this.archiveYearSelect.value);
     console.log(this.archiveMonthSelect.value);
 
-    // show the spinner
-    this.analyseButton.children[0].classList.remove("hidden");
-    this.analyseButton.disabled = true;
-
     // if the last run is still in progress
     if (this.analyseDialog.inProgress) {
       return false;
     }
+
+    // show the spinner
+    this.analyseButton.children[0].classList.remove("hidden");
+    this.analyseButton.disabled = true;
 
     // initialise the analyse process
     this.analyseDialog.isCancelled = false;
@@ -388,11 +388,8 @@ class Analyse {
 
     // if cancelled, don't proceed
     if (this.analyseDialog.isCancelled) {
-      // no longer in progress
-      this.analyseDialog.inProgress = false;
-      // hide the spinner
-      this.analyseButton.children[0].classList.add("hidden");
-      this.analyseButton.disabled = false;
+      // end the progress
+      this.analyseEndProgress();
 
       // reload the games dropdown (if they same year & month are still showing)
       if (year == this.archiveYear && month == this.archiveMonth) {
@@ -420,9 +417,8 @@ class Analyse {
       this.analyseDialog.stopButton.innerHTML = "Close";
       this.analyseDialog.stopButton.classList.remove("btn-warning");
       this.analyseDialog.stopButton.classList.add("btn-primary");
-      // hide the spinner
-      this.analyseButton.children[0].classList.add("hidden");
-      this.analyseButton.disabled = false;
+      // end the progress
+      this.analyseEndProgress();
 
       // reload the games dropdown (if they same year & month are still showing)
       if (year == this.archiveYear && month == this.archiveMonth) {
@@ -474,9 +470,16 @@ class Analyse {
     fetch(url, {
       method: "GET",
     })
-      .then((res) => res.json())
+      .then((res) => {
+        // if not a 200
+        if (res.status !== 200) {
+          throw new Error(res.error ? res.error : "Received an error.");
+        }
+
+        return res.json();
+      })
       .then((response) => {
-        console.log("Success:");
+        console.log("Success: " + response.status);
         console.log(response);
 
         // update the totals
@@ -492,10 +495,18 @@ class Analyse {
       .catch((error) => {
         console.error("Error:", error);
 
-        // hide the spinner
-        this.analyseButton.children[0].classList.add("hidden");
-        this.analyseButton.disabled = false;
+        // end the progress
+        this.analyseEndProgress();
       });
+  }
+
+  // analyse end progress
+  analyseEndProgress() {
+    // no longer in progress
+    this.analyseDialog.inProgress = false;
+    // hide the spinner
+    this.analyseButton.children[0].classList.add("hidden");
+    this.analyseButton.disabled = false;
   }
 
   // get a printable duration for a number of seconds (2h 14m 32s)
