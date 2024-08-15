@@ -13,8 +13,12 @@
     @apply text-black bg-gray-300 opacity-50 shadow-none pointer-events-none;
   }
 
+  .btn.hidden {
+    display: none;
+  }
+
   .btn-primary {
-    @apply bg-blue-500 text-white;
+    @apply text-white bg-blue-500;
   }
   .btn-primary:hover {
     @apply bg-blue-400;
@@ -24,7 +28,7 @@
   }
 
   .btn-warning {
-    @apply bg-red-500 text-white;
+    @apply text-white bg-red-500;
   }
   .btn-warning:hover {
     @apply bg-red-400;
@@ -34,10 +38,10 @@
   }
 
   .btn-outline {
-    @apply bg-gray-50 text-gray-700 border border-gray-200;
+    @apply text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-slate-700 border border-gray-300 dark:border-slate-900;
   }
   .btn-outline:hover {
-    @apply bg-gray-100 text-gray-500;
+    @apply text-gray-500 dark:text-gray-200 bg-gray-100 dark:bg-slate-800;
   }
   .btn-outline:focus-visible {
     @apply outline-blue-300;

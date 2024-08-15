@@ -90,7 +90,7 @@ Encore
   .copyFiles({
     from: "./assets/images",
     to: "images/[path][name].[ext]",
-    pattern: /\.(png|jpg|jpeg)$/,
+    pattern: /\.(png|jpg|jpeg|webp)$/,
   })
 
   .copyFiles({

@@ -1,4 +1,5 @@
-import { Chess } from "chess.js/dist/esm/chess.js";
+//import { Chess } from "chess.js/dist/esm/chess.js";
+import { MyChess } from "./chess.js";
 import { Chessboard, FEN } from "cm-chessboard/src/Chessboard.js";
 import {
   COLOR,
@@ -8,8 +9,15 @@ import {
   MARKER_TYPE,
   Markers,
 } from "cm-chessboard/src/extensions/markers/Markers.js";
+import { PromotionDialog } from "cm-chessboard/src/extensions/promotion-dialog/PromotionDialog.js";
 
 import "../styles/chessboard.css";
+
+export const BOARD_STATUS = {
+  default: "default",
+  waitingOnMove: "waitingOnMove",
+  animatingMoves: "animatingMoves",
+};
 
 /*
 MyChessBoard Class - Integrates Chess.js with cm-chessboard, validates moves, adds markers, etc.
@@ -17,6 +25,71 @@ MyChessBoard Class - Integrates Chess.js with cm-chessboard, validates moves, ad
 export class MyChessBoard {
   board = null;
   game = null;
+
+  status = BOARD_STATUS.default;
+  premove = null;
+
+  settings = {
+    useVariations: true,
+    premoveEnabled: false,
+    pgn: {
+      withLinks: true,
+      styling: {
+        main: "inline-block px-0.5 text-base rounded",
+        mainText: "text-gray-800 dark:text-gray-200 border border-transparent",
+        mainLink:
+          "cursor-pointer border border-transparent text-gray-800 dark:text-gray-200 hover:text-gray-600 hover:bg-slate-100 hover:border-slate-300 dark:hover:bg-primary-100 dark:hover:border-slate-600",
+        variation: "inline-block px-0.5 italic text-sm rounded",
+        variationText:
+          "text-gray-600 dark:text-gray-300 border border-transparent",
+        variationLink:
+          "cursor-pointer border border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-600 hover:bg-slate-100 hover:border hover:border-slate-300 dark:hover:bg-primary-100 dark:hover:border-slate-600",
+        currentMove:
+          "border text-primary-500 bg-primary-50 border-slate-300 dark:bg-primary-100 dark:border-slate-600",
+        //dark:text-gray-200 dark:bg-slate-900 peer-checked:dark:text-primary-500 peer-checked:dark:bg-slate-950
+      },
+    },
+  };
+
+  pgnField = null;
+
+  initialFen = "";
+  currentMove = -1;
+  currentVariation = -1;
+
+  history = [];
+  variations = [];
+
+  /*
+
+  - keep track of complete history with variations
+  - option to move back and forward through game
+
+  - keep track of main line (user can just make moves playing around)
+  - main line should be kept in tact
+  - and you should be able to have a getMoves / history function for the main line ??
+
+  - options: 
+  - + useVariations = on new move, add variation or overwrite existing line
+  - + keepMainLine = ? see above, probably the same setting?
+
+  - newGame()
+  - reset(?fen)
+  - load(fen)
+  - goBack(), goForward(), goFirst(), goLast()
+  - makeMoves(moves)
+  - jumpToMove(moveNr, variationNr)
+  - getVariations()
+  - getMainLine() ?
+
+  - getPgn(withVariations = true)
+  - getPgnLinks(withVariations = true)
+
+  - currentFen()
+  - currentLine() ?
+  - currentVariation() ?
+
+  */
 
   // the custom markers
   markers = {
@@ -28,10 +101,18 @@ export class MyChessBoard {
       class: "marker-cancel",
       slice: "markerCancel",
     },
+    squareGreen: {
+      class: "marker-square-green",
+      slice: "markerSquare",
+    },
+    squareRed: {
+      class: "marker-square-red",
+      slice: "markerSquare",
+    },
   };
 
   constructor() {
-    this.game = new Chess();
+    this.game = new MyChess();
   }
 
   /*
@@ -49,7 +130,7 @@ export class MyChessBoard {
       orientation: color,
       assetsUrl: "/build/", // wherever you copied the assets folder to, could also be in the node_modules folder
       style: {
-        cssClass: "default", // set the css theme of the board, try "green", "blue" or "chess-club"
+        cssClass: "chess-club", // set the css theme of the board, try "green", "blue" or "chess-club"
         showCoordinates: true, // show ranks and files
         aspectRatio: 1, // height/width of the board
         animationDuration: 300, // pieces animation duration in milliseconds. Disable all animations with `0`
@@ -59,7 +140,33 @@ export class MyChessBoard {
           class: Markers,
           props: { sprite: "/build/extensions/markers/markers.svg" },
         },
+        {
+          class: PromotionDialog,
+        },
       ],
+    });
+
+    // add keydown event listeners for left/right (prev/next move)
+    document.addEventListener("keydown", (event) => {
+      // if arrow left or right and the focus is not on an input element
+      if (
+        this.practice.paused &&
+        (event.key == "ArrowRight" || event.key == "ArrowLeft") &&
+        (!document.activeElement ||
+          !["INPUT", "SELECT", "TEXTAREA"].includes(
+            document.activeElement.nodeName
+          ))
+      ) {
+        console.log("keydown:");
+        console.log(event);
+        console.log(document.activeElement);
+
+        if (event.key == "ArrowRight") {
+          this.gotoNext();
+        } else {
+          this.gotoPrevious();
+        }
+      }
     });
   }
 
@@ -109,50 +216,51 @@ export class MyChessBoard {
     return fenParts.join(" ");
   }
 
-  // get the history(verbose=true) with the corrent FEN's
-  historyWithCorrectFen() {
-    var updatedFen = "";
-    // get the history
+  //
+  resetToPosition(initialFen, moves, updateBoard = true) {
+    // get the current moves
     var history = this.game.history({ verbose: true });
-    for (var i = 0; i < history.length; i++) {
-      // if the previous fen was updated
-      if (updatedFen != "") {
-        history[i].before = updatedFen;
+    var movesToMake = [];
 
-        updatedFen = "";
-      }
+    var match = moves.length >= history.length;
 
-      // if the move was a pawn move
-      if (history[i].piece == "p") {
-        // the en passant notation
-        var enPassant = "-";
-        // if the pawn moved 2 squares
-        if (
-          history[i].from.charAt(1) == "2" &&
-          history[i].to.charAt(1) == "4"
-        ) {
-          enPassant = history[i].from.charAt(0) + "3";
-        } else if (
-          history[i].from.charAt(1) == "7" &&
-          history[i].to.charAt(1) == "5"
-        ) {
-          enPassant = history[i].from.charAt(0) + "6";
-        }
-
-        // if we have an en passant move
-        if (enPassant != "-") {
-          // split the game FEN
-          var fenParts = history[i].after.split(" ");
-          // override the en passant part
-          fenParts[3] = enPassant;
-          // update the FEN
-          updatedFen = fenParts.join(" ");
-          history[i].after = updatedFen;
-        }
+    // see if the current moves match the new moves
+    for (var i = 0; i < moves.length; i++) {
+      // if this is a new move
+      if (i >= history.length) {
+        movesToMake.push(moves[i]);
+      } else if (moves[i] !== history[i].san) {
+        // not a match, stop checking
+        match = false;
+        break;
       }
     }
 
-    return history;
+    // reset the game & board
+    if (!match) {
+      // if we have an initial fen
+      if (initialFen != "") {
+        this.game.load(initialFen);
+      } else {
+        this.game.reset();
+      }
+      // update the board
+      if (updateBoard) {
+        this.board.setPosition(this.game.fen());
+      }
+
+      movesToMake = moves;
+    }
+
+    // the new moves
+    var newMoves = [];
+    // make the (new) moves
+    for (var i = moves.length - movesToMake.length; i < moves.length; i++) {
+      this.game.move(moves[i]);
+      newMoves.push(this.game.history({ verbose: true }).pop());
+    }
+
+    return newMoves;
   }
 
   // make a move
@@ -162,6 +270,10 @@ export class MyChessBoard {
       this.game.move(move);
       // set the new position
       this.board.setPosition(this.game.fen());
+
+      // add the move to our history with variations
+      this.addMoveToHistory(this.game.history({ verbose: true }).pop());
+
       // process the move
       this.afterMakeMove();
       // call the after move event
@@ -177,11 +289,18 @@ export class MyChessBoard {
       // get the history of moves
       var moves = this.game.history({ verbose: true });
 
+      // undo the last X moves
+      for (var i = 1; i < moves.length - index; i++) {
+        this.game.undo();
+      }
+
+      /*
       // reset the game and make the moves
       this.game.reset();
       for (var i = 0; i <= index; i++) {
         this.game.move(moves[i].san);
       }
+        */
 
       // set the board position
       this.board.setPosition(this.game.fen());
@@ -192,6 +311,694 @@ export class MyChessBoard {
       this.afterMove(moves[index]);
     } catch (err) {
       console.log(err);
+    }
+  }
+
+  /**
+   * history + variations
+   */
+
+  newGame(fen = "", moves = []) {
+    //
+    this.initialFen = fen;
+    //
+    this.game.reset();
+    //
+    if (fen != "") {
+      this.game.load(fen);
+      //} else {
+      //this.game.reset();
+    }
+    this.board.setPosition(this.game.fen());
+    //
+    this.history = moves;
+    this.variations = [];
+    this.currentMove = -1;
+    this.currentVariation = -1;
+
+    // update the pgn field
+    this.updatePgnField();
+  }
+
+  resetToCurrent(fen = "") {
+    this.initialFen = fen;
+    this.history = this.game.history({ verbose: true });
+    this.variations = [];
+    this.currentMove = this.history.length;
+    this.currentVariation = -1;
+    // update the pgn field
+    this.updatePgnField();
+  }
+
+  gameMove(move) {
+    this.game.move(move);
+    this.addMoveToHistory(move);
+  }
+
+  gameUndo() {
+    // undo the move
+    this.game.undo();
+    // update the board
+    this.board.setPosition(this.game.fen());
+    // remove from history or variation
+    if (this.currentVariation == -1) {
+      this.history.pop();
+    } else {
+      this.variations[this.currentVariation].moves.pop();
+      if (this.variations[this.currentVariation].moves.length == 0) {
+        this.variations.splice(this.currentVariation, 1);
+        this.currentVariation = -1;
+      }
+    }
+    // update the current move
+    this.currentMove = this.game.history().length;
+    // update the pgn field
+    this.updatePgnField();
+  }
+
+  gotoMove(moveNr, variationIdx = -1) {
+    console.log("moveNr: " + moveNr + ", variation: " + variationIdx);
+
+    var moves = [];
+
+    // safety, 1st move minimum
+    moveNr = Math.max(1, moveNr);
+    // make sure the variation index is correct
+    if (variationIdx >= 0) {
+      // if the variation does not exist
+      if (variationIdx >= this.variations.length) {
+        return false;
+      }
+
+      // if the move lies after the variation
+      if (
+        moveNr >
+        this.variations[variationIdx].moveNr +
+          this.variations[variationIdx].moves.length
+      ) {
+        return false;
+      }
+
+      // if the move lies before the variation, goto the parent variation
+      var curr = this.variations[variationIdx];
+      while (variationIdx >= 0 && moveNr < curr.moveNr) {
+        variationIdx =
+          this.variations[variationIdx].parent == null
+            ? -1
+            : this.variations[variationIdx].parent;
+      }
+    }
+
+    // safety, last move maximum
+    if (variationIdx >= 0) {
+      moveNr = Math.min(
+        moveNr,
+        this.variations[variationIdx].moveNr -
+          1 +
+          this.variations[variationIdx].moves.length
+      );
+    } else {
+      moveNr = Math.min(moveNr, this.history.length);
+    }
+
+    // safety, in case no moves
+    if (moveNr == 0) {
+      return false;
+    }
+
+    // remember the current move & variation
+    this.currentMove = moveNr;
+    this.currentVariation = variationIdx;
+
+    // if this is a main line move
+    if (variationIdx == -1) {
+      // get the moves
+      moves = this.history.slice(0, moveNr);
+    } else {
+      // get the 1st move of the top (parent) variation
+      var varStart = this.variations[variationIdx].moveNr;
+      // get all the parent-variations, top level 1st
+      var parent = this.variations[variationIdx].parent;
+      var parents = [];
+      while (parent !== null) {
+        // add to the beginning of the parents array
+        parents.splice(0, 0, parent);
+
+        varStart = this.variations[parent].moveNr;
+        parent = this.variations[parent].parent;
+      }
+
+      // get the main line moves
+      moves = this.history.slice(0, varStart - 1);
+
+      // add the parent(s) variation moves
+      for (var i = 0; i < parents.length; i++) {
+        var varEnd =
+          parents.length > i + 1
+            ? this.variations[parents[i + 1]].moveNr
+            : this.variations[variationIdx].moveNr;
+
+        moves = moves.concat(
+          this.variations[parents[i]].moves.slice(
+            0,
+            varEnd - this.variations[parents[i]].moveNr
+          )
+        );
+      }
+
+      // add the variation moves
+      moves = moves.concat(
+        this.variations[variationIdx].moves.slice(
+          0,
+          moveNr - this.variations[variationIdx].moveNr + 1
+        )
+      );
+    }
+
+    // reset to position (need to use diff function for this later..)
+    this.resetToPosition(this.initialFen, moves, false);
+    // update the board
+    this.board.setPosition(this.game.fen());
+    // process the move
+    this.afterMakeMove();
+    // update the PGN field
+    this.updatePgnField();
+
+    return true;
+  }
+
+  // goto 1st move main line
+  gotoFirst() {
+    this.gotoMove(1);
+  }
+
+  // goto last move main line
+  gotoLast() {
+    this.gotoMove(this.history.length);
+  }
+
+  // goto previous move in current line or variation
+  gotoPrevious() {
+    // make sure we have the currentMove
+    this.currentMove =
+      this.currentMove == -1 ? this.history.length : this.currentMove;
+
+    this.gotoMove(this.currentMove - 1, this.currentVariation);
+  }
+
+  // goto next move in current line or variation
+  gotoNext() {
+    // make sure we have the currentMove
+    this.currentMove =
+      this.currentMove == -1 ? this.history.length : this.currentMove;
+
+    this.gotoMove(this.currentMove + 1, this.currentVariation);
+  }
+
+  //
+  addMoveToHistory(move) {
+    try {
+      // get the current move index
+      //var moveNr = this.game.moveNumber();
+      var moveNr = this.game.history().length;
+
+      // if we are in the main line
+      if (this.currentVariation == -1) {
+        // if this is a new move
+        if (this.history.length < moveNr) {
+          // add the move to the main line
+          this.history.push(move);
+        } else {
+          //
+
+          if (this.settings.useVariations) {
+            //
+            var addVariation = true;
+            //
+            for (var i = 0; i < this.variations.length; i++) {
+              if (this.variations[i].moveNr == moveNr) {
+                //
+                if (this.variations[i].moves[0].san == move.san) {
+                  // set the current variation
+                  this.currentVariation = this.variations.length - 1;
+
+                  addVariation = false;
+                  break;
+                }
+              }
+            }
+
+            //
+            if (addVariation) {
+              // add a new main line variation
+              this.variations.push({
+                moveNr: moveNr,
+                parent: null,
+                moves: [move],
+              });
+
+              // set the current variation
+              this.currentVariation = this.variations.length - 1;
+            }
+          } else {
+            // overwrite the main line and add the new move
+            this.history.splice(0, moveNr, move);
+          }
+        }
+      } else {
+        // if this is a new move for the variation
+        if (
+          this.variations[this.currentVariation].moveNr -
+            1 +
+            this.variations[this.currentVariation].moves.length <
+          moveNr
+        ) {
+          // add the move to the current variation
+          this.variations[this.currentVariation].moves.push(move);
+        } else {
+          //
+          // check if the move matches the variation move
+          // if not, add new variation
+          //
+
+          // if this is a different move
+          if (
+            this.variations[this.currentVariation].moves[
+              moveNr - this.variations[this.currentVariation].moveNr
+            ].san != move.san
+          ) {
+            // add a new sub-variation
+            this.variations.push({
+              moveNr: moveNr,
+              parent: this.currentVariation,
+              moves: [move],
+            });
+
+            // set the current variation
+            this.currentVariation = this.variations.length - 1;
+          }
+        }
+      }
+
+      //
+      this.currentMove = moveNr;
+
+      // update the pgn field
+      this.updatePgnField();
+    } catch (err) {
+      console.log(err);
+    }
+  }
+
+  addVariation(moveNr, moves) {
+    console.log("addVariation: " + moveNr);
+    console.log(moves);
+    console.log(this.history);
+
+    var newMoves = [];
+    var moveVar = -1;
+    var currVar = -1;
+    var match = true;
+    // loop through the moves
+    for (var i = 0; i < moves.length; i++) {
+      var ii = moveNr - 1 + i;
+      // if no more history or (current) variation moves
+      if (
+        !match ||
+        (currVar == -1 && this.history.length <= ii) ||
+        (currVar >= 0 &&
+          this.variations[currVar].moveNr -
+            1 +
+            this.variations[currVar].moves.length <=
+            ii)
+      ) {
+        // add the move as a new move
+        newMoves.push(moves[i]);
+
+        continue;
+      }
+
+      // if the history move does not match
+      if (currVar == -1 && this.history[ii].san !== moves[i]) {
+        // not a match, check main line variations
+        for (var x = 0; x < this.variations.length; x++) {
+          if (
+            this.variations[x].parent == null &&
+            this.variations[x].moveNr == ii + 1 &&
+            this.variations[x].moves[0].san == moves[i]
+          ) {
+            // move found in main line variation
+            currVar = x;
+
+            // if this is the 1st move
+            if (i == 0) {
+              moveVar = x;
+            }
+
+            break;
+          }
+        }
+
+        console.log(
+          "main line no match, currVar = " +
+            currVar +
+            ", ii = " +
+            ii +
+            ", i = " +
+            i
+        );
+
+        // no match if move wasn't found in a main line variation
+        match = currVar >= 0;
+      }
+
+      // if the variation move does not match
+      if (
+        currVar >= 0 &&
+        this.variations[currVar].moves[ii - this.variations[currVar].moveNr + 1]
+          .san !== moves[i]
+      ) {
+        var found = false;
+        // not a match, check child variations
+        for (var x = 0; x < this.variations.length; x++) {
+          if (
+            this.variations[x].parent == this.variations[currVar].parent &&
+            this.variations[x].moveNr == ii + 1 &&
+            this.variations[x].moves[0].san == moves[i]
+          ) {
+            // move found in child variation
+            currVar = x;
+            found = true;
+
+            break;
+          }
+        }
+
+        console.log("current variation no match, found = " + found);
+
+        // no match if move wasn't found
+        match = found;
+      }
+
+      // if no match
+      if (!match) {
+        // add the move as a new move
+        newMoves.push(moves[i]);
+      }
+    }
+
+    console.log("newMoves:");
+    console.log(newMoves);
+
+    // if (part of) the variation is new
+    if (newMoves.length > 0) {
+      // create a game to make the moves
+      var game = new MyChess();
+      if (this.initialFen != "") {
+        game.load(this.initialFen);
+      }
+
+      var upTo = moveNr - 1 + moves.length - newMoves.length;
+
+      console.log("moveNr: " + moveNr + ", upTo: " + upTo);
+      console.log(this.history);
+
+      // make the moves up to the new moves
+      for (var i = 0; i < upTo; i++) {
+        game.move(this.history[i].san);
+      }
+
+      // make the moves & get them
+      var madeMoves = [];
+      for (var i = 0; i < newMoves.length; i++) {
+        // make the move
+        game.move(newMoves[i]);
+        // add it to our history
+        madeMoves.push(game.history({ verbose: true }).pop());
+      }
+
+      // if these are main line moves
+      if (currVar == -1 && match) {
+        // add the main line moves
+        for (var i = 0; i < madeMoves.length; i++) {
+          // add it to our history
+          this.history.push(madeMoves[i]);
+        }
+      } else {
+        // add a variation
+        this.variations.push({
+          moveNr: moveNr + moves.length - newMoves.length,
+          parent: currVar == -1 ? null : currVar,
+          moves: madeMoves,
+        });
+
+        if (newMoves.length == moves.length) {
+          moveVar = this.variations.length - 1;
+        }
+
+        console.log("new variation added:");
+        console.log(this.variations[this.variations.length - 1]);
+      }
+    }
+
+    return moveVar;
+  }
+
+  setPgnField(element) {
+    this.pgnField = element;
+  }
+
+  setPgnWithLinks(toggle = true) {
+    this.settings.pgn.withLinks = toggle;
+    // update the pgn field
+    this.updatePgnField();
+  }
+
+  updatePgnField() {
+    if (this.pgnField) {
+      this.getPgn(this.settings.useVariations, this.pgnField);
+    }
+  }
+
+  getPgnWithLinks(withVariations = true) {
+    return this.getPgn(withVariations, true);
+  }
+
+  getPgn(withVariations = true, pgnField = null) {
+    var pgn = "";
+
+    if (pgnField) {
+      pgnField.innerHTML = "";
+    }
+
+    var currentMove =
+      this.currentMove == -1 ? this.history.length : this.currentMove;
+
+    for (var i = 0; i < this.history.length; i++) {
+      var moveNr = Math.floor(i / 2) + 1;
+
+      if (i % 2 == 0) {
+        pgn += moveNr + ". ";
+
+        if (pgnField) {
+          var sp = document.createElement("span");
+          sp.className =
+            this.settings.pgn.styling.main +
+            " " +
+            this.settings.pgn.styling.mainText;
+          sp.innerHTML = moveNr + ".";
+
+          pgnField.appendChild(sp);
+        }
+      }
+
+      pgn += this.history[i].san + " ";
+
+      if (pgnField) {
+        var sp = document.createElement("span");
+        sp.className = this.settings.pgn.styling.main + " ";
+
+        // if this is the current move
+        if (this.currentVariation == -1 && currentMove == i + 1) {
+          sp.className = sp.className + this.settings.pgn.styling.currentMove;
+        } else if (this.settings.pgn.withLinks) {
+          sp.className = sp.className + this.settings.pgn.styling.mainLink;
+        } else {
+          sp.className = sp.className + this.settings.pgn.styling.mainText;
+        }
+
+        sp.innerHTML = this.history[i].san;
+        sp.setAttribute("data-move", i + 1);
+
+        // add event listener
+        if (this.settings.pgn.withLinks) {
+          sp.addEventListener("click", (event) => {
+            // goto a certain move
+            this.gotoMove(event.target.getAttribute("data-move"));
+          });
+        }
+
+        pgnField.appendChild(sp);
+      }
+
+      if (this.settings.useVariations && withVariations) {
+        for (var x = 0; x < this.variations.length; x++) {
+          if (
+            this.variations[x].parent == null &&
+            this.variations[x].moveNr == i + 1
+          ) {
+            pgn += this.getPgnForVariation(i, x, pgnField);
+          }
+        }
+      }
+    }
+
+    return pgn.trim();
+  }
+
+  getPgnForVariation(i, x, pgnField) {
+    var pgn = '<span style="color: #707070; style: italic;">(';
+
+    var variationSpan;
+
+    if (pgnField) {
+      variationSpan = document.createElement("span");
+      variationSpan.className =
+        this.settings.pgn.styling.variation +
+        " " +
+        this.settings.pgn.styling.variationText;
+
+      variationSpan.appendChild(document.createTextNode("("));
+    }
+
+    var moveNr = Math.floor(i / 2) + 1;
+
+    if (i % 2 == 1) {
+      pgn += moveNr + "... ";
+
+      if (pgnField) {
+        var sp = document.createElement("span");
+        sp.className =
+          this.settings.pgn.styling.variation +
+          " " +
+          this.settings.pgn.styling.variationText;
+        sp.innerHTML = moveNr + "...";
+        variationSpan.appendChild(sp);
+      }
+    }
+
+    for (var y = 0; y < this.variations[x].moves.length; y++) {
+      // get the move number
+      moveNr = Math.floor((i + y) / 2) + 1;
+
+      if ((i + y) % 2 == 0) {
+        pgn += moveNr + ". ";
+
+        if (pgnField) {
+          var sp = document.createElement("span");
+          sp.className =
+            this.settings.pgn.styling.variation +
+            " " +
+            this.settings.pgn.styling.variationText;
+          sp.innerHTML = moveNr + ".";
+          variationSpan.appendChild(sp);
+        }
+      }
+      pgn += this.variations[x].moves[y].san + " ";
+
+      if (pgnField) {
+        var sp = document.createElement("span");
+        sp.className = this.settings.pgn.styling.variation + " ";
+
+        // if this is the current move
+        if (this.currentVariation == x && this.currentMove == i + y + 1) {
+          sp.className = sp.className + this.settings.pgn.styling.currentMove;
+        } else if (this.settings.pgn.withLinks) {
+          sp.className = sp.className + this.settings.pgn.styling.variationLink;
+        } else {
+          sp.className = sp.className + this.settings.pgn.styling.variationText;
+        }
+
+        sp.innerHTML = this.variations[x].moves[y].san;
+        sp.setAttribute("data-variation", x);
+        sp.setAttribute("data-move", i + y + 1);
+
+        // add event listener
+        if (this.settings.pgn.withLinks) {
+          sp.addEventListener("click", (event) => {
+            // goto a certain move
+            this.gotoMove(
+              event.target.getAttribute("data-move"),
+              event.target.getAttribute("data-variation")
+            );
+          });
+        }
+
+        variationSpan.appendChild(sp);
+      }
+
+      // look for any sub-variations from this point
+      for (var z = 0; z < this.variations.length; z++) {
+        if (
+          this.variations[z].parent == x &&
+          this.variations[z].moveNr == i + y + 1
+        ) {
+          pgn += this.getPgnForVariation(i + y, z, variationSpan);
+        }
+      }
+    }
+    pgn += ")</span>";
+
+    if (pgnField) {
+      variationSpan.appendChild(document.createTextNode(")"));
+
+      pgnField.appendChild(variationSpan);
+    }
+
+    return pgn;
+  }
+
+  getHistoryMove(moveNr) {
+    var moves = [];
+
+    // add the main line move
+    if (this.history.length >= moveNr) {
+      moves.push(this.history[moveNr]);
+    }
+
+    // add the variations moves
+    for (var i = 0; i < this.variations.length; í++) {
+      if (
+        this.variations[i].moveNr <= moveNr &&
+        this.variations[i].moveNr + this.variations[i].moves.length >= moveNr
+      ) {
+        moves.push(
+          this.variations[i].moves[moveNr - this.variations[i].moveNr]
+        );
+      }
+    }
+
+    return moves;
+  }
+
+  //
+  setStatus(status) {
+    this.status = status;
+
+    // if we need to make a premove
+    if (this.status == BOARD_STATUS.waitingOnMove && this.premove !== null) {
+      console.log("-- making premove:");
+
+      // make the move
+      this.makeMove({
+        from: this.premove.squareFrom,
+        to: this.premove.squareTo,
+        promotion: "q", // NOTE: always promote to a queen for example simplicity
+      });
+
+      this.premove = null;
+
+      return true;
     }
   }
 
@@ -234,6 +1041,18 @@ export class MyChessBoard {
     // do not pick up pieces if the game is over
     if (this.game.isGameOver()) return false;
 
+    console.log("-- moveInputStarted: " + this.status);
+
+    // if this is a premove
+    if (this.status !== BOARD_STATUS.waitingOnMove) {
+      console.log("-- premove started:");
+
+      // add a marker
+      this.board.addMarker(this.markers.squareRed, event.squareFrom);
+
+      return true;
+    }
+
     var piece = this.board.getPiece(event.squareFrom);
 
     // only pick up pieces for the side to move
@@ -262,9 +1081,14 @@ export class MyChessBoard {
   }
 
   validateMoveInput(event) {
-    console.log("validateMoveInput:");
+    console.log("validateMoveInput: " + this.status);
     console.log(event);
     try {
+      // if this is a premove
+      if (this.status !== BOARD_STATUS.waitingOnMove) {
+        return true;
+      }
+
       // see if the move is legal
       var move = this.game.move({
         from: event.squareFrom,
@@ -275,6 +1099,9 @@ export class MyChessBoard {
       if (this.onValidateMove(move)) {
         // set the board position
         this.board.setPosition(this.game.fen());
+
+        // add the move to our history with variations
+        this.addMoveToHistory(this.game.history({ verbose: true }).pop());
 
         return true;
       } else {
@@ -291,17 +1118,38 @@ export class MyChessBoard {
   }
 
   moveInputCancelled(event) {
+    console.log("moveInputCancelled:");
+    console.log(event);
     // remove the legal move markers
     this.board.removeLegalMovesMarkers();
   }
 
   moveInputFinished(event) {
-    // process the move
-    this.afterMakeMove();
-    // if this was a legal move
-    if (event.legalMove) {
-      // call the after move event
-      this.afterMove(this.game.history({ verbose: true }).pop());
+    console.log("moveInputFinished:");
+    console.log(event);
+    // if this was an actual move
+    if (event.squareFrom && event.squareTo) {
+      // if this is a premove
+      if (this.status !== BOARD_STATUS.waitingOnMove) {
+        console.log("-- storing premove:");
+        console.log(event);
+
+        this.premove = event;
+
+        // remember the premove (only 1 premove allowed, check if there already was one.. etc)
+        this.board.addMarker(this.markers.squareRed, event.squareFrom);
+        this.board.addMarker(this.markers.squareRed, event.squareTo);
+
+        return true;
+      }
+
+      // process the move
+      this.afterMakeMove();
+      // if this was a legal move
+      if (event.legalMove) {
+        // call the after move event
+        this.afterMove(this.game.history({ verbose: true }).pop());
+      }
     }
   }
 

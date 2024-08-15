@@ -213,7 +213,8 @@ class MyPgnParser
             case 'fen':
                 $game->setFen($val);
                 break;
-            case 'link':
+            case 'link': // chess.com
+            case 'site': // lichess
                 $game->setLink($val);
                 break;
             default:

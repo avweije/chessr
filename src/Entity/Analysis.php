@@ -44,6 +44,9 @@ class Analysis
     #[ORM\Column(length: 255)]
     private ?string $InitialFen = null;
 
+    #[ORM\Column(length: 5)]
+    private ?string $color = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -165,6 +168,18 @@ class Analysis
     public function setInitialFen(string $InitialFen): static
     {
         $this->InitialFen = $InitialFen;
+
+        return $this;
+    }
+
+    public function getColor(): ?string
+    {
+        return $this->color;
+    }
+
+    public function setColor(string $color): static
+    {
+        $this->color = $color;
 
         return $this;
     }

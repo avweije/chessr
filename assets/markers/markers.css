@@ -2,7 +2,7 @@
   pointer-events: none;
 }
 .cm-chessboard .markers .marker.marker-frame {
-  stroke: rgb(99 102 241) !important;
+  stroke: #3b82f6 !important;
   stroke-width: 2.4px !important;
   opacity: 0.7 !important;
 }
@@ -17,7 +17,7 @@
   opacity: 0.5 !important;
 }
 .cm-chessboard .markers .marker.marker-circle {
-  stroke: rgb(99 102 241) !important;
+  stroke: #3b82f6 !important;
   stroke-width: 3px !important;
   opacity: 0.5 !important;
 }
@@ -32,15 +32,23 @@
   opacity: 0.5 !important;
 }
 .cm-chessboard .markers .marker.marker-square {
-  fill: rgb(99 102 241) !important;
+  fill: #3b82f6 !important;
+  opacity: 0.4 !important;
+}
+.cm-chessboard .markers .marker.marker-square-green {
+  fill: #56b814 !important;
+  opacity: 0.4 !important;
+}
+.cm-chessboard .markers .marker.marker-square-red {
+  fill: #f23636 !important;
   opacity: 0.4 !important;
 }
 .cm-chessboard .markers .marker.marker-dot {
-  fill: rgb(99 102 241) !important;
+  fill: #3b82f6 !important;
   opacity: 0.5 !important;
 }
 .cm-chessboard .markers .marker.marker-bevel {
-  fill: rgb(99 102 241) !important;
+  fill: #3b82f6 !important;
   opacity: 0.5 !important;
 }
 .cm-chessboard .markers .marker.marker-checkmark {

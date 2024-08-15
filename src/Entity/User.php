@@ -41,6 +41,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: Repertoire::class, mappedBy: 'User', orphanRemoval: true)]
     private Collection $repertoires;
 
+    #[ORM\OneToOne(mappedBy: 'User', cascade: ['persist', 'remove'])]
+    private ?Settings $settings = null;
+
     public function __construct()
     {
         $this->repertoires = new ArrayCollection();
@@ -147,6 +150,23 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
                 $repertoire->setUser(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getSettings(): ?Settings
+    {
+        return $this->settings;
+    }
+
+    public function setSettings(Settings $settings): static
+    {
+        // set the owning side of the relation if necessary
+        if ($settings->getUser() !== $this) {
+            $settings->setUser($this);
+        }
+
+        $this->settings = $settings;
 
         return $this;
     }

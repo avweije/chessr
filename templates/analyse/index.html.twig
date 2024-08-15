@@ -3,24 +3,30 @@
 {% block body %}
 
 	<div class="w-4/5 m-auto text-center p-4">
-		<div id="practiceRepertoireButtons" class="inline-flex rounded-md shadow-sm">
-			<button class="text-primary-700 disabled:text-gray-300 bg-gray-50 px-4 py-2 text-sm font-medium border border-gray-200 rounded-s-lg hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-2 focus:ring-primary-700 focus:text-primary-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-primary-500 dark:focus:text-white">
-				Chess.com
-			</button>
-			<button class="text-gray-900 disabled:text-gray-300 bg-white px-4 py-2 text-sm font-medium border border-gray-200 rounded-e-lg hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:ring-2 focus:ring-primary-700 focus:text-primary-700 dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:hover:text-white dark:hover:bg-gray-700 dark:focus:ring-primary-500 dark:focus:text-white">
-				Lichess
-			</button>
+		<div id="analyseWebsiteButtons" class="inline-flex rounded-md shadow-sm">
+			<div>
+				<input type="radio" id="siteChessDotComRadio" checked name="website" value="Chess.com" class="sr-only peer">
+				<label for="siteChessDotComRadio" class="cursor-pointer inline-block rounded-s-lg text-gray-900 bg-white peer-checked:text-primary-500 peer-checked:bg-primary-50 disabled:text-gray-300 px-4 py-2 text-sm font-medium border border-gray-300 dark:border-slate-600 hover:text-primary-500 hover:bg-primary-200 hover:peer-checked:text-primary-500 hover:peer-checked:bg-primary-200 dark:text-gray-200 dark:bg-slate-900 peer-checked:dark:text-primary-500 peer-checked:dark:bg-slate-950 dark:hover:text-primary-500 dark:hover:bg-slate-700 peer-checked:dark:hover:text-primary-500 peer-checked:dark:hover:bg-slate-700">
+					Chess.com
+				</label>
+			</div>
+			<div>
+				<input type="radio" id="siteLichessRadio" name="website" value="Lichess" class="sr-only peer">
+				<label for="siteLichessRadio" class="cursor-pointer inline-block rounded-e-lg text-gray-900 bg-white peer-checked:text-primary-500 peer-checked:bg-primary-50 disabled:text-gray-300 px-4 py-2 text-sm font-medium border border-gray-300 dark:border-slate-600 hover:text-primary-500 hover:bg-primary-200 hover:peer-checked:text-primary-500 hover:peer-checked:bg-primary-200 dark:text-gray-200 dark:bg-slate-900 peer-checked:dark:text-primary-500 peer-checked:dark:bg-slate-950 dark:hover:text-primary-500 dark:hover:bg-slate-700 peer-checked:dark:hover:text-primary-500 peer-checked:dark:hover:bg-slate-700">
+					Lichess
+				</label>
+			</div>
 		</div>
 	</div>
 
-	<p class="block text-sm font-bold text-gray-900 p-3 border-b border-slate-200">Account</p>
+	<p class="inline-block w-3/5 text-sm font-bold text-gray-900 dark:text-gray-400 p-3 border-b border-zinc-300 dark:border-slate-600">Account</p>
 
-	<div class="flex items-center p-3">
+	<div class="flex items-center px-4 py-6">
 		<div>
-			<label class="block text-sm font-medium text-gray-900">Username</label>
+			<label class="block text-sm font-medium text-gray-900 dark:text-gray-300">Username</label>
 		</div>
 		<div class="mx-3">
-			<input id="repertoireNameInput" type="text" name="username" size="40" value="avweije" placeholder="Enter your account name.." class="block w-full rounded-md border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+			<input id="siteUsername" type="text" name="username" size="40" value="" placeholder="Enter your account name.." class="block w-full rounded-md border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
 		</div>
 		<div>
 			<button type="button" id="connectButton" class="btn btn-primary">
@@ -30,96 +36,78 @@
 		</div>
 	</div>
 
-	<p class="block text-sm font-bold text-gray-900 p-3 border-b border-slate-200">Archives</p>
+	<div id="archivesSection">
+		<p class="inline-block w-3/5 text-sm font-bold text-gray-900 dark:text-gray-400 p-3 border-b border-zinc-300 dark:border-slate-600">Archives</p>
 
-	<div class="p-3">
+		<div class="px-4 py-6">
 
-		<p id="archivesDisabledText" class="text-base text-gray-900 p-3">Connect to your account to show the archives.</p>
+			<p id="archivesDisabledText" class="text-base text-gray-900 dark:text-gray-300">Connect to your account to show the archives.</p>
 
-		<div id="archivesContainer" class="hidden flex items-center p-3">
-			<div>
-				<label class="block text-sm font-medium text-gray-900">Year</label>
-			</div>
-			<div class="mx-3">
-				<div class="relative">
-					<select id="archiveYearSelect" name="archive_year" class="appearance-none inline-block rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></select>
-					<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-						<svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+			<div id="archivesContainer" class="hidden flex items-center">
+				<div>
+					<label class="block text-sm font-medium text-gray-900 dark:text-gray-300">Year</label>
+				</div>
+				<div class="mx-3">
+					<div class="relative">
+						<select id="archiveYearSelect" name="archive_year" class="appearance-none inline-block rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></select>
+						<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+							<svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+						</div>
 					</div>
 				</div>
-			</div>
-			<div>
-				<label class="block text-sm font-medium text-gray-900">Month</label>
-			</div>
-			<div class="mx-3">
-				<div class="relative">
-					<select id="archiveMonthSelect" name="archive_month" class="appearance-none inline-block rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></select>
-					<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-						<svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+				<div>
+					<label class="block text-sm font-medium text-gray-900 dark:text-gray-300">Month</label>
+				</div>
+				<div class="mx-3">
+					<div class="relative">
+						<select id="archiveMonthSelect" name="archive_month" class="appearance-none inline-block rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></select>
+						<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+							<svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+						</div>
 					</div>
 				</div>
-			</div>
 
-			<div>
-				<button type="button" id="downloadButton" class="btn btn-primary">
-					Download games
-					<span class="hidden inline-block icon-[svg-spinners--90-ring-with-bg] ml-1 w-4 h-4"></span>
-				</button>
+				<div>
+					<button type="button" id="downloadButton" class="btn btn-primary">
+						Download games
+						<span class="hidden inline-block icon-[svg-spinners--90-ring-with-bg] ml-1 w-4 h-4"></span>
+					</button>
+				</div>
 			</div>
 		</div>
 	</div>
 
-	<p class="block text-sm font-bold text-gray-900 p-3 border-b border-slate-200">Games</p>
+	<div id="gamesSection" class="hidden">
+		<p class="inline-block w-3/5 text-sm font-bold text-gray-900 dark:text-gray-400 p-3 border-b border-zinc-300 dark:border-slate-600">Games</p>
 
-	<div class="p-3">
+		<div class="px-4 py-6">
 
-		<p id="gamesDisabledText" class="text-base text-gray-900 p-3">Download an archive to show the games.</p>
+			<p id="gamesDisabledText" class="text-base text-gray-900 dark:text-gray-300">Download an archive to show the games.</p>
 
-		<div id="gamesContainer" class="hidden flex items-center p-3">
-			<div>
-				<label class="block text-sm font-medium text-gray-900">Time Control</label>
-			</div>
-			<div class="mx-3">
-				<div class="relative">
-					<select id="gameTypeSelect" name="game_type" class="appearance-none inline-block rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></select>
-					<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-						<svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+			<div id="gamesContainer" class="hidden flex items-center">
+				<div>
+					<label class="block text-sm font-medium text-gray-90 dark:text-gray-300">Time Control</label>
+				</div>
+				<div class="mx-3">
+					<div class="relative">
+						<select id="gameTypeSelect" name="game_type" class="appearance-none inline-block rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></select>
+						<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+							<svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+						</div>
 					</div>
 				</div>
-			</div>
 
-			<div>
-				<button type="button" id="analyseButton" class="btn btn-primary">
-					Analyse games
-					<span class="hidden inline-block icon-[svg-spinners--90-ring-with-bg] ml-1 w-4 h-4"></span>
-				</button>
+				<div>
+					<button type="button" id="analyseButton" class="btn btn-primary">
+						Analyse games
+						<span class="hidden inline-block icon-[svg-spinners--90-ring-with-bg] ml-1 w-4 h-4"></span>
+					</button>
+				</div>
 			</div>
 		</div>
 	</div>
 
-	<dialog id="analyseModal" class="relative p-6 bg-white rounded-lg shadow-lg">
-		<button id="analyseModalCloseButton" class="close-button">
-			<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-gray-700 hover:text-gray-900" fill="none" viewbox="0 0 24 24" stroke="currentColor">
-				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-			</svg>
-		</button>
-		<h2 class="mb-8 mr-32 text-lg font-semibold">Analysing your games</h2>
-		<div class="grid grid-cols-[_auto_1fr] gap-4">
-			<label class="text-gray-700 whitespace-nowrap">Type:</label>
-			<p class="w-full text-gray-700">Blitz Games</p>
-			<label class="text-gray-700 whitespace-nowrap">Games:</label>
-			<p class="w-full text-gray-700">24 in total, 14 left</p>
-			<label class="text-gray-700 whitespace-nowrap">Elapsed time:</label>
-			<p class="w-full text-gray-700">1m 12s</p>
-			<label class="text-gray-700 whitespace-nowrap">Estimated time:</label>
-			<p class="w-full text-gray-700">4m 30s</p>
-		</div>
-		<div class="flex justify-center space-x-2 mt-8">
-			<button id="analyseModalStopButton" class="btn btn-warning">
-				Stop analysing
-			</button>
-		</div>
-	</dialog>
+	{{ include('analyse/dialogs/analyse.html.twig') }}
 {% endblock %}
 {% block stylesheets %}
 	{{ parent() }}

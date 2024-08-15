@@ -9,11 +9,15 @@ use App\Entity\Downloads;
 use App\Entity\ECO;
 use App\Entity\Group;
 use App\Entity\Analysis;
+use App\Entity\Archives;
 use App\Entity\IgnoreList;
 use App\Entity\Repertoire;
 use App\Entity\RepertoireGroup;
+use App\Entity\Settings;
+use App\Entity\User;
 use App\Library\ChessJs;
 use App\Library\GameDownloader;
+use App\Library\GameDownloader\LichessInterface;
 use App\Library\UCI;
 use App\Service\MyPgnParser\MyGame;
 use App\Service\MyPgnParser\MyPgnParser;
@@ -35,6 +39,77 @@ class ApiController extends AbstractController
         $this->myPgnParser = $myPgnParser;
     }
 
+    #[Route('/api/analyse/test', name: 'app_api_analyse_test')]
+    public function apiTestAnalyseGame(Request $request): JsonResponse
+    {
+        // start the engine
+        $uci = new UCI();
+
+        // request the 3 best moves
+        $uci->setOption("MultiPV", 3);
+        // request only the best move
+        //$uci->setOption("MultiPV", 1);
+
+        $pgnText = '[Event "Live Chess"]
+[Site "Chess.com"]
+[Date "2024.01.16"]
+[Round "?"]
+[White "stadlile"]
+[Black "avweije"]
+[Result "1-0"]
+[ECO "B45"]
+[WhiteElo "1801"]
+[BlackElo "2034"]
+[TimeControl "180"]
+[EndTime "10:52:55 PST"]
+[Termination "stadlile won by checkmate"]
+
+1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. Be3 e6 7. f3 Be7 8. Qd2
+Nc6 9. O-O-O O-O 10. Bg5 Bd7 11. Bxf6 Bxf6 12. Nxc6 Bxc6 13. Qxd6 Qb6 14. Qa3
+Rad8 15. Bc4 Qe3+ 16. Kb1 Qf2 17. Rdf1 Qxg2 18. Rhg1 Qxh2 19. f4 Bd4 20. Rg4 Qh3
+21. Be2 Bxc3 22. bxc3 Bxe4 23. Rfg1 g6 24. Bf1 Qe3 25. Kb2 Rd2 26. R4g3 Rxc2+
+27. Kb3 Qb6+ 28. Qb4 Bd5+ 29. Kxc2 Qxb4 30. cxb4 Bxa2 31. Rc3 Bd5 32. Bg2 Rd8
+33. Bxd5 Rxd5 34. Rc7 Rb5 35. Kb3 Kg7 36. Ra1 h5 37. Rd1 Rf5 38. Rd4 h4 39. Rxb7
+h3 40. Rdd7 Rh5 41. Rxf7+ Kg8 42. Rfe7 Kf8 43. Rxe6 h2 44. Rxa6 h1=Q 45. Ra8#
+1-0';
+
+        $pgnText = '[Event "Live Chess"]
+[Site "Chess.com"]
+[Date "2024.07.02"]
+[Round "?"]
+[White "chesschampion4897"]
+[Black "avweije"]
+[Result "0-1"]
+[ECO "B50"]
+[WhiteElo "1650"]
+[BlackElo "2099"]
+[TimeControl "600"]
+[EndTime "5:58:40 PDT"]
+[Termination "avweije won by resignation"]
+
+1. e4 c5 2. Nf3 d6 3. Bc4 Nf6 4. Nc3 Nc6 5. d3 g6 6. h3 Bg7 7. Bf4 O-O 8. O-O a6
+9. Re1 b5 10. Bd5 Nxd5 11. Nxd5 Bxb2 12. Rb1 Bg7 13. c4 b4 14. Qa4 Bd7 15. Qb3
+a5 16. e5 a4 17. Qc2 dxe5 18. Bxe5 Nxe5 19. Nxe5 e6 20. Nf4 Bc8 21. Rbd1 Bxe5
+22. Rxe5 Qf6 23. Re4 Bb7 0-1';
+
+        // parse the game
+        $game = $this->myPgnParser->parsePgnFromText($pgnText, true);
+
+        // get the settings
+        $user = $this->em->getRepository(User::class)->find($this->getUser());
+        $settings = $user->getSettings();
+
+        // get the correct username
+        $siteUsername = $settings->getSite() == DownloadSite::ChessDotCom ? $settings->getChessUsername() : $settings->getLichessUsername();
+
+        // analyse the game
+        $temp = $this->analyseGame($uci, $game, $siteUsername);
+
+        dd($temp);
+
+        return new JsonResponse();
+    }
+
     #[Route('/api/groups', name: 'app_api_groups')]
     public function apiGroups(Request $request): JsonResponse
     {
@@ -47,6 +122,30 @@ class ApiController extends AbstractController
         }
 
         return new JsonResponse(["groups" => $res]);
+    }
+
+    #[Route('/api/repertoire/autoplay', methods: ['POST'], name: 'app_api_repertoire_autoplay')]
+    public function apiRepertoireAutoPlay(Request $request): JsonResponse
+    {
+        $data = $request->getPayload()->all();
+
+        $message = "";
+
+        $repo = $this->em->getRepository(Repertoire::class);
+        $rep = $repo->findOneBy(['id' => $data["repertoire"]]);
+        if ($rep) {
+            // update the autoplay flag
+            $rep->setAutoPlay($data["autoplay"]);
+
+            $this->em->persist($rep);
+            $this->em->flush();
+
+            $message = "Repertoire autoplay updated.";
+        } else {
+            $message = "Repertoire not found.";
+        }
+
+        return new JsonResponse(["message" => $message]);
     }
 
     #[Route('/api/repertoire/group', methods: ['POST'], name: 'app_api_repertoire_group_add')]
@@ -213,8 +312,9 @@ class ApiController extends AbstractController
         // the groups for this repertoire
         $groups = [];
 
-        // get the repertoire id, if we've saved it
+        // get the repertoire details, if we've saved it
         $repertoireId = 0;
+        $repertoireAutoPlay = false;
         if ($data['pgn'] != '') {
             $res = $repository->findOneBy([
                 'User' => $this->getUser(),
@@ -224,6 +324,7 @@ class ApiController extends AbstractController
 
             if ($res) {
                 $repertoireId = $res->getId();
+                $repertoireAutoPlay = $res->isAutoPlay();
                 foreach ($res->getRepertoireGroups() as $grp) {
                     $groups[] = ["id" => $grp->getGrp()->getId(), "name" => $grp->getGrp()->getName()];
                 }
@@ -270,7 +371,34 @@ class ApiController extends AbstractController
             }
         }
 
-        return new JsonResponse(['eco' => $codes, 'games' => $games, 'repertoire' => $reps, 'repertoireId' => $repertoireId, 'groups' => $groups]);
+        // the initial starting positions we have for this color (only needed at top level)
+        $initialFens = [];
+
+        // if we are at top level
+        if ($data['pgn'] == "") {
+            // find the initial starting positions for this color
+            $qb = $this->em->createQueryBuilder();
+            $qb->select('r')
+                ->from('App\Entity\Repertoire', 'r')
+                ->where('r.User = :user AND r.Color = :color AND r.HalfMove = 1 AND r.InitialFen != \'\'')
+                ->orderBy('r.InitialFen', 'ASC')
+                ->setParameter('user', $this->getUser())
+                ->setParameter('color', $data['color']);
+            $res = $qb->getQuery()->getResult();
+            foreach ($res as $rep) {
+                $initialFens[] = $rep->getInitialFen();
+            }
+        }
+
+        return new JsonResponse([
+            'eco' => $codes,
+            'games' => $games,
+            'repertoire' => $reps,
+            'repertoireId' => $repertoireId,
+            'repertoireAutoPlay' => $repertoireAutoPlay,
+            'initialFens' => $initialFens,
+            'groups' => $groups
+        ]);
     }
 
     #[Route('/api/repertoire', methods: ['POST'], name: 'app_api_repertoire_save')]
@@ -463,17 +591,66 @@ class ApiController extends AbstractController
         return $saved;
     }
 
-    #[Route('/api/download/archives', methods: ['GET'], name: 'app_api_download_archives')]
-    public function apiDownloadArchives(Request $request): JsonResponse
+    #[Route('/api/download/settings', methods: ['GET'], name: 'app_api_download_settings')]
+    public function apiDownloaddSettings(Request $request): JsonResponse
     {
+        // get the settings
+        $user = $this->em->getRepository(User::class)->find($this->getUser());
+        $settings = $user->getSettings();
+
+        if ($settings == null) {
+            // create the settings
+            $settings = new Settings();
+            $settings->setUser($this->getUser());
+
+            // save the settings
+            $this->em->persist($settings);
+            $this->em->flush();
+        }
+
+        return new JsonResponse(["settings" => [
+            "site" => $settings->getSite(),
+            "chess_username" => $settings->getChessUsername(),
+            "lichess_username" => $settings->getLichessUsername()
+        ]]);
+    }
+
+    #[Route('/api/download/archives/{username}/{site}', methods: ['GET'], name: 'app_api_download_archives')]
+    public function apiDownloadArchives(Request $request, $username, $site): JsonResponse
+    {
+        // get the settings
+        $user = $this->em->getRepository(User::class)->find($this->getUser());
+        $settings = $user->getSettings();
+
+        if ($settings == null) {
+            // create the settings
+            $settings = new Settings();
+            $settings->setUser($this->getUser());
+        }
+
+        // get the site
+        $site = DownloadSite::tryFrom($site);
+
+        // update the settings
+        $settings->setSite($site);
+        if ($site == DownloadSite::ChessDotCom) {
+            $settings->setChessUsername($username);
+        } else {
+            $settings->setLichessUsername($username);
+        }
+
+        // save the settings
+        $this->em->persist($settings);
+        $this->em->flush();
+
+        // update in the user (just in case)
+        $user->setSettings($settings);
+
+        // get the downloader
         $downloader = new GameDownloader($this->em, $this->getUser());
 
-        $archives = $downloader->downloadArchives();
-
-        // $games = $downloader->downloadGames(2024, 1);
-
         // set the JSON response
-        $resp = ['archives' => $downloader->getArchiveYearsMonths()];
+        $resp = ['archives' => $downloader->getArchives()];
 
         return new JsonResponse($resp);
     }
@@ -485,10 +662,12 @@ class ApiController extends AbstractController
 
         //$archives = $downloader->downloadArchives();
 
-        $games = $downloader->downloadGames($year, $month);
+        //$games = $downloader->xxdownloadGames($year, $month);
+        $games = $downloader->getGames($year, $month);
 
         // set the JSON response
-        $resp = ['games' => $downloader->getTotals()];
+        //$resp = ['games' => $downloader->xxgetTotals()];
+        $resp = ['games' => $games];
 
         return new JsonResponse($resp);
     }
@@ -516,7 +695,12 @@ class ApiController extends AbstractController
         }
 
 
-        // validate no current downloads going on - return error
+        // get the settings
+        $user = $this->em->getRepository(User::class)->find($this->getUser());
+        $settings = $user->getSettings();
+
+        // get the correct username
+        $siteUsername = $settings->getSite() == DownloadSite::ChessDotCom ? $settings->getChessUsername() : $settings->getLichessUsername();
 
         // get the repository
         $repository = $this->em->getRepository(Downloads::class);
@@ -544,7 +728,8 @@ class ApiController extends AbstractController
                     $mins = floor($secs / 60);
 
                     // if 5 minutes ago or more
-                    if ($mins > 4) {
+                    //if ($mins > 4) {
+                    if (true) {
                         // update status for record
                         $rec->setStatus(DownloadStatus::Partial);
                         $rec->setDateTime(new DateTime());
@@ -589,7 +774,7 @@ class ApiController extends AbstractController
             // add download record
             $rec = new Downloads();
             $rec->setUser($this->getUser());
-            $rec->setSite(DownloadSite::ChessDotCom);
+            $rec->setSite($settings->getSite());
             $rec->setYear($year);
             $rec->setMonth($month);
             $rec->setType($downloadType->value);
@@ -602,10 +787,13 @@ class ApiController extends AbstractController
 
         // get the game downloader
         $downloader = new GameDownloader($this->em, $this->getUser());
+
         // download the games
-        $downloader->downloadGames($year, $month);
+        $games = $downloader->downloadGames($year, $month, $type, $lastUUID);
+
+        // old = ->xxdownloadGames($year, $month)
         // get the games of the right type
-        $games = $downloader->getGames($type);
+        //$games = $downloader->xxgetGames($type);
 
         // start the engine
         $uci = new UCI();
@@ -619,6 +807,10 @@ class ApiController extends AbstractController
         $time = microtime(true);
 
         $lastUUIDFound = false;
+
+        if ($settings->getSite() == DownloadSite::Lichess) {
+            $lastUUID = "";
+        }
 
         // the max games to process
         $maxGames = 4;
@@ -643,7 +835,7 @@ class ApiController extends AbstractController
                 $game = $this->myPgnParser->parsePgnFromText($games[$i]["pgn"], true);
 
                 // analyse the game
-                $temp = $this->analyseGame($uci, $game);
+                $temp = $this->analyseGame($uci, $game, $siteUsername);
 
                 // if there are any mistakes
                 if (count($temp) > 0) {
@@ -664,6 +856,7 @@ class ApiController extends AbstractController
                         $rc = new Analysis();
 
                         $rc->setUser($this->getUser());
+                        $rc->setColor($game->getWhite() == $siteUsername ? "white" : "black");
                         $rc->setWhite($game->getWhite());
                         $rc->setBlack($game->getBlack());
                         $rc->setLink($game->getLink());
@@ -672,11 +865,15 @@ class ApiController extends AbstractController
                         $rc->setFen($mistake["fen"]);
                         $rc->setPgn($mistake["line"]["pgn"]);
                         $rc->setMove($mistake["move"]);
+
+                        /*
                         $bms = [];
                         foreach ($mistake["bestmoves"] as $bm) {
                             $bms[] = $bm["san"];
                         }
                         $rc->setBestMoves(join(" ", $bms));
+                        */
+                        $rc->setBestMoves(json_encode($mistake["bestmoves"]));
 
                         // save it
                         $this->em->persist($rc);
@@ -687,13 +884,13 @@ class ApiController extends AbstractController
 
                 // update the last UUID
                 $rec->setDateTime(new DateTime());
-                $rec->setLastUUID($games[$i]['uuid']);
+                $rec->setLastUUID($games[$i]["uuid"]);
 
                 $this->em->persist($rec);
                 $this->em->flush();
             } else if ($lastUUID != "") {
                 // match the last UUID we processed
-                $lastUUIDFound = $lastUUID == $games[$i]['uuid'];
+                $lastUUIDFound = $lastUUID == $games[$i]["uuid"];
             }
 
             // completed all games
@@ -704,6 +901,8 @@ class ApiController extends AbstractController
                 break;
             }
         }
+
+        $completed = $settings->getSite() == DownloadSite::ChessDotCom ? $completed : $processed < $maxGames;
 
         // update the status
         $rec->setStatus($completed ? DownloadStatus::Completed : DownloadStatus::Partial);
@@ -734,6 +933,7 @@ class ApiController extends AbstractController
         return new JsonResponse([
             'message' => 'Analysis done.',
             'processed' => $processed,
+            'completed' => $completed,
             'totals' => $totals
         ]);
     }
@@ -825,8 +1025,6 @@ class ApiController extends AbstractController
     #[Route('/api/practice', methods: ['GET'], name: 'app_api_practice')]
     public function apiPractice(Request $request): JsonResponse
     {
-        $data = $request->getPayload()->all();
-
         // get the repertoire repository
         $repository = $this->em->getRepository(Repertoire::class);
 
@@ -840,6 +1038,9 @@ class ApiController extends AbstractController
             ['color' => 'black', 'before' => '', 'after' => '', 'new' => 1, 'recommended' => 1, 'moves' => []]
         ];*/
         $lines = [];
+
+        // the groups & lines per group
+        $groups = [];
 
         // find the 1st moves
         foreach ($res as $rep) {
@@ -899,7 +1100,48 @@ class ApiController extends AbstractController
                     'moves' => []
                 ];
             }
+
+            // if this move belongs to a group
+            foreach ($rep->getRepertoireGroups() as $grp) {
+                //
+                $idx = -1;
+                //
+                for ($i = 0; $i < count($groups); $i++) {
+                    if ($groups[$i]["id"] == $grp->getGrp()->getId()) {
+                        $idx = $i;
+                        break;
+                    }
+                }
+
+                //
+                if ($idx == -1) {
+                    $idx = count($groups);
+
+                    $groups[] = [
+                        "id" => $grp->getGrp()->getId(),
+                        "name" => $grp->getGrp()->getName(),
+                        "lines" => []
+                    ];
+                }
+                //
+                $groups[$idx]["lines"][] = [
+                    'color' => $rep->getColor(),
+                    'initialFen' => $rep->getInitialFen(),
+                    'move' => $rep->getMove(),
+                    'autoplay' => $rep->isAutoPlay(),
+                    'halfmove' => $rep->getHalfMove(),
+                    'before' => $rep->getFenBefore(),
+                    'after' => $rep->getFenAfter(),
+                    'new' => $rep->getPracticeCount() == 0 ? 1 : 0,
+                    'failPercentage' => $rep->getPracticeCount() < 5 ? 1 : $rep->getPracticeFailed() / $rep->getPracticeCount(),
+                    'recommended' => $this->isRecommended($rep->getPracticeCount(), $rep->getPracticeFailed(), $rep->getPracticeInARow()) ? 1 : 0,
+                    'line' => [],
+                    'moves' => []
+                ];
+            }
         }
+
+        //dd($groups);
 
         /*
 
@@ -918,9 +1160,15 @@ class ApiController extends AbstractController
             // if we have multiple moves here, add them to an array
             if (count($lines[$i]['moves']) > 1) {
                 foreach ($lines[$i]['moves'] as $move) {
-                    $lines[$i]['multiple'][] = $move['move'];
+                    //$lines[$i]['multiple'][] = $move['move'];
+                    $lines[$i]['multiple'][] = [
+                        "move" => $move['move'],
+                        "cp" => isset($move['cp']) ? $move['cp'] : null,
+                        "eline" => isset($move['line']) ? $move['line'] : null
+                    ];
                 }
             }
+
 
             /*
             for ($x = 0; $x < count($lines[$i]['moves']); $x++) {
@@ -929,10 +1177,33 @@ class ApiController extends AbstractController
             */
         }
 
+        // now add the group lines based off the 1st moves
+        for ($i = 0; $i < count($groups); $i++) {
+            for ($x = 0; $x < count($groups[$i]["lines"]); $x++) {
+
+                $groups[$i]["lines"][$x]['moves'] = $this->getLines($groups[$i]["lines"][$x]['color'], $groups[$i]["lines"][$x]['after'], $res, []);
+                $groups[$i]["lines"][$x]['multiple'] = [];
+
+                // if we have multiple moves here, add them to an array
+                if (count($groups[$i]["lines"][$x]['moves']) > 1) {
+                    foreach ($groups[$i]["lines"][$x]['moves'] as $move) {
+                        //$lines[$i]['multiple'][] = $move['move'];
+                        $groups[$i]["lines"][$x]['multiple'][] = [
+                            "move" => $move['move'],
+                            "cp" => isset($move['cp']) ? $move['cp'] : null,
+                            "eline" => isset($move['line']) ? $move['line'] : null
+                        ];
+                    }
+                }
+            }
+        }
+
+        //dd($groups);
+
         //dd($lines[2]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]);
 
         // the response
-        $resp = ['white' => [], 'black' => [], 'new' => [], 'recommended' => [], "analysis" => []];
+        $resp = ['white' => [], 'black' => [], 'new' => [], 'recommended' => [], "analysis" => [], "groups" => $groups];
 
         // if we have a repertoire
         if (count($lines) > 0) {
@@ -942,19 +1213,20 @@ class ApiController extends AbstractController
             $resp['black'] = $this->findLines($lines, 'black', false, false);
             // find the new lines
             $resp['new'] = $this->findLines($lines, '', true, false);
-
-            //dd($resp['new']);
-
             // find the recommended lines
             $resp['recommended'] = $this->findLines($lines, '', false, true);
+
+            //dd($resp['recommended']);
+
+            //dd($lines);
 
             //dd($resp['white'][1]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]);
 
             // group the lines per starting position / color
-            $resp['white'] = $this->groupByPosition($resp['white']);
-            $resp['black'] = $this->groupByPosition($resp['black']);
-            $resp['new'] = $this->groupByPosition($resp['new']);
-            $resp['recommended'] = $this->groupByPosition($resp['recommended']);
+            $resp['white'] = $this->groupByPosition($resp['white'], $lines);
+            $resp['black'] = $this->groupByPosition($resp['black'], $lines);
+            $resp['new'] = $this->groupByPosition($resp['new'], $lines);
+            $resp['recommended'] = $this->groupByPosition($resp['recommended'], $lines);
         }
 
         //dd($resp['white']);
@@ -965,15 +1237,37 @@ class ApiController extends AbstractController
         $res = $repository->findBy(['User' => $this->getUser()], ['Link' => 'ASC', 'Pgn' => 'ASC']);
         // add them
         foreach ($res as $rec) {
-            // get the best moves array
-            $multiple = explode(" ", $rec->getBestMoves());
             $moves = [];
-            foreach ($multiple as $move) {
-                $moves[] = ["move" => $move];
+            $multiple = [];
+
+            // get the best moves json (new)
+            $json = json_decode($rec->getBestMoves(), true);
+            if ($json == null) {
+                // get the best moves array (old)
+                $bm = explode(" ", $rec->getBestMoves());
+                foreach ($bm as $move) {
+                    $moves[] = ["move" => $move];
+                    $multiple[] = [
+                        "move" => $move,
+                        "cp" => null,
+                        "eline" => null
+                    ];
+                }
+            } else {
+                foreach ($json as $move) {
+                    $moves[] = [
+                        "move" => $move["san"],
+                        "cp" => $move["cp"],
+                        "eline" => $move["line"]
+                    ];
+                    $multiple[] = [
+                        "move" => $move['san'],
+                        "cp" => isset($move['cp']) ? $move['cp'] : null,
+                        "eline" => isset($move['line']) ? $move['line'] : null
+                    ];
+                }
             }
 
-            // get the color
-            $color = $rec->getWhite() == "avweije" ? "white" : "black";
 
             // get the line up to this move
             $line = [];
@@ -989,7 +1283,7 @@ class ApiController extends AbstractController
 
             // the analysis record
             $analysis = [
-                "color" => $color,
+                "color" => $rec->getColor(),
                 "white" => $rec->getWhite(),
                 "black" => $rec->getBlack(),
                 "link" => $rec->getLink(),
@@ -1004,7 +1298,7 @@ class ApiController extends AbstractController
             ];
 
             // check to see if this position is in our repertoire
-            $move = $this->findPosition($rec->getFen(), $resp[$color]);
+            $move = $this->findPosition($rec->getFen(), $resp[$rec->getColor()]);
             if ($move !== false) {
                 $analysis["repertoire"] = $move["multiple"];
             }
@@ -1058,8 +1352,26 @@ class ApiController extends AbstractController
         return false;
     }
 
+    //
+    private function findMultiple($line, $res)
+    {
+
+        foreach ($res as $rec) {
+            if ($rec['color'] == $line['color'] && $rec['after'] == $line['before']) {
+                return $rec['multiple'];
+            }
+
+            $ret = $this->findMultiple($line, $rec['moves']);
+            if ($ret !== false) {
+                return $ret;
+            }
+        }
+
+        return false;
+    }
+
     // group the lines per starting position/color
-    private function groupByPosition(array $lines): array
+    private function groupByPosition(array $lines, array $res = []): array
     {
         $temp = [];
         foreach ($lines as $line) {
@@ -1073,6 +1385,9 @@ class ApiController extends AbstractController
 
             // if we don't  have this FEN position yet
             if ($idx == -1) {
+                // find the multiple moves from the original lines (we need all multiple moves, not just the new/recommended ones)
+                $multiple = $this->findMultiple($line, $res);
+
                 // if this is not the starting position
                 $temp[] = [
                     'color' => $line['color'],
@@ -1080,11 +1395,14 @@ class ApiController extends AbstractController
                     'fen' => $line['before'],
                     'line' => isset($line['line']) ? $line['line'] : [],
                     'moves' => $line['before'] == $line['after'] ? $line['moves'] : [$line],
-                    'multiple' => $line['before'] == $line['after'] ? $line['multiple'] : [$line['move']]
+                    'multiple' => $multiple,
+                    'multiple_old' => $line['before'] == $line['after'] ? $line['multiple'] : [$line['move']]
                 ];
             } else {
                 $temp[$idx]['moves'][] = $line;
-                $temp[$idx]['multiple'][] = $line['move'];
+                $temp[$idx]['multiple_old'][] = $line['move'];
+                //$temp[$idx]['multiple'] = $line['multiple'];
+                //$temp[$idx]['multiplex'] = $line['multiple'];
             }
         }
 
@@ -1156,7 +1474,12 @@ class ApiController extends AbstractController
                 // if we have multiple moves here, add them to an array
                 if (count($moves[$i]['moves']) > 1) {
                     foreach ($moves[$i]['moves'] as $move) {
-                        $moves[$i]['multiple'][] = $move['move'];
+                        //$moves[$i]['multiple'][] = $move['move'];
+                        $moves[$i]['multiple'][] = [
+                            "move" => $move['move'],
+                            "cp" => isset($move['cp']) ? $move['cp'] : null,
+                            "line" => isset($move['line']) ? $move['line'] : null
+                        ];
                     }
                 }
             }
@@ -1211,6 +1534,18 @@ class ApiController extends AbstractController
 
             // check this line to see if any child moves match the criteria
             $temp = $this->findLines($line['moves'], $color, $isNew, $isRecommended, $line['color'], $level + 1);
+
+            //
+            // TEMP: testing for recommended - we need the move before in case of multiple!!
+            //
+
+            //if ($level == 1 && count($temp) > 0) {
+            // add this line also (the parent line of the line we actually want)
+            //$res[] = $line;
+            //}
+
+
+
             foreach ($temp as $t) {
                 $res[] = $t;
             }
@@ -1359,7 +1694,7 @@ class ApiController extends AbstractController
     }
 
     // analyse a game
-    private function analyseGame($uci, MyGame $game): array
+    private function analyseGame($uci, MyGame $game, string $siteUsername): array
     {
         // create a new game
         $chess = new ChessJs($game->getFen());
@@ -1384,35 +1719,6 @@ class ApiController extends AbstractController
 
             // get the moves from the pgn
             //dd($game);
-
-            /*
-
-            - if we decide to keep in games with a fixed starting position (non-default)
-            - there is no way of finding out the intial moves (to get to the starting position)
-            - we can only save from starting position on
-            - so we need to store somehow that this move begins on a certain starting position
-
-            - once in repertoire.. you won't see the 1st move (if it wasnt yet in your repertoire)
-            - you will only find the move once you make the 1st X moves to get to the starting position of the game
-
-            - if you then click save repertoire (after adding a move for instance)
-            - you will now also have the 1st X moves that get to the initial position
-            - and all of a sudden these moves are in your practice runs also.. 
-            - which we don't want i think... ??
-
-            - option to add "autoPlay this move" option for each of our moves in repertoire ??
-            - can also be useful to skip 1. e4 / d4 moves (don't want to play these everytime..)
-
-            - we can use this on the starting moves when they get added
-            - how do we know?
-
-            - if a repertoire gets saved and the 1st X moves arent saved yet ?? 
-            - and there is a record with an initial starting position ??
-
-            - too much?
-            - something simpler.. ?
-
-            */
         }
         // get the FEN
         $fen = $chess->fen();
@@ -1421,7 +1727,7 @@ class ApiController extends AbstractController
         $uci->newGame();
 
         // get the game downloader
-        $downloader = new GameDownloader($this->em, $this->getUser());
+        //$downloader = new GameDownloader($this->em, $this->getUser());
 
         //
         // temporarily disable: 429 - too many requests..
@@ -1447,7 +1753,7 @@ class ApiController extends AbstractController
         $whiteToMove = true;
 
         // need to change this to user setting?
-        $analyseForBlack = $game->getBlack() == "avweije";
+        $analyseForBlack = $game->getBlack() == $siteUsername;
 
         // get the ignore list repo
         $repo = $this->em->getRepository(IgnoreList::class);
@@ -1462,6 +1768,11 @@ class ApiController extends AbstractController
 
         // need to add this to settings?
         $includeInnacuracies = true;
+
+        // stop analysing when we exceed the limit
+        $mistakesTotal = 0;
+        $mistakesLimit = 10;
+        $mistakesPoints = ["inaccuracy" => 1, "mistake" => 2, "blunder" => 3];
 
         foreach ($uciMoves as $move) {
             // add the UCI move
@@ -1589,6 +1900,9 @@ class ApiController extends AbstractController
 
                 // if we have a mistake
                 if ($mistake["type"] !== "" && !$repo->isOnIgnoreList($this->getUser(), $fenBefore, $move["san"])) {
+                    // add to the mistakes total
+                    $mistakesTotal = $mistakesTotal + $mistakesPoints[$mistake["type"]];
+
                     // undo the current move so we can test the best moves
                     $chess->undo();
 
@@ -1647,7 +1961,33 @@ class ApiController extends AbstractController
 
                             // add to the bestmoves
                             if ($add) {
-                                $mistake["bestmoves"][] = ["move" => $bm["move"], "san" => $last["san"], "cp" => $bm["cp"]];
+                                // get the san moves from the uci moves..
+                                foreach ($bm["line"] as $lmove) {
+                                    // get the move details
+                                    $fromSquare = substr($lmove, 0, 2);
+                                    $toSquare = substr($lmove, 2, 2);
+                                    $promotion = strlen($lmove == 5) ? substr($lmove, 5) : "";
+                                    // make the move
+                                    $ret = $chess->move(["from" => $fromSquare, "to" => $toSquare, "promotion" => $promotion]);
+                                }
+
+                                $sanMoves = [];
+                                foreach ($bm["line"] as $lmove) {
+                                    // get the last move
+                                    $history = $chess->history(['verbose' => true]);
+                                    $last = array_pop($history);
+                                    array_unshift($sanMoves, $last["san"]);
+                                    // undo the last move
+                                    $chess->undo();
+                                }
+
+                                $mistake["bestmoves"][] = [
+                                    "move" => $bm["move"],
+                                    "san" => $last["san"],
+                                    "cp" => $bm["cp"],
+                                    //"line" => $bm["line"],
+                                    "line" => $sanMoves
+                                ];
                             }
                         }
                     }
@@ -1679,10 +2019,15 @@ class ApiController extends AbstractController
             $linePgn .= ($linePgn != "" ? " " : "") . ($halfMove % 2 == 1 ? ceil($halfMove / 2) . ". " : "") . $move['san'];
             $lineMoves[] = $move['san'];
 
+            // increase the halfmove
             $halfMove++;
-
-            // max 15 moves?
+            // if we need to stop analysing
             if ($halfMove >= 30) {
+                break;
+            }
+
+            // if we exceeded the mistakes limit
+            if ($mistakesTotal > $mistakesLimit) {
                 break;
             }
         }

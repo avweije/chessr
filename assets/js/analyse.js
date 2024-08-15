@@ -1,16 +1,24 @@
+import { Utils } from "./utils.js";
 import { Modal } from "./modal.js";
 
 class Analyse {
   // the elements
+  siteChessDotComRadio = null;
+  siteLichessRadio = null;
+
+  siteUsername = null;
+
   connectButton = null;
   downloadButton = null;
   analyseButton = null;
 
+  archivesSection = null;
   archivesDisabledText = null;
   archivesContainer = null;
   archiveYearSelect = null;
   archiveMonthSelect = null;
 
+  gamesSection = null;
   gamesDisabledText = null;
   gamesContainer = null;
   gameTypeSelect = null;
@@ -36,21 +44,31 @@ class Analyse {
     totals: [],
   };
 
+  // the settings
+  settings = [];
+
   // the data
   archives = [];
   games = [];
 
   constructor() {
     // get the elements
+    this.siteChessDotComRadio = document.getElementById("siteChessDotComRadio");
+    this.siteLichessRadio = document.getElementById("siteLichessRadio");
+
+    this.siteUsername = document.getElementById("siteUsername");
+
     this.connectButton = document.getElementById("connectButton");
     this.downloadButton = document.getElementById("downloadButton");
     this.analyseButton = document.getElementById("analyseButton");
 
+    this.archivesSection = document.getElementById("archivesSection");
     this.archivesDisabledText = document.getElementById("archivesDisabledText");
     this.archivesContainer = document.getElementById("archivesContainer");
     this.archiveYearSelect = document.getElementById("archiveYearSelect");
     this.archiveMonthSelect = document.getElementById("archiveMonthSelect");
 
+    this.gamesSection = document.getElementById("gamesSection");
     this.gamesDisabledText = document.getElementById("gamesDisabledText");
     this.gamesContainer = document.getElementById("gamesContainer");
     this.gameTypeSelect = document.getElementById("gameTypeSelect");
@@ -64,6 +82,15 @@ class Analyse {
     this.analyseButton.disabled = true;
 
     // attach event handlers
+    this.siteChessDotComRadio.addEventListener(
+      "change",
+      this.switchSite.bind(this)
+    );
+    this.siteLichessRadio.addEventListener(
+      "change",
+      this.switchSite.bind(this)
+    );
+
     this.connectButton.addEventListener("click", this.getArchives.bind(this));
     this.downloadButton.addEventListener("click", this.getGames.bind(this));
     this.analyseButton.addEventListener("click", this.analyseGames.bind(this));
@@ -89,6 +116,8 @@ class Analyse {
       "analyseModalCloseButton"
     );
 
+    console.log(this.analyseDialog);
+
     // register the modal
     Modal.register(
       this.analyseDialog.modal,
@@ -104,17 +133,123 @@ class Analyse {
       ],
       this.onCloseDialog.bind(this)
     );
+
+    // get settings
+    this.getSettings();
+  }
+
+  // get the settings
+  getSettings() {
+    console.log("getSettings:");
+
+    var url = "/api/download/settings";
+
+    // show the page loader
+    Utils.showLoading();
+
+    fetch(url, {
+      method: "GET",
+    })
+      .then((res) => res.json())
+      .then((response) => {
+        console.log("Success:");
+        console.log(response);
+
+        // handle the response
+        this.onGetSettings(response["settings"]);
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      })
+      .finally(() => {
+        // hide the page loader
+        Utils.hideLoading();
+      });
+  }
+
+  //
+  onGetSettings(settings) {
+    console.log("onGetSettings:");
+    console.log(settings);
+
+    // store the settings
+    this.settings = settings;
+
+    // select the correct site
+    if (this.settings.site == "Lichess") {
+      this.siteLichessRadio.checked = true;
+
+      this.siteUsername.value = this.settings.lichess_username
+        ? this.settings.lichess_username
+        : "";
+    } else {
+      this.siteChessDotComRadio.checked = true;
+
+      this.siteUsername.value = this.settings.chess_username
+        ? this.settings.chess_username
+        : "";
+    }
+  }
+
+  // switch sites
+  switchSite() {
+    // get the selected site
+    this.settings.site = this.siteChessDotComRadio.checked
+      ? this.siteChessDotComRadio.value
+      : this.siteLichessRadio.value;
+
+    // set the correct username
+    if (this.settings.site == "Lichess") {
+      // store the current username
+      this.settings.chess_username = this.siteUsername.value;
+      // set the lichess username
+      this.siteUsername.value = this.settings.lichess_username
+        ? this.settings.lichess_username
+        : "";
+    } else {
+      // store the current username
+      this.settings.lichess_username = this.siteUsername.value;
+      // set the chess.com username
+      this.siteUsername.value = this.settings.chess_username
+        ? this.settings.chess_username
+        : "";
+    }
+
+    console.log(this.settings);
+
+    // disable the download button
+    this.downloadButton.disabled = true;
+
+    // show the text, hide the container
+    this.archivesDisabledText.classList.remove("hidden");
+    this.archivesContainer.classList.add("hidden");
+
+    // hide the games
+    this.gamesSection.classList.add("hidden");
   }
 
   // get the repertoire
   getArchives() {
     console.log("getArchives:");
 
-    var url = "/api/download/archives";
+    var site = this.siteChessDotComRadio.checked
+      ? this.siteChessDotComRadio.value
+      : this.siteLichessRadio.value;
+
+    var url =
+      "/api/download/archives/" +
+      encodeURIComponent(this.siteUsername.value) +
+      "/" +
+      encodeURIComponent(site);
+
+    console.log("URL: " + url);
 
     // show the spinner
     this.connectButton.children[0].classList.remove("hidden");
     this.connectButton.disabled = true;
+
+    // hide the games section
+    this.gamesSection.classList.add("hidden");
 
     fetch(url, {
       method: "GET",
@@ -174,6 +309,9 @@ class Analyse {
     // hide the text, show the container
     this.archivesDisabledText.classList.add("hidden");
     this.archivesContainer.classList.remove("hidden");
+
+    // show the games section
+    this.gamesSection.classList.remove("hidden");
   }
 
   // fired when the user selects a different year
@@ -274,15 +412,15 @@ class Analyse {
 
     // fill the type select
     for (var [key, totals] of Object.entries(this.games)) {
-      if (totals.total - totals.processed > 0) {
+      if (totals.total == -1 || totals.total - totals.processed > 0) {
         var opt = document.createElement("option");
         opt.value = key;
         opt.text =
           key.charAt(0).toUpperCase() +
           key.slice(1) +
-          " (" +
-          (totals.total - totals.processed) +
-          ")";
+          (totals.total == -1
+            ? ""
+            : " (" + (totals.total - totals.processed) + ")");
 
         if (rememberSelected && key == selectedValue) {
           opt.selected = true;
@@ -344,8 +482,22 @@ class Analyse {
       this.gameTypeSelect.value.charAt(0).toUpperCase() +
       this.gameTypeSelect.value.slice(1);
 
+    // set the elapsed time
+    this.analyseDialog.elapsedTimeField.innerHTML = "0s";
+
     // set the stop button text
     this.analyseDialog.stopButton.innerHTML = "Stop analysing";
+
+    // if this is lichess (no estimated time left)
+    if (this.siteLichessRadio.checked) {
+      console.log("estimatedTimeField:");
+      console.log(this.analyseDialog.estimatedTimeField.previousElementSibling);
+
+      this.analyseDialog.estimatedTimeField.classList.add("hidden");
+      this.analyseDialog.estimatedTimeField.previousElementSibling.classList.add(
+        "hidden"
+      );
+    }
 
     // open the dialog
     Modal.open(this.analyseDialog.modal);
@@ -401,8 +553,9 @@ class Analyse {
 
     // if we have no more games left to process
     if (
+      this.analyseDialog.totals[this.gameTypeSelect.value].total != -1 &&
       this.analyseDialog.totals[this.gameTypeSelect.value].processed ==
-      this.analyseDialog.totals[this.gameTypeSelect.value].total
+        this.analyseDialog.totals[this.gameTypeSelect.value].total
     ) {
       // update the games field
       this.analyseDialog.gamesField.innerHTML =
@@ -428,35 +581,46 @@ class Analyse {
       return;
     }
 
-    // update the games field
-    this.analyseDialog.gamesField.innerHTML =
-      this.analyseDialog.totals[this.gameTypeSelect.value].total +
-      " in total, " +
-      (this.analyseDialog.totals[this.gameTypeSelect.value].total -
-        this.analyseDialog.totals[this.gameTypeSelect.value].processed) +
-      " remaining";
-
-    // get the elapsed time so far
-    var elapsed = (new Date().getTime() - this.analyseDialog.startTime) / 1000;
-    // get the average time per game
-    var estimate =
-      this.analyseDialog.processed > 0
-        ? elapsed / this.analyseDialog.processed
-        : 15;
-    // update the estimated time left field
-    this.analyseDialog.estimatedTimeField.innerHTML = this.getDuration(
-      estimate *
+    // if we have estimated time left
+    if (this.siteChessDotComRadio.checked) {
+      // update the games field
+      this.analyseDialog.gamesField.innerHTML =
+        this.analyseDialog.totals[this.gameTypeSelect.value].total +
+        " in total, " +
         (this.analyseDialog.totals[this.gameTypeSelect.value].total -
-          this.analyseDialog.totals[this.gameTypeSelect.value].processed)
-    );
+          this.analyseDialog.totals[this.gameTypeSelect.value].processed) +
+        " remaining";
 
-    console.log("elapsed: " + elapsed);
-    console.log("estimate per game: " + estimate);
-    console.log(
-      "games left: " +
-        (this.analyseDialog.totals[this.gameTypeSelect.value].total -
-          this.analyseDialog.totals[this.gameTypeSelect.value].processed)
-    );
+      // get the elapsed time so far
+      var elapsed =
+        (new Date().getTime() - this.analyseDialog.startTime) / 1000;
+      // get the average time per game
+      var estimate =
+        this.analyseDialog.processed > 0
+          ? elapsed / this.analyseDialog.processed
+          : 15;
+      // update the estimated time left field
+      this.analyseDialog.estimatedTimeField.innerHTML = this.getDuration(
+        estimate *
+          (this.analyseDialog.totals[this.gameTypeSelect.value].total -
+            this.analyseDialog.totals[this.gameTypeSelect.value].processed)
+      );
+
+      console.log("elapsed: " + elapsed);
+      console.log("estimate per game: " + estimate);
+      console.log(
+        "games left: " +
+          (this.analyseDialog.totals[this.gameTypeSelect.value].total -
+            this.analyseDialog.totals[this.gameTypeSelect.value].processed)
+      );
+    } else {
+      // update the games field
+      this.analyseDialog.gamesField.innerHTML =
+        this.analyseDialog.totals[this.gameTypeSelect.value].processed > 0
+          ? this.analyseDialog.totals[this.gameTypeSelect.value].processed +
+            " games processed"
+          : "processing games";
+    }
 
     //var url = "/api/download/games/{year}/{month}";
     var url =
@@ -488,6 +652,12 @@ class Analyse {
         this.analyseDialog.totals[this.gameTypeSelect.value].processed =
           this.analyseDialog.totals[this.gameTypeSelect.value].processed +
           response.processed;
+
+        // if completed, set the total (needed for lichess to end the analysis)
+        if (response.completed) {
+          this.analyseDialog.totals[this.gameTypeSelect.value].total =
+            this.analyseDialog.totals[this.gameTypeSelect.value].processed;
+        }
 
         // analyse the next set of games
         this.analyseNext(year, month);

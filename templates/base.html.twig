@@ -6,8 +6,11 @@
 			{% block title %}Chess Repertoire
 			{% endblock %}
 		</title>
-		<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text></svg>">
-		<script src="https://cdn.tailwindcss.com"></script>
+		<link
+		rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text></svg>">
+		<!--
+																																																																																																																																																																																				<script src="https://cdn.tailwindcss.com"></script>
+																																																																																																																																																																																				-->
 		<link rel="stylesheet" href="/build/app.css">
 		{% block stylesheets %}
 			{{ encore_entry_link_tags('app') }}
@@ -17,21 +20,24 @@
 		{% endblock %}
 		<script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.3.5/dist/alpine.min.js" defer></script>
 	</head>
-	<body class="bg-gray-100 h-screen antialiased leading-none font-sans min-h-screen">
+	<body class="bg-zinc-100 dark:bg-slate-800 h-screen antialiased leading-none font-sans min-h-screen">
 		{% block header %}
-			<header>
+			<header
+				class="fixed z-20 top-0 start-0 w-full">
 				<!-- Main navigation container -->
-				<nav class="fixed z-20 top-0 start-0 flex w-full flex-wrap items-center justify-between bg-zinc-50 border border-slate-300 py-2 shadow-dark-mild dark:bg-neutral-700 lg:py-4" data-twe-navbar-ref>
-					<div class="flex w-full flex-wrap items-center justify-between px-3">
+				<nav class="relative py-1 md:py-2 bg-zinc-50 dark:bg-slate-900 border-b border-zinc-300 dark:border-slate-700 flex w-full rounded flex-wrap items-center justify-between shadow-dark-mild" data-twe-navbar-ref>
+					<div id="pageHeaderBackground" class="absolute w-full h-full" style="opacity: .1; background-image: url('{{ asset('build/images/smokey-chess-background.webp') }}');"></div>
+
+					<div class="relative flex w-full flex-wrap items-center justify-between px-1 md:px-2">
 						<div>
-							<a class="mx-2 my-1 flex items-center lg:mb-0 lg:mt-0" href="#">
+							<a class="mr-2 flex items-center" href="#">
 								<img class="me-2" src="{{ asset('build/images/chess-board.png') }}" style="height: 32px" alt="Chess Repertoire" loading="lazy"/>
 							</a>
 						</div>
 
 						<!-- Collapsible navbar container -->
-						<div class="!visible mt-2 hidden flex-grow basis-[100%] items-center lg:mt-0 lg:!flex lg:basis-auto" id="navbarSupportedContent4" data-twe-collapse-item>
-							<h2 class="text-1xl font-semibold text-gray-900">Chess Repertoire</h2>
+						<div class="!visible hidden flex-grow items-center md:!flex md:basis-auto" id="navbarSupportedContent4" data-twe-collapse-item>
+							<h2 class="text-1xl font-semibold text-gray-900 dark:text-white">Chess Repertoire</h2>
 						</div>
 
 						<!-- Right elements -->
@@ -43,31 +49,40 @@
 								class="list-style-none me-auto mr-20 flex ps-0 mt-1 flex-row" data-twe-navbar-nav-ref>
 								<!-- Home -->
 								<li class="mb-0 pe-1 ps-0" data-twe-nav-item-ref>
-									<a href="/" class="p-0 px-1 text-black/60 transition duration-200 hover:text-black/80 hover:ease-in-out focus:text-black/80 active:text-black/80 motion-reduce:transition-none dark:text-white/60 dark:hover:text-white/80 dark:focus:text-white/80 dark:active:text-white/80 lg:px-2" data-twe-nav-link-ref>
+									<a href="/" class="p-0 px-1 text-black/60 transition duration-200 hover:text-black/80 hover:ease-in-out focus:text-black/80 active:text-black/80 motion-reduce:transition-none dark:text-white/60 dark:hover:text-white/80 dark:focus:text-white/80 dark:active:text-white/80 md:px-3" data-twe-nav-link-ref>
 										Home
 									</a>
 								</li>
 								<!-- Repertoire -->
 								<li class="mb-0 pe-1 ps-0" data-twe-nav-item-ref>
-									<a href="/repertoire" class="p-0 px-1 text-black/60 transition duration-200 hover:text-black/80 hover:ease-in-out focus:text-black/80 active:text-black/80 motion-reduce:transition-none dark:text-white/60 dark:hover:text-white/80 dark:focus:text-white/80 dark:active:text-white/80 lg:px-2" data-twe-nav-link-ref>
+									<a href="/repertoire" class="p-0 px-1 text-black/60 transition duration-200 hover:text-black/80 hover:ease-in-out focus:text-black/80 active:text-black/80 motion-reduce:transition-none dark:text-white/60 dark:hover:text-white/80 dark:focus:text-white/80 dark:active:text-white/80 md:px-3" data-twe-nav-link-ref>
 										Repertoire
 									</a>
 								</li>
 								<!-- Practice -->
 								<li class="mb-0 pe-1 ps-0" data-twe-nav-item-ref>
-									<a href="/practice" class="p-0 px-1 text-black/60 transition duration-200 hover:text-black/80 hover:ease-in-out focus:text-black/80 active:text-black/80 motion-reduce:transition-none dark:text-white/60 dark:hover:text-white/80 dark:focus:text-white/80 dark:active:text-white/80 lg:px-2" data-twe-nav-link-ref>
+									<a href="/practice" class="p-0 px-1 text-black/60 transition duration-200 hover:text-black/80 hover:ease-in-out focus:text-black/80 active:text-black/80 motion-reduce:transition-none dark:text-white/60 dark:hover:text-white/80 dark:focus:text-white/80 dark:active:text-white/80 md:px-3" data-twe-nav-link-ref>
 										Practice
 									</a>
 								</li>
 							</ul>
 
+							<div class="flex flex-col justify-center ml-3">
+								<input type="checkbox" id="lightSwitchCheckbox" class="light-switch sr-only"/>
+								<label class="relative cursor-pointer p-2" for="lightSwitchCheckbox">
+									<span class="hidden dark:inline-block text-primary-500 icon-[mdi--white-balance-sunny]"></span>
+									<span class="inline-block dark:hidden text-primary-500 icon-[mdi--moon-and-stars]"></span>
+									<span class="sr-only">Switch to light / dark version</span>
+								</label>
+							</div>
+
 							<div class="flex items-center">
 								{% if app.user %}
-									<a href="/logout" class="rounded-md px-3 py-2 text-sm uppercase font-semibold text-primary-500 shadow-sm">
+									<a href="/logout" class="rounded-md px-3 py-2 text-sm uppercase font-semibold text-primary-500">
 										Logout
 									</a>
 								{% else %}
-									<a href="/login" class="rounded-md px-3 py-2 text-sm uppercase font-semibold text-primary-500 shadow-sm">
+									<a href="/login" class="rounded-md px-3 py-2 text-sm uppercase font-semibold text-primary-500">
 										Login
 									</a>
 									<a href="/register" class="btn btn-primary uppercase">
@@ -78,10 +93,11 @@
 						</div>
 					</div>
 				</nav>
+				{% block header_bottom %}{% endblock %}
 			</header>
 		{% endblock %}
 
-		<div class="pt-20 pb-20 px-5"> {% block body %}{% endblock %}
+		<div class="pt-14 pb-5 px-5"> {% block body %}{% endblock %}
 
 			</div>
 
@@ -93,9 +109,11 @@
 			</div>
 
 			{% block footer %}
-				<footer class="fixed bottom-0 w-full bg-zinc-50 border border-slate-300 py-1 shadow-dark-mild dark:bg-neutral-700 lg:py-2">
-					<p class="m-0 text-center text-base text-sm p-0">
-						Copyright 2024 avweije. All Rights Reserved.
+				<footer class="hidden fixed bottom-0 w-full rounded bg-white dark:bg-slate-900 border-t border-zinc-300 dark:border-slate-700 shadow-dark-mild dark:text-white/70">
+					<div id="pageFooterBackground" class="absolute w-full h-full" style="opacity: .1; background-image: url('{{ asset('build/images/smokey-chess-background.webp') }}');"></div>
+
+					<p class="m-0 text-center text-base text-xs py-1 md:py-2">
+						Copyright 2024 AvWeije. All Rights Reserved.
 					</p>
 				</footer>
 			{% endblock %}

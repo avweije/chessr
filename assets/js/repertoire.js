@@ -17,6 +17,7 @@ class Repertoire extends MyChessBoard {
   movesTable = null;
 
   repertoireContainer = null;
+  repertoireAutoPlayCheckbox = null;
   repertoireGroupInput = null;
   repertoireGroupDataList = null;
   repertoireGroupTagsContainer = null;
@@ -32,8 +33,14 @@ class Repertoire extends MyChessBoard {
   };
 
   repertoireId = 0;
+  repertoireAutoPlay = false;
   groups = [];
   repertoireGroups = [];
+
+  initialFensLoaded = false;
+  initialFen = "";
+  initialFenContainer = null;
+  initialFenSelect = null;
 
   confirmDialog = {};
 
@@ -53,6 +60,9 @@ class Repertoire extends MyChessBoard {
     this.movesTable = document.getElementById("movesTable");
     // get the repertoire container and elements
     this.repertoireContainer = document.getElementById("repertoireContainer");
+    this.repertoireAutoPlayCheckbox = document.getElementById(
+      "repertoireAutoPlayCheckbox"
+    );
     this.repertoireGroupInput = document.getElementById("repertoireGroupInput");
     this.repertoireGroupDataList = document.getElementById(
       "repertoireGroupDataList"
@@ -64,6 +74,15 @@ class Repertoire extends MyChessBoard {
       "removeRepertoireButton"
     );
 
+    // get the initial fens elements
+    this.initialFenContainer = document.getElementById("initialFenContainer");
+    this.initialFenSelect = document.getElementById("initialFenSelect");
+
+    this.initialFenSelect.addEventListener(
+      "change",
+      this.onSelectInitialFen.bind(this)
+    );
+
     // get the board element
     var el = document.getElementById("board");
     // get the repertoire color
@@ -73,6 +92,11 @@ class Repertoire extends MyChessBoard {
     this.saveRepertoireButton.addEventListener(
       "click",
       this.onSaveRepertoire.bind(this)
+    );
+
+    this.repertoireAutoPlayCheckbox.addEventListener(
+      "change",
+      this.onRepertoireAutoPlayChange.bind(this)
     );
 
     this.repertoireGroupInput.addEventListener(
@@ -175,6 +199,7 @@ class Repertoire extends MyChessBoard {
 
         // remove the repertoireId
         this.repertoireId = 0;
+        this.repertoireAutoPlay = false;
         // toggle the buttons
         this.toggleButtons(false);
         // remove the dots for any child moves that have been deleted
@@ -270,12 +295,6 @@ class Repertoire extends MyChessBoard {
 
         // handle the response
         this.onGetMoves(response);
-
-        // remember the repertoireId
-        this.repertoireId = response["repertoireId"];
-
-        // toggle the buttons
-        this.toggleButtons(response["repertoireId"] > 0);
       })
       .catch((error) => {
         console.error("Error:", error);
@@ -288,6 +307,26 @@ class Repertoire extends MyChessBoard {
 
   // show the moves, the groups
   onGetMoves(data) {
+    // remember the current repertoire details
+    this.repertoireId = data["repertoireId"];
+    this.repertoireAutoPlay = data["repertoireAutoPlay"];
+
+    // toggle the buttons
+    this.toggleButtons(data["repertoireId"] > 0);
+
+    // if we haven't loaded the initial fens yet
+    if (!this.initialFensLoaded) {
+      // if we have initial fens
+      if (data["initialFens"] && data["initialFens"].length > 0) {
+        this.showInitialFens();
+        this.loadInitialFens(data["initialFens"]);
+      } else {
+        this.hideInitialFens();
+      }
+
+      this.initialFensLoaded = true;
+    }
+
     // set the current ECO code
     this.ecoField.innerHTML =
       data.eco.current && data.eco.current.name ? data.eco.current.name : "";
@@ -296,14 +335,17 @@ class Repertoire extends MyChessBoard {
     console.log(data);
     console.log(this.ecoField.innerHTML);
 
-    // reload the groups
-    this.loadGroups(this.ecoField.innerHTML);
-
     // load the moves table
     this.loadMovesTable(data);
 
+    // set the autoplay checkbox
+    this.repertoireAutoPlayCheckbox.checked = this.repertoireAutoPlay;
+
     // store the groups for this move
     this.repertoireGroups = data.groups;
+
+    // reload the groups
+    this.loadGroups(this.ecoField.innerHTML);
 
     // clear the group tags
     this.clearGroupTags();
@@ -314,6 +356,10 @@ class Repertoire extends MyChessBoard {
       this.addGroupTags();
     }
   }
+
+  /**
+   * Group (tags) functions.
+   */
 
   // remove the group tags
   clearGroupTags() {
@@ -388,6 +434,34 @@ class Repertoire extends MyChessBoard {
     }
 
     //repertoireGroupTagsContainer
+  }
+
+  // onChange event for repertoire autoplay checkbox
+  onRepertoireAutoPlayChange(event) {
+    console.log("onRepertoireAutoPlayChange:");
+
+    // set the data object
+    var data = {
+      repertoire: this.repertoireId,
+      autoplay: this.repertoireAutoPlayCheckbox.checked,
+    };
+
+    console.log(data);
+
+    // send the API request
+    var url = "/api/repertoire/autoplay";
+    fetch(url, {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((res) => res.json())
+      .then((response) => {
+        console.log("Success:", JSON.stringify(response));
+      })
+      .catch((error) => console.error("Error:", error));
   }
 
   // onInput event for the repertoire group input
@@ -543,7 +617,7 @@ class Repertoire extends MyChessBoard {
   // save the current path to your repertoire (color, starting position, move, end position)
   onSaveRepertoire() {
     var pgn = "";
-    var moves = this.historyWithCorrectFen();
+    var moves = this.game.historyWithCorrectFen();
     for (var i = 0; i < moves.length; i++) {
       if (i % 2 == 0) {
         pgn += i / 2 + 1 + ". ";
@@ -587,6 +661,10 @@ class Repertoire extends MyChessBoard {
   hideRepertoireDetails() {
     this.repertoireContainer.classList.add("hidden");
   }
+
+  /**
+   * Moves table functions.
+   */
 
   // clear the moves table
   clearMovesTable() {
@@ -651,11 +729,12 @@ class Repertoire extends MyChessBoard {
   // add a row to the moves table
   movesAddRow(data) {
     var row = this.movesTable.tBodies[0].insertRow(-1);
-    row.className = "hover:cursor-pointer hover:bg-slate-100";
+    row.className =
+      "hover:cursor-pointer hover:bg-slate-100 hover:dark:bg-slate-600 text-gray-900 dark:text-gray-200";
     row.setAttribute("data-move", data.move);
 
     var cell = row.insertCell(-1);
-    cell.className = "w-12 pl-3 pr-2 py-2 font-semibold";
+    cell.className = "w-12 pl-3 pr-2 py-2 font-semibold whitespace-nowrap";
     cell.innerHTML = data.move;
 
     cell = row.insertCell(-1);
@@ -678,29 +757,32 @@ class Repertoire extends MyChessBoard {
 
       var flex = document.createElement("div");
       flex.className =
-        "flex min-w-32 w-44 max-w-52 rounded-full border border-slate-300 overflow-hidden";
+        "flex min-w-32 w-44 max-w-52 rounded-full border border-slate-300 dark:border-slate-800 overflow-hidden";
       flex.title = "Win/draw/loss % for " + this.getNumberOfGames(data.total);
 
       var div1 = document.createElement("div");
       div1.className =
-        "bg-slate-100 text-[10px] py-px px-2 text-slate-500 text-center w-[" +
+        "bg-slate-100 dark:bg-slate-200 text-[10px] px-2 text-slate-500 dark:text-slate-600 text-center w-[" +
         wpct +
         "%] min-w-min";
       div1.innerHTML = wpct + "%";
+      div1.style = "width: " + wpct + "%;";
 
       var div2 = document.createElement("div");
       div2.className =
-        "bg-slate-300 text-[10px] py-px px-2 text-slate-900 text-center w-[" +
+        "bg-slate-300 dark:bg-slate-400 text-[10px] px-2 text-slate-900 text-center w-[" +
         dpct +
         "%] min-w-min";
       div2.innerHTML = dpct + "%";
+      div2.style = "width: " + dpct + "%;";
 
       var div3 = document.createElement("div");
       div3.className =
-        "bg-slate-600 text-[10px] py-px px-2 text-slate-300 text-center w-[" +
+        "bg-slate-600 text-[10px] px-2 text-slate-300 text-center w-[" +
         lpct +
         "%] min-w-min";
       div3.innerHTML = lpct + "%";
+      div3.style = "width: " + lpct + "%;";
 
       flex.appendChild(div1);
       flex.appendChild(div2);
@@ -815,6 +897,59 @@ class Repertoire extends MyChessBoard {
     this.makeMove(move);
   }
 
+  /**
+   * Initial fens functions.
+   */
+
+  showInitialFens() {
+    this.initialFenContainer.classList.remove("hidden");
+  }
+
+  hideInitialFens() {
+    this.initialFenContainer.classList.add("hidden");
+  }
+
+  loadInitialFens(data) {
+    while (this.initialFenSelect.firstChild) {
+      this.initialFenSelect.removeChild(this.initialFenSelect.lastChild);
+    }
+
+    var opt = document.createElement("option");
+    opt.value = "";
+    opt.text = "default";
+
+    this.initialFenSelect.appendChild(opt);
+
+    for (var i = 0; i < data.length; i++) {
+      opt = document.createElement("option");
+      opt.value = data[i];
+      opt.text = data[i];
+      opt.selected = data[i] == this.initialFen;
+
+      this.initialFenSelect.appendChild(opt);
+    }
+  }
+
+  onSelectInitialFen(event) {
+    console.log("onSelectInitialFen: " + this.initialFenSelect.value);
+
+    // set the initial fen
+    this.initialFen = this.initialFenSelect.value;
+
+    // reset the board
+    if (this.initialFen != "") {
+      this.game.load(this.initialFen);
+    } else {
+      this.game.reset();
+    }
+
+    // update the board
+    this.board.setPosition(this.game.fen(), true);
+
+    // update the status & get the moves
+    this.updateStatus();
+  }
+
   // event handler
   afterMove(move) {
     // update the status, get the ECO codes for next position.. etc
@@ -856,11 +991,15 @@ class Repertoire extends MyChessBoard {
     // get the PGN
     var pgn = this.game.pgn();
 
-    if (pgn == "") {
+    console.log("PGN:");
+    console.log(pgn);
+
+    // get the history of moves
+    var moves = this.game.history({ verbose: true });
+    // if no moves yet
+    if (moves.length == 0) {
       this.pgnField.innerHTML = "--";
     } else {
-      var moves = this.game.history({ verbose: true });
-
       for (var i = 0; i < moves.length; i++) {
         if (i % 2 == 0) {
           var sp = document.createElement("span");

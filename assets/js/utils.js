@@ -6,10 +6,6 @@ export class Utils {
   static showCounter = 0;
 
   static {
-    console.log("Utils:static:init");
-    console.log(this.pageLoadingOverlay);
-    console.log(document.getElementById("pageLoadingOverlay"));
-
     this.pageLoadingOverlay = document.getElementById("pageLoadingOverlay");
   }
 

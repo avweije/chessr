@@ -160,7 +160,7 @@ class UCI
                 // add to the response string
                 $response .= $line;
                 // add to the response lines
-                $lines[] = $line;
+                $lines[] = rtrim($line);
             }
 
             // if we've waited long enough
