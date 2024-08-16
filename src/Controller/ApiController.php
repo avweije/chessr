@@ -75,22 +75,23 @@ h3 40. Rdd7 Rh5 41. Rxf7+ Kg8 42. Rfe7 Kf8 43. Rxe6 h2 44. Rxa6 h1=Q 45. Ra8#
 
         $pgnText = '[Event "Live Chess"]
 [Site "Chess.com"]
-[Date "2024.07.02"]
+[Date "2024.03.01"]
 [Round "?"]
-[White "chesschampion4897"]
-[Black "avweije"]
-[Result "0-1"]
-[ECO "B50"]
-[WhiteElo "1650"]
-[BlackElo "2099"]
-[TimeControl "600"]
-[EndTime "5:58:40 PDT"]
+[White "avweije"]
+[Black "noobchessplayer0809"]
+[Result "1-0"]
+[ECO "A40"]
+[WhiteElo "2138"]
+[BlackElo "979"]
+[TimeControl "180"]
+[EndTime "3:19:29 PST"]
 [Termination "avweije won by resignation"]
 
-1. e4 c5 2. Nf3 d6 3. Bc4 Nf6 4. Nc3 Nc6 5. d3 g6 6. h3 Bg7 7. Bf4 O-O 8. O-O a6
-9. Re1 b5 10. Bd5 Nxd5 11. Nxd5 Bxb2 12. Rb1 Bg7 13. c4 b4 14. Qa4 Bd7 15. Qb3
-a5 16. e5 a4 17. Qc2 dxe5 18. Bxe5 Nxe5 19. Nxe5 e6 20. Nf4 Bc8 21. Rbd1 Bxe5
-22. Rxe5 Qf6 23. Re4 Bb7 0-1';
+1. d4 e5 2. c3 exd4 3. cxd4 Nf6 4. Nf3 Nc6 5. Nc3 d6 6. Bf4 Be7 7. e3 O-O 8. Bd3
+Re8 9. O-O Be6 10. d5 Nxd5 11. Nxd5 Bxd5 12. Bxh7+ Kxh7 13. Qxd5 Nb4 14. Qxf7
+Nc2 15. Qf5+ g6 16. Qxc2 c6 17. Bg3 Bf6 18. Rad1 Re6 19. Nd4 Re7 20. Rd2 c5 21.
+Nf3 Qb6 22. b3 Rd8 23. Rfd1 Re6 24. Qc4 Re7 25. Qg4 Be5 26. Bxe5 dxe5 27. Rxd8
+Qxd8 1-0';
 
         // parse the game
         $game = $this->myPgnParser->parsePgnFromText($pgnText, true);
@@ -435,11 +436,13 @@ a5 16. e5 a4 17. Qc2 dxe5 18. Bxe5 Nxe5 19. Nxe5 e6 20. Nf4 Bc8 21. Rbd1 Bxe5
         // loop through the moves
         foreach ($data["moves"] as $move) {
 
+            //dd($move);
+
             // find this move
             $rec = $repo->findOneBy([
                 'User' => $this->getUser(),
                 'Color' => $move['color'],
-                'FenAfter' => $move['fen'],
+                'FenBefore' => $move['fen'],
                 'Move' => $move['move']
             ]);
 
@@ -728,8 +731,8 @@ a5 16. e5 a4 17. Qc2 dxe5 18. Bxe5 Nxe5 19. Nxe5 e6 20. Nf4 Bc8 21. Rbd1 Bxe5
                     $mins = floor($secs / 60);
 
                     // if 5 minutes ago or more
-                    //if ($mins > 4) {
-                    if (true) {
+                    if ($mins > 4) {
+                        //if (true) {
                         // update status for record
                         $rec->setStatus(DownloadStatus::Partial);
                         $rec->setDateTime(new DateTime());
@@ -894,7 +897,7 @@ a5 16. e5 a4 17. Qc2 dxe5 18. Bxe5 Nxe5 19. Nxe5 e6 20. Nf4 Bc8 21. Rbd1 Bxe5
             }
 
             // completed all games
-            $completed = $i + 1 == $cnt;
+            $completed = $i + 1 >= $cnt;
 
             // stop when we've reached the max
             if ($processed >= $maxGames) {
@@ -1096,6 +1099,9 @@ a5 16. e5 a4 17. Qc2 dxe5 18. Bxe5 Nxe5 19. Nxe5 e6 20. Nf4 Bc8 21. Rbd1 Bxe5
                     'new' => $rep->getPracticeCount() == 0 ? 1 : 0,
                     'failPercentage' => $rep->getPracticeCount() < 5 ? 1 : $rep->getPracticeFailed() / $rep->getPracticeCount(),
                     'recommended' => $this->isRecommended($rep->getPracticeCount(), $rep->getPracticeFailed(), $rep->getPracticeInARow()) ? 1 : 0,
+                    'practiceCount' => $rep->getPracticeCount(),
+                    'practiceFailed' => $rep->getPracticeFailed(),
+                    'practiceInARow' => $rep->getPracticeInARow(),
                     'line' => [],
                     'moves' => []
                 ];
@@ -1135,6 +1141,9 @@ a5 16. e5 a4 17. Qc2 dxe5 18. Bxe5 Nxe5 19. Nxe5 e6 20. Nf4 Bc8 21. Rbd1 Bxe5
                     'new' => $rep->getPracticeCount() == 0 ? 1 : 0,
                     'failPercentage' => $rep->getPracticeCount() < 5 ? 1 : $rep->getPracticeFailed() / $rep->getPracticeCount(),
                     'recommended' => $this->isRecommended($rep->getPracticeCount(), $rep->getPracticeFailed(), $rep->getPracticeInARow()) ? 1 : 0,
+                    'practiceCount' => $rep->getPracticeCount(),
+                    'practiceFailed' => $rep->getPracticeFailed(),
+                    'practiceInARow' => $rep->getPracticeInARow(),
                     'line' => [],
                     'moves' => []
                 ];
@@ -1196,6 +1205,9 @@ a5 16. e5 a4 17. Qc2 dxe5 18. Bxe5 Nxe5 19. Nxe5 e6 20. Nf4 Bc8 21. Rbd1 Bxe5
                     }
                 }
             }
+
+            // group the lines per starting position / color
+            $groups[$i]["lines"] = $this->groupByPosition($groups[$i]["lines"], $lines);
         }
 
         //dd($groups);
@@ -1414,12 +1426,7 @@ a5 16. e5 a4 17. Qc2 dxe5 18. Bxe5 Nxe5 19. Nxe5 e6 20. Nf4 Bc8 21. Rbd1 Bxe5
         // get the fail percentage
         $failPct = $practiceCount < 5 ? 1 : $practiceFailed / $practiceCount;
 
-        //if ($practiceFailed > 0) {
-        //print "PracticeFailed: $practiceCount / $practiceFailed / $practiceInARow = $failPct = " . ($practiceCount == 0 ? false : $practiceInARow < $failPct * 8) . "<br>";
-        //}
-
-        return $practiceCount == 0 ? false : $practiceInARow < $failPct * 8;
-        //return $practiceCount == 0 ? false : true;
+        return $practiceCount == 0 ? false : $practiceInARow < $failPct * 20;
     }
 
     // get the complete lines for a certain color and starting position
@@ -1427,16 +1434,8 @@ a5 16. e5 a4 17. Qc2 dxe5 18. Bxe5 Nxe5 19. Nxe5 e6 20. Nf4 Bc8 21. Rbd1 Bxe5
     {
         $moves = [];
 
-        //if ($color == "black") {
-        //  print "getLines - $color -- $fen:<br>";
-        //}
-
         // find the follow up moves for a certain color and position
         foreach ($res as $rep) {
-            //if ($color == "black") {
-            //  print "res - " . $rep->getColor() . " -- " . $rep->getFenBefore() . "<br>";
-            //}
-
             if ($rep->getColor() == $color && $rep->getFenBefore() == $fen) {
                 $moves[] = [
                     'color' => $color,
@@ -1449,17 +1448,15 @@ a5 16. e5 a4 17. Qc2 dxe5 18. Bxe5 Nxe5 19. Nxe5 e6 20. Nf4 Bc8 21. Rbd1 Bxe5
                     'new' => $rep->getPracticeCount() == 0 ? 1 : 0,
                     'failPercentage' => $rep->getPracticeCount() < 5 ? 1 : $rep->getPracticeFailed() / $rep->getPracticeCount(),
                     'recommended' => $this->isRecommended($rep->getPracticeCount(), $rep->getPracticeFailed(), $rep->getPracticeInARow()) ? 1 : 0,
+                    'practiceCount' => $rep->getPracticeCount(),
+                    'practiceFailed' => $rep->getPracticeFailed(),
+                    'practiceInARow' => $rep->getPracticeInARow(),
                     'line' => $lineMoves,
                     'moves' => [],
                     'multiple' => []
                 ];
             }
         }
-
-        //if ($color == "black") {
-        //  print_r($moves);
-        //print "<br><br>";
-        //}
 
         // if we have any moves
         if (count($moves) > 0) {
@@ -1955,6 +1952,7 @@ a5 16. e5 a4 17. Qc2 dxe5 18. Bxe5 Nxe5 19. Nxe5 e6 20. Nf4 Bc8 21. Rbd1 Bxe5
 
                                 // calculate the move percentage loss
                                 $movePctLoss = $prevWinPct == -1 ? 0 : max(0, ($prevWinPct - $moveWinPct) / 100);
+
                                 // add if not an inaccuracy or worse
                                 $add = $movePctLoss < .1;
                             }

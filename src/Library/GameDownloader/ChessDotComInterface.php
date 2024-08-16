@@ -93,7 +93,6 @@ class ChessDotComInterface implements ChessSiteInterface
             $lastIdFound = [];
 
             foreach ($data as $game) {
-
                 if (!isset($this->games[$game["time_class"]])) {
                     $this->games[$game["time_class"]] = ["total" => 0, "processed" => 0];
                 }
@@ -134,20 +133,25 @@ class ChessDotComInterface implements ChessSiteInterface
         // if response ok
         if ($response !== null && $response->getStatusCode() == 200) {
             $games = $response->toArray()['games'];
+            $gamesOfType = [];
 
             foreach ($games as $game) {
-                if (!isset($this->games[$year])) {
-                    $this->games[$year] = [];
-                }
+                if ($game["time_class"] == $type) {
+                    if (!isset($this->games[$year])) {
+                        $this->games[$year] = [];
+                    }
 
-                if (!isset($this->games[$year][$month])) {
-                    $this->games[$year][$month] = [];
-                }
+                    if (!isset($this->games[$year][$month])) {
+                        $this->games[$year][$month] = [];
+                    }
 
-                $this->games[$year][$month][] = $game;
+                    $this->games[$year][$month][] = $game;
+
+                    $gamesOfType[] = $game;
+                }
             }
 
-            return $games;
+            return $gamesOfType;
         }
 
         return [];

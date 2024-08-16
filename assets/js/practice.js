@@ -26,6 +26,7 @@ class Practice extends MyChessBoard {
 
   containers = {
     group: null,
+    groupSelect: null,
 
     counters: null,
     moveCounter: null,
@@ -45,7 +46,9 @@ class Practice extends MyChessBoard {
   inPractice = false;
 
   repertoire = [];
+  needsRefresh = false;
 
+  lastMove = null;
   correctMoves = [];
 
   practice = {
@@ -105,6 +108,15 @@ class Practice extends MyChessBoard {
 
     // get the counter elements
     this.containers.group = document.getElementById("practiceGroupContainer");
+    this.containers.groupSelect = document.getElementById(
+      "practiceGroupSelect"
+    );
+
+    this.containers.groupSelect.addEventListener(
+      "change",
+      this.onGroupSelectChange.bind(this)
+    );
+
     this.containers.counters = document.getElementById(
       "practiceCountersContainer"
     );
@@ -148,13 +160,36 @@ class Practice extends MyChessBoard {
     this.disableMoveInput();
 
     // get the entire repertoire
-    this.getRepertoire();
+    this.getRepertoire(true);
 
     // initialise the analysis elements
     this.initAnalysis();
 
     // initialise the dialogs
     this.initDialogs();
+
+    // add keydown event listeners for left/right (prev/next move)
+    document.addEventListener("keydown", (event) => {
+      // if arrow left or right and the focus is not on an input element
+      if (
+        this.practice.paused &&
+        (event.key == "ArrowRight" || event.key == "ArrowLeft") &&
+        (!document.activeElement ||
+          !["INPUT", "SELECT", "TEXTAREA"].includes(
+            document.activeElement.nodeName
+          ))
+      ) {
+        console.log("keydown:");
+        console.log(event);
+        console.log(document.activeElement);
+
+        if (event.key == "ArrowRight") {
+          this.gotoNext();
+        } else {
+          this.gotoPrevious();
+        }
+      }
+    });
 
     // hide the page loader
     Utils.hideLoading();
@@ -276,11 +311,11 @@ class Practice extends MyChessBoard {
         return true;
       }
 
-      // get the last move as SAN code
-      this.lastMove = this.game.history({ verbose: true }).pop().san;
+      // get the last move
+      this.lastMove = this.game.historyWithCorrectFen().pop();
 
       // is this the correct repertoire move?
-      var isCorrect = this.practice.lineMoves.includes(this.lastMove);
+      var isCorrect = this.practice.lineMoves.includes(this.lastMove.san);
 
       // if this is the correct move
       if (isCorrect) {
@@ -301,9 +336,6 @@ class Practice extends MyChessBoard {
           // add to the failed counter
           this.addFailedCount();
 
-          // get the current FEN
-          var fen = this.getFen();
-
           // add to the failed count
           var failed = [];
 
@@ -317,7 +349,8 @@ class Practice extends MyChessBoard {
                 )
               ) {
                 failed.push({
-                  fen: fen,
+                  color: this.practice.lineColor,
+                  fen: this.lastMove.before,
                   move: this.practice.lineMoves[i],
                   failed: 1,
                 });
@@ -327,7 +360,7 @@ class Practice extends MyChessBoard {
             // add the move
             failed.push({
               color: this.practice.lineColor,
-              fen: fen,
+              fen: this.lastMove.before,
               move: this.practice.lineMoves[0],
               failed: 1,
             });
@@ -525,6 +558,9 @@ class Practice extends MyChessBoard {
     // add the engine moves
     moves.push({ moves: engineMoves });
 
+    // we need to refresh the repertoire data when starting a new practice
+    this.needsRefresh = true;
+
     // set the API url
     var url = "/api/analysis/save";
 
@@ -631,8 +667,12 @@ class Practice extends MyChessBoard {
 
   // fired when the analysis discard button is clicked
   onAnalysisDiscard(event, removeFromDb = true) {
+    // we need to refresh the repertoire data when starting a new practice
+    this.needsRefresh = true;
+
     // if we need to remove this move from the database
     if (removeFromDb) {
+      //if (false) {
       // set the API url
       var url = "/api/analysis";
       // set the data
@@ -665,6 +705,7 @@ class Practice extends MyChessBoard {
 
     // reduce by number of moves counter
     var reduceBy = 0;
+    var reduceTotal = 0;
     for (var i = 0; i < this.practice.lines.length; i++) {
       // if this is the same move
       if (
@@ -678,6 +719,16 @@ class Practice extends MyChessBoard {
             ? this.practice.lineMoves.length -
               this.practice.lineMovesPlayed.length
             : this.practice.lines[i].moves.length);
+        reduceTotal = reduceTotal + this.practice.lines[i].moves.length;
+
+        console.log(
+          "-- discard, line found: " +
+            i +
+            ", idx = " +
+            this.practice.lineIdx +
+            ", reduce = " +
+            reduceBy
+        );
 
         // remove this line
         this.practice.lines.splice(i, 1);
@@ -693,8 +744,10 @@ class Practice extends MyChessBoard {
 
     // update the move counter
     if (reduceBy > 0) {
-      this.practice.moveCount = this.practice.moveCount - reduceBy;
       this.reduceMoveCount(reduceBy);
+    }
+    if (reduceTotal > 0) {
+      this.practice.moveCount = this.practice.moveCount - reduceTotal;
     }
 
     // proceed to the 1st move of the next line (current line was removed, so no need to increase line index)
@@ -709,6 +762,11 @@ class Practice extends MyChessBoard {
 
   // update the analysis game fields
   analysisFieldsUpdate() {
+    // safety check
+    if (this.practice.lines[this.practice.lineIdx] == undefined) {
+      return;
+    }
+
     // set the opponent name
     this.analysis.fields.children[1].innerHTML =
       this.practice.lines[this.practice.lineIdx].color == "white"
@@ -773,11 +831,11 @@ class Practice extends MyChessBoard {
     // currently not waiting on move
     this.practice.waitingOnMove = false;
 
-    // update the board status
-    this.setStatus(BOARD_STATUS.default);
-
     // if this is an analysis line
     if (this.type == "analysis") {
+      // update the board status
+      this.setStatus(BOARD_STATUS.waitingOnMove);
+
       // wait before proceeding to the next line
       action = "wait";
 
@@ -802,6 +860,9 @@ class Practice extends MyChessBoard {
           this.board.removeMarkers();
         }
       }, 1500);
+    } else {
+      // update the board status
+      this.setStatus(BOARD_STATUS.default);
     }
 
     switch (action) {
@@ -899,32 +960,40 @@ class Practice extends MyChessBoard {
    */
 
   // get the repertoire
-  getRepertoire() {
-    var url = "/api/practice";
+  getRepertoire(refresh = this.needsRefresh) {
+    // no need to refresh after this
+    this.needsRefresh = false;
+    // if we need to refresh
+    if (refresh) {
+      var url = "/api/practice";
 
-    // show the page loader
-    Utils.showLoading();
+      // show the page loader
+      Utils.showLoading();
 
-    fetch(url, {
-      method: "GET",
-    })
-      .then((res) => res.json())
-      .then((response) => {
-        console.log("Success:");
-        console.log(response);
-
-        // enable the practice
-        this.onGetRepertoire(response);
+      fetch(url, {
+        method: "GET",
       })
-      .catch((error) => console.error("Error:", error))
-      .finally(() => {
-        // hide the page loader
-        Utils.hideLoading();
-      });
+        .then((res) => res.json())
+        .then((response) => {
+          console.log("Success:");
+          console.log(response);
+
+          // enable the practice
+          this.onGetRepertoire(response);
+        })
+        .catch((error) => console.error("Error:", error))
+        .finally(() => {
+          // hide the page loader
+          Utils.hideLoading();
+        });
+    } else {
+      // enable the practice
+      this.onGetRepertoire(this.repertoire);
+    }
   }
 
   // enable the practice
-  onGetRepertoire(json) {
+  onGetRepertoire(json, group = null) {
     this.repertoire = json;
     // enable the start practice button
     this.buttons.startPractice.disabled = false;
@@ -943,25 +1012,21 @@ class Practice extends MyChessBoard {
       "analysis",
       this.repertoire["analysis"]
     );
-    /*
-    for (var i = 0; i < this.types.length; i++) {
-      this.practice.lines = [];
-      moveCounts[i] = this.getPracticeLines(
-        this.types[i],
-        this.types[i] == "all"
-          ? [...this.repertoire["white"], ...this.repertoire["black"]]
-          : this.repertoire[this.types[i]]
-      );
-    }
-      */
 
     // toggle the repertoire type buttons
     this.toggleRepertoireButtons(moveCounts);
 
+    // load the groups
+    if (group == null) {
+      this.loadGroups();
+    }
+
     // get the right repertoire
     var rep =
       this.type == "all"
-        ? [...this.repertoire["white"], ...this.repertoire["black"]]
+        ? group == null
+          ? [...this.repertoire["white"], ...this.repertoire["black"]]
+          : this.repertoire.groups[group].lines
         : this.repertoire[this.type];
 
     this.practice.lines = [];
@@ -1078,11 +1143,80 @@ class Practice extends MyChessBoard {
     }
 
     // toggle the group select container
-    if (this.buttons.repertoireType.children[4].children[0].checked) {
-      this.containers.group.classList.remove("hidden");
+    if (
+      this.buttons.repertoireType.children[4].children[0].checked &&
+      this.repertoire.groups.length > 0
+    ) {
+      this.showGroups();
     } else {
-      this.containers.group.classList.add("hidden");
+      this.hideGroups();
     }
+  }
+
+  /**
+   * Repertoire group functions. Select box with repertoire groups to practice.
+   *
+   * - loadGroups
+   * - showGroups
+   * - hideGroups
+   */
+
+  loadGroups() {
+    // clear the moves list
+    while (this.containers.groupSelect.lastChild) {
+      this.containers.groupSelect.removeChild(
+        this.containers.groupSelect.firstChild
+      );
+    }
+
+    var opt = document.createElement("option");
+    opt.value = "";
+    opt.text =
+      this.repertoire.groups.length == 0
+        ? "No groups available"
+        : "No group selected";
+
+    this.containers.groupSelect.appendChild(opt);
+
+    for (var i = 0; i < this.repertoire.groups.length; i++) {
+      opt = document.createElement("option");
+      //opt.value = this.repertoire.groups[i].id;
+      opt.value = i;
+      opt.text = this.repertoire.groups[i].name;
+
+      this.containers.groupSelect.appendChild(opt);
+    }
+  }
+
+  showGroups() {
+    this.containers.group.classList.remove("hidden");
+  }
+
+  hideGroups() {
+    this.containers.group.classList.add("hidden");
+  }
+
+  onGroupSelectChange(event) {
+    console.log("onGroupSelectChange:");
+
+    // stop the current practice
+    this.stopPractice();
+    // reset the board
+    this.game.reset();
+    this.board.setPosition(this.game.fen());
+    // remove the markers
+    this.board.removeMarkers();
+
+    // disable move input
+    this.disableMoveInput();
+
+    // get the group repertoire
+    this.onGetRepertoire(
+      this.repertoire,
+      this.containers.groupSelect.value == ""
+        ? null
+        : this.containers.groupSelect.value
+    );
   }
 
   // split the repertoire into practice lines
@@ -1275,24 +1409,12 @@ class Practice extends MyChessBoard {
 
     // if we've completed all lines
     if (this.practice.lineIdx >= this.practice.lines.length) {
+      // stop the current practice
+      this.stopPractice();
       // update the status
       this.showInfo("You completed all the lines in this repertoire.");
-      // disable move input
-      this.disableMoveInput();
-
-      // toggle the buttons
-      this.buttons.startPractice.disabled = false;
-      this.buttons.startPractice.classList.remove("hidden");
+      // set the button text
       this.buttons.startPractice.innerHTML = "Start again";
-      this.buttons.giveHint.disabled = true;
-      this.buttons.giveHint.classList.add("hidden");
-      this.buttons.skipMove.disabled = true;
-      this.buttons.skipMove.classList.add("hidden");
-
-      // hide the played moves container
-      if (this.type != "analysis") {
-        this.hidePlayedMoves();
-      }
 
       return;
     }
@@ -1315,7 +1437,7 @@ class Practice extends MyChessBoard {
 
     // if no more moves or next move for analysis line..
     if (
-      moves.length == 0 ||
+      playable.length == 0 ||
       (this.type == "analysis" && this.practice.moveIdx > 0)
     ) {
       // goto the next line
@@ -1331,6 +1453,13 @@ class Practice extends MyChessBoard {
     this.practice.lineMovesPlayable = playable;
     this.practice.lineMovesPlayed = [];
     this.practice.failedCount = 0;
+
+    this.practice.current_lineIdx = this.practice.lineIdx;
+    this.practice.current_moveIdx = this.practice.moveIdx;
+
+    this.practice.skipped_lineIdx = -1;
+    this.practice.skipped_moveIdx = -1;
+
     // reset the hint counter
     this.hintCounter = 0;
     // currently waiting on move
@@ -1584,8 +1713,6 @@ class Practice extends MyChessBoard {
 
   // wait on next move (use auto-play if needed)
   waitOnMove() {
-    console.log("waitOnMove:");
-
     // if we need to auto-move
     if (this.isAutoMove()) {
       // auto-move (for other color)
@@ -1614,9 +1741,6 @@ class Practice extends MyChessBoard {
 
   // do we need to auto-move?
   isAutoMove() {
-    console.log(
-      "isAutoMove: " + this.practice.lineColor + " - " + this.game.turn()
-    );
     return (
       (this.practice.lineColor == "white" && this.game.turn() == "b") ||
       (this.practice.lineColor == "black" && this.game.turn() == "w") ||
@@ -1627,9 +1751,6 @@ class Practice extends MyChessBoard {
 
   // auto-move
   async autoMove(next = false) {
-    console.log("autoMove: " + next);
-    console.log(this.type);
-
     // if we have multiple moves or this is an analysis line
     if (this.practice.isMultiple || this.type == "analysis") {
       // goto the next line
@@ -1637,8 +1758,6 @@ class Practice extends MyChessBoard {
 
       return;
     }
-
-    console.log("isMultiple: " + this.practice.isMultiple);
 
     if (next) {
       // goto the next move
@@ -1692,13 +1811,11 @@ class Practice extends MyChessBoard {
 
   // called when the correct move was played
   correctMovePlayed() {
-    console.log("correctMovePlayed: " + this.practice.isMultiple);
-
     var cp = null;
     var eline = null;
 
     for (var i = 0; i < this.practice.lineMovesMultiple.length; i++) {
-      if (this.practice.lineMovesMultiple[i].move == this.lastMove) {
+      if (this.practice.lineMovesMultiple[i].move == this.lastMove.san) {
         cp = this.practice.lineMovesMultiple[i].cp;
         eline = this.practice.lineMovesMultiple[i].eline;
         break;
@@ -1708,7 +1825,7 @@ class Practice extends MyChessBoard {
     // if we have multiple correct moves
     if (this.practice.isMultiple) {
       // if this move was already played
-      if (this.practice.lineMovesPlayed.includes(this.lastMove)) {
+      if (this.practice.lineMovesPlayed.includes(this.lastMove.san)) {
         // update status
         this.showInfo(
           "You already played this move. Try to find the next move."
@@ -1728,14 +1845,14 @@ class Practice extends MyChessBoard {
       }
 
       // add the move to the correctly played moves
-      this.practice.lineMovesPlayed.push(this.lastMove);
+      this.practice.lineMovesPlayed.push(this.lastMove.san);
 
       // show the played move in the list
       this.setPlayedMove(
         this.type == "analysis"
-          ? this.practice.lineMoves.indexOf(this.lastMove)
+          ? this.practice.lineMoves.indexOf(this.lastMove.san)
           : this.practice.lineMovesPlayed.length - 1,
-        this.lastMove,
+        this.lastMove.san,
         cp,
         eline
       );
@@ -1755,8 +1872,8 @@ class Practice extends MyChessBoard {
       this.saveMoveCounters([
         {
           color: this.practice.lineColor,
-          fen: this.getFen(),
-          move: this.lastMove,
+          fen: this.lastMove.before,
+          move: this.lastMove.san,
           correct: 1,
         },
       ]);
@@ -1766,7 +1883,7 @@ class Practice extends MyChessBoard {
       var msg =
         this.type == "analysis"
           ? "That is the " +
-            nth[this.practice.lineMoves.indexOf(this.lastMove)] +
+            nth[this.practice.lineMoves.indexOf(this.lastMove.san)] +
             "best move."
           : "That's the correct move.";
 
@@ -1810,7 +1927,7 @@ class Practice extends MyChessBoard {
         // show the played move in the list
         this.setPlayedMove(
           this.practice.lineMovesPlayed.length,
-          this.lastMove,
+          this.lastMove.san,
           cp,
           eline
         );
@@ -1826,13 +1943,12 @@ class Practice extends MyChessBoard {
       this.saveMoveCounters([
         {
           color: this.practice.lineColor,
-          fen: this.getFen(),
-          move: this.practice.lineMoves[0],
+          fen: this.lastMove.before,
+          move: this.lastMove.san,
           correct: 1,
         },
       ]);
 
-      //
       this.onMoveFinished();
     }
   }
@@ -1916,6 +2032,9 @@ class Practice extends MyChessBoard {
     if (this.type == "analysis") {
       return false;
     }
+
+    // we need to refresh the repertoire data when starting a new practice
+    this.needsRefresh = true;
 
     // set the url
     var url = "api/repertoire/counters";
@@ -2120,6 +2239,48 @@ class Practice extends MyChessBoard {
       return;
     }
 
+    if (
+      this.practice.current_lineIdx != this.practice.lineIdx ||
+      this.practice.current_moveIdx != this.practice.moveIdx
+    ) {
+      console.log(
+        "*************** REDUCE MOVE COUNT ERROR ********************"
+      );
+      console.log(
+        "*************** REDUCE MOVE COUNT ERROR ********************"
+      );
+      console.log(
+        "*************** REDUCE MOVE COUNT ERROR ********************"
+      );
+      console.log(
+        "*************** REDUCE MOVE COUNT ERROR ********************"
+      );
+      console.log(
+        "*************** REDUCE MOVE COUNT ERROR ********************"
+      );
+    }
+
+    if (
+      this.practice.skipped_lineIdx == this.practice.lineIdx &&
+      this.practice.skipped_moveIdx == this.practice.moveIdx
+    ) {
+      console.log(
+        "*************** REDUCE SKIPPED MOVE COUNT ERROR ********************"
+      );
+      console.log(
+        "*************** REDUCE SKIPPED MOVE COUNT ERROR ********************"
+      );
+      console.log(
+        "*************** REDUCE SKIPPED MOVE COUNT ERROR ********************"
+      );
+      console.log(
+        "*************** REDUCE SKIPPED MOVE COUNT ERROR ********************"
+      );
+      console.log(
+        "*************** REDUCE SKIPPED MOVE COUNT ERROR ********************"
+      );
+    }
+
     // update the move counter
     this.reduceMoveCount(
       this.practice.lineMoves.length - this.practice.lineMovesPlayed.length
@@ -2219,7 +2380,7 @@ class Practice extends MyChessBoard {
     // set the CP eval
     var cpEval = cp
       ? '&nbsp;<sup class="text-xs text-gray-600 dark:text-gray-400">' +
-        (cp >= 0 ? "+" : "-") +
+        (cp >= 0 ? "+" : "") +
         Math.round(cp) / 100 +
         "</sup>"
       : "";

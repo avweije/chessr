@@ -603,7 +603,8 @@ class Analyse {
       this.analyseDialog.estimatedTimeField.innerHTML = this.getDuration(
         estimate *
           (this.analyseDialog.totals[this.gameTypeSelect.value].total -
-            this.analyseDialog.totals[this.gameTypeSelect.value].processed)
+            this.analyseDialog.totals[this.gameTypeSelect.value].processed +
+            this.analyseDialog.processed)
       );
 
       console.log("elapsed: " + elapsed);

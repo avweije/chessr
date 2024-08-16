@@ -10,7 +10,7 @@
     @apply outline outline-2 outline-offset-2;
   }
   .btn:disabled {
-    @apply text-black bg-gray-300 opacity-50 shadow-none pointer-events-none;
+    @apply text-gray-600 bg-gray-300 opacity-50 shadow-none pointer-events-none;
   }
 
   .btn.hidden {

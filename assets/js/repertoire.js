@@ -1,4 +1,4 @@
-import { MyChessBoard } from "./chessboard.js";
+import { BOARD_STATUS, MyChessBoard } from "./chessboard.js";
 import { COLOR } from "cm-chessboard/src/view/ChessboardView.js";
 import { Utils } from "./utils.js";
 import { Modal } from "./modal.js";
@@ -118,6 +118,9 @@ class Repertoire extends MyChessBoard {
       el,
       this.color && this.color == "white" ? COLOR.white : COLOR.black
     );
+
+    // set the board status
+    this.setStatus(BOARD_STATUS.waitingOnMove);
 
     // enable move input
     this.enableMoveInput();

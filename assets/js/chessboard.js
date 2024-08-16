@@ -145,29 +145,6 @@ export class MyChessBoard {
         },
       ],
     });
-
-    // add keydown event listeners for left/right (prev/next move)
-    document.addEventListener("keydown", (event) => {
-      // if arrow left or right and the focus is not on an input element
-      if (
-        this.practice.paused &&
-        (event.key == "ArrowRight" || event.key == "ArrowLeft") &&
-        (!document.activeElement ||
-          !["INPUT", "SELECT", "TEXTAREA"].includes(
-            document.activeElement.nodeName
-          ))
-      ) {
-        console.log("keydown:");
-        console.log(event);
-        console.log(document.activeElement);
-
-        if (event.key == "ArrowRight") {
-          this.gotoNext();
-        } else {
-          this.gotoPrevious();
-        }
-      }
-    });
   }
 
   /*
@@ -1086,7 +1063,16 @@ export class MyChessBoard {
     try {
       // if this is a premove
       if (this.status !== BOARD_STATUS.waitingOnMove) {
-        return true;
+        console.log("-- storing premove (1):");
+        console.log(event);
+
+        this.premove = event;
+
+        // remember the premove (only 1 premove allowed, check if there already was one.. etc)
+        this.board.addMarker(this.markers.squareRed, event.squareFrom);
+        this.board.addMarker(this.markers.squareRed, event.squareTo);
+
+        return false;
       }
 
       // see if the move is legal
@@ -1131,7 +1117,7 @@ export class MyChessBoard {
     if (event.squareFrom && event.squareTo) {
       // if this is a premove
       if (this.status !== BOARD_STATUS.waitingOnMove) {
-        console.log("-- storing premove:");
+        console.log("-- storing premove (2):");
         console.log(event);
 
         this.premove = event;
