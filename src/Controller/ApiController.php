@@ -408,7 +408,7 @@ Qxd8 1-0';
         // get the data
         $data = $request->getPayload()->all();
         // save the repertoire
-        $saved = $this->saveRepertoire($data['color'], "", $data['moves']);
+        $saved = $this->saveRepertoire($data['color'], $data['initialFen'], $data['moves']);
 
         return new JsonResponse($saved);
     }
@@ -1173,7 +1173,7 @@ Qxd8 1-0';
                     $lines[$i]['multiple'][] = [
                         "move" => $move['move'],
                         "cp" => isset($move['cp']) ? $move['cp'] : null,
-                        "eline" => isset($move['line']) ? $move['line'] : null
+                        "pv" => isset($move['line']) ? $move['line'] : null
                     ];
                 }
             }
@@ -1200,7 +1200,7 @@ Qxd8 1-0';
                         $groups[$i]["lines"][$x]['multiple'][] = [
                             "move" => $move['move'],
                             "cp" => isset($move['cp']) ? $move['cp'] : null,
-                            "eline" => isset($move['line']) ? $move['line'] : null
+                            "pv" => isset($move['line']) ? $move['line'] : null
                         ];
                     }
                 }
@@ -1262,7 +1262,7 @@ Qxd8 1-0';
                     $multiple[] = [
                         "move" => $move,
                         "cp" => null,
-                        "eline" => null
+                        "pv" => null
                     ];
                 }
             } else {
@@ -1270,12 +1270,12 @@ Qxd8 1-0';
                     $moves[] = [
                         "move" => $move["san"],
                         "cp" => $move["cp"],
-                        "eline" => $move["line"]
+                        "pv" => $move["line"]
                     ];
                     $multiple[] = [
                         "move" => $move['san'],
                         "cp" => isset($move['cp']) ? $move['cp'] : null,
-                        "eline" => isset($move['line']) ? $move['line'] : null
+                        "pv" => isset($move['line']) ? $move['line'] : null
                     ];
                 }
             }

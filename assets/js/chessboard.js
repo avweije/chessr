@@ -12,11 +12,28 @@ import {
 import { PromotionDialog } from "cm-chessboard/src/extensions/promotion-dialog/PromotionDialog.js";
 
 import "../styles/chessboard.css";
+import "cm-chessboard/assets/extensions/promotion-dialog/promotion-dialog.css";
 
 export const BOARD_STATUS = {
   default: "default",
   waitingOnMove: "waitingOnMove",
   animatingMoves: "animatingMoves",
+};
+
+export const BOARD_SETTINGS = {
+  variations: "useVariations",
+  premoves: "premoveEnabled",
+  navigation: "navigationEnabled",
+  pgn: {
+    links: "pgn.withLinks",
+    styling: {
+      main: {
+        default: "pgn.styling.main",
+        text: "pgn.styling.mainText",
+        link: "pgn.styling.mainLink",
+      },
+    },
+  },
 };
 
 /*
@@ -32,21 +49,21 @@ export class MyChessBoard {
   settings = {
     useVariations: true,
     premoveEnabled: false,
+    navigationEnabled: false, // enable prev/next by using left/right arrow keys
     pgn: {
       withLinks: true,
       styling: {
         main: "inline-block px-0.5 text-base rounded",
         mainText: "text-gray-800 dark:text-gray-200 border border-transparent",
         mainLink:
-          "cursor-pointer border border-transparent text-gray-800 dark:text-gray-200 hover:text-gray-600 hover:bg-slate-100 hover:border-slate-300 dark:hover:bg-primary-100 dark:hover:border-slate-600",
+          "cursor-pointer border border-transparent text-gray-800 dark:text-gray-200 hover:text-gray-600 hover:bg-slate-100 hover:border-slate-300 dark:hover:text-gray-200 dark:hover:bg-slate-500 dark:hover:border-slate-600",
         variation: "inline-block px-0.5 italic text-sm rounded",
         variationText:
           "text-gray-600 dark:text-gray-300 border border-transparent",
         variationLink:
-          "cursor-pointer border border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-600 hover:bg-slate-100 hover:border hover:border-slate-300 dark:hover:bg-primary-100 dark:hover:border-slate-600",
+          "cursor-pointer border border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-600 hover:bg-slate-100 hover:border hover:border-slate-300 dark:hover:text-gray-300 dark:hover:bg-slate-500 dark:hover:border-slate-600",
         currentMove:
-          "border text-primary-500 bg-primary-50 border-slate-300 dark:bg-primary-100 dark:border-slate-600",
-        //dark:text-gray-200 dark:bg-slate-900 peer-checked:dark:text-primary-500 peer-checked:dark:bg-slate-950
+          "border text-primary-500 dark:text-primary-300 bg-primary-50 border-slate-300 dark:bg-slate-500 dark:border-slate-600",
       },
     },
   };
@@ -112,7 +129,27 @@ export class MyChessBoard {
   };
 
   constructor() {
+    // create the chess game
     this.game = new MyChess();
+
+    // add keydown event listeners for left/right (prev/next move)
+    document.addEventListener("keydown", (event) => {
+      // if navigation is enabled and arrow left/right was hit
+      if (
+        this.settings.navigationEnabled &&
+        (event.key == "ArrowRight" || event.key == "ArrowLeft") &&
+        (!document.activeElement ||
+          !["INPUT", "SELECT", "TEXTAREA"].includes(
+            document.activeElement.nodeName
+          ))
+      ) {
+        if (event.key == "ArrowRight") {
+          this.gotoNext();
+        } else {
+          this.gotoPrevious();
+        }
+      }
+    });
   }
 
   /*
@@ -123,7 +160,7 @@ export class MyChessBoard {
   - color: the initial orientation of the chessboard.
   */
 
-  init(boardElement, color = COLOR.white) {
+  init(boardElement, color = COLOR.white, settings = {}) {
     // create the chess board
     this.board = new Chessboard(boardElement, {
       position: FEN.start,
@@ -145,6 +182,37 @@ export class MyChessBoard {
         },
       ],
     });
+
+    // apply the settings
+    this.settings = this.deepMerge(this.settings, settings);
+  }
+
+  setOption(setting, value) {
+    try {
+      // get the (nested) setting keys
+      var parts = setting.split(".");
+      var temp = this.settings;
+      for (var i = 1; i < parts.length; i++) {
+        temp = temp[parts[i - 1]];
+      }
+      // update the setting
+      temp[parts[parts.length - 1]] = value;
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  deepMerge(obj1, obj2) {
+    for (let key in obj2) {
+      if (obj2.hasOwnProperty(key)) {
+        if (obj2[key] instanceof Object && obj1[key] instanceof Object) {
+          obj1[key] = this.deepMerge(obj1[key], obj2[key]);
+        } else {
+          obj1[key] = obj2[key];
+        }
+      }
+    }
+    return obj1;
   }
 
   /*
@@ -199,7 +267,7 @@ export class MyChessBoard {
     var history = this.game.history({ verbose: true });
     var movesToMake = [];
 
-    var match = moves.length >= history.length;
+    var match = initialFen == this.initialFen && moves.length >= history.length;
 
     // see if the current moves match the new moves
     for (var i = 0; i < moves.length; i++) {
@@ -296,18 +364,14 @@ export class MyChessBoard {
    */
 
   newGame(fen = "", moves = []) {
-    //
     this.initialFen = fen;
-    //
     this.game.reset();
-    //
+
     if (fen != "") {
       this.game.load(fen);
-      //} else {
-      //this.game.reset();
     }
     this.board.setPosition(this.game.fen());
-    //
+
     this.history = moves;
     this.variations = [];
     this.currentMove = -1;
@@ -353,9 +417,44 @@ export class MyChessBoard {
     this.updatePgnField();
   }
 
-  gotoMove(moveNr, variationIdx = -1) {
-    console.log("moveNr: " + moveNr + ", variation: " + variationIdx);
+  isFirst() {
+    // make sure we have the currentMove
+    this.currentMove =
+      this.currentMove == -1 ? this.history.length : this.currentMove;
 
+    return this.currentMove == 1;
+  }
+
+  isLast() {
+    // make sure we have the currentMove
+    this.currentMove =
+      this.currentMove == -1 ? this.history.length : this.currentMove;
+
+    // make sure the current variation is valid
+    if (
+      this.currentVariation >= 0 &&
+      this.currentVariation >= this.variations.length
+    ) {
+      this.currentVariation = -1;
+    }
+
+    if (this.currentVariation >= 0) {
+      if (this.variations[this.currentVariation].moveNr < this.history.length) {
+        return false;
+      }
+
+      return (
+        this.currentMove ==
+        this.variations[this.currentVariation].moveNr +
+          this.variations[this.currentVariation].moves.length -
+          1
+      );
+    } else {
+      return this.currentMove == this.history.length;
+    }
+  }
+
+  gotoMove(moveNr, variationIdx = -1) {
     var moves = [];
 
     // safety, 1st move minimum
@@ -377,8 +476,10 @@ export class MyChessBoard {
       }
 
       // if the move lies before the variation, goto the parent variation
-      var curr = this.variations[variationIdx];
-      while (variationIdx >= 0 && moveNr < curr.moveNr) {
+      while (
+        variationIdx >= 0 &&
+        moveNr < this.variations[variationIdx].moveNr
+      ) {
         variationIdx =
           this.variations[variationIdx].parent == null
             ? -1
@@ -461,6 +562,9 @@ export class MyChessBoard {
     // update the PGN field
     this.updatePgnField();
 
+    // call the afterGotoMove handler
+    this.afterGotoMove(moveNr, variationIdx);
+
     return true;
   }
 
@@ -480,7 +584,18 @@ export class MyChessBoard {
     this.currentMove =
       this.currentMove == -1 ? this.history.length : this.currentMove;
 
-    this.gotoMove(this.currentMove - 1, this.currentVariation);
+    var gotoMove = this.currentMove - 1;
+
+    // if we are on the 1st move of a variation
+    if (
+      this.currentVariation >= 0 &&
+      this.currentVariation < this.variations.length &&
+      this.currentMove == this.variations[this.currentVariation].moveNr
+    ) {
+      gotoMove = gotoMove + 1;
+    }
+
+    this.gotoMove(gotoMove, this.currentVariation);
   }
 
   // goto next move in current line or variation
@@ -588,10 +703,6 @@ export class MyChessBoard {
   }
 
   addVariation(moveNr, moves) {
-    console.log("addVariation: " + moveNr);
-    console.log(moves);
-    console.log(this.history);
-
     var newMoves = [];
     var moveVar = -1;
     var currVar = -1;
@@ -636,15 +747,6 @@ export class MyChessBoard {
           }
         }
 
-        console.log(
-          "main line no match, currVar = " +
-            currVar +
-            ", ii = " +
-            ii +
-            ", i = " +
-            i
-        );
-
         // no match if move wasn't found in a main line variation
         match = currVar >= 0;
       }
@@ -671,8 +773,6 @@ export class MyChessBoard {
           }
         }
 
-        console.log("current variation no match, found = " + found);
-
         // no match if move wasn't found
         match = found;
       }
@@ -684,9 +784,6 @@ export class MyChessBoard {
       }
     }
 
-    console.log("newMoves:");
-    console.log(newMoves);
-
     // if (part of) the variation is new
     if (newMoves.length > 0) {
       // create a game to make the moves
@@ -696,9 +793,6 @@ export class MyChessBoard {
       }
 
       var upTo = moveNr - 1 + moves.length - newMoves.length;
-
-      console.log("moveNr: " + moveNr + ", upTo: " + upTo);
-      console.log(this.history);
 
       // make the moves up to the new moves
       for (var i = 0; i < upTo; i++) {
@@ -732,9 +826,6 @@ export class MyChessBoard {
         if (newMoves.length == moves.length) {
           moveVar = this.variations.length - 1;
         }
-
-        console.log("new variation added:");
-        console.log(this.variations[this.variations.length - 1]);
       }
     }
 
@@ -765,7 +856,19 @@ export class MyChessBoard {
     var pgn = "";
 
     if (pgnField) {
+      //pgnField.innerHTML = this.history.length == 0 ? "&nbsp;" : "";
       pgnField.innerHTML = "";
+
+      if (this.history.length == 0) {
+        var sp = document.createElement("span");
+        sp.className =
+          this.settings.pgn.styling.main +
+          " " +
+          this.settings.pgn.styling.mainText;
+        sp.innerHTML = "1.";
+
+        pgnField.appendChild(sp);
+      }
     }
 
     var currentMove =
@@ -836,16 +939,16 @@ export class MyChessBoard {
   getPgnForVariation(i, x, pgnField) {
     var pgn = '<span style="color: #707070; style: italic;">(';
 
-    var variationSpan;
-
     if (pgnField) {
-      variationSpan = document.createElement("span");
-      variationSpan.className =
+      var sp = document.createElement("span");
+      sp.className =
         this.settings.pgn.styling.variation +
         " " +
         this.settings.pgn.styling.variationText;
 
-      variationSpan.appendChild(document.createTextNode("("));
+      sp.innerHTML = "(";
+
+      pgnField.appendChild(sp);
     }
 
     var moveNr = Math.floor(i / 2) + 1;
@@ -860,7 +963,7 @@ export class MyChessBoard {
           " " +
           this.settings.pgn.styling.variationText;
         sp.innerHTML = moveNr + "...";
-        variationSpan.appendChild(sp);
+        pgnField.appendChild(sp);
       }
     }
 
@@ -878,7 +981,7 @@ export class MyChessBoard {
             " " +
             this.settings.pgn.styling.variationText;
           sp.innerHTML = moveNr + ".";
-          variationSpan.appendChild(sp);
+          pgnField.appendChild(sp);
         }
       }
       pgn += this.variations[x].moves[y].san + " ";
@@ -911,7 +1014,7 @@ export class MyChessBoard {
           });
         }
 
-        variationSpan.appendChild(sp);
+        pgnField.appendChild(sp);
       }
 
       // look for any sub-variations from this point
@@ -920,16 +1023,22 @@ export class MyChessBoard {
           this.variations[z].parent == x &&
           this.variations[z].moveNr == i + y + 1
         ) {
-          pgn += this.getPgnForVariation(i + y, z, variationSpan);
+          pgn += this.getPgnForVariation(i + y, z, pgnField);
         }
       }
     }
     pgn += ")</span>";
 
     if (pgnField) {
-      variationSpan.appendChild(document.createTextNode(")"));
+      var sp = document.createElement("span");
+      sp.className =
+        this.settings.pgn.styling.variation +
+        " " +
+        this.settings.pgn.styling.variationText;
 
-      pgnField.appendChild(variationSpan);
+      sp.innerHTML = ")";
+
+      pgnField.appendChild(sp);
     }
 
     return pgn;
@@ -964,13 +1073,11 @@ export class MyChessBoard {
 
     // if we need to make a premove
     if (this.status == BOARD_STATUS.waitingOnMove && this.premove !== null) {
-      console.log("-- making premove:");
-
       // make the move
       this.makeMove({
         from: this.premove.squareFrom,
         to: this.premove.squareTo,
-        promotion: "q", // NOTE: always promote to a queen for example simplicity
+        promotion: this.premove.promotion ? this.premove.promotion : "q",
       });
 
       this.premove = null;
@@ -984,6 +1091,7 @@ export class MyChessBoard {
   - onValidateMove: called when a legal move is being made, return false to cancel the move
   - afterMove: called after a legal move was made
   - afterIllegalMove: called after an illegal move was made
+  - afterGotoMove: called after one of these functions is called: gotoFirst, gotoLast, gotoNext, gotoPrevious, gotoMove
   */
   onValidateMove(move) {
     return true;
@@ -992,6 +1100,8 @@ export class MyChessBoard {
   afterMove(move) {}
 
   afterIllegalMove(move) {}
+
+  afterGotoMove(moveNr, variationIdx) {}
 
   /*
   Private event handlers.
@@ -1018,12 +1128,8 @@ export class MyChessBoard {
     // do not pick up pieces if the game is over
     if (this.game.isGameOver()) return false;
 
-    console.log("-- moveInputStarted: " + this.status);
-
     // if this is a premove
     if (this.status !== BOARD_STATUS.waitingOnMove) {
-      console.log("-- premove started:");
-
       // add a marker
       this.board.addMarker(this.markers.squareRed, event.squareFrom);
 
@@ -1058,14 +1164,48 @@ export class MyChessBoard {
   }
 
   validateMoveInput(event) {
-    console.log("validateMoveInput: " + this.status);
-    console.log(event);
     try {
+      // if this is a promotion
+      if (
+        ((this.game.turn() === "b" && event.squareTo.charAt(1) === "1") ||
+          (this.game.turn() === "w" && event.squareTo.charAt(1) === "8")) &&
+        event.piece.charAt(1) === "p"
+      ) {
+        // show the promotion dialog
+        this.board.showPromotionDialog(
+          event.squareTo,
+          this.game.turn() === "w" ? COLOR.white : COLOR.black,
+          (result) => {
+            if (result && result.piece) {
+              // if this is a premove
+              if (this.status !== BOARD_STATUS.waitingOnMove) {
+                this.premove = event;
+                this.premove.promotion = result.piece.charAt(1);
+
+                // remember the premove (only 1 premove allowed, check if there already was one.. etc)
+                this.board.addMarker(this.markers.squareRed, event.squareFrom);
+                this.board.addMarker(this.markers.squareRed, event.squareTo);
+              } else {
+                //chessboard.setPiece(result.square, result.piece, true);
+                // make the move
+                this.makeMove({
+                  from: event.squareFrom,
+                  to: event.squareTo,
+                  promotion: result.piece.charAt(1),
+                });
+              }
+            } else {
+              //chessboard.setPosition(position);
+            }
+          }
+        );
+
+        // return false here, cancelling the move, on dialog result, we make the move.. if not, move is already cancelled
+        return false;
+      }
+
       // if this is a premove
       if (this.status !== BOARD_STATUS.waitingOnMove) {
-        console.log("-- storing premove (1):");
-        console.log(event);
-
         this.premove = event;
 
         // remember the premove (only 1 premove allowed, check if there already was one.. etc)
@@ -1117,9 +1257,6 @@ export class MyChessBoard {
     if (event.squareFrom && event.squareTo) {
       // if this is a premove
       if (this.status !== BOARD_STATUS.waitingOnMove) {
-        console.log("-- storing premove (2):");
-        console.log(event);
-
         this.premove = event;
 
         // remember the premove (only 1 premove allowed, check if there already was one.. etc)

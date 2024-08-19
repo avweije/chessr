@@ -13,6 +13,9 @@
 
 {% block board_top %}
 	<div class="flex justify-end mt-0 mb-2">
+		<button type="button" id="loadPgnButton" disabled class="btn btn-primary mr-1">
+			Load PGN
+		</button>
 		<button type="button" id="saveRepertoireButton" disabled class="btn btn-primary">
 			Save to your repertoire
 		</button>
@@ -31,7 +34,16 @@
 			<p class="block text-sm font-bold text-gray-900 dark:text-gray-200">Game</p>
 			<p id="statusField" class="block text-sm text-right text-gray-900 dark:text-gray-200 pl-5"></p>
 		</div>
-		<p id="pgnField" class="block text-base font-semibold text-gray-900 dark:text-gray-200 p-3"></p>
+		<div id="pgnField" class="p-3 text-sm"></div>
+		<div id="pgnStartPositionContainer" class="hidden p-2 border-t border-slate-300 dark:border-slate-900">
+			<label class="p-2 block text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">Starting position:</label>
+			<p class="p-2 pt-0 block text-sm w-full truncate text-gray-700 dark:text-gray-200"></p>
+		</div>
+		<div class="flex justify-end">
+			<button type="button" id="closePgnButton" class="hidden m-3 mt-2 btn btn-outline">
+				Close PGN
+			</button>
+		</div>
 	</div>
 
 	<div class="my-px border rounded text-sm bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-900">
@@ -40,9 +52,9 @@
 			<p id="ecoField" class="block text-sm text-right font-semibold text-gray-900 dark:text-gray-200 pl-5"></p>
 		</div>
 
-		<div style="overflow-y: auto; max-height: 56vh;">
+		<div style="overflow-y: auto; overflow-x: hidden; max-height: 56vh;">
 			<div class="p-1">
-				<p class="block text-base text-gray-900 dark:text-gray-200 p-2 hidden">No repertoire moves or book moves found.</p>
+				<p class="block text-base text-gray-900 dark:text-gray-200 p-3 hidden">No repertoire moves or book moves found.</p>
 
 				<table id="movesTable" class="table-fixed min-w-full m-0">
 					<tbody></tbody>
@@ -66,14 +78,14 @@
 				<label class="block text-sm font-medium text-gray-900 dark:text-gray-200">Group:</label>
 			</div>
 			<div class="w-full mb-1">
-				<input id="repertoireGroupInput" list="repertoireGroupDataList" name="repertoire_group" placeholder="Add to group (select from list or press Enter to add)" class="block w-full rounded-md border-0 py-1 px-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+				<input id="repertoireGroupInput" list="repertoireGroupDataList" name="repertoire_group" placeholder="Add to group (select from list or press Enter to add)" class="block w-full rounded-md border-0 py-1 px-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600">
 				<datalist id="repertoireGroupDataList"></datalist>
 			</div>
 			<div id="repertoireGroupTagsContainer" class="flex flex-wrap"></div>
 		</div>
 
 		<div class="flex justify-end p-3 pt-0">
-			<button type="button" id="removeRepertoireButton" class="btn btn-primary">
+			<button type="button" id="removeRepertoireButton" class="btn btn-outline">
 				Remove from your repertoire
 			</button>
 		</div>
@@ -84,8 +96,8 @@
 
 		<div class="p-3">
 			<div class="relative inline-block">
-				<select id="initialFenSelect" class="appearance-none inline-block w-full rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></select>
-				<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-900 dark:text-gray-200">
+				<select id="initialFenSelect" class="appearance-none inline-block w-full rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"></select>
+				<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
 					<svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
 				</div>
 			</div>
@@ -93,13 +105,8 @@
 
 	</div>
 
-	<div class="border rounded text-sm bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-900 hidden">
-		<p class="block text-sm font-bold p-3 border-b text-gray-900 dark:text-gray-200 border-slate-200 dark:border-slate-900">FEN</p>
-
-		<div id="fenField" class="p-3"></div>
-	</div>
-
 	{{ include('repertoire/dialogs/confirm.html.twig') }}
+	{{ include('repertoire/dialogs/loadpgn.html.twig') }}
 {% endblock %}
 
 {% block stylesheets %}

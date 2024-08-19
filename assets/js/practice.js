@@ -1,4 +1,4 @@
-import { MyChessBoard, BOARD_STATUS } from "./chessboard.js";
+import { MyChessBoard, BOARD_STATUS, BOARD_SETTINGS } from "./chessboard.js";
 import { MyChess } from "./chess.js";
 import { COLOR } from "cm-chessboard/src/view/ChessboardView.js";
 import {
@@ -39,6 +39,7 @@ class Practice extends MyChessBoard {
   };
 
   pgnContainer = null;
+  pgnNavigationContainer = null;
 
   playedMovesContainer = null;
   playedMovesList = null;
@@ -138,6 +139,9 @@ class Practice extends MyChessBoard {
     this.playedMovesList = document.getElementById("playedMovesList");
 
     this.pgnContainer = document.getElementById("pgnContainer");
+    this.pgnNavigationContainer = document.getElementById(
+      "pgnNavigationContainer"
+    );
 
     // set the pgn field
     this.setPgnField(document.getElementById("pgnField"));
@@ -153,6 +157,24 @@ class Practice extends MyChessBoard {
     this.buttons.giveHint.addEventListener("click", this.giveHint.bind(this));
     this.buttons.skipMove.addEventListener("click", this.skipMove.bind(this));
 
+    // attach pgn navigation button handlers
+    this.pgnNavigationContainer.children[0].addEventListener(
+      "click",
+      this.gotoFirst.bind(this)
+    );
+    this.pgnNavigationContainer.children[1].addEventListener(
+      "click",
+      this.gotoPrevious.bind(this)
+    );
+    this.pgnNavigationContainer.children[2].addEventListener(
+      "click",
+      this.gotoNext.bind(this)
+    );
+    this.pgnNavigationContainer.children[3].addEventListener(
+      "click",
+      this.gotoLast.bind(this)
+    );
+
     // create the chess board
     this.init(el, this.type == "black" ? COLOR.black : COLOR.white);
 
@@ -167,29 +189,6 @@ class Practice extends MyChessBoard {
 
     // initialise the dialogs
     this.initDialogs();
-
-    // add keydown event listeners for left/right (prev/next move)
-    document.addEventListener("keydown", (event) => {
-      // if arrow left or right and the focus is not on an input element
-      if (
-        this.practice.paused &&
-        (event.key == "ArrowRight" || event.key == "ArrowLeft") &&
-        (!document.activeElement ||
-          !["INPUT", "SELECT", "TEXTAREA"].includes(
-            document.activeElement.nodeName
-          ))
-      ) {
-        console.log("keydown:");
-        console.log(event);
-        console.log(document.activeElement);
-
-        if (event.key == "ArrowRight") {
-          this.gotoNext();
-        } else {
-          this.gotoPrevious();
-        }
-      }
-    });
 
     // hide the page loader
     Utils.hideLoading();
@@ -411,6 +410,14 @@ class Practice extends MyChessBoard {
     }
   }
 
+  afterGotoMove(moveNr, variationIdx) {
+    console.log("afterGotMove: " + moveNr + ", " + variationIdx);
+    console.log(this.isFirst(), this.isLast());
+
+    // toggle the pgn navigation buttons
+    this.togglePgnNavigationButtons();
+  }
+
   /**
    * Pgn Container functions.
    */
@@ -421,6 +428,14 @@ class Practice extends MyChessBoard {
 
   hidePgnContainer() {
     this.pgnContainer.classList.add("hidden");
+  }
+
+  togglePgnNavigationButtons() {
+    // toggle the pgn navigation buttons
+    this.pgnNavigationContainer.children[0].disabled = this.isFirst();
+    this.pgnNavigationContainer.children[1].disabled = this.isFirst();
+    this.pgnNavigationContainer.children[2].disabled = this.isLast();
+    this.pgnNavigationContainer.children[3].disabled = this.isLast();
   }
 
   /**
@@ -670,6 +685,11 @@ class Practice extends MyChessBoard {
     // we need to refresh the repertoire data when starting a new practice
     this.needsRefresh = true;
 
+    console.info("onDiscard: ");
+    console.info(this.practice.lineMoves);
+    console.info(this.practice.lineMovesPlayed);
+    console.info(this.practice.lines[this.practice.lineIdx]);
+
     // if we need to remove this move from the database
     if (removeFromDb) {
       //if (false) {
@@ -893,6 +913,13 @@ class Practice extends MyChessBoard {
     this.buttons.skipMove.title = "Continue";
     // enable the pgn links
     this.setPgnWithLinks(true);
+    // toggle the pgn navigation buttons
+    this.togglePgnNavigationButtons();
+    // show the pgn navigation buttons
+    this.pgnNavigationContainer.classList.remove("hidden");
+
+    // allow navigation by arrow left/right
+    this.setOption(BOARD_SETTINGS.navigation, true);
   }
 
   // continue the practice
@@ -904,6 +931,11 @@ class Practice extends MyChessBoard {
       this.buttons.skipMove.title = "Skip this move";
       // disable the pgn links
       this.setPgnWithLinks(false);
+      // hide the pgn navigation buttons
+      this.pgnNavigationContainer.classList.add("hidden");
+
+      // disallow navigation by arrow left/right
+      this.setOption(BOARD_SETTINGS.navigation, false);
     }
 
     this.practice.paused = false;
@@ -1466,6 +1498,11 @@ class Practice extends MyChessBoard {
     this.practice.waitingOnMove = true;
     // disable the pgn links
     this.setPgnWithLinks(false);
+    // hide the pgn navigation buttons
+    this.pgnNavigationContainer.classList.add("hidden");
+
+    // disallow navigation by arrow left/right
+    this.setOption(BOARD_SETTINGS.navigation, false);
 
     // if this is the 1st move in the line
     if (this.practice.moveIdx == 0) {
@@ -1637,6 +1674,8 @@ class Practice extends MyChessBoard {
         // show the played moves container
         this.showPlayedMoves(multiple.length);
 
+        console.info("** numberOfMoves: " + multiple.length);
+
         // if we need to add moves to already played moves
         //if (moves.length < multiple.length) {
         if (playable.length < multiple.length) {
@@ -1647,7 +1686,7 @@ class Practice extends MyChessBoard {
                 this.practice.lineMovesPlayed.length,
                 multiple[i].move,
                 multiple[i].cp,
-                multiple[i].eline
+                multiple[i].pv
               );
               this.practice.lineMovesPlayed.push(multiple[i].move);
             }
@@ -1669,6 +1708,8 @@ class Practice extends MyChessBoard {
           );
           // show the played moves container
           this.showPlayedMoves(1);
+
+          console.info("** numberOfMoves: " + 1);
         } else if (playable.length > 0) {
           this.showInfo("Play the move that's in your repertoire.");
 
@@ -1812,12 +1853,12 @@ class Practice extends MyChessBoard {
   // called when the correct move was played
   correctMovePlayed() {
     var cp = null;
-    var eline = null;
+    var pv = null;
 
     for (var i = 0; i < this.practice.lineMovesMultiple.length; i++) {
       if (this.practice.lineMovesMultiple[i].move == this.lastMove.san) {
         cp = this.practice.lineMovesMultiple[i].cp;
-        eline = this.practice.lineMovesMultiple[i].eline;
+        pv = this.practice.lineMovesMultiple[i].pv;
         break;
       }
     }
@@ -1854,7 +1895,7 @@ class Practice extends MyChessBoard {
           : this.practice.lineMovesPlayed.length - 1,
         this.lastMove.san,
         cp,
-        eline
+        pv
       );
 
       // update the move counter
@@ -1919,6 +1960,9 @@ class Practice extends MyChessBoard {
       // update the move counter
       this.reduceMoveCount();
 
+      // add the move to the correctly played moves
+      this.practice.lineMovesPlayed.push(this.lastMove.san);
+
       // if we have multiples here or this is an analysis line
       if (
         this.type == "analysis" ||
@@ -1926,10 +1970,10 @@ class Practice extends MyChessBoard {
       ) {
         // show the played move in the list
         this.setPlayedMove(
-          this.practice.lineMovesPlayed.length,
+          this.practice.lineMovesPlayed.length - 1,
           this.lastMove.san,
           cp,
-          eline
+          pv
         );
       }
 
@@ -2000,6 +2044,8 @@ class Practice extends MyChessBoard {
 
   // reduce the move count
   reduceMoveCount(count = 1) {
+    console.info("reduceMoveCount: " + count);
+
     this.containers.moveCounter.innerHTML =
       parseInt(this.containers.moveCounter.innerHTML) - count;
   }
@@ -2239,48 +2285,6 @@ class Practice extends MyChessBoard {
       return;
     }
 
-    if (
-      this.practice.current_lineIdx != this.practice.lineIdx ||
-      this.practice.current_moveIdx != this.practice.moveIdx
-    ) {
-      console.log(
-        "*************** REDUCE MOVE COUNT ERROR ********************"
-      );
-      console.log(
-        "*************** REDUCE MOVE COUNT ERROR ********************"
-      );
-      console.log(
-        "*************** REDUCE MOVE COUNT ERROR ********************"
-      );
-      console.log(
-        "*************** REDUCE MOVE COUNT ERROR ********************"
-      );
-      console.log(
-        "*************** REDUCE MOVE COUNT ERROR ********************"
-      );
-    }
-
-    if (
-      this.practice.skipped_lineIdx == this.practice.lineIdx &&
-      this.practice.skipped_moveIdx == this.practice.moveIdx
-    ) {
-      console.log(
-        "*************** REDUCE SKIPPED MOVE COUNT ERROR ********************"
-      );
-      console.log(
-        "*************** REDUCE SKIPPED MOVE COUNT ERROR ********************"
-      );
-      console.log(
-        "*************** REDUCE SKIPPED MOVE COUNT ERROR ********************"
-      );
-      console.log(
-        "*************** REDUCE SKIPPED MOVE COUNT ERROR ********************"
-      );
-      console.log(
-        "*************** REDUCE SKIPPED MOVE COUNT ERROR ********************"
-      );
-    }
-
     // update the move counter
     this.reduceMoveCount(
       this.practice.lineMoves.length - this.practice.lineMovesPlayed.length
@@ -2417,4 +2421,8 @@ class Practice extends MyChessBoard {
 // initialise the Practice object once the page is loaded
 document.addEventListener("DOMContentLoaded", (event) => {
   var practice = new Practice();
+
+  //console.log = function (param) {
+  // temp disable logging..
+  //};
 });

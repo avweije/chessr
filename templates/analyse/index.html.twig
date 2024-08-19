@@ -2,7 +2,7 @@
 
 {% block body %}
 
-	<div class="w-4/5 m-auto text-center p-4">
+	<div class="w-full md:w-4/5 lg:w-3/5 m-auto text-center p-4">
 		<div id="analyseWebsiteButtons" class="inline-flex rounded-md shadow-sm">
 			<div>
 				<input type="radio" id="siteChessDotComRadio" checked name="website" value="Chess.com" class="sr-only peer">
@@ -19,14 +19,14 @@
 		</div>
 	</div>
 
-	<p class="inline-block w-3/5 text-sm font-bold text-gray-900 dark:text-gray-400 p-3 border-b border-zinc-300 dark:border-slate-600">Account</p>
+	<p class="inline-block w-full md:w-4/5 lg:w-3/5 text-sm font-bold text-gray-900 dark:text-gray-400 p-3 border-b border-zinc-300 dark:border-slate-600">Account</p>
 
 	<div class="flex items-center px-4 py-6">
 		<div>
 			<label class="block text-sm font-medium text-gray-900 dark:text-gray-300">Username</label>
 		</div>
 		<div class="mx-3">
-			<input id="siteUsername" type="text" name="username" size="40" value="" placeholder="Enter your account name.." class="block w-full rounded-md border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6">
+			<input id="siteUsername" type="text" name="username" size="40" value="" placeholder="Enter your account name.." class="block w-full rounded-md border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600">
 		</div>
 		<div>
 			<button type="button" id="connectButton" class="btn btn-primary">
@@ -37,7 +37,7 @@
 	</div>
 
 	<div id="archivesSection">
-		<p class="inline-block w-3/5 text-sm font-bold text-gray-900 dark:text-gray-400 p-3 border-b border-zinc-300 dark:border-slate-600">Archives</p>
+		<p class="inline-block w-full md:w-4/5 lg:w-3/5 text-sm font-bold text-gray-900 dark:text-gray-400 p-3 border-b border-zinc-300 dark:border-slate-600">Archives</p>
 
 		<div class="px-4 py-6">
 
@@ -49,7 +49,7 @@
 				</div>
 				<div class="mx-3">
 					<div class="relative">
-						<select id="archiveYearSelect" name="archive_year" class="appearance-none inline-block rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></select>
+						<select id="archiveYearSelect" name="archive_year" class="appearance-none inline-block rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"></select>
 						<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
 							<svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
 						</div>
@@ -60,7 +60,7 @@
 				</div>
 				<div class="mx-3">
 					<div class="relative">
-						<select id="archiveMonthSelect" name="archive_month" class="appearance-none inline-block rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></select>
+						<select id="archiveMonthSelect" name="archive_month" class="appearance-none inline-block rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"></select>
 						<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
 							<svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
 						</div>
@@ -78,7 +78,7 @@
 	</div>
 
 	<div id="gamesSection" class="hidden">
-		<p class="inline-block w-3/5 text-sm font-bold text-gray-900 dark:text-gray-400 p-3 border-b border-zinc-300 dark:border-slate-600">Games</p>
+		<p class="inline-block w-full md:w-4/5 lg:w-3/5 text-sm font-bold text-gray-900 dark:text-gray-400 p-3 border-b border-zinc-300 dark:border-slate-600">Games</p>
 
 		<div class="px-4 py-6">
 
@@ -90,7 +90,7 @@
 				</div>
 				<div class="mx-3">
 					<div class="relative">
-						<select id="gameTypeSelect" name="game_type" class="appearance-none inline-block rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"></select>
+						<select id="gameTypeSelect" name="game_type" class="appearance-none inline-block rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"></select>
 						<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
 							<svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
 						</div>

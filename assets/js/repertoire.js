@@ -1,3 +1,4 @@
+import { MyChess } from "./chess.js";
 import { BOARD_STATUS, MyChessBoard } from "./chessboard.js";
 import { COLOR } from "cm-chessboard/src/view/ChessboardView.js";
 import { Utils } from "./utils.js";
@@ -11,10 +12,15 @@ class Repertoire extends MyChessBoard {
   statusField = null;
   ecoField = null;
   pgnField = null;
+  pgnStartPositionContainer = null;
 
   color = "white";
+  loadPgnButton = null;
+  closePgnButton = null;
   saveRepertoireButton = null;
   movesTable = null;
+
+  pgnLoaded = false;
 
   repertoireContainer = null;
   repertoireAutoPlayCheckbox = null;
@@ -38,11 +44,11 @@ class Repertoire extends MyChessBoard {
   repertoireGroups = [];
 
   initialFensLoaded = false;
-  initialFen = "";
   initialFenContainer = null;
   initialFenSelect = null;
 
   confirmDialog = {};
+  loadPgnDialog = {};
 
   constructor() {
     super();
@@ -53,8 +59,17 @@ class Repertoire extends MyChessBoard {
     // get the status fields
     this.statusField = document.getElementById("statusField");
     this.ecoField = document.getElementById("ecoField");
-    this.pgnField = document.getElementById("pgnField");
-    // get the save repertoire button
+
+    // set the pgn field
+    this.setPgnField(document.getElementById("pgnField"));
+
+    this.pgnStartPositionContainer = document.getElementById(
+      "pgnStartPositionContainer"
+    );
+
+    // get the buttons
+    this.loadPgnButton = document.getElementById("loadPgnButton");
+    this.closePgnButton = document.getElementById("closePgnButton");
     this.saveRepertoireButton = document.getElementById("saveRepertoireButton");
     // get the moves table
     this.movesTable = document.getElementById("movesTable");
@@ -88,7 +103,10 @@ class Repertoire extends MyChessBoard {
     // get the repertoire color
     this.color = el.getAttribute("data-color");
 
-    // attach click handler to save repertoire button
+    // attach the event handlers
+    this.loadPgnButton.addEventListener("click", this.onLoadPgn.bind(this));
+    this.closePgnButton.addEventListener("click", this.onClosePgn.bind(this));
+
     this.saveRepertoireButton.addEventListener(
       "click",
       this.onSaveRepertoire.bind(this)
@@ -116,7 +134,10 @@ class Repertoire extends MyChessBoard {
     // create the chess board
     this.init(
       el,
-      this.color && this.color == "white" ? COLOR.white : COLOR.black
+      this.color && this.color == "white" ? COLOR.white : COLOR.black,
+      {
+        useVariations: false,
+      }
     );
 
     // set the board status
@@ -130,6 +151,9 @@ class Repertoire extends MyChessBoard {
 
     // update the status
     this.updateStatus();
+
+    // enable the load pgn button
+    this.loadPgnButton.disabled = false;
 
     // get the modal elements
     this.confirmDialog.modal = document.getElementById("confirmModal");
@@ -160,8 +184,331 @@ class Repertoire extends MyChessBoard {
       },
     ]);
 
+    // get the modal elements
+    this.loadPgnDialog.modal = document.getElementById("loadPgnModal");
+    this.loadPgnDialog.closeButton = document.getElementById(
+      "loadPgnModalCloseButton"
+    );
+    this.loadPgnDialog.cancelButton = document.getElementById(
+      "loadPgnModalCancelButton"
+    );
+    this.loadPgnDialog.confirmButton = document.getElementById(
+      "loadPgnModalConfirmButton"
+    );
+    this.loadPgnDialog.loadPgnModalPgnTextArea = document.getElementById(
+      "loadPgnModalPgnTextArea"
+    );
+
+    // register the modal
+    Modal.register(this.loadPgnDialog.modal, [
+      {
+        element: this.loadPgnDialog.closeButton,
+        action: "close",
+      },
+      {
+        element: this.loadPgnDialog.cancelButton,
+        action: "close",
+      },
+      {
+        element: this.loadPgnDialog.confirmButton,
+        action: "handler",
+        handler: this.onLoadPgnConfirmed.bind(this),
+      },
+    ]);
+
     // hide the page loader
     Utils.hideLoading();
+
+    // TESTING
+    var testPgn =
+      '[Event "anonymouse123\'s Study: Chapter 1"]\n' +
+      '[Site "https://lichess.org/study/EMhaMZRn/Ni1Ungio"]\n' +
+      '[Result "*"]\n' +
+      '[Variant "Standard"]\n' +
+      '[ECO "B90"]\n' +
+      '[Opening "Sicilian Defense: Najdorf Variation, English Attack"]\n' +
+      '[Annotator "https://lichess.org/@/anonymouse123"]\n' +
+      '[UTCDate "2024.08.17"]\n' +
+      '[UTCTime "12:03:12"]\n' +
+      "\n" +
+      "1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 (4. Qxd4 Nc6 (4... Na6) 5. Bb5 Bd7 6. Bxc6) 4... Nf6 5. Nc3 a6 (5... Nc6 6. Bc4 e6 7. Be3) 6. Be3 e5 7. Nb3 *";
+
+    //this.parsePgn(testPgn);
+  }
+
+  onLoadPgn(event) {
+    console.log("onLoadPgn:");
+
+    console.log(this.loadPgnDialog.loadPgnModalPgnTextArea.value);
+
+    // clear the textarea
+    this.loadPgnDialog.loadPgnModalPgnTextArea.value = "";
+
+    // show the modal
+    Modal.open(this.loadPgnDialog.modal);
+  }
+
+  onLoadPgnConfirmed() {
+    console.log("onLoadPgnConfirmed:");
+    console.log(this.loadPgnDialog.loadPgnModalPgnTextArea.value);
+
+    // close the modal
+    Modal.close(this.loadPgnDialog.modal);
+
+    // parse the PGN
+    this.parsePgn(this.loadPgnDialog.loadPgnModalPgnTextArea.value);
+  }
+
+  onClosePgn(event) {
+    console.log("onClosePgn:");
+
+    // turn off variations, reset to current position
+    this.settings.useVariations = false;
+    this.resetToCurrent(this.initialFen);
+
+    // hide elements
+    this.pgnStartPositionContainer.classList.add("hidden");
+    this.closePgnButton.classList.add("hidden");
+
+    // turn off pgn mode
+    this.pgnLoaded = false;
+  }
+
+  parsePgn(pgnText) {
+    console.log("parsePgn:");
+
+    //
+    pgnText = pgnText.replace(new RegExp("\r?\n", "g"), "\n");
+    pgnText = pgnText.replace(new RegExp("\\(", "g"), "( ");
+    pgnText = pgnText.replace(new RegExp("\\)", "g"), " )");
+
+    console.log(pgnText);
+
+    //
+    var fen = "";
+    var lines = pgnText.split("\n");
+
+    console.log(lines);
+
+    var pgnMoves = "";
+    for (var i = 0; i < lines.length; i++) {
+      if (lines[i].charAt(0) == "[") {
+        //list($key, $val) = explode(' ', $line, 2);
+        //$key = strtolower(trim($key, '['));
+        //$val = trim($val, '"]');
+        var parts = lines[i].substring(1, lines[i].length - 1).split(" ", 2);
+        if (parts[0].toLowerCase() == "fen") {
+          console.log("FEN parts:");
+          console.log(parts);
+
+          fen = lines[i].substring(6, lines[i].length - 2);
+
+          console.log("FEN found: " + fen);
+        }
+        continue;
+      }
+
+      pgnMoves += lines[i];
+    }
+
+    var parts = pgnMoves.split(" ");
+
+    console.log(parts);
+
+    var moves = [];
+    var vars = [];
+    var currvar = -1;
+    var movenr = 1;
+
+    for (var i = 0; i < parts.length; i++) {
+      switch (parts[i].charAt(0)) {
+        case " ":
+        case "\b":
+        case "\f":
+        case "\n":
+        case "\r":
+        case "\t":
+          break;
+
+        case ";":
+          // TODO:  add support for "rest of line" comment.  http://www6.chessclub.com/help/PGN-spec
+          break;
+
+        case "{":
+          break;
+
+        case "(":
+          //_openNewVariation(game, isContinuation);
+
+          var vmovenr =
+            currvar == -1
+              ? movenr - 1
+              : vars[currvar].moveNr + vars[currvar].moves.length - 1;
+
+          vars.push({
+            parent: currvar,
+            moveNr: vmovenr,
+            moves: [],
+          });
+
+          currvar = vars.length - 1;
+
+          console.log("variation added: " + currvar);
+          break;
+
+        case ")":
+          //_closeCurrentVariation(game);
+
+          console.log(
+            "variation ended: " + currvar + ", " + vars[currvar].parent
+          );
+
+          currvar = vars[currvar].parent;
+          break;
+
+        case "$":
+          break;
+        case "*":
+          break;
+
+        default:
+          var moveNumberRegex = /\d+\.+/;
+          if (moveNumberRegex.exec(parts[i])) {
+            //console.log("moveNumber: " + parts[i]);
+
+            continue;
+          }
+
+          //console.log("move found: " + parts[i]);
+
+          if (currvar == -1) {
+            moves.push(parts[i]);
+
+            movenr++;
+          } else {
+            vars[currvar].moves.push(parts[i]);
+          }
+
+          break;
+      }
+    }
+
+    console.log("moves & variations:");
+    console.log(moves);
+    console.log(vars);
+
+    //
+    if (moves.length > 0) {
+      var valid = true;
+
+      var history = [];
+      var variations = [];
+
+      var game = new MyChess();
+
+      // validate the moves
+      try {
+        // load the FEN (empty or initial setup)
+        if (fen != "") {
+          game.load(fen);
+        }
+        //
+        for (var i = 0; i < moves.length; i++) {
+          game.move(moves[i]);
+
+          history.push(game.history({ verbose: true }).pop());
+        }
+
+        console.log("-- main line validated");
+
+        game.reset();
+        if (fen != "") {
+          game.load(fen);
+        }
+
+        for (var i = 0; i < vars.length; i++) {
+          var start = vars[i].moveNr - 1;
+          var parent = vars[i].parent;
+          var line = [];
+          while (parent !== -1) {
+            line = [
+              ...vars[parent].moves.slice(
+                0,
+                vars[i].moveNr - vars[parent].moveNr
+              ),
+              ...line,
+            ];
+            start = vars[parent].moveNr - 1;
+            parent = vars[parent].parent;
+          }
+
+          line = [...moves.slice(0, start), ...line];
+
+          console.log("variation: " + i);
+          console.log(line);
+
+          variations.push({
+            moveNr: vars[i].moveNr,
+            parent: vars[i].parent == -1 ? null : vars[i].parent,
+            moves: [],
+          });
+
+          for (var x = 0; x < line.length; x++) {
+            game.move(line[x]);
+          }
+
+          for (var x = 0; x < vars[i].moves.length; x++) {
+            game.move(vars[i].moves[x]);
+
+            variations[variations.length - 1].moves.push(
+              game.history({ verbose: true }).pop()
+            );
+          }
+
+          console.log("-- variation validated");
+
+          game.reset();
+          if (fen != "") {
+            game.load(fen);
+          }
+        }
+      } catch (err) {
+        console.log(err);
+
+        valid = false;
+      }
+
+      if (valid) {
+        // turn on pgn mode
+        this.pgnLoaded = true;
+
+        // show the close pgn button
+        this.closePgnButton.classList.remove("hidden");
+
+        // show the start position (if any)
+        if (fen != "") {
+          this.pgnStartPositionContainer.classList.remove("hidden");
+          this.pgnStartPositionContainer.children[1].innerHTML = fen;
+        }
+
+        // start a new game with the initial FEN
+        this.newGame(fen);
+
+        this.history = history;
+        this.variations = variations;
+        this.settings.useVariations = true;
+
+        // update the pgn field
+        this.updatePgnField();
+
+        // goto the last move
+        this.gotoLast();
+
+        return true;
+      }
+    }
+
+    return false;
   }
 
   // fired once the remove repertoire button is clicked
@@ -633,6 +980,7 @@ class Repertoire extends MyChessBoard {
     // set the data object
     var data = {
       color: this.color,
+      initialFen: this.initialFen,
       moves: moves,
     };
 
@@ -949,12 +1297,27 @@ class Repertoire extends MyChessBoard {
     // update the board
     this.board.setPosition(this.game.fen(), true);
 
+    // reset the history & variations
+    this.resetToCurrent(this.initialFen);
+
     // update the status & get the moves
     this.updateStatus();
   }
 
-  // event handler
+  // event handlers
   afterMove(move) {
+    // update the status, get the ECO codes for next position.. etc
+    this.updateStatus();
+  }
+
+  afterGotoMove(moveNr, variationIdx) {
+    console.log("afterGotoMove: " + this.initialFen);
+    console.log(this);
+
+    // reset the history to the current position
+    if (!this.pgnLoaded) {
+      this.resetToCurrent(this.initialFen);
+    }
     // update the status, get the ECO codes for next position.. etc
     this.updateStatus();
   }
@@ -989,48 +1352,9 @@ class Repertoire extends MyChessBoard {
     }
 
     this.statusField.innerHTML = status;
-    this.pgnField.innerHTML = "";
 
-    // get the PGN
-    var pgn = this.game.pgn();
-
-    console.log("PGN:");
-    console.log(pgn);
-
-    // get the history of moves
-    var moves = this.game.history({ verbose: true });
-    // if no moves yet
-    if (moves.length == 0) {
-      this.pgnField.innerHTML = "--";
-    } else {
-      for (var i = 0; i < moves.length; i++) {
-        if (i % 2 == 0) {
-          var sp = document.createElement("span");
-          sp.className = "inline-block px-0.5";
-          sp.innerHTML = i / 2 + 1 + ".";
-
-          this.pgnField.appendChild(sp);
-        }
-        var sp = document.createElement("span");
-        sp.className =
-          "inline-block px-0.5 rounded border border-transparent" +
-          (i + 1 < moves.length
-            ? " cursor-pointer hover:text-gray-600 hover:bg-slate-100 hover:border hover:border-slate-300"
-            : "");
-        sp.innerHTML = moves[i]["san"];
-        sp.setAttribute("data-move", i);
-
-        // add event listener
-        if (i + 1 < moves.length) {
-          sp.addEventListener("click", (event) => {
-            // jump to a certain move
-            this.jumpToMove(event.target.getAttribute("data-move"));
-          });
-        }
-
-        this.pgnField.appendChild(sp);
-      }
-    }
+    // update the pgn field
+    this.updatePgnField();
 
     // get the moves for the new position
     this.getMoves();

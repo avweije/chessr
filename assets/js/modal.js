@@ -16,10 +16,6 @@ export class Modal {
    * @memberof Modal
    */
   static register(modal, buttons = [], onClose = null) {
-    console.log("Register modal:");
-    console.log(modal);
-    console.log(buttons);
-
     for (var i = 0; i < buttons.length; i++) {
       switch (buttons[i].action) {
         case "open":
@@ -52,16 +48,12 @@ export class Modal {
   }
 
   static open(modal) {
-    console.log("Modal.open:");
-
     modal.classList.remove("closing");
     modal.showModal();
     modal.classList.add("showing");
   }
 
   static close(modal) {
-    console.log("Modal.closeModal:");
-
     modal.classList.remove("showing");
     modal.classList.add("closing");
     modal.addEventListener(
