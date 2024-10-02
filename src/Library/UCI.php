@@ -2,7 +2,7 @@
 
 namespace App\Library;
 
-define("UCI_MAX_THINK_TIME", 5);
+define("UCI_MAX_THINK_TIME", 30);
 
 class UCI
 {
@@ -130,6 +130,8 @@ class UCI
             fwrite($this->pipes[0], "isready\n");
         }
 
+        usleep(500);
+
         // we need to stop reading the stream when 'readyok' or 'bestmove' are written
         $stopReadingMatch = $goCommand ? "bestmove" : "readyok";
 
@@ -139,13 +141,35 @@ class UCI
         $response = "";
         $lines = [];
 
+        $i = 0;
+
         // wait for the response
         while (true) {
 
+            /*
+
+            - fstat gives size = 0 when there is data, so this doesn't work for blocking io fix..
+            - maybe try to use it on the STDERR ? if size > 0, there won't be any data in STDIN ??
+
+            */
+            // get the stats for the stream (this won't block if there is nothing to read)
+            $stat = fstat($this->pipes[2]);
+            if ($stat !== false && $stat["size"] > 0) {
+
+                //print "-- STDERR is filled, returning false..<br>";
+
+                return false;
+            }
+
+            // if there is data to read
+            //if ($stat["size"] > 0) {
             // read the next line
             $line = fgets($this->pipes[1]);
             // if we have the response
             if ($line != "") {
+
+                //print "line: $line<br>";
+
                 // if we need to stop reading the stream
                 if (strpos($line, $stopReadingMatch) === 0) {
                     // if this was the go command
@@ -162,9 +186,13 @@ class UCI
                 // add to the response lines
                 $lines[] = rtrim($line);
             }
+            //} else {
+            //  $line = "";
+            //}
 
             // if we've waited long enough
             if ((time() - $start_thinking_time) > UCI_MAX_THINK_TIME) {
+                //print "-- thinking too long, returning false..<br>";
 
                 return false;
             } else if ($line === false) {
@@ -207,7 +235,8 @@ class UCI
                 // add the bestmove
                 $lines[$bestMoveIdx - 1] = [
                     "depth" => $parts[2],
-                    "cp" => $parts[9],
+                    "cp" => $parts[8] == "cp" ? intval($parts[9]) : null,
+                    "mate" => $parts[8] == "mate" ? intval($parts[9]) : null,
                     "move" => count($moves) > 0 ? $moves[0] : "",
                     "line" => $moves
                 ];

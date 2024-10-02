@@ -23,7 +23,7 @@
 {% endblock %}
 
 {% block board_left %}
-	<div id="board" class="border border-slate-300 dark:border-slate-900" data-color="{{ repertoireColor }}"></div>
+	<div id="board" class="" data-color="{{ repertoireColor }}"></div>
 
 {% endblock %}
 
@@ -70,15 +70,19 @@
 		</div>
 
 		<div class="w-full p-3">
-			<div class="mb-2 pl-2">
+			<div class="pl-2">
 				<input id="repertoireAutoPlayCheckbox" type="checkbox" class="accent-primary-400">
 				<label for="repertoireAutoPlayCheckbox" class="inline-block text-base p-2 text-gray-900 dark:text-gray-200">Auto-play this move in practice</label>
+			</div>
+			<div class="mb-2 pl-2">
+				<input id="repertoireExcludeCheckbox" type="checkbox" class="accent-primary-400">
+				<label for="repertoireExcludeCheckbox" class="inline-block text-base p-2 text-gray-900 dark:text-gray-200">Temporarily exclude this line from practice</label>
 			</div>
 			<div class="mb-2">
 				<label class="block text-sm font-medium text-gray-900 dark:text-gray-200">Group:</label>
 			</div>
 			<div class="w-full mb-1">
-				<input id="repertoireGroupInput" list="repertoireGroupDataList" name="repertoire_group" placeholder="Add to group (select from list or press Enter to add)" class="block w-full rounded-md border-0 py-1 px-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600">
+				<input id="repertoireGroupInput" list="repertoireGroupDataList" name="repertoire_group" placeholder="Type and press Enter to add or select from list..." class="block w-full rounded-md border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600">
 				<datalist id="repertoireGroupDataList"></datalist>
 			</div>
 			<div id="repertoireGroupTagsContainer" class="flex flex-wrap"></div>
@@ -104,6 +108,13 @@
 		</div>
 
 	</div>
+
+	<div class="flex justify-end mt-2">
+		<button type="button" id="analyseGameButton" disabled class="btn btn-primary">
+			Analyse on Lichess
+		</button>
+	</div>
+
 
 	{{ include('repertoire/dialogs/confirm.html.twig') }}
 	{{ include('repertoire/dialogs/loadpgn.html.twig') }}

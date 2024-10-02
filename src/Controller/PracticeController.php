@@ -2,8 +2,6 @@
 
 namespace App\Controller;
 
-use App\Entity\Moves;
-use App\Entity\Repertoire;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;

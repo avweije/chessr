@@ -6,11 +6,7 @@
 			{% block title %}Chess Repertoire
 			{% endblock %}
 		</title>
-		<link
-		rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text></svg>">
-		<!--
-																																																																																																																																																																																				<script src="https://cdn.tailwindcss.com"></script>
-																																																																																																																																																																																				-->
+		<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text></svg>">
 		<link rel="stylesheet" href="/build/app.css">
 		{% block stylesheets %}
 			{{ encore_entry_link_tags('app') }}
@@ -18,9 +14,15 @@
 		{% block javascripts %}
 			{{ encore_entry_script_tags('app') }}
 		{% endblock %}
+
+		<!-- need to check out what this script is for, copied from youtube tutorial -->
 		<script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.3.5/dist/alpine.min.js" defer></script>
+
+		<!-- leave tailwind css in there while developing, so you dont have to rebuild everytime -->
+		<!-- <script src="https://cdn.tailwindcss.com"></script> -->
+
 	</head>
-	<body class="bg-zinc-100 dark:bg-slate-800 h-screen antialiased leading-none font-sans min-h-screen">
+	<body class="bg-zinc-100 dark:bg-slate-800 h-screen antialiased leading-none font-sans min-h-screen overflow-y-scroll">
 		{% block header %}
 			<header
 				class="fixed z-20 top-0 start-0 w-full">
@@ -49,19 +51,19 @@
 								class="list-style-none me-auto mr-20 flex ps-0 mt-1 flex-row" data-twe-navbar-nav-ref>
 								<!-- Home -->
 								<li class="mb-0 pe-1 ps-0" data-twe-nav-item-ref>
-									<a href="/" class="p-0 px-1 text-black/60 transition duration-200 hover:text-black/80 hover:ease-in-out focus:text-black/80 active:text-black/80 motion-reduce:transition-none dark:text-white/60 dark:hover:text-white/80 dark:focus:text-white/80 dark:active:text-white/80 md:px-3" data-twe-nav-link-ref>
+									<a href="/" class="font-normal p-0 px-1 text-black/60 transition duration-200 hover:text-black/80 hover:ease-in-out focus:text-black/80 active:text-black/80 motion-reduce:transition-none dark:text-white/60 dark:hover:text-white/80 dark:focus:text-white/80 dark:active:text-white/80 md:px-3" data-twe-nav-link-ref>
 										Home
 									</a>
 								</li>
 								<!-- Repertoire -->
 								<li class="mb-0 pe-1 ps-0" data-twe-nav-item-ref>
-									<a href="/repertoire" class="p-0 px-1 text-black/60 transition duration-200 hover:text-black/80 hover:ease-in-out focus:text-black/80 active:text-black/80 motion-reduce:transition-none dark:text-white/60 dark:hover:text-white/80 dark:focus:text-white/80 dark:active:text-white/80 md:px-3" data-twe-nav-link-ref>
+									<a href="/repertoire" class="font-normal p-0 px-1 text-black/60 transition duration-200 hover:text-black/80 hover:ease-in-out focus:text-black/80 active:text-black/80 motion-reduce:transition-none dark:text-white/60 dark:hover:text-white/80 dark:focus:text-white/80 dark:active:text-white/80 md:px-3" data-twe-nav-link-ref>
 										Repertoire
 									</a>
 								</li>
 								<!-- Practice -->
 								<li class="mb-0 pe-1 ps-0" data-twe-nav-item-ref>
-									<a href="/practice" class="p-0 px-1 text-black/60 transition duration-200 hover:text-black/80 hover:ease-in-out focus:text-black/80 active:text-black/80 motion-reduce:transition-none dark:text-white/60 dark:hover:text-white/80 dark:focus:text-white/80 dark:active:text-white/80 md:px-3" data-twe-nav-link-ref>
+									<a href="/practice" class="font-normal p-0 px-1 text-black/60 transition duration-200 hover:text-black/80 hover:ease-in-out focus:text-black/80 active:text-black/80 motion-reduce:transition-none dark:text-white/60 dark:hover:text-white/80 dark:focus:text-white/80 dark:active:text-white/80 md:px-3" data-twe-nav-link-ref>
 										Practice
 									</a>
 								</li>
@@ -117,5 +119,12 @@
 					</p>
 				</footer>
 			{% endblock %}
+
+			<div id="errorIconElement" class="fade-element fade fixed bottom-3 right-3">
+				<div class="flex bg-white rounded-full border border-gray-400 dark:border-slate-500">
+					<span class="text-red-500 w-5 h-5 shrink-0 icon-[mdi--error]"></span>
+				</div>
+			</div>
+
 		</body>
 	</html>

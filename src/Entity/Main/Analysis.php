@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Entity;
+namespace App\Entity\Main;
 
 use App\Repository\AnalysisRepository;
 use Doctrine\ORM\Mapping as ORM;
@@ -38,7 +38,7 @@ class Analysis
     #[ORM\Column(length: 10)]
     private ?string $Move = null;
 
-    #[ORM\Column(length: 30)]
+    #[ORM\Column(length: 1024)]
     private ?string $BestMoves = null;
 
     #[ORM\Column(length: 255)]

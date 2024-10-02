@@ -1,0 +1,3 @@
+migrations_paths:
+  "main": "../../migrations"
+em: main

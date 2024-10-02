@@ -84,21 +84,25 @@
 {% endblock %}
 
 {% block board_left %}
-	<div id="board" class="border border-slate-200 dark:border-slate-500" data-type="{{ repertoireType }}"></div>
+	<div id="board" class="" data-type="{{ repertoireType }}"></div>
 {% endblock %}
 
 {% block board_right %}
 	<div class="mb-px border rounded overflow-hidden border-slate-300 dark:border-slate-900">
-		<div id="infoContainer" class="flex items-center p-3 min-h-16 bg-primary-100 text-primary-700 border-l-4 border-l-primary-400" role="alert">
-			<span class="text-primary-500 w-7 h-7 shrink-0 icon-[mdi--information-slab-circle-outline]"></span>
+		<div id="infoContainer" class="flex items-center rounded p-3 min-h-16 bg-yellow-100 text-yellow-700 border-l-[6px] border-l-yellow-400" role="alert">
+			<span></span>
 			<span class="text-base font-medium px-3 block sm:inline">To start your practice, click the button below.</span>
 		</div>
-		<div id="confirmContainer" class="hidden flex items-center p-3 min-h-16 bg-secondary-100 text-secondary-700 border-l-4 border-l-secondary-400" role="alert">
+		<div id="confirmContainer" class="hidden flex items-center rounded p-3 min-h-16 bg-secondary-100 text-secondary-700 border-l-[6px] border-l-secondary-400" role="alert">
 			<span class="text-secondary-500 w-7 h-7 shrink-0 icon-[mdi--check-circle-outline]"></span>
 			<span class="text-base font-medium px-3 block sm:inline"></span>
 		</div>
-		<div id="warningContainer" class="hidden flex items-center p-3 min-h-16 bg-red-100 text-red-700 border-l-4 border-l-red-400" role="alert">
+		<div id="warningContainer" class="hidden flex items-center rounded p-3 min-h-16 bg-red-100 text-red-700 border-l-[6px] border-l-red-400" role="alert">
 			<span class="text-red-500 w-7 h-7 shrink-0 icon-[mdi--error-outline]"></span>
+			<span class="text-base font-medium px-3 block sm:inline"></span>
+		</div>
+		<div id="hintContainer" class="hidden flex items-center mt-1 rounded p-3 min-h-16 bg-primary-100 text-primary-700 border-l-[6px] border-l-primary-400" role="alert">
+			<span class="text-primary-500 w-7 h-7 shrink-0 icon-[mdi--information-slab-circle-outline]"></span>
 			<span class="text-base font-medium px-3 block sm:inline"></span>
 		</div>
 	</div>
@@ -110,11 +114,17 @@
 		<button type="button" id="giveHintButton" title="Hint" disabled class="hidden btn btn-primary mr-1">
 			<span class="w-6 h-6 icon-[mdi--lightbulb-on-outline]"></span>
 		</button>
-		<button type="button" id="skipMoveButton" title="Skip this move" disabled class="hidden btn btn-primary">
+		<button type="button" id="skipMoveButton" title="Skip this move" disabled class="hidden btn btn-primary mr-1">
 			<span class="w-6 h-6 icon-[mdi--next-title]"></span>
 		</button>
+		<div class="flex">
+			<input type="checkbox" id="showPracticeInfoButton" value="1" class="peer hidden">
+			<label for="showPracticeInfoButton" title="Toggle info" class="hidden select-none btn btn-primary mr-1 peer-checked:btn-checked">
+				<span class="w-6 h-6 icon-[mdi--information-slab-circle-outline]"></span>
+			</label>
+		</div>
 		<div id="analysisGameButtons" class="hidden flex">
-			<button type="button" id="analysisSaveButton" title="Save" disabled class="btn btn-primary ml-1" title="Save this move to your repertoire and discard it.">
+			<button type="button" id="analysisSaveButton" title="Save" disabled class="btn btn-primary" title="Save this move to your repertoire and discard it.">
 				<span class="w-6 h-6 icon-[mdi--content-save-outline]"></span>
 			</button>
 			<button type="button" id="analysisIgnoreButton" title="Not a mistake" disabled class="btn btn-primary mx-1" title="This move will be ignored in future analysis.">
@@ -147,19 +157,41 @@
 		<div id="pgnField" class="p-3 text-sm"></div>
 	</div>
 
-	<div id="analysisGameContainer" class="hidden">
+	<div id="analysisGameContainer" class="hidden my-px">
 		<div class="border rounded text-sm bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-900">
 			<p class="block text-sm font-bold text-gray-900 dark:text-gray-200 p-3 border-b border-slate-300 dark:border-slate-900">Game</p>
-			<div id="analysisGameFields" class="grid grid-cols-[_auto_1fr] p-2">
-				<label class="p-2 text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">Opponent:</label>
+			<div id="analysisGameFields" class="grid grid-cols-[_auto_1fr] items-center p-2">
+				<label class="p-2 text-xs font-semibold text-gray-700 dark:text-gray-400 whitespace-nowrap">Opponent:</label>
 				<p class="p-2 text-sm w-full truncate text-gray-700 dark:text-gray-200"></p>
-				<label class="p-2 text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">Move:</label>
+				<label class="p-2 text-xs font-semibold text-gray-700 dark:text-gray-400 whitespace-nowrap">Move:</label>
 				<p class="p-2 text-sm w-full truncate text-gray-700 dark:text-gray-200"></p>
-				<label class="p-2 text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">FEN:</label>
+				<label class="p-2 text-xs font-semibold text-gray-700 dark:text-gray-400 whitespace-nowrap">FEN:</label>
 				<p class="p-2 text-sm w-full truncate text-gray-700 dark:text-gray-200"></p>
-				<label class="p-2 text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">Link:</label>
+				<label class="p-2 text-xs font-semibold text-gray-700 dark:text-gray-400 whitespace-nowrap">Link:</label>
 				<a href="#" target="_blank" class="p-2 text-sm w-full truncate text-gray-700 hover:text-gray-400 dark:text-gray-200 dark:hover:text-gray-500"></a>
 			</div>
+		</div>
+	</div>
+
+	<div id="practiceInfoContainer" class="hidden my-px">
+		<div class="border rounded text-sm bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-900">
+			<p class="block text-sm font-bold text-gray-900 dark:text-gray-200 p-3 border-b border-slate-300 dark:border-slate-900">Info</p>
+			<div id="practiceInfoFields" class="grid grid-cols-[_auto_1fr] items-center p-2">
+				<label class="p-2 text-xs font-semibold text-gray-700 dark:text-gray-400 whitespace-nowrap">ECO:</label>
+				<p class="p-2 text-sm w-full truncate text-gray-700 dark:text-gray-200"></p>
+				<label class="p-2 text-xs font-semibold text-gray-700 dark:text-gray-400 whitespace-nowrap">PGN:</label>
+				<p class="p-2 text-sm w-full truncate text-gray-700 dark:text-gray-200"></p>
+				<label class="p-2 text-xs font-semibold text-gray-700 dark:text-gray-400 whitespace-nowrap">FEN:</label>
+				<p class="p-2 text-sm w-full truncate text-gray-700 dark:text-gray-200"></p>
+				<label class="p-2 text-xs font-semibold text-gray-700 dark:text-gray-400 whitespace-nowrap">Stats:</label>
+				<p class="p-2 text-sm w-full truncate text-gray-700 dark:text-gray-200"></p>
+			</div>
+		</div>
+
+		<div class="flex justify-end mt-2">
+			<button type="button" id="analyseGameButton" class="btn btn-primary">
+				Analyse on Lichess
+			</button>
 		</div>
 	</div>
 

@@ -291,21 +291,17 @@ class LichessInterface implements ChessSiteInterface
         // if response is ok
         if ($response !== null && $response->getStatusCode() == 200 && $response->getContent(false) !== "") {
 
-            //print "response ok...\n";
+            $resp = explode("\n", $response->getContent(false));
 
-            $games = explode("\n", $response->getContent(false));
-
-            // if last one is empty
-            if (count($games) > 0 && $games[count($games) - 1] == "") {
-                array_pop($games);
+            for ($i = 0; $i < count($resp); $i++) {
+                if ($resp[$i] != "") {
+                    $json = json_decode($resp[$i], true);
+                    if ($lastId == "" || $lastId != $json["createdAt"]) {
+                        $json["uuid"] = $json["createdAt"];
+                        $games[] = $json;
+                    }
+                }
             }
-
-            for ($i = 0; $i < count($games); $i++) {
-                $games[$i] = json_decode($games[$i], true);
-                $games[$i]["uuid"] = $games[$i]["createdAt"];
-            }
-
-            //dd($games);
         }
 
         return $games;

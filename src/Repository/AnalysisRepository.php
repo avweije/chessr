@@ -2,7 +2,7 @@
 
 namespace App\Repository;
 
-use App\Entity\Analysis;
+use App\Entity\Main\Analysis;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 

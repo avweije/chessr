@@ -54,6 +54,10 @@ class MyPgnParser
                 continue;
             }
 
+            if (substr($line, 0, 3) == pack("CCC", 0xef, 0xbb, 0xbf)) {
+                $line = substr($line, 3);
+            }
+
             if (strpos($line, '[') === 0 && $this->multiLineAnnotationDepth === 0) {
                 // Starts with [ so must be meta-data.
                 // If already have meta-data AND moves, then we are now at the end of a game's

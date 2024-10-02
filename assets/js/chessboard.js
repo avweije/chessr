@@ -10,9 +10,11 @@ import {
   Markers,
 } from "cm-chessboard/src/extensions/markers/Markers.js";
 import { PromotionDialog } from "cm-chessboard/src/extensions/promotion-dialog/PromotionDialog.js";
+import { Arrows } from "cm-chessboard/src/extensions/arrows/Arrows.js";
 
 import "../styles/chessboard.css";
 import "cm-chessboard/assets/extensions/promotion-dialog/promotion-dialog.css";
+import "cm-chessboard/assets/extensions/arrows/arrows.css";
 
 export const BOARD_STATUS = {
   default: "default",
@@ -71,7 +73,7 @@ export class MyChessBoard {
   pgnField = null;
 
   initialFen = "";
-  currentMove = -1;
+  currentMove = 0;
   currentVariation = -1;
 
   history = [];
@@ -160,16 +162,19 @@ export class MyChessBoard {
   - color: the initial orientation of the chessboard.
   */
 
-  init(boardElement, color = COLOR.white, settings = {}) {
-    // create the chess board
-    this.board = new Chessboard(boardElement, {
+  init(boardElement, boardSettings = {}, settings = {}) {
+    // the default board settings
+    var _boardSettings = {
       position: FEN.start,
-      orientation: color,
+      orientation: COLOR.white,
       assetsUrl: "/build/", // wherever you copied the assets folder to, could also be in the node_modules folder
       style: {
         cssClass: "chess-club", // set the css theme of the board, try "green", "blue" or "chess-club"
         showCoordinates: true, // show ranks and files
         aspectRatio: 1, // height/width of the board
+        pieces: {
+          file: "pieces/standard.svg", // the filename of the sprite in `assets/pieces/` or an absolute url like `https://…` or `/…`
+        },
         animationDuration: 300, // pieces animation duration in milliseconds. Disable all animations with `0`
       },
       extensions: [
@@ -180,10 +185,20 @@ export class MyChessBoard {
         {
           class: PromotionDialog,
         },
+        {
+          class: Arrows,
+        },
       ],
-    });
+    };
+    // merge the custom board settings
+    _boardSettings = this.deepMerge(_boardSettings, boardSettings);
 
-    // apply the settings
+    console.log(_boardSettings);
+
+    // create the chess board
+    this.board = new Chessboard(boardElement, _boardSettings);
+
+    // apply the chessboard settings (for this class, not the board itself)
     this.settings = this.deepMerge(this.settings, settings);
   }
 
@@ -262,23 +277,35 @@ export class MyChessBoard {
   }
 
   //
-  resetToPosition(initialFen, moves, updateBoard = true) {
+  async resetToPosition(initialFen, moves, updateBoard = true) {
     // get the current moves
     var history = this.game.history({ verbose: true });
     var movesToMake = [];
+    var movesThatMatch = [];
 
-    var match = initialFen == this.initialFen && moves.length >= history.length;
+    //var match = initialFen == this.initialFen && moves.length >= history.length;
+    var match = initialFen == this.initialFen;
+    var lastMatchingFen = "";
 
     // see if the current moves match the new moves
     for (var i = 0; i < moves.length; i++) {
       // if this is a new move
-      if (i >= history.length) {
+      if (match == false || i >= history.length) {
         movesToMake.push(moves[i]);
       } else if (moves[i] !== history[i].san) {
+        movesToMake.push(moves[i]);
         // not a match, stop checking
         match = false;
-        break;
+        //break;
+      } else if (match) {
+        //lastMatchingFen = history[i].after;
+        movesThatMatch.push(moves[i]);
       }
+    }
+
+    // if a match, but current history has more moves
+    if (match && history.length > moves.length) {
+      match = false;
     }
 
     // reset the game & board
@@ -289,12 +316,20 @@ export class MyChessBoard {
       } else {
         this.game.reset();
       }
+      // make the moves that matched
+      for (var i = 0; i < movesThatMatch.length; i++) {
+        this.game.move(movesThatMatch[i]);
+      }
       // update the board
       if (updateBoard) {
-        this.board.setPosition(this.game.fen());
+        // animate the moves if it's a new position
+        await this.board.setPosition(
+          this.game.fen(),
+          movesThatMatch.length > 0
+        );
       }
 
-      movesToMake = moves;
+      //movesToMake = moves;
     }
 
     // the new moves
@@ -374,7 +409,7 @@ export class MyChessBoard {
 
     this.history = moves;
     this.variations = [];
-    this.currentMove = -1;
+    this.currentMove = 0;
     this.currentVariation = -1;
 
     // update the pgn field
@@ -422,7 +457,7 @@ export class MyChessBoard {
     this.currentMove =
       this.currentMove == -1 ? this.history.length : this.currentMove;
 
-    return this.currentMove == 1;
+    return this.currentMove == 0;
   }
 
   isLast() {
@@ -454,11 +489,11 @@ export class MyChessBoard {
     }
   }
 
-  gotoMove(moveNr, variationIdx = -1) {
+  gotoMove(moveNr, variationIdx = -1, afterGotoMove = true) {
     var moves = [];
 
     // safety, 1st move minimum
-    moveNr = Math.max(1, moveNr);
+    moveNr = Math.max(0, moveNr);
     // make sure the variation index is correct
     if (variationIdx >= 0) {
       // if the variation does not exist
@@ -499,9 +534,14 @@ export class MyChessBoard {
       moveNr = Math.min(moveNr, this.history.length);
     }
 
-    // safety, in case no moves
-    if (moveNr == 0) {
-      return false;
+    // if this is the same move, no need to make it again..
+    if (moveNr == this.currentMove && variationIdx == this.currentVariation) {
+      // call the afterGotoMove handler
+      if (afterGotoMove) {
+        this.afterGotoMove(moveNr, variationIdx);
+      }
+
+      return true;
     }
 
     // remember the current move & variation
@@ -570,7 +610,7 @@ export class MyChessBoard {
 
   // goto 1st move main line
   gotoFirst() {
-    this.gotoMove(1);
+    this.gotoMove(0);
   }
 
   // goto last move main line
@@ -595,7 +635,7 @@ export class MyChessBoard {
       gotoMove = gotoMove + 1;
     }
 
-    this.gotoMove(gotoMove, this.currentVariation);
+    this.gotoMove(gotoMove, this.currentVariation, false);
   }
 
   // goto next move in current line or variation
@@ -604,7 +644,7 @@ export class MyChessBoard {
     this.currentMove =
       this.currentMove == -1 ? this.history.length : this.currentMove;
 
-    this.gotoMove(this.currentMove + 1, this.currentVariation);
+    this.gotoMove(this.currentMove + 1, this.currentVariation, false);
   }
 
   //
@@ -654,7 +694,7 @@ export class MyChessBoard {
             }
           } else {
             // overwrite the main line and add the new move
-            this.history.splice(0, moveNr, move);
+            this.history.splice(moveNr - 1, this.history.length, move);
           }
         }
       } else {
@@ -1067,22 +1107,26 @@ export class MyChessBoard {
     return moves;
   }
 
-  //
+  // update the board status
   setStatus(status) {
     this.status = status;
 
     // if we need to make a premove
     if (this.status == BOARD_STATUS.waitingOnMove && this.premove !== null) {
-      // make the move
-      this.makeMove({
-        from: this.premove.squareFrom,
-        to: this.premove.squareTo,
-        promotion: this.premove.promotion ? this.premove.promotion : "q",
-      });
-
-      this.premove = null;
-
-      return true;
+      try {
+        // remove the premove markers
+        this.board.removeMarkers(this.markers.squareRed);
+        // make the move
+        this.makeMove({
+          from: this.premove.squareFrom,
+          to: this.premove.squareTo,
+          promotion: this.premove.promotion ? this.premove.promotion : "q",
+        });
+      } catch (err) {
+        console.log(err);
+      } finally {
+        this.premove = null;
+      }
     }
   }
 
@@ -1125,6 +1169,9 @@ export class MyChessBoard {
   }
 
   moveInputStarted(event) {
+    console.log("moveInputStarted:");
+    console.log(event);
+
     // do not pick up pieces if the game is over
     if (this.game.isGameOver()) return false;
 
@@ -1246,6 +1293,15 @@ export class MyChessBoard {
   moveInputCancelled(event) {
     console.log("moveInputCancelled:");
     console.log(event);
+
+    // if we have a premove
+    if (this.premove !== null) {
+      this.premove = null;
+
+      // remove the premove markers
+      this.board.removeMarkers(this.markers.squareRed);
+    }
+
     // remove the legal move markers
     this.board.removeLegalMovesMarkers();
   }
@@ -1277,15 +1333,22 @@ export class MyChessBoard {
   }
 
   // called after a move was made
-  afterMakeMove() {
+  afterMakeMove(removeMarkers = true) {
+    console.log("afterMakeMove:");
+
     // remove the legal move markers
     this.board.removeLegalMovesMarkers();
+
+    if (removeMarkers) {
+      console.log("-- remove markers..");
+
+      this.board.removeMarkers();
+    }
 
     // get the last move
     var last = this.game.history({ verbose: true }).pop();
 
     // add marker for last move
-    this.board.removeMarkers();
     if (last) {
       this.board.addMarker(MARKER_TYPE.square, last.from);
       this.board.addMarker(MARKER_TYPE.square, last.to);

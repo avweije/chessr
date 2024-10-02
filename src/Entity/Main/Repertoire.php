@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Entity;
+namespace App\Entity\Main;
 
 use App\Repository\RepertoireRepository;
+use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: RepertoireRepository::class)]
@@ -22,13 +24,13 @@ class Repertoire
     #[ORM\Column(length: 10)]
     private ?string $Color = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, options: ['collation' => 'utf8mb4_bin'])]
     private ?string $FenBefore = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, options: ['collation' => 'utf8mb4_bin'])]
     private ?string $FenAfter = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 1024)]
     private ?string $Pgn = null;
 
     #[ORM\Column(length: 10)]
@@ -46,6 +48,9 @@ class Repertoire
     #[ORM\Column]
     private ?int $PracticeInARow = null;
 
+    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
+    private ?DateTimeInterface $LastUsed = null;
+
     /**
      * @var Collection<int, RepertoireGroup>
      */
@@ -57,6 +62,9 @@ class Repertoire
 
     #[ORM\Column]
     private ?bool $AutoPlay = null;
+
+    #[ORM\Column]
+    private ?bool $Exclude = null;
 
     public function __construct()
     {
@@ -188,6 +196,18 @@ class Repertoire
         return $this;
     }
 
+    public function getLastUsed(): ?\DateTimeInterface
+    {
+        return $this->LastUsed;
+    }
+
+    public function setLastUsed(\DateTimeInterface $LastUsed): static
+    {
+        $this->LastUsed = $LastUsed;
+
+        return $this;
+    }
+
     /**
      * @return Collection<int, RepertoireGroup>
      */
@@ -238,6 +258,18 @@ class Repertoire
     public function setAutoPlay(bool $AutoPlay): static
     {
         $this->AutoPlay = $AutoPlay;
+
+        return $this;
+    }
+
+    public function isExclude(): ?bool
+    {
+        return $this->Exclude;
+    }
+
+    public function setExclude(bool $Exclude): static
+    {
+        $this->Exclude = $Exclude;
 
         return $this;
     }

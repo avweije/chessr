@@ -226,6 +226,8 @@ class Analyse {
 
     // hide the games
     this.gamesSection.classList.add("hidden");
+    this.gamesDisabledText.classList.remove("hidden");
+    this.gamesContainer.classList.add("hidden");
   }
 
   // get the repertoire
@@ -441,6 +443,8 @@ class Analyse {
       opt.text = "No games left to analyse";
 
       this.gameTypeSelect.appendChild(opt);
+
+      this.analyseButton.disabled = true;
     }
 
     // enable the analyse button
@@ -620,7 +624,7 @@ class Analyse {
         this.analyseDialog.totals[this.gameTypeSelect.value].processed > 0
           ? this.analyseDialog.totals[this.gameTypeSelect.value].processed +
             " games processed"
-          : "processing games";
+          : "Processing...";
     }
 
     //var url = "/api/download/games/{year}/{month}";

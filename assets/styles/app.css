@@ -3,8 +3,12 @@
 @tailwind utilities;
 
 @layer utilities {
+  a {
+    @apply font-bold text-blue-500;
+  }
+
   .btn {
-    @apply inline-flex items-center rounded-md px-4 py-2 text-sm font-semibold shadow-sm;
+    @apply inline-flex items-center rounded-md px-4 py-2 text-sm font-semibold shadow-sm cursor-pointer border border-transparent;
   }
   .btn:focus-visible {
     @apply outline outline-2 outline-offset-2;
@@ -27,6 +31,13 @@
     @apply outline-blue-500;
   }
 
+  .btn-primary.btn-checked {
+    @apply text-blue-700 bg-blue-100;
+  }
+  .btn-primary.btn-checked:hover {
+    @apply bg-blue-50;
+  }
+
   .btn-warning {
     @apply text-white bg-red-500;
   }
@@ -45,6 +56,15 @@
   }
   .btn-outline:focus-visible {
     @apply outline-primary-300;
+  }
+
+  .fade-element {
+    opacity: 1;
+    transition: ease-in opacity 0.5s;
+  }
+
+  .fade-element.fade {
+    opacity: 0;
   }
 
   ::-webkit-scrollbar {

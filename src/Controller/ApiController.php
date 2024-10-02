@@ -5,38 +5,44 @@ namespace App\Controller;
 use App\Config\DownloadSite;
 use App\Config\DownloadStatus;
 use App\Config\DownloadType;
-use App\Entity\Downloads;
-use App\Entity\ECO;
-use App\Entity\Group;
-use App\Entity\Analysis;
-use App\Entity\Archives;
-use App\Entity\IgnoreList;
-use App\Entity\Repertoire;
-use App\Entity\RepertoireGroup;
-use App\Entity\Settings;
-use App\Entity\User;
+use App\Entity\Main\Downloads;
+use App\Entity\Main\ECO;
+use App\Entity\Main\Group;
+use App\Entity\Main\Analysis;
+use App\Entity\Evaluations\Evaluation;
+use App\Entity\Main\IgnoreList;
+use App\Entity\Main\Repertoire;
+use App\Entity\Main\RepertoireGroup;
+use App\Entity\Main\Settings;
+use App\Entity\Main\User;
 use App\Library\ChessJs;
 use App\Library\GameDownloader;
-use App\Library\GameDownloader\LichessInterface;
 use App\Library\UCI;
 use App\Service\MyPgnParser\MyGame;
 use App\Service\MyPgnParser\MyPgnParser;
 use DateTime;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Serializer\Encoder\JsonEncoder;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Symfony\Component\Serializer\Serializer;
 
 class ApiController extends AbstractController
 {
     private $em;
+    private $em2;
     private $myPgnParser;
 
-    public function __construct(EntityManagerInterface $em, MyPgnParser $myPgnParser)
+    public function __construct(private Connection $conn, EntityManagerInterface $em, ManagerRegistry $doctrine, MyPgnParser $myPgnParser)
     {
         $this->em = $em;
         $this->myPgnParser = $myPgnParser;
+        $this->em2 = $doctrine->getManager("evaluations");
     }
 
     #[Route('/api/analyse/test', name: 'app_api_analyse_test')]
@@ -75,23 +81,43 @@ h3 40. Rdd7 Rh5 41. Rxf7+ Kg8 42. Rfe7 Kf8 43. Rxe6 h2 44. Rxa6 h1=Q 45. Ra8#
 
         $pgnText = '[Event "Live Chess"]
 [Site "Chess.com"]
-[Date "2024.03.01"]
+[Date "2024.01.29"]
 [Round "?"]
-[White "avweije"]
-[Black "noobchessplayer0809"]
+[White "pararu123"]
+[Black "avweije"]
 [Result "1-0"]
-[ECO "A40"]
-[WhiteElo "2138"]
-[BlackElo "979"]
-[TimeControl "180"]
-[EndTime "3:19:29 PST"]
-[Termination "avweije won by resignation"]
+[ECO "D06"]
+[WhiteElo "2111"]
+[BlackElo "2023"]
+[TimeControl "600"]
+[EndTime "3:07:30 PST"]
+[Termination "pararu123 won by resignation"]
 
-1. d4 e5 2. c3 exd4 3. cxd4 Nf6 4. Nf3 Nc6 5. Nc3 d6 6. Bf4 Be7 7. e3 O-O 8. Bd3
-Re8 9. O-O Be6 10. d5 Nxd5 11. Nxd5 Bxd5 12. Bxh7+ Kxh7 13. Qxd5 Nb4 14. Qxf7
-Nc2 15. Qf5+ g6 16. Qxc2 c6 17. Bg3 Bf6 18. Rad1 Re6 19. Nd4 Re7 20. Rd2 c5 21.
-Nf3 Qb6 22. b3 Rd8 23. Rfd1 Re6 24. Qc4 Re7 25. Qg4 Be5 26. Bxe5 dxe5 27. Rxd8
-Qxd8 1-0';
+1. d4 Nf6 2. c4 d5 3. cxd5 Qxd5 4. Nc3 Qd8 5. e4 e5 6. dxe5 Qxd1+ 7. Kxd1 Ng4 8.
+Ke2 Bc5 9. Nh3 Nxe5 10. f4 Bg4+ 11. Ke1 Nec6 12. Nf2 Bd7 13. Nd3 Bb6 14. Nd5 O-O
+15. Nxb6 axb6 16. Bd2 Re8 17. e5 f6 18. Kf2 fxe5 19. fxe5 Nxe5 20. Nxe5 Rxe5 21.
+Bc4+ Kh8 22. Rhe1 Rf5+ 23. Kg1 Nc6 24. Bc3 Raf8 25. Rad1 Bc8 26. Re3 b5 27. Bd3
+Rg5 28. Bc2 b4 29. Be1 Bf5 30. Bb3 Bg6 31. Rd7 Rgf5 32. h3 Rf1+ 33. Kh2 Na5 34.
+Bxb4 Be8 35. Rxc7 Bc6 36. Bxf8 Rxf8 37. Bd1 h6 38. Bf3 Rd8 39. Bxc6 bxc6 40.
+Ree7 Rd2 41. Rxg7 Rxb2 42. Rgd7 Rb8 43. Rh7+ Kg8 44. Rxh6 1-0';
+
+        /*
+        $pgnText = '[Event "Live Chess"]
+[Site "Chess.com"]
+[Date "2024.08.18"]
+[Round "?"]
+[White "ValenBik"]
+[Black "avweije"]
+[Result "1-0"]
+[ECO "A84"]
+[WhiteElo "1895"]
+[BlackElo "1039"]
+[TimeControl "60"]
+[EndTime "14:37:35 PDT"]
+[Termination "avweije won by checkmate"]
+
+1. f3 e5 2. g4 Bc5 3. e3 Qh4+ 0-1';
+*/
 
         // parse the game
         $game = $this->myPgnParser->parsePgnFromText($pgnText, true);
@@ -103,10 +129,14 @@ Qxd8 1-0';
         // get the correct username
         $siteUsername = $settings->getSite() == DownloadSite::ChessDotCom ? $settings->getChessUsername() : $settings->getLichessUsername();
 
-        // analyse the game
-        $temp = $this->analyseGame($uci, $game, $siteUsername);
+        $time = time();
 
-        dd($temp);
+        // analyse the game
+        [$temp, $count] = $this->analyseGame($uci, $game, $siteUsername);
+
+        $time = time() - $time;
+
+        dd($temp, $count, $time);
 
         return new JsonResponse();
     }
@@ -142,6 +172,30 @@ Qxd8 1-0';
             $this->em->flush();
 
             $message = "Repertoire autoplay updated.";
+        } else {
+            $message = "Repertoire not found.";
+        }
+
+        return new JsonResponse(["message" => $message]);
+    }
+
+    #[Route('/api/repertoire/exclude', methods: ['POST'], name: 'app_api_repertoire_exclude')]
+    public function apiRepertoireExclude(Request $request): JsonResponse
+    {
+        $data = $request->getPayload()->all();
+
+        $message = "";
+
+        $repo = $this->em->getRepository(Repertoire::class);
+        $rep = $repo->findOneBy(['id' => $data["repertoire"]]);
+        if ($rep) {
+            // update the exclude flag
+            $rep->setExclude($data["exclude"]);
+
+            $this->em->persist($rep);
+            $this->em->flush();
+
+            $message = "Repertoire exclude updated.";
         } else {
             $message = "Repertoire not found.";
         }
@@ -221,7 +275,7 @@ Qxd8 1-0';
 
             $qb = $this->em->createQueryBuilder();
 
-            $query = $qb->delete('App\Entity\RepertoireGroup', 'rg')
+            $query = $qb->delete('App\Entity\Main\RepertoireGroup', 'rg')
                 ->where('rg.Repertoire = :rep AND rg.Grp = :grp')
                 ->setParameter('rep', $data["repertoire"])
                 ->setParameter('grp', $grp->getId())
@@ -234,7 +288,7 @@ Qxd8 1-0';
             if (count($res) == 0) {
                 $qb = $this->em->createQueryBuilder();
 
-                $query = $qb->delete('App\Entity\Group', 'g')
+                $query = $qb->delete('App\Entity\Main\Group', 'g')
                     ->where('g.id = :id')
                     ->setParameter('id', $grp->getId())
                     ->getQuery();
@@ -252,13 +306,80 @@ Qxd8 1-0';
     {
         $data = $request->getPayload()->all();
 
+        // get the FEN without the move numbers
+        //$parts = explode(" ", $data["fen"]);
+        $parts = explode(" ", $data["fen2"]);
+        $fenWithout = join(" ", array_slice($parts, 0, 4));
+
+        $chess = new ChessJs();
+        $chess->load($data["fen"]);
+
+        global $turn;
+        $turn = $chess->turn();
+
+        $evals = [];
+
+        $timers = [];
+        $timers["evals"] = time();
+
+        // get the evaluations for this position
+        $rec = $this->em2->getRepository(Evaluation::class)->findOneBy(["Fen" => $fenWithout]);
+
+        $timers["evals"] = time() - $timers["evals"];
+
+        if ($rec) {
+            //
+            //$chess = new ChessJs();
+
+            $temp = json_decode($rec->getEvals(), true);
+
+            usort($temp, function ($a, $b) {
+                if ($a["depth"] > $b["depth"]) return -1;
+                if ($a["depth"] < $b["depth"]) return 1;
+                return 0;
+            });
+
+            //
+            foreach ($temp as $eval) {
+                foreach ($eval["pvs"] as $pv) {
+
+                    // load the FEN (adding the move counters manually)
+                    $chess->load($fenWithout . " 0 1");
+
+                    // get the moves
+                    $move = explode(" ", $pv["line"]);
+
+                    // get the move details
+                    $fromSquare = substr($move[0], 0, 2);
+                    $toSquare = substr($move[0], 2, 2);
+                    $promotion = strlen($move[0] == 5) ? substr($move[0], 5) : "";
+                    // make the move
+                    $ret = $chess->move(["from" => $fromSquare, "to" => $toSquare, "promotion" => $promotion]);
+                    if ($ret !== null) {
+                        // get the last move
+                        $history = $chess->history(['verbose' => true]);
+                        $last = array_pop($history);
+                        // undo the last move
+                        $chess->undo();
+
+                        // add the evaluation
+                        $evals[] = [
+                            "cp" => isset($pv["cp"]) ? $pv["cp"] : null,
+                            "mate" => isset($pv["mate"]) ? $pv["mate"] : null,
+                            "move" => $last["san"]
+                        ];
+                    }
+                }
+            }
+        }
+
         // get the ECO codes for this position and the next move
         $codes = $this->em->getRepository(ECO::class)->findByPgn($data['pgn']);
 
         // get the most played moves for this position
         $qb = $this->em->createQueryBuilder();
         $qb->select('m')
-            ->from('App\Entity\Moves', 'm')
+            ->from('App\Entity\Main\Moves', 'm')
             ->where('m.Fen = :fen')
             ->orderBy('m.Wins + m.Draws + m.Losses', 'DESC')
             ->setParameter('fen', $data['fen']);
@@ -275,6 +396,8 @@ Qxd8 1-0';
             // add the move
             $games['moves'][] = [
                 'move' => $mov->getMove(),
+                'cp' => null,
+                'mate' => null,
                 'eco' => '',
                 'name' => '',
                 'repertoire' => 0,
@@ -316,6 +439,9 @@ Qxd8 1-0';
         // get the repertoire details, if we've saved it
         $repertoireId = 0;
         $repertoireAutoPlay = false;
+        $repertoireExclude = false;
+        $repertoireIncluded = true;
+
         if ($data['pgn'] != '') {
             $res = $repository->findOneBy([
                 'User' => $this->getUser(),
@@ -326,6 +452,8 @@ Qxd8 1-0';
             if ($res) {
                 $repertoireId = $res->getId();
                 $repertoireAutoPlay = $res->isAutoPlay();
+                //$repertoireExclude = $res->isExclude();
+                //$repertoireIncluded = $repository->isIncluded($res->FenBefore());
                 foreach ($res->getRepertoireGroups() as $grp) {
                     $groups[] = ["id" => $grp->getGrp()->getId(), "name" => $grp->getGrp()->getName()];
                 }
@@ -341,7 +469,19 @@ Qxd8 1-0';
 
         $reps = [];
         foreach ($res as $rep) {
-            $move = ['move' => $rep->getMove(), 'eco' => '', 'name' => ''];
+            $move = [
+                'move' => $rep->getMove(),
+                'cp' => null,
+                'mate' => null,
+                'eco' => '',
+                'name' => '',
+                'percentage' => 0,
+                'total' => 0,
+                'wins' => 0,
+                'draws' => 0,
+                'losses' => 0
+            ];
+
             // find the ECO code for this move
             for ($i = 0; $i < count($codes['next']); $i++) {
                 $temp = explode(' ', $codes['next'][$i]['PGN']);
@@ -349,6 +489,19 @@ Qxd8 1-0';
                     $move['eco'] = $codes['next'][$i]['Code'];
                     $move['name'] = $codes['next'][$i]['Name'];
                     $codes['next'][$i]['repertoire'] = 1;
+                }
+            }
+
+            // find the move totals & percentage
+            for ($i = 0; $i < count($games['moves']); $i++) {
+                if ($games['moves'][$i]['move'] == $rep->getMove()) {
+                    $move['percentage'] = $games['moves'][$i]['percentage'];
+                    $move['total'] = $games['moves'][$i]['total'];
+                    $move['wins'] = $games['moves'][$i]['wins'];
+                    $move['losses'] = $games['moves'][$i]['losses'];
+                    $move['losses'] = $games['moves'][$i]['losses'];
+
+                    break;
                 }
             }
 
@@ -380,7 +533,7 @@ Qxd8 1-0';
             // find the initial starting positions for this color
             $qb = $this->em->createQueryBuilder();
             $qb->select('r')
-                ->from('App\Entity\Repertoire', 'r')
+                ->from('App\Entity\Main\Repertoire', 'r')
                 ->where('r.User = :user AND r.Color = :color AND r.HalfMove = 1 AND r.InitialFen != \'\'')
                 ->orderBy('r.InitialFen', 'ASC')
                 ->setParameter('user', $this->getUser())
@@ -391,14 +544,113 @@ Qxd8 1-0';
             }
         }
 
+        // add the evaluations
+        foreach ($evals as $eval) {
+            $found = false;
+            // check the game moves
+            for ($i = 0; $i < count($games["moves"]); $i++) {
+                if ($eval["move"] == $games["moves"][$i]["move"]) {
+                    $games["moves"][$i]["cp"] = $eval["cp"];
+                    $games["moves"][$i]["mate"] = $eval["mate"];
+                    $found = true;
+                }
+            }
+            // check the repertoire moves
+            for ($i = 0; $i < count($reps); $i++) {
+                if ($eval["move"] == $reps[$i]["move"]) {
+                    $reps[$i]["cp"] = $eval["cp"];
+                    $reps[$i]["mate"] = $eval["mate"];
+                    $found = true;
+                }
+            }
+            // if the engine move is not found
+            if (!$found) {
+                $games['moves'][] = [
+                    'move' => $eval["move"],
+                    'cp' => $eval["cp"],
+                    'mate' => $eval["mate"],
+                    'eco' => '',
+                    'name' => '',
+                    'repertoire' => 0,
+                    'percentage' => 0,
+                    'total' => 0,
+                    'wins' => 0,
+                    'draws' => 0,
+                    'losses' => 0
+                ];
+            }
+        }
+
+        // sort the repertoire moves by percentage / eval
+        usort($reps, function ($a, $b) {
+            global $turn;
+
+            if ($a["percentage"] > $b["percentage"]) return -1;
+            if ($a["percentage"] < $b["percentage"]) return 1;
+
+            if ($a["mate"] !== null && $b["mate"] == null) return -1;
+            if ($a["mate"] == null && $b["mate"] !== null) return 1;
+            if ($a["mate"] !== null && $b["mate"] !== null) {
+                if ($a["mate"] < $b["mate"]) return -1;
+                if ($a["mate"] > $b["mate"]) return 1;
+            }
+
+            if ($a["cp"] > $b["cp"]) return ($turn == "w" ? -1 : 1);
+            if ($a["cp"] < $b["cp"]) return ($turn == "w" ? 1 : -1);
+
+            return 0;
+        });
+
+        // sort the game moves by percentage / eval
+        usort($games['moves'], function ($a, $b) {
+            global $turn;
+
+            if ($a["percentage"] > $b["percentage"]) return -1;
+            if ($a["percentage"] < $b["percentage"]) return 1;
+
+            /*
+            if ($a["mate"] !== null && $b["mate"] == null) {
+                if ($a["mate"] > 0) return ($turn == "w" ? -1 : 1);
+                return ($turn == "w" ? 1 : -1);
+            }
+            if ($a["mate"] == null && $b["mate"] !== null) {
+                if ($a["mate"] > 0) return ($turn == "w" ? -1 : 1);
+                return ($turn == "w" ? -1 : 1);
+            }
+                */
+            if ($a["mate"] !== null && $b["mate"] == null) {
+                if ($a["mate"] > 0) return ($turn == "w" ? -1 : 1);
+                return ($turn == "w" ? 1 : -1);
+            }
+            if ($a["mate"] == null && $b["mate"] !== null) {
+                if ($b["mate"] > 0) return ($turn == "w" ? 1 : -1);
+                return ($turn == "w" ? -1 : 1);
+            }
+            if ($a["mate"] !== null && $b["mate"] !== null) {
+                if ($a["mate"] < $b["mate"]) return ($turn == "w" ? -1 : 1);
+                if ($a["mate"] > $b["mate"]) return ($turn == "w" ? 1 : -1);
+            }
+
+            if ($a["cp"] > $b["cp"]) return ($turn == "w" ? -1 : 1);
+            if ($a["cp"] < $b["cp"]) return ($turn == "w" ? 1 : -1);
+
+            return 0;
+        });
+
         return new JsonResponse([
             'eco' => $codes,
+            'turn' => $turn,
             'games' => $games,
             'repertoire' => $reps,
-            'repertoireId' => $repertoireId,
-            'repertoireAutoPlay' => $repertoireAutoPlay,
+            'current' => [
+                'id' => $repertoireId,
+                'autoplay' => $repertoireAutoPlay,
+                'exclude' => $repertoireExclude,
+                'included' => $repertoireIncluded
+            ],
             'initialFens' => $initialFens,
-            'groups' => $groups
+            'groups' => $groups,
+            'timers' => $timers
         ]);
     }
 
@@ -460,6 +712,9 @@ Qxd8 1-0';
                     $rec->setPracticeFailed($rec->getPracticeFailed() + 1);
                 }
 
+                // update the last used date
+                $rec->setLastUsed(new DateTime('now'));
+
                 // save the record
                 $this->em->persist($rec);
             }
@@ -471,7 +726,7 @@ Qxd8 1-0';
     }
 
     // delete a move and it's children
-    private function deleteRepertoire(string $color, $fenAfter, $move)
+    private function deleteRepertoire(string $color, $fenAfter, $move, $isTop = true)
     {
         $repository = $this->em->getRepository(Repertoire::class);
 
@@ -484,7 +739,7 @@ Qxd8 1-0';
 
         // delete the child moves
         foreach ($res as $rec) {
-            $this->deleteRepertoire($color, $rec->getFenAfter(), $rec->getMove());
+            $this->deleteRepertoire($color, $rec->getFenAfter(), $rec->getMove(), false);
         }
 
         // find this move
@@ -503,8 +758,8 @@ Qxd8 1-0';
             // delete the moves
             $this->em->flush();
 
-            // if this is a black repertoire
-            if ($color == "black") {
+            // remove the preceding move if no sibling moves remaining..
+            if ($isTop) {
                 // find sibling moves
                 $rec = $repository->findBy([
                     'User' => $this->getUser(),
@@ -564,13 +819,15 @@ Qxd8 1-0';
                 $rep->setInitialFen($initialFen);
                 $rep->setFenBefore($move['before']);
                 $rep->setFenAfter($move['after']);
-                $rep->setPgn($move['pgn']);
+                $rep->setPgn(trim($move['pgn']));
                 $rep->setMove($move['san']);
                 $rep->setAutoPlay(isset($move['autoplay']) ? $move['autoplay'] : false);
+                $rep->setExclude(isset($move['exclude']) ? $move['exclude'] : false);
                 $rep->setHalfMove($halfMove);
                 $rep->setPracticeCount(0);
                 $rep->setPracticeFailed(0);
                 $rep->setPracticeInARow(0);
+                //$rep->setLastUsed(new DateTime());
 
                 // tell Doctrine you want to (eventually) save the Product (no queries yet)
                 $this->em->persist($rep);
@@ -594,6 +851,72 @@ Qxd8 1-0';
         return $saved;
     }
 
+    #[Route('/api/settings', methods: ['GET'], name: 'app_api_get_settings')]
+    public function apiGetSettings(Request $request): JsonResponse
+    {
+        // get the settings
+        $user = $this->em->getRepository(User::class)->find($this->getUser());
+        $settings = $user->getSettings();
+
+        //dd($settings, $user);
+
+        if ($settings == null) {
+            // create the settings
+            $settings = new Settings();
+            $settings->setUser($this->getUser());
+            $settings->setAnimation(300);
+
+            // save the settings
+            $this->em->persist($settings);
+            $this->em->flush();
+        }
+
+        return new JsonResponse(["settings" => [
+            "board" => $settings->getBoard(),
+            "pieces" => $settings->getPieces(),
+            "animation" => $settings->getAnimation()
+        ]]);
+    }
+
+    #[Route('/api/settings', methods: ['POST'], name: 'app_api_save_settings')]
+    public function apiSaveSettings(Request $request): JsonResponse
+    {
+        // get the payload
+        $payload = $request->getPayload()->all();
+
+        // get the settings
+        $user = $this->em->getRepository(User::class)->find($this->getUser());
+        $settings = $user->getSettings();
+
+        if ($settings == null) {
+            // create the settings
+            $settings = new Settings();
+            $settings->setUser($this->getUser());
+            $settings->setAnimation(300);
+        }
+
+        // update all the settings
+        foreach ($payload["settings"] as $key => $value) {
+            switch ($key) {
+                case "board":
+                    $settings->setBoard($value);
+                    break;
+                case "pieces":
+                    $settings->setPieces($value);
+                    break;
+                case "animation":
+                    $settings->setAnimation($value);
+                    break;
+            }
+        }
+
+        // save the settings
+        $this->em->persist($settings);
+        $this->em->flush();
+
+        return new JsonResponse(["message" => "Settings updated."]);
+    }
+
     #[Route('/api/download/settings', methods: ['GET'], name: 'app_api_download_settings')]
     public function apiDownloaddSettings(Request $request): JsonResponse
     {
@@ -605,6 +928,7 @@ Qxd8 1-0';
             // create the settings
             $settings = new Settings();
             $settings->setUser($this->getUser());
+            $settings->setAnimation(300);
 
             // save the settings
             $this->em->persist($settings);
@@ -629,6 +953,7 @@ Qxd8 1-0';
             // create the settings
             $settings = new Settings();
             $settings->setUser($this->getUser());
+            $settings->setAnimation(300);
         }
 
         // get the site
@@ -661,12 +986,28 @@ Qxd8 1-0';
     #[Route('/api/download/games/{year}/{month}', methods: ['GET'], name: 'app_api_download_games')]
     public function apiDownloadGames(Request $request, $year, $month): JsonResponse
     {
-        $downloader = new GameDownloader($this->em, $this->getUser());
+        // get the settings
+        $user = $this->em->getRepository(User::class)->find($this->getUser());
+        $settings = $user->getSettings();
 
-        //$archives = $downloader->downloadArchives();
+        // get the repository
+        $repository = $this->em->getRepository(Downloads::class);
 
-        //$games = $downloader->xxdownloadGames($year, $month);
-        $games = $downloader->getGames($year, $month);
+        // find the download record
+        $rec = $repository->findOneBy([
+            'User' => $this->getUser(),
+            'Site' => $settings->getSite(),
+            'Year' => $year,
+            'Month' => $month
+        ]);
+
+        // if we already completed this download
+        if ($rec && $rec->getStatus() == DownloadStatus::Completed) {
+            $games = [];
+        } else {
+            $downloader = new GameDownloader($this->em, $this->getUser());
+            $games = $downloader->getGames($year, $month);
+        }
 
         // set the JSON response
         //$resp = ['games' => $downloader->xxgetTotals()];
@@ -838,7 +1179,7 @@ Qxd8 1-0';
                 $game = $this->myPgnParser->parsePgnFromText($games[$i]["pgn"], true);
 
                 // analyse the game
-                $temp = $this->analyseGame($uci, $game, $siteUsername);
+                [$temp, $count] = $this->analyseGame($uci, $game, $siteUsername);
 
                 // if there are any mistakes
                 if (count($temp) > 0) {
@@ -866,7 +1207,7 @@ Qxd8 1-0';
                         $rc->setType($mistake["type"]);
                         $rc->setInitialFen($initialFen);
                         $rc->setFen($mistake["fen"]);
-                        $rc->setPgn($mistake["line"]["pgn"]);
+                        $rc->setPgn(trim($mistake["line"]["pgn"]));
                         $rc->setMove($mistake["move"]);
 
                         /*
@@ -949,7 +1290,7 @@ Qxd8 1-0';
         $qb = $this->em->createQueryBuilder();
 
         // delete the analysis for this user, fen & move
-        $query = $qb->delete('App\Entity\Analysis', 'a')
+        $query = $qb->delete('App\Entity\Main\Analysis', 'a')
             ->where('a.User = :user AND a.Fen = :fen AND a.Move = :move')
             ->setParameter('user', $this->getUser())
             ->setParameter('fen', $data["fen"])
@@ -1028,11 +1369,48 @@ Qxd8 1-0';
     #[Route('/api/practice', methods: ['GET'], name: 'app_api_practice')]
     public function apiPractice(Request $request): JsonResponse
     {
-        // get the repertoire repository
-        $repository = $this->em->getRepository(Repertoire::class);
-
         // get the saved repository moves for this user
+        $repository = $this->em->getRepository(Repertoire::class);
         $res = $repository->findBy(['User' => $this->getUser()], ['HalfMove' => 'ASC']);
+
+        $ecoRepo = $this->em->getRepository(ECO::class);
+        /*
+        $user = $this->em->getRepository(User::class)->find($this->getUser());
+        //
+        $sql = 'SELECT rep.*, eco.code, eco.name FROM repertoire rep 
+        LEFT JOIN eco eco ON eco.pgn = rep.pgn 
+        WHERE rep.user_id = :user 
+        ORDER BY half_move';
+        //
+        $stmtReps = $this->conn->prepare($sql);
+        $stmtReps->bindValue('user', $user->getId());
+        //
+        $res = $stmtReps->executeQuery()->fetchAllAssociative();
+
+        dd($sql, $user, $res);
+
+        //
+        $sql = 'SELECT * FROM repertoire_groups WHERE repertoire_id = :repertoire';
+        $stmtRepGrps = $this->conn->prepare($sql);
+        $stmtRepGrps->bindValue('repertoire', $res["id"]);
+        //
+        $res = $stmtRepGrps->executeQuery()->fetchAllAssociative();
+        */
+
+        /*
+        $qb = $this->em->createQueryBuilder();
+        $qb->select('rep')
+            ->addSelect('eco')
+            ->from('App\Entity\Main\Repertoire', 'rep')
+            ->leftJoin('App\Entity\Main\ECO', 'eco', 'WITH', 'eco.PGN = rep.Pgn')
+            ->where('rep.User = :user')
+            ->orderBy('rep.HalfMove', 'ASC')
+            ->setParameter('user', $this->getUser());
+
+        $res = $qb->getQuery()->getResult();
+        */
+
+        //dd($res);
 
         // the lines
         /*
@@ -1047,6 +1425,20 @@ Qxd8 1-0';
 
         // find the 1st moves
         foreach ($res as $rep) {
+            //for ($resIdx = 0; $resIdx < count($res); $resIdx = $resIdx + 2) {
+
+            //print "$resIdx--";
+
+            //$rep = $res[$resIdx];
+            //$repEco = $res[$resIdx + 1];
+
+            //dd($rep, $repEco);
+
+            // skip if this move is excluded
+            //if ($rep->isExclude() == false) {
+            //    continue;
+            //}
+
             // if this is a 1st move
             if ($rep->getHalfMove() == 1) {
                 /*
@@ -1067,9 +1459,13 @@ Qxd8 1-0';
                 }
 
                 if ($idx >= count($lines)) {
+                    // get the ECO code
+                    //$eco = $ecoRepo->findCode($rep->getPgn());
+
                     $lines[] = [
                         'color' => $rep->getColor(),
                         'initialFen' => $rep->getInitialFen(),
+                        //'eco' => $eco,
                         'before' => $rep->getFenBefore(),
                         'after' => $rep->getFenBefore(),
                         'new' => 1,
@@ -1086,19 +1482,23 @@ Qxd8 1-0';
                 $lines[1]['after'] = $rep->getFenBefore();
                 */
 
+                // get the ECO code
+                //$eco = $ecoRepo->findCode($rep->getPgn());
+
                 // add the move
                 //$lines[($rep->getColor() == 'white' ? 0 : 1)]['moves'][] = [
                 $lines[$idx]['moves'][] = [
                     'color' => $rep->getColor(),
                     'initialFen' => $rep->getInitialFen(),
                     'move' => $rep->getMove(),
+                    //'eco' => $eco,
                     'autoplay' => $rep->isAutoPlay(),
                     'halfmove' => $rep->getHalfMove(),
                     'before' => $rep->getFenBefore(),
                     'after' => $rep->getFenAfter(),
                     'new' => $rep->getPracticeCount() == 0 ? 1 : 0,
                     'failPercentage' => $rep->getPracticeCount() < 5 ? 1 : $rep->getPracticeFailed() / $rep->getPracticeCount(),
-                    'recommended' => $this->isRecommended($rep->getPracticeCount(), $rep->getPracticeFailed(), $rep->getPracticeInARow()) ? 1 : 0,
+                    'recommended' => $this->isRecommended($rep->getPracticeCount(), $rep->getPracticeFailed(), $rep->getPracticeInARow(), $rep->getLastUsed()) ? 1 : 0,
                     'practiceCount' => $rep->getPracticeCount(),
                     'practiceFailed' => $rep->getPracticeFailed(),
                     'practiceInARow' => $rep->getPracticeInARow(),
@@ -1134,17 +1534,18 @@ Qxd8 1-0';
                     'color' => $rep->getColor(),
                     'initialFen' => $rep->getInitialFen(),
                     'move' => $rep->getMove(),
+                    //'eco' => ['code' => 'A00', 'name' => 'The Cow System'],
                     'autoplay' => $rep->isAutoPlay(),
                     'halfmove' => $rep->getHalfMove(),
                     'before' => $rep->getFenBefore(),
                     'after' => $rep->getFenAfter(),
                     'new' => $rep->getPracticeCount() == 0 ? 1 : 0,
                     'failPercentage' => $rep->getPracticeCount() < 5 ? 1 : $rep->getPracticeFailed() / $rep->getPracticeCount(),
-                    'recommended' => $this->isRecommended($rep->getPracticeCount(), $rep->getPracticeFailed(), $rep->getPracticeInARow()) ? 1 : 0,
+                    'recommended' => $this->isRecommended($rep->getPracticeCount(), $rep->getPracticeFailed(), $rep->getPracticeInARow(), $rep->getLastUsed()) ? 1 : 0,
                     'practiceCount' => $rep->getPracticeCount(),
                     'practiceFailed' => $rep->getPracticeFailed(),
                     'practiceInARow' => $rep->getPracticeInARow(),
-                    'line' => [],
+                    'line' => $this->getLineBefore($rep, $res),
                     'moves' => []
                 ];
             }
@@ -1173,6 +1574,7 @@ Qxd8 1-0';
                     $lines[$i]['multiple'][] = [
                         "move" => $move['move'],
                         "cp" => isset($move['cp']) ? $move['cp'] : null,
+                        "mate" => isset($move['mate']) ? $move['mate'] : null,
                         "pv" => isset($move['line']) ? $move['line'] : null
                     ];
                 }
@@ -1200,11 +1602,15 @@ Qxd8 1-0';
                         $groups[$i]["lines"][$x]['multiple'][] = [
                             "move" => $move['move'],
                             "cp" => isset($move['cp']) ? $move['cp'] : null,
+                            "mate" => isset($move['mate']) ? $move['mate'] : null,
                             "pv" => isset($move['line']) ? $move['line'] : null
                         ];
                     }
                 }
             }
+
+            //
+            //$resp['recommended'] = $this->findLines($lines, '', false, true);
 
             // group the lines per starting position / color
             $groups[$i]["lines"] = $this->groupByPosition($groups[$i]["lines"], $lines);
@@ -1214,8 +1620,27 @@ Qxd8 1-0';
 
         //dd($lines[2]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]);
 
+        $ecoResult = $this->em->getRepository(ECO::class)->findAll();
+
+        $encoders = [new JsonEncoder()];
+        $normalizers = [new ObjectNormalizer()];
+
+        $serializer = new Serializer($normalizers, $encoders);
+
+        //dd($serializer->normalize($ecoResult[0], 'json'));
+
+        $jsonEco = $serializer->serialize($ecoResult, 'json');
+
         // the response
-        $resp = ['white' => [], 'black' => [], 'new' => [], 'recommended' => [], "analysis" => [], "groups" => $groups];
+        $resp = [
+            'white' => [],
+            'black' => [],
+            'new' => [],
+            'recommended' => [],
+            "analysis" => [],
+            "groups" => $groups,
+            "eco" => json_decode($jsonEco)
+        ];
 
         // if we have a repertoire
         if (count($lines) > 0) {
@@ -1228,20 +1653,12 @@ Qxd8 1-0';
             // find the recommended lines
             $resp['recommended'] = $this->findLines($lines, '', false, true);
 
-            //dd($resp['recommended']);
-
-            //dd($lines);
-
-            //dd($resp['white'][1]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]);
-
             // group the lines per starting position / color
             $resp['white'] = $this->groupByPosition($resp['white'], $lines);
             $resp['black'] = $this->groupByPosition($resp['black'], $lines);
             $resp['new'] = $this->groupByPosition($resp['new'], $lines);
             $resp['recommended'] = $this->groupByPosition($resp['recommended'], $lines);
         }
-
-        //dd($resp['white']);
 
         // get the analysis repository
         $repository = $this->em->getRepository(Analysis::class);
@@ -1251,17 +1668,18 @@ Qxd8 1-0';
         foreach ($res as $rec) {
             $moves = [];
             $multiple = [];
-
             // get the best moves json (new)
             $json = json_decode($rec->getBestMoves(), true);
             if ($json == null) {
                 // get the best moves array (old)
                 $bm = explode(" ", $rec->getBestMoves());
+                //dd($rec->getBestMoves());
                 foreach ($bm as $move) {
                     $moves[] = ["move" => $move];
                     $multiple[] = [
                         "move" => $move,
                         "cp" => null,
+                        "mate" => null,
                         "pv" => null
                     ];
                 }
@@ -1269,12 +1687,14 @@ Qxd8 1-0';
                 foreach ($json as $move) {
                     $moves[] = [
                         "move" => $move["san"],
-                        "cp" => $move["cp"],
+                        "cp" => isset($move['cp']) ? $move['cp'] : null,
+                        "mate" => isset($move['mate']) ? $move['mate'] : null,
                         "pv" => $move["line"]
                     ];
                     $multiple[] = [
                         "move" => $move['san'],
                         "cp" => isset($move['cp']) ? $move['cp'] : null,
+                        "mate" => isset($move['mate']) ? $move['mate'] : null,
                         "pv" => isset($move['line']) ? $move['line'] : null
                     ];
                 }
@@ -1333,6 +1753,40 @@ Qxd8 1-0';
         });
 
         return new JsonResponse($resp);
+    }
+
+    // get the line before a certain repertoire move
+    private function getLineBefore($rep, $res)
+    {
+        // get the halfmove before this one
+        $halfMove = $rep->getHalfMove() - 1;
+        $fenBefore = $rep->getFenBefore();
+
+        if ($halfMove == 0) {
+            return [];
+        }
+
+        $line = [];
+
+        for ($i = 0; $i < count($res); $i++) {
+            if ($res[$i]->getHalfMove() == $halfMove && $res[$i]->getFenAfter() == $fenBefore) {
+                array_unshift($line, $res[$i]->getMove());
+
+                $halfMove--;
+                $fenBefore = $res[$i]->getFenBefore();
+
+                if ($halfMove == 0) {
+                    break;
+                }
+
+                // reset the loop
+                $i = -1;
+
+                continue;
+            }
+        }
+
+        return $line;
     }
 
     // find a position inside a line
@@ -1404,15 +1858,31 @@ Qxd8 1-0';
                 $temp[] = [
                     'color' => $line['color'],
                     'initialFen' => isset($line['initialFen']) ? $line['initialFen'] : '',
+                    //'eco' => isset($line['eco']) ? $line['eco'] : null,
                     'fen' => $line['before'],
                     'line' => isset($line['line']) ? $line['line'] : [],
+                    //'moves' => $line['before'] == $line['after'] ? $line['moves'] : [$line],
                     'moves' => $line['before'] == $line['after'] ? $line['moves'] : [$line],
                     'multiple' => $multiple,
-                    'multiple_old' => $line['before'] == $line['after'] ? $line['multiple'] : [$line['move']]
+                    'multiple_old' => $line['before'] == $line['after'] ? $line['multiple'] : [$line['move']],
+                    'practiceCount' => isset($line['practiceCount']) ? $line['practiceCount'] : 0,
+                    'practiceFailed' => isset($line['practiceFailed']) ? $line['practiceFailed'] : 0,
+                    'practiceInARow' => isset($line['practiceInARow']) ? $line['practiceInARow'] : 0
                 ];
             } else {
-                $temp[$idx]['moves'][] = $line;
-                $temp[$idx]['multiple_old'][] = $line['move'];
+                // make sure the move doesn't exist already (through transposition)
+                $found = false;
+                foreach ($temp[$idx]['moves'] as $move) {
+                    if ($move['move'] == $line['move']) {
+                        $found = true;
+                        break;
+                    }
+                }
+                // add it if not found
+                if (!$found) {
+                    $temp[$idx]['moves'][] = $line;
+                    $temp[$idx]['multiple_old'][] = $line['move'];
+                }
                 //$temp[$idx]['multiple'] = $line['multiple'];
                 //$temp[$idx]['multiplex'] = $line['multiple'];
             }
@@ -1421,33 +1891,60 @@ Qxd8 1-0';
         return $temp;
     }
 
-    private function isRecommended(int $practiceCount, int $practiceFailed, int $practiceInARow): bool
+    private function isRecommended(int $practiceCount, int $practiceFailed, int $practiceInARow, ?\DateTimeInterface $lastUsed): bool
     {
         // get the fail percentage
-        $failPct = $practiceCount < 5 ? 1 : $practiceFailed / $practiceCount;
+        $failPercentage = $practiceCount == 0 ? 0 : max($practiceFailed / $practiceCount, 1);
 
-        return $practiceCount == 0 ? false : $practiceInARow < $failPct * 20;
+        // 3 in a row is enough if the fail percentage is low enough, up to 5 in a row for high fail percentage
+        $inARowNeeded = max(3, 3 + round($failPercentage / .5));
+
+        // if the fail percentage is low, recommend after 8 weeks, up to 2 weeks for high fail percentage
+        $daysNeeded = 7 * max(8 - (8 * $failPercentage), 2);
+
+        $daysSince = 999;
+        if ($lastUsed !== null) {
+            $now = new DateTime();
+            $daysSince = $now->diff($lastUsed)->format("%a");
+        }
+
+        // if never practiced, recommended = false
+        // if practice in a row less than required (3-5) or based on last used and fail percentage
+        return $practiceCount == 0 ? false : ($practiceInARow < $inARowNeeded) || ($daysSince >= $daysNeeded);
     }
 
     // get the complete lines for a certain color and starting position
     private function getLines(string $color, string $fen, array $res, $lineMoves = [], int $step = 1): array
     {
+        $ecoRepo = $this->em->getRepository(ECO::class);
+
         $moves = [];
 
         // find the follow up moves for a certain color and position
         foreach ($res as $rep) {
+            //for ($resIdx = 0; $resIdx < count($res); $resIdx += 2) {
+
+            //$rep = $res[$resIdx];
+            //$repEco = $res[$resIdx + 1];
+
+            // if not excluded and a match
+            //if ($rep->isExclude() == false && $rep->getColor() == $color && $rep->getFenBefore() == $fen) {
             if ($rep->getColor() == $color && $rep->getFenBefore() == $fen) {
+                // get the ECO code
+                //$eco = $ecoRepo->findCode($rep->getPgn());
+
                 $moves[] = [
                     'color' => $color,
                     'initialFen' => $rep->getInitialFen(),
                     'move' => $rep->getMove(),
+                    //'eco' => $eco,
                     'autoplay' => $rep->isAutoPlay(),
                     'halfmove' => $rep->getHalfMove(),
                     'before' => $rep->getFenBefore(),
                     'after' => $rep->getFenAfter(),
                     'new' => $rep->getPracticeCount() == 0 ? 1 : 0,
                     'failPercentage' => $rep->getPracticeCount() < 5 ? 1 : $rep->getPracticeFailed() / $rep->getPracticeCount(),
-                    'recommended' => $this->isRecommended($rep->getPracticeCount(), $rep->getPracticeFailed(), $rep->getPracticeInARow()) ? 1 : 0,
+                    'recommended' => $this->isRecommended($rep->getPracticeCount(), $rep->getPracticeFailed(), $rep->getPracticeInARow(), $rep->getLastUsed()) ? 1 : 0,
                     'practiceCount' => $rep->getPracticeCount(),
                     'practiceFailed' => $rep->getPracticeFailed(),
                     'practiceInARow' => $rep->getPracticeInARow(),
@@ -1475,6 +1972,7 @@ Qxd8 1-0';
                         $moves[$i]['multiple'][] = [
                             "move" => $move['move'],
                             "cp" => isset($move['cp']) ? $move['cp'] : null,
+                            "mate" => isset($move['mate']) ? $move['mate'] : null,
                             "line" => isset($move['line']) ? $move['line'] : null
                         ];
                     }
@@ -1486,7 +1984,7 @@ Qxd8 1-0';
     }
 
     // find the lines of a certain type
-    private function findLines(array $lines, string $color = "", bool $isNew = false, bool $isRecommended = false, string $rootColor = "", int $level = 1): array
+    private function findLines(array $lines, string $color = "", bool $isNew = false, bool $isRecommended = false, string $rootColor = "", int $level = 1, $rootVariation = null): array
     {
         $res = [];
 
@@ -1508,6 +2006,7 @@ Qxd8 1-0';
             if ($ourMove && $color != "" && $line['color'] == $color) {
                 // add to the lines
                 $res[] = $line;
+                //$res[] = $isRecommended && $rootVariation !== null ? $rootVariation : $line;
 
                 continue;
             }
@@ -1515,6 +2014,7 @@ Qxd8 1-0';
             if ($ourMove && $isNew && $line['new'] == 1 && (!isset($line['autoplay']) || !$line['autoplay'])) {
                 // add to the lines
                 $res[] = $line;
+                //$res[] = $isRecommended && $rootVariation !== null ? $rootVariation : $line;
 
                 continue;
             }
@@ -1525,12 +2025,16 @@ Qxd8 1-0';
 
                 // add to the lines
                 $res[] = $line;
+                //$res[] = $isRecommended && $rootVariation !== null ? $rootVariation : $line;
 
                 continue;
             }
 
+            // set the root of the variation
+            $rootVariation = $rootVariation == null || count($line['moves']) > 1 ? $line : $rootVariation;
+
             // check this line to see if any child moves match the criteria
-            $temp = $this->findLines($line['moves'], $color, $isNew, $isRecommended, $line['color'], $level + 1);
+            $temp = $this->findLines($line['moves'], $color, $isNew, $isRecommended, $line['color'], $level + 1, $rootVariation);
 
             //
             // TEMP: testing for recommended - we need the move before in case of multiple!!
@@ -1545,6 +2049,7 @@ Qxd8 1-0';
 
             foreach ($temp as $t) {
                 $res[] = $t;
+                //$res[] = $rootVariation;
             }
         }
 
@@ -1568,8 +2073,6 @@ Qxd8 1-0';
                 }
             }
 
-            //dd($parts);
-
             $linesUntil = [];
 
             // get the line until
@@ -1590,7 +2093,7 @@ Qxd8 1-0';
     }
 
     // split the line into parts that match
-    private function splitLine($line, string $color = "", bool $isNew = false, bool $isRecommended = false, bool $match = true, $level = 1): array
+    private function splitLine($line, string $color = "", bool $isNew = false, bool $isRecommended = false, bool $match = true, $level = 1, $rootVariation = null): array
     {
         $parts = [];
 
@@ -1602,6 +2105,8 @@ Qxd8 1-0';
         //print "level: $level - ourMove: " . $ourMove . "<br>";
         //}
 
+        $rootVariation = $rootVariation == null || count($line['moves']) > 1 ? $line : $rootVariation;
+
         foreach ($line['moves'] as $move) {
             $temp = [];
 
@@ -1612,19 +2117,20 @@ Qxd8 1-0';
                 // if this move matches also
                 if (!$ourMove || ($color != '' && $move['color'] == $color) || ($isNew && $move['new'] == 1 && !$autoplay) || ($isRecommended && $move['recommended'] == 1 && !$autoplay)) {
                     // check next move for a non-match
-                    $temp = $this->splitLine($move, $color, $isNew, $isRecommended, true, $level + 1);
+                    $temp = $this->splitLine($move, $color, $isNew, $isRecommended, true, $level + 1, $rootVariation);
                 } else {
                     // check next move for match
-                    $temp = $this->splitLine($move, $color, $isNew, $isRecommended, false, $level + 1);
+                    $temp = $this->splitLine($move, $color, $isNew, $isRecommended, false, $level + 1, $rootVariation);
                 }
             } else {
                 // if this move matches
                 if ($ourMove && (($color != '' && $move['color'] == $color) || ($isNew && $move['new'] == 1 && !$autoplay) || ($isRecommended && $move['recommended'] == 1 && !$autoplay))) {
                     // add this this line as a part
                     $parts[] = $move;
+                    //$parts[] = $isRecommended ? $rootVariation : $move;
                 } else {
                     // check next move for match
-                    $temp = $this->splitLine($move, $color, $isNew, $isRecommended, false, $level + 1);
+                    $temp = $this->splitLine($move, $color, $isNew, $isRecommended, false, $level + 1, $rootVariation);
                 }
             }
 
@@ -1635,7 +2141,7 @@ Qxd8 1-0';
     }
 
     // get the line until the criteria doesn't match anymore
-    private function getLineUntil(array $moves, string $color = '', bool $isNew = false, bool $isRecommended = false, $level = 1): array
+    private function getLineUntil(array $moves, string $color = '', bool $isNew = false, bool $isRecommended = false, $level = 1, $match = false): array
     {
         $line = [];
 
@@ -1656,34 +2162,32 @@ Qxd8 1-0';
 
             $autoplay = isset($move['autoplay']) ? $move['autoplay'] : false;
 
+            $isMatch = (($color != '' && $move['color'] == $color) || ($isNew && $move['new'] == 1 && !$autoplay) || ($isRecommended && $move['recommended'] == 1 && !$autoplay));
+
             // if this move matches the criteria
-            if (!$ourMove || (($color != '' && $move['color'] == $color) || ($isNew && $move['new'] == 1 && !$autoplay) || ($isRecommended && $move['recommended'] == 1 && !$autoplay))) {
+            if (!$ourMove || $isMatch) {
+
+                $match = $isMatch;
+
                 // get the rest of the line
-                $temp = $this->getLineUntil($move['moves'], $color, $isNew, $isRecommended, $level + 1);
+                $temp = $this->getLineUntil($move['moves'], $color, $isNew, $isRecommended, $level + 1, $match);
 
                 // add this move if its our move or there are child moves
                 if ($ourMove || count($temp) > 0) {
-
-                    //print "- adding..<br>";
-
                     // add to the lines
                     $line[] = [
                         'initialFen' => isset($move['initialFen']) ? $move['initialFen'] : "",
                         'move' => $move['move'],
                         'autoplay' => isset($move['autoplay']) ? $move['autoplay'] : false,
+                        'new' => isset($move['new']) ? $move['new'] : 0,
+                        'recommended' => isset($move['recommended']) ? $move['recommended'] : 0,
                         'moves' => $temp,
-                        'multiple' => $move['multiple']
+                        'multiple' => $move['multiple'],
+                        'practiceCount' => isset($move['practiceCount']) ? $move['practiceCount'] : 0,
+                        'practiceFailed' => isset($move['practiceFailed']) ? $move['practiceFailed'] : 0,
+                        'practiceInARow' => isset($move['practiceInARow']) ? $move['practiceInARow'] : 0
                     ];
-                } else {
-
-                    //print "Not added:<br>";
-                    //print_r($temp);
-                    //print "<br><br>";
-                    //dd($temp);
                 }
-            } else {
-
-                //print "- no match..<br>";
             }
         }
 
@@ -1707,6 +2211,7 @@ Qxd8 1-0';
         $halfMove = 1;
         $linePgn = "";
         $lineMoves = [];
+        $count = ["evaluation" => 0, "engine" => 0];
 
         // reset the game
         $chess->reset();
@@ -1741,16 +2246,27 @@ Qxd8 1-0';
             //}
         } else {
             // set the initial position and get the best moves from the engine
-            $bestMoves = $uci->setPosition($fen);
+            $bestMoves = $this->getEvaluationBestMoves($chess->fen(), 3);
+            if ($bestMoves == null) {
+                $bestMoves = $uci->setPosition($fen);
+
+                $count["engine"]++;
+            } else {
+                $count["evaluation"]++;
+            }
         }
 
         // get the current best move
         $bestCp = $bestMoves[0]["cp"];
+        $bestMate = $bestMoves[0]["mate"];
+
         // white to move
         $whiteToMove = true;
 
         // need to change this to user setting?
         $analyseForBlack = $game->getBlack() == $siteUsername;
+
+        //print "Analyse for black (" . $game->getBlack() . " / " . $siteUsername . ") = " . ($analyseForBlack ? "Yes" : "No") . "\n";
 
         // get the ignore list repo
         $repo = $this->em->getRepository(IgnoreList::class);
@@ -1759,17 +2275,22 @@ Qxd8 1-0';
         //print "Analysing for: " . ($analyseForBlack ? "Black" : "White") . "<br>";
 
         // get the intial win percentage
-        $prevWinPct = (50 + 50 * (2 / (1 + exp(-0.00368208 * $bestCp)) - 1));
-        $accuracy = [];
-        $mistakes = [];
+        if ($bestMate !== null) {
+            $prevWinPct = 100;
+        } else {
+            $prevWinPct = (50 + 50 * (2 / (1 + exp(-0.00368208 * $bestCp)) - 1));
+            $accuracy = [];
+            $mistakes = [];
+        }
 
         // need to add this to settings?
         $includeInnacuracies = true;
 
         // stop analysing when we exceed the limit
+        $maxMoves = 15; // 15
         $mistakesTotal = 0;
-        $mistakesLimit = 10;
-        $mistakesPoints = ["inaccuracy" => 1, "mistake" => 2, "blunder" => 3];
+        $mistakesLimit = 9;
+        $mistakesPoints = ["inaccuracy" => 1.5, "mistake" => 2, "blunder" => 3];
 
         foreach ($uciMoves as $move) {
             // add the UCI move
@@ -1778,6 +2299,8 @@ Qxd8 1-0';
             $fenBefore = $chess->fen();
             // remember the best moves for this move
             $bestMovesBefore = [...$bestMoves];
+
+            //print "Move: " . $move["san"] . "<br>";
 
             // play the move
             $ret = $chess->move($move["san"]);
@@ -1820,36 +2343,61 @@ Qxd8 1-0';
             } else {
                 // set the position and get the best moves from the engine
                 //$bestMoves = $uci->setPosition("", $moves);
-                $bestMoves = $uci->setPosition($fen, $moves);
+                $bestMoves = $this->getEvaluationBestMoves($chess->fen(), 3);
+                if ($bestMoves == null) {
+                    $bestMoves = $uci->setPosition($fen, $moves);
+
+                    $count["engine"]++;
+                    //print "--engine<br>";
+                } else {
+                    $count["evaluation"]++;
+                    //print "--eval<br>";
+                }
 
                 // if these evals are for a black move
                 if ($whiteToMove) {
                     // uno reverse the cp value
                     for ($i = 0; $i < count($bestMoves); $i++) {
-                        $bestMoves[$i]["cp"] = $bestMoves[$i]["cp"] * -1;
+                        if ($bestMoves[$i]["cp"] !== null) {
+                            $bestMoves[$i]["cp"] = $bestMoves[$i]["cp"] * -1;
+                        }
                     }
                 }
             }
 
             $whiteToMove = !$whiteToMove;
 
+            //print "-- bestMoves:\n";
+            //print "<pre>";
+            //print_r($bestMoves);
+            //print "</pre>";
+
             // get the current best move centipawn value
             $moveCp = $bestMoves[0]["cp"];
+            $moveMate = $bestMoves[0]["mate"];
+
+            //print "CP: $moveCp<br>";
 
             // if we need to check the CP loss
             if ((!$whiteToMove && !$analyseForBlack) || ($whiteToMove && $analyseForBlack)) {
 
                 // not using the centipawn for now, but keep it in..
+                /*
                 if ($analyseForBlack) {
                     $cpLoss = $bestCp < $moveCp ? max(0, abs($bestCp - $moveCp)) : 0;
                 } else {
                     $cpLoss = $bestCp > $moveCp ? max(0, abs($bestCp - $moveCp)) : 0;
                 }
+                    */
 
                 // get the current win percentage
-                $winPct = (50 + 50 * (2 / (1 + exp(-0.00368208 * $moveCp)) - 1));
-                if ($analyseForBlack) {
-                    $winPct = 100 - $winPct;
+                if ($moveMate !== null) {
+                    $winPct = 100;
+                } else {
+                    $winPct = (50 + 50 * (2 / (1 + exp(-0.00368208 * $moveCp)) - 1));
+                    if ($analyseForBlack) {
+                        $winPct = 100 - $winPct;
+                    }
                 }
 
                 // calculate the percentage loss for this move
@@ -1860,7 +2408,13 @@ Qxd8 1-0';
                 $accuracy[] = $acc;
 
                 // set the mistake array
-                $mistake = ["move" => $move["san"], "type" => "", "bestmoves" => [], "fen" => $fenBefore, "line" => ["pgn" => $linePgn, "moves" => $lineMoves]];
+                $mistake = [
+                    "move" => $move["san"],
+                    "type" => "",
+                    "bestmoves" => [],
+                    "fen" => $fenBefore,
+                    "line" => ["pgn" => $linePgn, "moves" => $lineMoves]
+                ];
 
                 /*
 
@@ -1903,7 +2457,37 @@ Qxd8 1-0';
                     // undo the current move so we can test the best moves
                     $chess->undo();
 
+                    // make sure the best moves are sorted according to color
+                    if ($analyseForBlack) {
+                        usort($bestMovesBefore, function ($a, $b) {
+                            if ($a["mate"] !== null && $b["mate"] == null) return -1;
+                            if ($a["mate"] == null && $b["mate"] !== null) return 1;
+                            if ($a["mate"] !== null && $b["mate"] !== null) {
+                                if ($a["mate"] < $b["mate"]) return -1;
+                                if ($a["mate"] > $b["mate"]) return 1;
+                            }
+                            if ($a["cp"] > $b["cp"]) return 1;
+                            if ($a["cp"] < $b["cp"]) return -1;
+                            return 0;
+                        });
+                    } else {
+                        usort($bestMovesBefore, function ($a, $b) {
+                            if ($a["mate"] !== null && $b["mate"] == null) return -1;
+                            if ($a["mate"] == null && $b["mate"] !== null) return 1;
+                            if ($a["mate"] !== null && $b["mate"] !== null) {
+                                if ($a["mate"] < $b["mate"]) return -1;
+                                if ($a["mate"] > $b["mate"]) return 1;
+                            }
+                            if ($a["cp"] > $b["cp"]) return -1;
+                            if ($a["cp"] < $b["cp"]) return 1;
+                            return 0;
+                        });
+                    }
+
                     foreach ($bestMovesBefore as $bm) {
+
+                        //print "BestMove: " . $bm["move"] . "<br>";
+
                         // get the move details
                         $fromSquare = substr($bm["move"], 0, 2);
                         $toSquare = substr($bm["move"], 2, 2);
@@ -1912,7 +2496,9 @@ Qxd8 1-0';
                         $ret = $chess->move(["from" => $fromSquare, "to" => $toSquare, "promotion" => $promotion]);
                         if ($ret == null) {
 
-                            //print "Invalid move: " . $bm['move'] . "<br>";
+                            print "Invalid move: " . $bm['move'] . "<br>";
+
+                            dd($chess->fen(), $chess->history(), $moves);
 
                             // invalid move.. ? do something.. ?
 
@@ -1945,9 +2531,13 @@ Qxd8 1-0';
                             // if this is not the 1st best move
                             if (count($mistake["bestmoves"]) > 0) {
                                 // calculate the win percentage for this move
-                                $moveWinPct = (50 + 50 * (2 / (1 + exp(-0.00368208 * $bm["cp"])) - 1));
-                                if ($analyseForBlack) {
-                                    $moveWinPct = 100 - $moveWinPct;
+                                if ($bm["mate"] !== null) {
+                                    $moveWinPct = 100;
+                                } else {
+                                    $moveWinPct = (50 + 50 * (2 / (1 + exp(-0.00368208 * $bm["cp"])) - 1));
+                                    if ($analyseForBlack) {
+                                        $moveWinPct = 100 - $moveWinPct;
+                                    }
                                 }
 
                                 // calculate the move percentage loss
@@ -1967,6 +2557,10 @@ Qxd8 1-0';
                                     $promotion = strlen($lmove == 5) ? substr($lmove, 5) : "";
                                     // make the move
                                     $ret = $chess->move(["from" => $fromSquare, "to" => $toSquare, "promotion" => $promotion]);
+                                    if ($ret == null) {
+                                        print "move is null?<br>";
+                                        dd($lmove, $chess->history(['verbose' => true]));
+                                    }
                                 }
 
                                 $sanMoves = [];
@@ -1983,16 +2577,21 @@ Qxd8 1-0';
                                     "move" => $bm["move"],
                                     "san" => $last["san"],
                                     "cp" => $bm["cp"],
+                                    "mate" => $bm["mate"],
                                     //"line" => $bm["line"],
                                     "line" => $sanMoves
                                 ];
+
+                                // if we have 3 best moves, break the loop (lichess evals sometimes has more than 3)
+                                if (count($mistake["bestmoves"]) == 3) {
+                                    break;
+                                }
                             }
                         }
                     }
 
                     // redo the current move
                     $chess->move($move["san"]);
-
 
                     /*
 
@@ -2002,13 +2601,19 @@ Qxd8 1-0';
                     */
 
                     // add the mistake
-                    $mistakes[] = $mistake;
+                    if (count($mistake["bestmoves"]) > 0) {
+                        $mistakes[] = $mistake;
+                    }
                 }
             } else {
                 // calculate the win percentage for the previous move (for next loop)
-                $prevWinPct = (50 + 50 * (2 / (1 + exp(-0.00368208 * $moveCp)) - 1));
-                if ($analyseForBlack) {
-                    $prevWinPct = 100 - $prevWinPct;
+                if ($moveMate !== null) {
+                    $prevWinPct = 100;
+                } else {
+                    $prevWinPct = (50 + 50 * (2 / (1 + exp(-0.00368208 * $moveCp)) - 1));
+                    if ($analyseForBlack) {
+                        $prevWinPct = 100 - $prevWinPct;
+                    }
                 }
             }
 
@@ -2020,17 +2625,96 @@ Qxd8 1-0';
             // increase the halfmove
             $halfMove++;
             // if we need to stop analysing
-            if ($halfMove >= 30) {
+            if ($halfMove >= $maxMoves * 2) {
                 break;
             }
 
             // if we exceeded the mistakes limit
-            if ($mistakesTotal > $mistakesLimit) {
+            if ($mistakesTotal >= $mistakesLimit) {
                 break;
             }
         }
 
-        return $mistakes;
+        return [$mistakes, $count];
+    }
+
+    private function getEvaluationBestMoves(string $fen, $max = 5): ?array
+    {
+        $parts = explode(" ", $fen);
+        // the fen without the move numbers
+        $fenWithout = implode(" ", array_slice($parts, 0, 4));
+        // the 2nd with the en-passant square as -
+        $fenWithout2 = implode(" ", array_slice($parts, 0, 3)) . " -";
+
+        $repo = $this->em2->getRepository(Evaluation::class);
+
+        // find the evaluation
+        $rec = $repo->findOneBy(['Fen' => $fenWithout]);
+        // if not found, try with 2nd FEN
+        if ($rec == null && $fenWithout != $fenWithout2) {
+            $rec = $repo->findOneBy(['Fen' => $fenWithout2]);
+        }
+
+        if ($rec) {
+            /*
+            $evals = [];
+            foreach (json_decode($rec->getPvs(), true) as $eval) {
+                $line = explode(" ", $eval["line"]);
+                $evals[] = [
+                    "depth" => $rec->getDepth(),
+                    "cp" => isset($eval["cp"]) ? intval($eval["cp"]) : null,
+                    "mate" => isset($eval["mate"]) ? intval($eval["mate"]) : null,
+                    "move" => $line[0],
+                    "line" => $line
+                ];
+            }
+                */
+
+            // new version - get up to 3 lines across all depth pvs (to ensure more than 1 line)
+            $evals = json_decode($rec->getEvals(), true);
+
+            usort($evals, function ($a, $b) {
+                if ($a["depth"] > $b["depth"]) return -1;
+                if ($a["depth"] < $b["depth"]) return 1;
+                return 0;
+            });
+
+            $pvs = [];
+            $firstmoves = [];
+            $evcnt = 0;
+            foreach ($evals as $eval) {
+                foreach ($eval["pvs"] as $pv) {
+                    $line = explode(" ", $pv["line"]);
+                    $firstmove = $line[0];
+                    if (!in_array($firstmove, $firstmoves)) {
+                        $firstmoves[] = $firstmove;
+                        //$pvs[] = $pv;
+                        $pvs[] = [
+                            "depth" => $eval["depth"],
+                            "cp" => isset($pv["cp"]) ? intval($pv["cp"]) : null,
+                            "mate" => isset($pv["mate"]) ? intval($pv["mate"]) : null,
+                            "move" => $line[0],
+                            "line" => $line
+                        ];
+
+                        // if we have 3 lines from the top eval or 5 lines from the top 2
+                        if (count($pvs) >= $max) {
+                            break 2;
+                        }
+                    }
+                }
+                $evcnt++;
+
+                // only take lines from the top 2 evals
+                if ($evcnt >= 2) {
+                    break;
+                }
+            }
+
+            return $pvs;
+        }
+
+        return null;
     }
 
     // check if a move is on the ignore list or not

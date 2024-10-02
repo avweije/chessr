@@ -28,9 +28,12 @@ Encore
   .addEntry("app", "./assets/app.js")
   .addEntry("modal", "./assets/js/modal.js")
   .addEntry("chessboard", "./assets/js/chessboard.js")
+  .addEntry("home", "./assets/js/home.js")
   .addEntry("repertoire", "./assets/js/repertoire.js")
   .addEntry("practice", "./assets/js/practice.js")
+  .addEntry("practiceWorker", "./assets/js/workers/practice.js")
   .addEntry("analyse", "./assets/js/analyse.js")
+  .addEntry("admin", "./assets/js/admin.js")
 
   .addStyleEntry("markers", "./assets/markers/markers.css")
 
@@ -102,6 +105,12 @@ Encore
   .copyFiles({
     from: "./assets/markers",
     to: "extensions/markers/[name].[ext]",
+    pattern: /\.(svg)$/,
+  })
+
+  .copyFiles({
+    from: "./assets/arrows",
+    to: "extensions/arrows/[name].[ext]",
     pattern: /\.(svg)$/,
   })
 

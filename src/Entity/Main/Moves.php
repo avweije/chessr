@@ -1,11 +1,13 @@
 <?php
 
-namespace App\Entity;
+namespace App\Entity\Main;
 
 use App\Repository\MovesRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: MovesRepository::class)]
+#[ORM\Index(columns: ['fen'], name: 'idx_moves_fen')]
 class Moves
 {
     #[ORM\Id]
@@ -13,7 +15,7 @@ class Moves
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, options: ['collation' => 'utf8mb4_bin'])]
     private ?string $Fen = null;
 
     #[ORM\Column(length: 10)]

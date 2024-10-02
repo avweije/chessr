@@ -2,8 +2,7 @@
 
 namespace App\Repository;
 
-use App\Entity\IgnoreList;
-use App\Entity\User;
+use App\Entity\Main\IgnoreList;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;

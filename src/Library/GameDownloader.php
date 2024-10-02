@@ -3,10 +3,9 @@
 namespace App\Library;
 
 use App\Config\DownloadSite;
-use App\Entity\Archives;
-use App\Entity\Downloads;
-use App\Entity\Settings;
-use App\Entity\User;
+use App\Entity\Main\Archives;
+use App\Entity\Main\Downloads;
+use App\Entity\Main\User;
 use App\Library\GameDownloader\ChessDotComInterface;
 use App\Library\GameDownloader\LichessInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -117,6 +116,7 @@ class GameDownloader
         // find the download record
         $res = $repository->findBy([
             'User' => $this->user,
+            'Site' => $this->site,
             'Year' => $year,
             'Month' => $month
         ]);

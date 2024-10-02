@@ -5,8 +5,12 @@ export class Utils {
   // overlay show counter
   static showCounter = 0;
 
+  // the error icon element
+  static errorIconElement = null;
+
   static {
     this.pageLoadingOverlay = document.getElementById("pageLoadingOverlay");
+    this.errorIconElement = document.getElementById("errorIconElement");
   }
 
   static showLoading() {
@@ -24,5 +28,23 @@ export class Utils {
       this.pageLoadingOverlay.classList.add("hidden");
       this.showCounter = 0;
     }
+  }
+
+  static showError() {
+    // if already showing
+    if (!this.errorIconElement.classList.contains("fade")) {
+      return false;
+    }
+
+    // start fade-in and call fade-out after 5 seconds
+    this.errorIconElement.classList.remove("fade");
+
+    setTimeout(() => {
+      this.hideError();
+    }, 5000);
+  }
+
+  static hideError() {
+    this.errorIconElement.classList.add("fade");
   }
 }

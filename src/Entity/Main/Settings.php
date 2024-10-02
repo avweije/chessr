@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Entity;
+namespace App\Entity\Main;
 
 use App\Config\DownloadSite;
 use App\Repository\SettingsRepository;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: SettingsRepository::class)]
@@ -26,6 +27,15 @@ class Settings
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $LichessUsername = null;
+
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $Board = null;
+
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $Pieces = null;
+
+    #[ORM\Column(type: Types::SMALLINT)]
+    private ?int $Animation = null;
 
     public function getId(): ?int
     {
@@ -76,6 +86,42 @@ class Settings
     public function setLichessUsername(?string $LichessUsername): static
     {
         $this->LichessUsername = $LichessUsername;
+
+        return $this;
+    }
+
+    public function getBoard(): ?string
+    {
+        return $this->Board;
+    }
+
+    public function setBoard(?string $Board): static
+    {
+        $this->Board = $Board;
+
+        return $this;
+    }
+
+    public function getPieces(): ?string
+    {
+        return $this->Pieces;
+    }
+
+    public function setPieces(?string $Pieces): static
+    {
+        $this->Pieces = $Pieces;
+
+        return $this;
+    }
+
+    public function getAnimation(): ?int
+    {
+        return $this->Animation;
+    }
+
+    public function setAnimation(int $Animation): static
+    {
+        $this->Animation = $Animation;
 
         return $this;
     }
