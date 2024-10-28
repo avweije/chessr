@@ -22,12 +22,11 @@
 		<!-- <script src="https://cdn.tailwindcss.com"></script> -->
 
 	</head>
-	<body class="bg-zinc-100 dark:bg-slate-800 h-screen antialiased leading-none font-sans min-h-screen overflow-y-scroll">
+	<body class="bg-tacao-50/50 dark:bg-slate-800 h-screen antialiased leading-none font-sans min-w-min min-h-screen overflow-y-scroll" style="width: calc(100vw - 10px);">
 		{% block header %}
-			<header
-				class="fixed z-20 top-0 start-0 w-full">
-				<!-- Main navigation container -->
-				<nav class="relative py-1 md:py-2 bg-zinc-50 dark:bg-slate-900 border-b border-zinc-300 dark:border-slate-700 flex w-full rounded flex-wrap items-center justify-between shadow-dark-mild" data-twe-navbar-ref>
+			<header class="fixed z-20 top-0 start-0 w-full">
+
+				<nav class="relative py-1 md:py-2 bg-tacao-100 dark:bg-slate-900 rounded-sm border border-tacao-200 dark:border-slate-700 flex w-full rounded flex-wrap items-center justify-between shadow-dark-mild">
 					<div id="pageHeaderBackground" class="absolute w-full h-full" style="opacity: .1; background-image: url('{{ asset('build/images/smokey-chess-background.webp') }}');"></div>
 
 					<div class="relative flex w-full flex-wrap items-center justify-between px-1 md:px-2">
@@ -38,55 +37,69 @@
 						</div>
 
 						<!-- Collapsible navbar container -->
-						<div class="!visible hidden flex-grow items-center md:!flex md:basis-auto" id="navbarSupportedContent4" data-twe-collapse-item>
-							<h2 class="text-1xl font-semibold text-gray-900 dark:text-white">Chess Repertoire</h2>
+						<div class="!visible hidden flex-grow items-center md:!flex md:basis-auto" id="navbarSupportedContent4">
+							<h2 class="text-1xl font-semibold text-gray-800 dark:text-gray-200">Chess Repertoire</h2>
 						</div>
 
 						<!-- Right elements -->
-						<div
-							class="relative flex items-center">
+						<div class="relative flex items-center">
 
-							<!-- Left links -->
-							<ul
-								class="list-style-none me-auto mr-20 flex ps-0 mt-1 flex-row" data-twe-navbar-nav-ref>
-								<!-- Home -->
-								<li class="mb-0 pe-1 ps-0" data-twe-nav-item-ref>
-									<a href="/" class="font-normal p-0 px-1 text-black/60 transition duration-200 hover:text-black/80 hover:ease-in-out focus:text-black/80 active:text-black/80 motion-reduce:transition-none dark:text-white/60 dark:hover:text-white/80 dark:focus:text-white/80 dark:active:text-white/80 md:px-3" data-twe-nav-link-ref>
-										Home
-									</a>
-								</li>
-								<!-- Repertoire -->
-								<li class="mb-0 pe-1 ps-0" data-twe-nav-item-ref>
-									<a href="/repertoire" class="font-normal p-0 px-1 text-black/60 transition duration-200 hover:text-black/80 hover:ease-in-out focus:text-black/80 active:text-black/80 motion-reduce:transition-none dark:text-white/60 dark:hover:text-white/80 dark:focus:text-white/80 dark:active:text-white/80 md:px-3" data-twe-nav-link-ref>
-										Repertoire
-									</a>
-								</li>
-								<!-- Practice -->
-								<li class="mb-0 pe-1 ps-0" data-twe-nav-item-ref>
-									<a href="/practice" class="font-normal p-0 px-1 text-black/60 transition duration-200 hover:text-black/80 hover:ease-in-out focus:text-black/80 active:text-black/80 motion-reduce:transition-none dark:text-white/60 dark:hover:text-white/80 dark:focus:text-white/80 dark:active:text-white/80 md:px-3" data-twe-nav-link-ref>
-										Practice
-									</a>
-								</li>
-							</ul>
+							{% if app.user %}
+								<!-- Left links -->
+								<ul
+									class="list-style-none me-auto mr-20 flex ps-0 mt-1 flex-row">
+									<!-- Home -->
+									<li class="mb-0 pe-1 ps-0">
+										<a href="/" class="p-0 px-1 font-normal transition duration-200 hover:ease-in-out motion-reduce:transition-none md:px-3">
+											Home
+										</a>
+									</li>
+									<!-- Repertoire -->
+									<li class="mb-0 pe-1 ps-0">
+										<a href="/repertoire" class="p-0 px-1 font-normal transition duration-200 hover:ease-in-out motion-reduce:transition-none md:px-3">
+											Repertoire
+										</a>
+									</li>
+									<!-- Practice -->
+									<li class="mb-0 pe-1 ps-0">
+										{% if template.hasRepertoire() %}
+											<a href="/practice" class="p-0 px-1 font-normal transition duration-200 hover:ease-in-out motion-reduce:transition-none md:px-3">
+												Practice
+											</a>
+										{% else %}
+											<span class="p-0 px-1 md:px-3">
+												Practice
+											</span>
+										{% endif %}
+									</li>
+								</ul>
 
-							<div class="flex flex-col justify-center ml-3">
+								{% if template.hasRepertoire() %}
+									<a href="/roadmap" class="px-3 py-2 font-semibold" title="Roadmap">
+										<span class="tc-link icon-[mdi--sitemap]"></span>
+									</a>
+								{% else %}
+									<span class="px-3 py-2 font-semibold text-primary-500" title="Roadmap">
+										<span class="tc-link opacity-50 icon-[mdi--sitemap]"></span>
+									</span>
+								{% endif %}
+							{% endif %}
+
+							<div class="flex flex-col justify-center">
 								<input type="checkbox" id="lightSwitchCheckbox" class="light-switch sr-only"/>
-								<label class="relative cursor-pointer p-2" for="lightSwitchCheckbox">
-									<span class="hidden dark:inline-block text-primary-500 icon-[mdi--white-balance-sunny]"></span>
-									<span class="inline-block dark:hidden text-primary-500 icon-[mdi--moon-and-stars]"></span>
-									<span class="sr-only">Switch to light / dark version</span>
+								<label class="relative cursor-pointer px-3 py-2" for="lightSwitchCheckbox">
+									<span title="Switch to light mode" class="hidden dark:inline-block tc-link icon-[mdi--white-balance-sunny]"></span>
+									<span title="Switch to dark mode" class="inline-block dark:hidden tc-link icon-[mdi--moon-and-stars]"></span>
+									<span class="sr-only">Switch to light / dark mode</span>
 								</label>
 							</div>
 
 							<div class="flex items-center">
 								{% if app.user %}
-									<a href="/logout" class="rounded-md px-3 py-2 text-sm uppercase font-semibold text-primary-500">
+									<a href="/logout" class="rounded-md px-3 py-2 text-sm uppercase">
 										Logout
 									</a>
 								{% else %}
-									<a href="/login" class="rounded-md px-3 py-2 text-sm uppercase font-semibold text-primary-500">
-										Login
-									</a>
 									<a href="/register" class="btn btn-primary uppercase">
 										Sign up for free
 									</a>
@@ -99,32 +112,34 @@
 			</header>
 		{% endblock %}
 
-		<div class="pt-14 pb-5 px-5"> {% block body %}{% endblock %}
-
+		<div id="topCenterDiv" class="sticky left-0 pt-14" style="width: calc(100vw - 10px);"> {% block body_header %}{% endblock %}
 			</div>
 
-			<!-- loader -->
-			<div id="pageLoadingOverlay" class="hidden w-full h-full fixed top-0 left-0 backdrop-grayscale-[.5] z-50">
-				<div class="flex w-full h-full justify-center items-center">
-					<span class="inline-block icon-[svg-spinners--90-ring-with-bg] w-12 h-12"></span>
+			<div class="px-5 pb-5"> {% block body %}{% endblock %}
 				</div>
-			</div>
 
-			{% block footer %}
-				<footer class="hidden fixed bottom-0 w-full rounded bg-white dark:bg-slate-900 border-t border-zinc-300 dark:border-slate-700 shadow-dark-mild dark:text-white/70">
-					<div id="pageFooterBackground" class="absolute w-full h-full" style="opacity: .1; background-image: url('{{ asset('build/images/smokey-chess-background.webp') }}');"></div>
-
-					<p class="m-0 text-center text-base text-xs py-1 md:py-2">
-						Copyright 2024 AvWeije. All Rights Reserved.
-					</p>
-				</footer>
-			{% endblock %}
-
-			<div id="errorIconElement" class="fade-element fade fixed bottom-3 right-3">
-				<div class="flex bg-white rounded-full border border-gray-400 dark:border-slate-500">
-					<span class="text-red-500 w-5 h-5 shrink-0 icon-[mdi--error]"></span>
+				<!-- loader -->
+				<div id="pageLoadingOverlay" class="hidden w-full h-full fixed top-0 left-0 backdrop-grayscale-[.5] z-50">
+					<div class="flex w-full h-full justify-center items-center">
+						<span class="inline-block icon-[svg-spinners--90-ring-with-bg] w-12 h-12"></span>
+					</div>
 				</div>
-			</div>
 
-		</body>
-	</html>
+				{% block footer %}
+					<footer class="hidden fixed bottom-0 w-full rounded bg-white dark:bg-slate-900 border-t border-zinc-300 dark:border-slate-700 shadow-dark-mild dark:text-white/70">
+						<div id="pageFooterBackground" class="absolute w-full h-full" style="opacity: .1; background-image: url('{{ asset('build/images/smokey-chess-background.webp') }}');"></div>
+
+						<p class="m-0 text-center text-base text-xs py-1 md:py-2">
+							Copyright 2024 AvWeije. All Rights Reserved.
+						</p>
+					</footer>
+				{% endblock %}
+
+				<div id="errorIconElement" class="fade-element fade fixed bottom-3 right-3">
+					<div class="flex bg-white rounded-full border border-gray-400 dark:border-slate-500">
+						<span class="text-red-500 w-7 h-7 shrink-0 icon-[mdi--error]"></span>
+					</div>
+				</div>
+
+			</body>
+		</html>

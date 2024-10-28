@@ -32,7 +32,7 @@ class Analysis
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $Fen = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 2048, nullable: true)]
     private ?string $Pgn = null;
 
     #[ORM\Column(length: 10)]
@@ -131,7 +131,7 @@ class Analysis
 
     public function setPgn(?string $Pgn): static
     {
-        $this->Pgn = $Pgn;
+        $this->Pgn = strlen($Pgn) > 2048 ? substr($Pgn, 0, 2048) : $Pgn;
 
         return $this;
     }

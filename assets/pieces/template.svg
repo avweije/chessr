@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<svg width="40px" height="40px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <title>cm-chessboard pieces and markers sprite</title>
+    <desc>Chess pieces and markers for the cm-chessboard (https://shaack.com/projekte/cm-chessboard/).</desc>
+
+    <g id="wk">
+    </g>
+    <g id="wq">
+    </g>
+    <g id="wb">
+    </g>
+    <g id="wn">
+    </g>
+    <g id="wr">
+    </g>
+    <g id="wp">
+    </g>
+    <g id="bk">
+    </g>
+    <g id="bq">
+    </g>
+    <g id="bb">
+    </g>
+    <g id="bn">
+    </g>
+    <g id="br">
+    </g>
+    <g id="bp">
+    </g>
+</svg>

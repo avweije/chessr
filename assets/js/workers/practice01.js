@@ -18,14 +18,15 @@ self.onmessage = function (msg) {
 
 function getEco(pgn) {
   // filter the ECO's by the current PGN
-  var res = ecoData.filter((rec) => pgn.indexOf(rec.PGN) > -1);
+  var res = ecoData.filter((rec) => pgn.indexOf(rec.PGN) == 0);
 
   res.sort((a, b) => {
     if (a.PGN === b.PGN) return 0;
     return a.PGN > b.PGN ? -1 : 1;
   });
 
-  console.log("filtered:");
+  console.log("filtered:", pgn);
+  console.log("pgn: " + pgn);
   console.log(res);
 
   // update the ECO field

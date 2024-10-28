@@ -17,7 +17,6 @@ class Downloads
     private ?int $id = null;
 
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: false)]
     private ?User $User = null;
 
     #[ORM\Column(enumType: DownloadSite::class)]
@@ -40,6 +39,9 @@ class Downloads
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $LastUUID = null;
+
+    #[ORM\ManyToOne]
+    private ?Opponent $Opponent = null;
 
     public function getId(): ?int
     {
@@ -138,6 +140,18 @@ class Downloads
     public function setLastUUID(?string $LastUUID): static
     {
         $this->LastUUID = $LastUUID;
+
+        return $this;
+    }
+
+    public function getOpponent(): ?Opponent
+    {
+        return $this->Opponent;
+    }
+
+    public function setOpponent(?Opponent $Opponent): static
+    {
+        $this->Opponent = $Opponent;
 
         return $this;
     }

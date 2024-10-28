@@ -5,6 +5,7 @@ namespace App\Library;
 use App\Config\DownloadSite;
 use App\Entity\Main\Archives;
 use App\Entity\Main\Downloads;
+use App\Entity\Main\Opponent;
 use App\Entity\Main\User;
 use App\Library\GameDownloader\ChessDotComInterface;
 use App\Library\GameDownloader\LichessInterface;
@@ -20,6 +21,7 @@ class GameDownloader
     private $client;
     private $em;
     private $user;
+    private $opponent;
 
     private $site;
     private $siteInterface;
@@ -37,20 +39,42 @@ class GameDownloader
      * - return games for that user,year,month,type (all games or X games = lichess)
      */
 
-    public function __construct(EntityManagerInterface $em, UserInterface $user)
+    public function __construct(EntityManagerInterface $em, ?UserInterface $user, ?Opponent $opponent = null)
     {
         $this->client = HttpClient::create();
         $this->em = $em;
         $this->user = $user;
+        $this->opponent = $opponent;
 
-        // get the user settings
-        $temp = $this->em->getRepository(User::class)->find($user);
-        $settings = $temp->getSettings();
+        // if we have a user
+        if ($user) {
+            // get the user settings
+            $temp = $this->em->getRepository(User::class)->find($user);
+            $settings = $temp->getSettings();
 
-        // get the site interface & username
-        $this->site = $settings->getSite();
-        $this->siteInterface = $settings->getSite() == DownloadSite::ChessDotCom ? new ChessDotComInterface() : new LichessInterface();
-        $this->siteUsername = $settings->getSite() == DownloadSite::ChessDotCom ? $settings->getChessUsername() : $settings->getLichessUsername();
+            // get the site interface & username
+            $this->site = $settings->getSite();
+            $this->siteInterface = $settings->getSite() == DownloadSite::ChessDotCom ? new ChessDotComInterface() : new LichessInterface();
+            $this->siteUsername = $settings->getSite() == DownloadSite::ChessDotCom ? $settings->getChessUsername() : $settings->getLichessUsername();
+            // set the site interface username
+            $this->siteInterface->setUsername($this->siteUsername);
+        } else if ($opponent) {
+            // get the opponent settings
+            $settings = $this->em->getRepository(Opponent::class)->find($opponent);
+
+            // get the site interface & username
+            $this->site = $settings->getSite();
+            $this->siteInterface = $settings->getSite() == DownloadSite::ChessDotCom ? new ChessDotComInterface() : new LichessInterface();
+            $this->siteUsername = $settings->getUsername();
+            // set the site interface username
+            $this->siteInterface->setUsername($this->siteUsername);
+        }
+    }
+
+    // get the created at
+    public function getCreatedAt(): int
+    {
+        return $this->siteInterface->getCreatedAt();
     }
 
     // get the archives
@@ -131,9 +155,9 @@ class GameDownloader
     }
 
     // get the games (totals per type for that year/month)
-    public function downloadGames(int $year, int $month, string $type, string $lastId = ""): array
+    public function downloadGames(int $year, int $month, string $type, string $lastId = "", $max = 4): array
     {
-        return $this->siteInterface->downloadGames($year, $month, $type, $lastId);
+        return $this->siteInterface->downloadGames($year, $month, $type, $lastId, $max);
     }
 
     // download archives from chess.com

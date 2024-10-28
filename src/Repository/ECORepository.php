@@ -11,52 +11,41 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class ECORepository extends ServiceEntityRepository
 {
-    private static $ecoCache = [];
-
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, ECO::class);
     }
 
-    public function findCode($pgn): array
+    public function findCode($pgn): null|array
     {
-        if (isset(self::$ecoCache[$pgn])) {
-            return self::$ecoCache[$pgn];
-        }
-
-        // build the query
-        /*
-        $query = $this->createQueryBuilder('ECO')
-            ->andWhere(':pgn LIKE CONCAT(ECO.PGN, \'%\')')
-            ->setParameter('pgn', trim($pgn))
-            ->orderBy('ECO.PGN', 'DESC')
+        $qb = $this->getEntityManager()->createQueryBuilder('ECO');
+        $query = $qb->select('e')
+            ->from('App\Entity\Main\ECO', 'e')
+            ->where($qb->expr()->like(':pgn', 'CONCAT(e.PGN, \'%\')'))
+            ->setParameter('pgn', $pgn)
+            ->orderBy('e.PGN', 'DESC')
             ->setMaxResults(1)
             ->getQuery();
-            */
-        $query = $this->createQueryBuilder('ECO')
-            ->orderBy('ECO.PGN', 'ASC')
-            ->getQuery();
-        //
-        $query->enableResultCache();
 
         $res = $query->getArrayResult();
 
-        //dd($res);
+        return count($res) > 0 ? ["code" => $res[0]["Code"], "name" => $res[0]["Name"]] : null;
+    }
 
-        //$pgn = "1. e4 e5";
+    public function hasMore($pgn): bool
+    {
+        $qb = $this->getEntityManager()->createQueryBuilder('ECO');
+        $query = $qb->select('e')
+            ->from('App\Entity\Main\ECO', 'e')
+            ->where($qb->expr()->like('e.PGN', ':pgn'))
+            ->setParameter('pgn', $pgn . ' %')
+            ->orderBy('e.PGN', 'ASC')
+            ->setMaxResults(1)
+            ->getQuery();
 
-        //
-        $data = array_filter($res, function ($v, $k) use ($pgn) {
-            return strstr($pgn, $v["PGN"]) !== false;
-        }, ARRAY_FILTER_USE_BOTH);
+        $res = $query->getArrayResult();
 
-        usort($data, function ($a, $b) {
-            return strcmp($b["PGN"], $a["PGN"]);
-        });
-
-        self::$ecoCache[$pgn] = count($data) > 0 ? ["code" => $data[0]["Code"], "name" => $data[0]["Name"]] : null;
-
-        return self::$ecoCache[$pgn];
+        return count($res) > 0;
     }
 
     public function findByPgn($pgn): array

@@ -3,9 +3,285 @@
 @tailwind utilities;
 
 @layer utilities {
+  /* standard link */
+
   a {
-    @apply font-bold text-blue-500;
+    @apply font-semibold text-sky-800 hover:text-sky-600 dark:text-blue-400 dark:hover:text-blue-200;
   }
+
+  .tc-link {
+    @apply text-sky-800 hover:text-sky-600 dark:text-blue-400 dark:hover:text-blue-200;
+  }
+
+  .tc-link-shade {
+    @apply text-tacao-400 hover:text-tacao-200 dark:text-gray-400 dark:hover:text-gray-200 disabled:text-tacao-200 dark:disabled:text-gray-600;
+  }
+
+  /* skeleton elements - pulse while loading */
+  .pulse-skeleton {
+    @apply relative before:block before:absolute before:top-2 before:bottom-2 before:left-0 before:right-0 before:rounded-full before:bg-tacao-400 before:dark:bg-slate-500 before:animate-pulse;
+    color: transparent !important;
+    background-color: transparent !important;
+  }
+
+  /* text colors */
+
+  .tc-base,
+  .tc-base-hover {
+    @apply text-gray-600 text-tacao-950 dark:text-gray-300;
+  }
+  .tc-base-hover:hover {
+    @apply text-gray-400 text-tacao-800 dark:text-gray-100;
+  }
+
+  .tc-faded,
+  .tc-faded-hover {
+    @apply text-gray-500 text-tacao-700 dark:text-gray-400;
+  }
+  .tc-faded-hover:hover {
+    @apply text-gray-300 text-tacao-500 dark:text-gray-200;
+  }
+
+  .tc-sharp,
+  .tc-sharp-hover {
+    @apply text-gray-700 text-tacao-800 dark:text-gray-200;
+  }
+  .tc-sharp-hover:hover {
+    @apply text-gray-500 text-tacao-600 dark:text-gray-50;
+  }
+
+  /* boxed checkboxes, radios and links */
+
+  .boxed-link {
+    @apply flex items-center px-2 py-1 font-medium text-blue-500 dark:text-blue-400 hover:bg-blue-50/50 hover:dark:bg-white/5 rounded-lg border border-zinc-300 hover:border-blue-200 dark:border-slate-700 hover:dark:border-slate-600;
+  }
+
+  .boxed-link span:first-child {
+    @apply whitespace-nowrap p-2;
+  }
+
+  .boxed-link span:last-child {
+    @apply text-2xl m-2 icon-[mdi--arrow-right-thin];
+  }
+
+  .boxed-radio-group,
+  .boxed-checkbox-group,
+  .regular-checkbox-group {
+    @apply flex flex-wrap gap-1 justify-center;
+  }
+
+  .boxed-radio-menu {
+    @apply inline-flex justify-center overflow-hidden rounded-lg bg-tacao-200 dark:bg-slate-950 border border-tacao-200 dark:border-slate-950;
+  }
+
+  .boxed-radio-menu.hidden {
+    display: none;
+  }
+
+  .boxed-radio,
+  .boxed-checkbox {
+    @apply relative flex items-center justify-center bg-tacao-100 dark:bg-slate-700 px-4 py-3 font-medium;
+  }
+  .boxed-radio.hidden,
+  .boxed-checkbox.hidden {
+    display: none;
+  }
+
+  div:not(.boxed-radio-menu) > .boxed-radio,
+  .boxed-checkbox {
+    @apply rounded-lg text-gray-700 dark:text-gray-50;
+  }
+
+  .boxed-radio-menu > .boxed-radio {
+    @apply text-gray-600 dark:text-gray-200;
+  }
+
+  .boxed-radio-menu > .boxed-radio:not(:first-child) {
+    @apply border-l border-l-tacao-200 dark:border-l-slate-950;
+  }
+
+  div:not(.boxed-radio-menu) > .boxed-radio {
+    @apply min-w-36;
+  }
+
+  .boxed-radio-menu > .boxed-radio {
+    @apply min-w-28;
+  }
+
+  div:not(.boxed-radio-menu) > .boxed-radio {
+    @apply rounded-lg px-4 py-3;
+  }
+
+  .boxed-radio-menu > .boxed-radio {
+    @apply text-sm px-3 py-3;
+  }
+
+  .boxed-radio,
+  .boxed-checkbox {
+    @apply text-base;
+  }
+
+  .boxed-radio-menu .boxed-radio {
+    @apply text-sm;
+  }
+
+  .regular-checkbox {
+    @apply relative flex items-center;
+  }
+
+  div:not(.boxed-radio-menu) > .boxed-radio .boxed-radio-label,
+  .boxed-checkbox .boxed-checkbox-label {
+    @apply absolute top-0 h-full w-full cursor-pointer rounded-lg border border-tacao-300 dark:border-slate-950;
+  }
+
+  .boxed-radio-menu
+    > .boxed-radio
+    input:not(:disabled):checked
+    ~ .boxed-radio-label {
+    @apply bg-tacao-500 dark:bg-blue-100 border-tacao-700 dark:border-blue-300;
+  }
+
+  div:not(.boxed-radio-menu)
+    > .boxed-radio
+    input:not(:disabled):checked
+    ~ .boxed-radio-label,
+  .boxed-checkbox input:not(:disabled):checked ~ .boxed-checkbox-label {
+    @apply bg-tacao-300 dark:bg-blue-100 border-tacao-400 dark:border-blue-300;
+  }
+
+  div:not(.boxed-radio-menu)
+    > .boxed-radio
+    input:not(:disabled):checked
+    ~ .boxed-radio-circle {
+    @apply border-transparent bg-sky-700 dark:bg-blue-300 ring-2;
+  }
+
+  .boxed-radio input:not(:disabled):checked ~ .boxed-radio-text,
+  .boxed-checkbox input:not(:disabled):checked ~ .boxed-checkbox-text {
+    @apply text-gray-50 dark:text-gray-700;
+  }
+
+  .boxed-radio-menu .boxed-radio .boxed-radio-label {
+    @apply absolute top-0 w-full h-full cursor-pointer;
+  }
+
+  .boxed-radio-menu
+    .boxed-radio
+    input:not(:disabled):not(:checked)
+    ~ .boxed-radio-label:hover {
+    @apply bg-tacao-200 dark:bg-slate-600;
+  }
+
+  .regular-checkbox .regular-checkbox-label {
+    @apply absolute top-0 h-full w-full cursor-pointer;
+  }
+
+  .boxed-radio .boxed-radio-circle {
+    @apply pointer-events-none z-10 h-4 w-4 shrink-0 rounded-full border-2 border-tacao-200 dark:border-slate-500 bg-tacao-50 dark:bg-slate-600 ring-sky-800 dark:ring-blue-400 ring-offset-2;
+  }
+
+  .boxed-checkbox .boxed-checkbox-circle {
+    @apply pointer-events-none z-10 h-5 w-5 shrink-0 text-tacao-200 dark:text-slate-500;
+  }
+
+  .regular-checkbox .regular-checkbox-circle {
+    @apply pointer-events-none z-10 h-5 w-5 shrink-0 text-tacao-200 dark:text-slate-500;
+  }
+
+  .boxed-checkbox input:not(:disabled):checked ~ div > .boxed-checkbox-circle {
+    @apply text-sky-600 dark:text-blue-400;
+  }
+
+  .boxed-radio .boxed-radio-text,
+  .boxed-checkbox .boxed-checkbox-text {
+    @apply pointer-events-none z-10 whitespace-nowrap text-center pl-4 pr-4 grow;
+  }
+
+  .regular-checkbox .regular-checkbox-text {
+    @apply whitespace-nowrap text-sm ml-1 font-medium text-gray-900 dark:text-gray-300;
+  }
+
+  /* boxed card */
+
+  .boxed-card {
+    @apply flex flex-col shrink-0 cursor-pointer shadow rounded-lg pl-4 pr-6 py-3 bg-tacao-100/50 hover:bg-tacao-100 dark:bg-slate-700/50 hover:dark:bg-slate-700 border border-tacao-300 dark:border-slate-950;
+  }
+
+  .boxed-card .boxed-card-arrow {
+    @apply absolute right-0 bottom-0 text-2xl m-2 opacity-0 text-sky-600 dark:text-blue-400 icon-[mdi--arrow-right-thin];
+  }
+  .boxed-card:hover .boxed-card-arrow {
+    @apply opacity-100;
+  }
+
+  /* inputs, selects, etc */
+
+  .input-select {
+    @apply relative inline-block;
+  }
+
+  .input-text,
+  .input-text-faded,
+  .input-text-small,
+  .input-select > select {
+    @apply inline-block w-full rounded-md border-0 text-sm text-gray-900 dark:text-gray-50 bg-white dark:bg-slate-900 shadow-sm outline-none ring-1 ring-inset ring-tacao-200 dark:ring-slate-700 placeholder:text-gray-500 placeholder:dark:text-gray-300;
+  }
+
+  .input-text,
+  .input-text-faded,
+  .input-select > select {
+    @apply p-3;
+  }
+
+  .input-text-small {
+    @apply p-2;
+  }
+
+  .input-select > select {
+    @apply appearance-none pr-12;
+  }
+
+  .input-select > .input-select-caret {
+    @apply pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-gray-200;
+  }
+
+  .input-select-xx {
+    @apply appearance-none inline-block w-full rounded-md border-0 py-1 pl-2 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:text-gray-300 dark:bg-slate-900 dark:ring-slate-500 sm:text-xs sm:leading-6;
+  }
+
+  .input-text:focus,
+  .input-text-faded:focus,
+  .input-text-small:focus {
+    @apply ring-2 ring-inset ring-sky-800 dark:ring-blue-600;
+  }
+
+  .input-text-faded {
+    @apply bg-tacao-50 dark:bg-slate-900/30;
+  }
+
+  .input-text-faded:focus {
+    @apply bg-white dark:bg-slate-900;
+  }
+
+  /* input checkbox toggle */
+
+  .input-toggle {
+    @apply inline-flex items-center me-5 cursor-pointer;
+  }
+
+  .input-toggle > .input-toggle-switch {
+    @apply relative w-11 h-6 bg-gray-200 rounded-full dark:bg-gray-700 after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600;
+  }
+
+  .input-toggle > input:focus ~ .input-toggle-switch {
+    @apply ring-4 ring-tacao-300 dark:ring-primary-800;
+  }
+
+  .input-toggle > input:checked ~ .input-toggle-switch {
+    @apply after:translate-x-full rtl:after:-translate-x-full after:border-white bg-tacao-500 dark:bg-primary-400;
+  }
+
+  /* buttons */
 
   .btn {
     @apply inline-flex items-center rounded-md px-4 py-2 text-sm font-semibold shadow-sm cursor-pointer border border-transparent;
@@ -13,35 +289,43 @@
   .btn:focus-visible {
     @apply outline outline-2 outline-offset-2;
   }
+  /*
   .btn:disabled {
-    @apply text-gray-600 bg-gray-300 opacity-50 shadow-none pointer-events-none;
+    @apply text-gray-400 dark:text-gray-500 pointer-events-none;
+  }*/
+
+  .btn.btn-large {
+    @apply text-base px-5 py-2.5;
   }
 
   .btn.hidden {
     display: none;
   }
+  .btn:disabled {
+    @apply opacity-50 cursor-default;
+  }
 
   .btn-primary {
-    @apply text-white bg-blue-500;
+    @apply text-white bg-sky-700 dark:bg-blue-400;
   }
-  .btn-primary:hover {
-    @apply bg-blue-400;
+  .btn-primary:not(:disabled):hover {
+    @apply text-white bg-sky-600 dark:bg-blue-300;
   }
   .btn-primary:focus-visible {
-    @apply outline-blue-500;
+    @apply outline-sky-700 dark:outline-blue-400;
   }
 
   .btn-primary.btn-checked {
-    @apply text-blue-700 bg-blue-100;
+    @apply text-sky-800 bg-sky-300 dark:text-blue-600 dark:bg-blue-200 border-sky-400 dark:border-blue-400 shadow-inner;
   }
-  .btn-primary.btn-checked:hover {
-    @apply bg-blue-50;
+  .btn-primary.btn-checked:not(:disabled):hover {
+    @apply bg-sky-200 dark:bg-blue-100;
   }
 
   .btn-warning {
     @apply text-white bg-red-500;
   }
-  .btn-warning:hover {
+  .btn-warning:not(:disabled):hover {
     @apply bg-red-400;
   }
   .btn-warning:focus-visible {
@@ -51,12 +335,14 @@
   .btn-outline {
     @apply text-gray-700 dark:text-gray-200 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-black/40;
   }
-  .btn-outline:hover {
+  .btn-outline:not(:disabled):hover {
     @apply text-gray-500 dark:text-gray-50 bg-black/10 dark:bg-white/10;
   }
   .btn-outline:focus-visible {
-    @apply outline-primary-300;
+    @apply outline-sky-700 dark:outline-primary-400;
   }
+
+  /* fade elements (used for modals?) */
 
   .fade-element {
     opacity: 1;

@@ -10,8 +10,8 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
 class LichessInterface implements ChessSiteInterface
 {
     private $client;
-    private $username = "anonymouse123";
-    private $createdAt;
+    private $username = "";
+    private $createdAt = null;
 
     private $types = ["bullet", "blitz", "rapid", "classical"];
     private $archives = [];
@@ -33,6 +33,23 @@ class LichessInterface implements ChessSiteInterface
     public function setUsername($username): void
     {
         $this->username = $username;
+    }
+
+    public function getCreatedAt(): int
+    {
+        // if we need to get the created at from the profile
+        if ($this->createdAt == null) {
+            // set the url
+            $url = "https://lichess.org/api/user/" . $this->username;
+
+            // get the user public data
+            $response = $this->request('GET', $url);
+            if ($response !== null && $response->getStatusCode() == 200) {
+                $this->createdAt = $response->toArray()["createdAt"];
+            }
+        }
+
+        return $this->createdAt;
     }
 
     public function setSavedArchives(array $archives): void
@@ -260,9 +277,8 @@ class LichessInterface implements ChessSiteInterface
         return $games;
     }
 
-    public function downloadGames(int $year, int $month, string $type, string $lastId = ""): array
+    public function downloadGames(int $year, int $month, string $type, string $lastId = "", $max = 4): array
     {
-
         $games = [];
 
         $since = new DateTime();
@@ -274,12 +290,15 @@ class LichessInterface implements ChessSiteInterface
         $until->sub(DateInterval::createFromDateString('1 day'));
         $until->setTime(23, 59, 59);
 
+        // get the type (daily = classical)
+        $type = $type == "daily" ? "classical" : $type;
+
         // set the url
         $url = "https://lichess.org/api/games/user/" . $this->username;
 
-        $url .= "?since=" . ($lastId == "" ? ($since->getTimestamp() * 1000) : intval($lastId) + 1);
+        $url .= "?since=" . ($lastId == "" ? ($since->getTimestamp() * 1000) : intval($lastId));
         $url .= "&until=" . ($until->getTimestamp() * 1000);
-        $url .= "&max=4";
+        $url .= "&max=" . ($max + 1);
         $url .= "&perfType=" . $type;
         $url .= "&pgnInJson=true&sort=dateAsc";
 
@@ -291,12 +310,16 @@ class LichessInterface implements ChessSiteInterface
         // if response is ok
         if ($response !== null && $response->getStatusCode() == 200 && $response->getContent(false) !== "") {
 
+            // sleep for 1 second (to prevent 429 - timeouts)
+            sleep(1);
+
             $resp = explode("\n", $response->getContent(false));
 
             for ($i = 0; $i < count($resp); $i++) {
                 if ($resp[$i] != "") {
                     $json = json_decode($resp[$i], true);
-                    if ($lastId == "" || $lastId != $json["createdAt"]) {
+                    // if this is not the last UUID and we don't have 4 games yet
+                    if (($lastId == "" || $lastId != $json["createdAt"]) && count($games) < $max) {
                         $json["uuid"] = $json["createdAt"];
                         $games[] = $json;
                     }
@@ -448,8 +471,8 @@ class LichessInterface implements ChessSiteInterface
                         // add 2 mins to the time limit
                         set_time_limit(120);
 
-                        // wait for 1 minute
-                        sleep(60);
+                        // wait for 30 seconds
+                        sleep(30);
 
                         $this->retryCount++;
                     }

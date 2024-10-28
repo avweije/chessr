@@ -9,7 +9,8 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
 class ChessDotComInterface implements ChessSiteInterface
 {
     private $client;
-    private $username = "avweije";
+    private $username = "";
+    private $joined = null;
     private $archives = [];
     private $games = [];
 
@@ -26,6 +27,22 @@ class ChessDotComInterface implements ChessSiteInterface
     public function setUsername($username): void
     {
         $this->username = $username;
+    }
+
+    public function getCreatedAt(): int
+    {
+        // if we need to get the created at from the profile
+        if ($this->joined == null) {
+            // set the url
+            $url = "https://api.chess.com/pub/player/" . $this->username;
+            // get the profile
+            $response = $this->request('GET', $url);
+            if ($response !== null && $response->getStatusCode() == 200) {
+                $this->joined = $response->toArray()['joined'];
+            }
+        }
+
+        return $this->joined;
     }
 
     public function getArchives(): array
@@ -116,7 +133,7 @@ class ChessDotComInterface implements ChessSiteInterface
     }
 
     //
-    public function downloadGames($year, $month, $type, $lastId = ""): array
+    public function downloadGames($year, $month, $type, $lastId = "", $max = 4): array
     {
         // pad the month
         $month = str_pad($month, 2, '0', STR_PAD_LEFT);
@@ -135,8 +152,21 @@ class ChessDotComInterface implements ChessSiteInterface
             $games = $response->toArray()['games'];
             $gamesOfType = [];
 
+            // only get the games newer than the last id
+            $lastIdFound = $lastId == "";
+
+            // loop through the games
             foreach ($games as $game) {
+                // if this is the correct time format
                 if ($game["time_class"] == $type) {
+                    // if we haven't found the last id yet
+                    if (!$lastIdFound) {
+                        $lastIdFound = $game["uuid"] == $lastId;
+
+                        continue;
+                    }
+
+                    // don't need this anymore ??
                     if (!isset($this->games[$year])) {
                         $this->games[$year] = [];
                     }
@@ -147,7 +177,12 @@ class ChessDotComInterface implements ChessSiteInterface
 
                     $this->games[$year][$month][] = $game;
 
+                    // add the game
                     $gamesOfType[] = $game;
+
+                    if (count($gamesOfType) >= $max) {
+                        break;
+                    }
                 }
             }
 

@@ -38,6 +38,21 @@ export const BOARD_SETTINGS = {
   },
 };
 
+export const PIECE_TILESIZE = {
+  default: 40,
+  alpha: 2048,
+
+  get(str) {
+    console.log("PIECE_TILESIZE:get: " + str);
+    // strip the basename
+    var base = new String(str).substring(str.lastIndexOf("/") + 1);
+    if (base.lastIndexOf(".") != -1)
+      base = base.substring(0, base.lastIndexOf("."));
+
+    return PIECE_TILESIZE[base] ? PIECE_TILESIZE[base] : this.default;
+  },
+};
+
 /*
 MyChessBoard Class - Integrates Chess.js with cm-chessboard, validates moves, adds markers, etc.
 */
@@ -56,16 +71,15 @@ export class MyChessBoard {
       withLinks: true,
       styling: {
         main: "inline-block px-0.5 text-base rounded",
-        mainText: "text-gray-800 dark:text-gray-200 border border-transparent",
+        mainText: "tc-base border border-transparent",
         mainLink:
-          "cursor-pointer border border-transparent text-gray-800 dark:text-gray-200 hover:text-gray-600 hover:bg-slate-100 hover:border-slate-300 dark:hover:text-gray-200 dark:hover:bg-slate-500 dark:hover:border-slate-600",
+          "cursor-pointer border border-transparent tc-base hover:text-sky-800 hover:bg-sky-200 hover:border-sky-400 dark:hover:text-primary-300 dark:hover:bg-slate-500 dark:hover:border-slate-700",
         variation: "inline-block px-0.5 italic text-sm rounded",
-        variationText:
-          "text-gray-600 dark:text-gray-300 border border-transparent",
+        variationText: "tc-faded border border-transparent",
         variationLink:
-          "cursor-pointer border border-transparent text-gray-600 dark:text-gray-300 hover:text-gray-600 hover:bg-slate-100 hover:border hover:border-slate-300 dark:hover:text-gray-300 dark:hover:bg-slate-500 dark:hover:border-slate-600",
+          "cursor-pointer border border-transparent tc-faded hover:text-gray-600 hover:bg-slate-100 hover:border hover:border-slate-300 dark:hover:text-gray-300 dark:hover:bg-slate-500 dark:hover:border-slate-600",
         currentMove:
-          "border text-primary-500 dark:text-primary-300 bg-primary-50 border-slate-300 dark:bg-slate-500 dark:border-slate-600",
+          "border text-sky-800 dark:text-primary-300 bg-sky-200 border-sky-400 dark:bg-slate-500 dark:border-slate-700",
       },
     },
   };
@@ -230,6 +244,25 @@ export class MyChessBoard {
     return obj1;
   }
 
+  // remove all markers, optionally excluding the premove marker
+  removeMarkers(keepPremove = true) {
+    this.board.removeMarkers(MARKER_TYPE.bevel);
+    this.board.removeMarkers(MARKER_TYPE.circle);
+    this.board.removeMarkers(MARKER_TYPE.circleDanger);
+    this.board.removeMarkers(MARKER_TYPE.circlePrimary);
+    this.board.removeMarkers(MARKER_TYPE.dot);
+    this.board.removeMarkers(MARKER_TYPE.frame);
+    this.board.removeMarkers(MARKER_TYPE.frameDanger);
+    this.board.removeMarkers(MARKER_TYPE.framePrimary);
+    this.board.removeMarkers(MARKER_TYPE.square);
+    this.board.removeMarkers(this.markers.checkmark);
+    this.board.removeMarkers(this.markers.cancel);
+    this.board.removeMarkers(this.markers.squareGreen);
+    if (!keepPremove) {
+      this.board.removeMarkers(this.markers.squareRed);
+    }
+  }
+
   /*
   Public functions.
   */
@@ -277,15 +310,29 @@ export class MyChessBoard {
   }
 
   //
-  async resetToPosition(initialFen, moves, updateBoard = true) {
+  async resetToPosition(
+    initialFen,
+    moves,
+    resetMoves = false,
+    updateBoard = true
+  ) {
     // get the current moves
     var history = this.game.history({ verbose: true });
     var movesToMake = [];
     var movesThatMatch = [];
 
     //var match = initialFen == this.initialFen && moves.length >= history.length;
-    var match = initialFen == this.initialFen;
+    var match = initialFen == this.initialFen && !resetMoves;
     var lastMatchingFen = "";
+
+    console.info(
+      "resetToPosition:",
+      initialFen,
+      this.initialFen,
+      history.length,
+      moves.length,
+      match
+    );
 
     // see if the current moves match the new moves
     for (var i = 0; i < moves.length; i++) {
@@ -339,6 +386,8 @@ export class MyChessBoard {
       this.game.move(moves[i]);
       newMoves.push(this.game.history({ verbose: true }).pop());
     }
+
+    console.info(newMoves, movesToMake, moves);
 
     return newMoves;
   }
@@ -594,7 +643,7 @@ export class MyChessBoard {
     }
 
     // reset to position (need to use diff function for this later..)
-    this.resetToPosition(this.initialFen, moves, false);
+    this.resetToPosition(this.initialFen, moves, false, false);
     // update the board
     this.board.setPosition(this.game.fen());
     // process the move
@@ -1114,6 +1163,8 @@ export class MyChessBoard {
     // if we need to make a premove
     if (this.status == BOARD_STATUS.waitingOnMove && this.premove !== null) {
       try {
+        console.info("setStatus, has premove, making it now..");
+
         // remove the premove markers
         this.board.removeMarkers(this.markers.squareRed);
         // make the move
@@ -1122,6 +1173,8 @@ export class MyChessBoard {
           to: this.premove.squareTo,
           promotion: this.premove.promotion ? this.premove.promotion : "q",
         });
+        // remove the last move markers
+        this.board.removeMarkers();
       } catch (err) {
         console.log(err);
       } finally {
@@ -1297,11 +1350,9 @@ export class MyChessBoard {
     // if we have a premove
     if (this.premove !== null) {
       this.premove = null;
-
-      // remove the premove markers
-      this.board.removeMarkers(this.markers.squareRed);
     }
-
+    // remove the premove markers
+    this.board.removeMarkers(this.markers.squareRed);
     // remove the legal move markers
     this.board.removeLegalMovesMarkers();
   }
@@ -1309,6 +1360,8 @@ export class MyChessBoard {
   moveInputFinished(event) {
     console.log("moveInputFinished:");
     console.log(event);
+    // remove the legal move markers
+    this.board.removeLegalMovesMarkers();
     // if this was an actual move
     if (event.squareFrom && event.squareTo) {
       // if this is a premove
@@ -1340,7 +1393,7 @@ export class MyChessBoard {
     this.board.removeLegalMovesMarkers();
 
     if (removeMarkers) {
-      console.log("-- remove markers..");
+      console.info("-- REMOVE MARKERS (1)");
 
       this.board.removeMarkers();
     }

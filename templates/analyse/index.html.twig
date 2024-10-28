@@ -3,107 +3,104 @@
 {% block body %}
 
 	<div class="w-full md:w-4/5 lg:w-3/5 m-auto text-center p-4">
-		<div id="analyseWebsiteButtons" class="inline-flex rounded-md shadow-sm">
-			<div>
-				<input type="radio" id="siteChessDotComRadio" checked name="website" value="Chess.com" class="sr-only peer">
-				<label for="siteChessDotComRadio" class="cursor-pointer inline-block rounded-s-lg text-gray-900 bg-white peer-checked:text-primary-500 peer-checked:bg-primary-50 disabled:text-gray-300 px-4 py-2 text-sm font-medium border border-gray-300 dark:border-slate-600 hover:text-primary-500 hover:bg-primary-200 hover:peer-checked:text-primary-500 hover:peer-checked:bg-primary-200 dark:text-gray-200 dark:bg-slate-900 peer-checked:dark:text-primary-500 peer-checked:dark:bg-slate-950 dark:hover:text-primary-500 dark:hover:bg-slate-700 peer-checked:dark:hover:text-primary-500 peer-checked:dark:hover:bg-slate-700">
-					Chess.com
-				</label>
-			</div>
-			<div>
-				<input type="radio" id="siteLichessRadio" name="website" value="Lichess" class="sr-only peer">
-				<label for="siteLichessRadio" class="cursor-pointer inline-block rounded-e-lg text-gray-900 bg-white peer-checked:text-primary-500 peer-checked:bg-primary-50 disabled:text-gray-300 px-4 py-2 text-sm font-medium border border-gray-300 dark:border-slate-600 hover:text-primary-500 hover:bg-primary-200 hover:peer-checked:text-primary-500 hover:peer-checked:bg-primary-200 dark:text-gray-200 dark:bg-slate-900 peer-checked:dark:text-primary-500 peer-checked:dark:bg-slate-950 dark:hover:text-primary-500 dark:hover:bg-slate-700 peer-checked:dark:hover:text-primary-500 peer-checked:dark:hover:bg-slate-700">
-					Lichess
-				</label>
-			</div>
-		</div>
-	</div>
+		<p class="text-base font-medium text-gray-600 dark:text-gray-300 mt-10 mb-6">From which website do you want to download your games?</p>
 
-	<p class="inline-block w-full md:w-4/5 lg:w-3/5 text-sm font-bold text-gray-900 dark:text-gray-400 p-3 border-b border-zinc-300 dark:border-slate-600">Account</p>
+		<div id="analyseWebsiteButtons" class="boxed-radio-group m-2">
+			<div class="boxed-radio">
+				<input class="peer hidden" type="radio" name="website" value="Chess.com" id="siteChessDotComRadio" checked/>
+				<label class="boxed-radio-label" for="siteChessDotComRadio"></label>
+				<div class="boxed-radio-circle"></div>
+				<span class="boxed-radio-text">Chess.com</span>
+			</div>
+			<div class="boxed-radio">
+				<input class="peer hidden" type="radio" name="website" value="Lichess" id="siteLichessRadio"/>
+				<label class="boxed-radio-label" for="siteLichessRadio"></label>
+				<div class="boxed-radio-circle"></div>
+				<span class="boxed-radio-text">Lichess</span>
+			</div>
+		</div>
 
-	<div class="flex items-center px-4 py-6">
+		<p class="text-base font-medium text-gray-600 dark:text-gray-300 mt-10 mb-4">What is your username there?</p>
+
 		<div>
-			<label class="block text-sm font-medium text-gray-900 dark:text-gray-300">Username</label>
+			<input id="siteUsername" type="text" name="username" value="" placeholder="Enter your account name.." class="input-text-faded"/>
 		</div>
-		<div class="mx-3">
-			<input id="siteUsername" type="text" name="username" size="40" value="" placeholder="Enter your account name.." class="block w-full rounded-md border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600">
+
+		<p class="text-base font-medium text-gray-600 dark:text-gray-300 mt-10 mb-6">What time period do you want to analyse?</p>
+
+		<div class="boxed-checkbox-group m-2">
+			<div class="boxed-checkbox">
+				<input class="peer hidden" type="checkbox" name="period_recent" id="periodRecentRadio" checked/>
+				<label class="boxed-checkbox-label" for="periodRecentRadio"></label>
+				<div class="relative hidden peer-checked:flex">
+					<div class="absolute top-1 right-1 bottom-1 left-1 rounded-full bg-white"></div>
+					<div class="boxed-checkbox-circle icon-[mdi--checkbox-marked-circle]"></div>
+				</div>
+				<div class="boxed-checkbox-circle peer-checked:hidden text-amber-300 dark:text-slate-500 icon-[mdi--checkbox-blank-circle-outline]"></div>
+				<span class="boxed-checkbox-text peer-checked:dark:text-gray-700">The past year</span>
+			</div>
+			<div class="boxed-checkbox">
+				<input class="peer hidden" type="checkbox" name="period_older" id="periodOlderRadio"/>
+				<label class="boxed-checkbox-label" for="periodOlderRadio"></label>
+				<div class="relative hidden peer-checked:flex">
+					<div class="absolute top-1 right-1 bottom-1 left-1 rounded-full bg-white"></div>
+					<div class="boxed-checkbox-circle icon-[mdi--checkbox-marked-circle]"></div>
+				</div>
+				<div class="boxed-checkbox-circle peer-checked:hidden text-amber-300 dark:text-slate-500 icon-[mdi--checkbox-blank-circle-outline]"></div>
+				<span class="boxed-checkbox-text peer-checked:dark:text-gray-700">Older</span>
+			</div>
 		</div>
-		<div>
-			<button type="button" id="connectButton" class="btn btn-primary">
-				Connect
-				<span class="hidden inline-block icon-[svg-spinners--90-ring-with-bg] ml-1 w-4 h-4"></span>
+
+		<p class="text-base font-medium text-gray-600 dark:text-gray-300 mt-10 mb-6">Which time controls do you want to include?</p>
+
+		<div class="boxed-checkbox-group m-2">
+			<div class="boxed-checkbox">
+				<input class="peer hidden" type="checkbox" name="type_daily" value="daily" id="typeDailyCheckbox" checked/>
+				<label class="boxed-checkbox-label" for="typeDailyCheckbox"></label>
+				<div class="relative hidden peer-checked:flex">
+					<div class="absolute top-1 right-1 bottom-1 left-1 rounded-full bg-white"></div>
+					<div class="boxed-checkbox-circle icon-[mdi--checkbox-marked-circle]"></div>
+				</div>
+				<div class="boxed-checkbox-circle peer-checked:hidden text-amber-300 dark:text-slate-500 icon-[mdi--checkbox-blank-circle-outline]"></div>
+				<span class="boxed-checkbox-text peer-checked:dark:text-gray-700">Daily</span>
+			</div>
+			<div class="boxed-checkbox">
+				<input class="peer hidden" type="checkbox" name="type_rapid" value="rapid" id="typeRapidCheckbox" checked/>
+				<label class="boxed-checkbox-label" for="typeRapidCheckbox"></label>
+				<div class="relative hidden peer-checked:flex">
+					<div class="absolute top-1 right-1 bottom-1 left-1 rounded-full bg-white"></div>
+					<div class="boxed-checkbox-circle icon-[mdi--checkbox-marked-circle]"></div>
+				</div>
+				<div class="boxed-checkbox-circle peer-checked:hidden text-amber-300 dark:text-slate-500 icon-[mdi--checkbox-blank-circle-outline]"></div>
+				<span class="boxed-checkbox-text peer-checked:dark:text-gray-700">Rapid</span>
+			</div>
+			<div class="boxed-checkbox">
+				<input class="peer hidden" type="checkbox" name="type_blitz" value="blitz" id="typeBlitzCheckbox" checked/>
+				<label class="boxed-checkbox-label" for="typeBlitzCheckbox"></label>
+				<div class="relative hidden peer-checked:flex">
+					<div class="absolute top-1 right-1 bottom-1 left-1 rounded-full bg-white"></div>
+					<div class="boxed-checkbox-circle icon-[mdi--checkbox-marked-circle]"></div>
+				</div>
+				<div class="boxed-checkbox-circle peer-checked:hidden text-amber-300 dark:text-slate-500 icon-[mdi--checkbox-blank-circle-outline]"></div>
+				<span class="boxed-checkbox-text peer-checked:dark:text-gray-700">Blitz</span>
+			</div>
+			<div class="boxed-checkbox">
+				<input class="peer hidden" type="checkbox" name="type_bullet" value="bullet" id="typeBulletCheckbox"/>
+				<label class="boxed-checkbox-label" for="typeBulletCheckbox"></label>
+				<div class="relative hidden peer-checked:flex">
+					<div class="absolute top-1 right-1 bottom-1 left-1 rounded-full bg-white"></div>
+					<div class="boxed-checkbox-circle icon-[mdi--checkbox-marked-circle]"></div>
+				</div>
+				<div class="boxed-checkbox-circle peer-checked:hidden text-amber-300 dark:text-slate-500 icon-[mdi--checkbox-blank-circle-outline]"></div>
+				<span class="boxed-checkbox-text peer-checked:dark:text-gray-700">Bullet</span>
+			</div>
+		</div>
+
+		<div class="mt-10 mb-6">
+			<button type="button" id="startButton" disabled class="btn btn-primary">
+				Start analysing
+				<span class="hidden inline-block icon-[svg-spinners--90-ring-with-bg] ml-3 w-5 h-5"></span>
 			</button>
-		</div>
-	</div>
-
-	<div id="archivesSection">
-		<p class="inline-block w-full md:w-4/5 lg:w-3/5 text-sm font-bold text-gray-900 dark:text-gray-400 p-3 border-b border-zinc-300 dark:border-slate-600">Archives</p>
-
-		<div class="px-4 py-6">
-
-			<p id="archivesDisabledText" class="text-base text-gray-900 dark:text-gray-300">Connect to your account to show the archives.</p>
-
-			<div id="archivesContainer" class="hidden flex items-center">
-				<div>
-					<label class="block text-sm font-medium text-gray-900 dark:text-gray-300">Year</label>
-				</div>
-				<div class="mx-3">
-					<div class="relative">
-						<select id="archiveYearSelect" name="archive_year" class="appearance-none inline-block rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"></select>
-						<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-							<svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-						</div>
-					</div>
-				</div>
-				<div>
-					<label class="block text-sm font-medium text-gray-900 dark:text-gray-300">Month</label>
-				</div>
-				<div class="mx-3">
-					<div class="relative">
-						<select id="archiveMonthSelect" name="archive_month" class="appearance-none inline-block rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"></select>
-						<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-							<svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-						</div>
-					</div>
-				</div>
-
-				<div>
-					<button type="button" id="downloadButton" class="btn btn-primary">
-						Download games
-						<span class="hidden inline-block icon-[svg-spinners--90-ring-with-bg] ml-1 w-4 h-4"></span>
-					</button>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<div id="gamesSection" class="hidden">
-		<p class="inline-block w-full md:w-4/5 lg:w-3/5 text-sm font-bold text-gray-900 dark:text-gray-400 p-3 border-b border-zinc-300 dark:border-slate-600">Games</p>
-
-		<div class="px-4 py-6">
-
-			<p id="gamesDisabledText" class="text-base text-gray-900 dark:text-gray-300">Download an archive to show the games.</p>
-
-			<div id="gamesContainer" class="hidden flex items-center">
-				<div>
-					<label class="block text-sm font-medium text-gray-90 dark:text-gray-300">Time Control</label>
-				</div>
-				<div class="mx-3">
-					<div class="relative">
-						<select id="gameTypeSelect" name="game_type" class="appearance-none inline-block rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"></select>
-						<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-							<svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-						</div>
-					</div>
-				</div>
-
-				<div>
-					<button type="button" id="analyseButton" class="btn btn-primary">
-						Analyse games
-						<span class="hidden inline-block icon-[svg-spinners--90-ring-with-bg] ml-1 w-4 h-4"></span>
-					</button>
-				</div>
-			</div>
 		</div>
 	</div>
 

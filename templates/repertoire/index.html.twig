@@ -1,13 +1,17 @@
 {% extends 'board.html.twig' %}
 
 {% block board_header %}
-	<div class="inline-flex rounded-md shadow-sm">
-		<a href="/repertoire/white" class="rounded-s-lg {{ repertoireColor == 'white' ? 'text-primary-500 bg-primary-50 dark:text-primary-500 dark:bg-slate-950' : 'text-gray-900 bg-white dark:text-gray-200 dark:bg-slate-900' }} disabled:text-gray-300 px-4 py-2 text-sm font-medium border border-gray-300 dark:border-slate-600 hover:text-primary-500 hover:bg-primary-200 dark:hover:text-primary-500 dark:hover:bg-slate-700">
-			White Repertoire
-		</a>
-		<a href="/repertoire/black" class="rounded-e-lg {{ repertoireColor == 'black' ? 'text-primary-500 bg-primary-50 dark:text-primary-500 dark:bg-slate-950' : 'text-gray-900 bg-white dark:text-gray-200 dark:bg-slate-900' }} disabled:text-gray-300 px-4 py-2 text-sm font-medium border border-gray-300 dark:border-slate-600 hover:text-primary-500 hover:bg-primary-200 dark:hover:text-primary-500 dark:hover:bg-slate-700">
-			Black Repertoire
-		</a>
+	<div id="repertoireColorButtons" class="boxed-radio-menu">
+		<div class="boxed-radio">
+			<input class="peer hidden" type="radio" name="repertoire_color" value="white" id="whiteRepertoireRadio" {{ repertoireColor == 'black' ? '' : 'checked' }}/>
+			<label class="boxed-radio-label" for="whiteRepertoireRadio"></label>
+			<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500">White</span>
+		</div>
+		<div class="boxed-radio">
+			<input class="peer hidden" type="radio" name="repertoire_color" value="black" id="blackRepertoireRadio" {{ repertoireColor == 'black' ? 'checked' : '' }}/>
+			<label class="boxed-radio-label" for="blackRepertoireRadio"></label>
+			<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500">Black</span>
+		</div>
 	</div>
 {% endblock %}
 
@@ -23,21 +27,24 @@
 {% endblock %}
 
 {% block board_left %}
-	<div id="board" class="" data-color="{{ repertoireColor }}"></div>
+	<div id="board" class="" data-color="{{ repertoireColor }}" data-fen="{{ repertoireFen }}" data-line="{{ repertoireLine }}"></div>
 
 {% endblock %}
 
 {% block board_right %}
 
-	<div class="border rounded text-sm bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-900">
-		<div class="flex justify-between items-center m-0 p-3 border-b border-slate-300 dark:border-slate-900">
-			<p class="block text-sm font-bold text-gray-900 dark:text-gray-200">Game</p>
-			<p id="statusField" class="block text-sm text-right text-gray-900 dark:text-gray-200 pl-5"></p>
+	<div class="border rounded text-sm bg-tacao-100/50 dark:bg-slate-700 border-tacao-300/60 dark:border-slate-900">
+		<div class="flex justify-between items-center m-0 p-3 border-b border-tacao-300/60 dark:border-slate-900">
+			<p class="block text-sm font-bold tc-sharp">Game</p>
+			<p id="statusField" class="block text-sm text-right tc-base tc-faded pl-5"></p>
 		</div>
-		<div id="pgnField" class="p-3 text-sm"></div>
-		<div id="pgnStartPositionContainer" class="hidden p-2 border-t border-slate-300 dark:border-slate-900">
-			<label class="p-2 block text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">Starting position:</label>
-			<p class="p-2 pt-0 block text-sm w-full truncate text-gray-700 dark:text-gray-200"></p>
+		<div class="flex items-center">
+			<button id="gotoFirstButton" disabled class="shrink-0 w-7 h-7 my-2 ml-2 mr-1 tc-link-shade icon-[mdi--page-first]"></button>
+			<div id="pgnField" class="py-3 pr-3 text-sm"></div>
+		</div>
+		<div id="pgnStartPositionContainer" class="hidden p-2 border-t border-tacao-300/60 dark:border-slate-900">
+			<label class="p-2 block text-sm font-semibold tc-base whitespace-nowrap">Starting position:</label>
+			<p class="p-2 pt-0 block text-sm w-full truncate tc-base"></p>
 		</div>
 		<div class="flex justify-end">
 			<button type="button" id="closePgnButton" class="hidden m-3 mt-2 btn btn-outline">
@@ -46,15 +53,15 @@
 		</div>
 	</div>
 
-	<div class="my-px border rounded text-sm bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-900">
-		<div class="flex justify-between items-center m-0 p-3 border-b border-slate-300 dark:border-slate-900">
-			<p class="block text-sm font-bold text-gray-900 dark:text-gray-200">Moves</p>
-			<p id="ecoField" class="block text-sm text-right font-semibold text-gray-900 dark:text-gray-200 pl-5"></p>
+	<div class="my-0.5 border rounded text-sm bg-tacao-100/50 dark:bg-slate-700 border-tacao-300/60 dark:border-slate-900">
+		<div class="flex justify-between items-center m-0 p-3 border-b border-tacao-300/60 dark:border-slate-900">
+			<p class="block text-sm font-bold tc-sharp">Moves</p>
+			<p id="ecoField" class="block text-sm text-right font-semibold tc-base tc-faded pl-5"></p>
 		</div>
 
 		<div style="overflow-y: auto; overflow-x: hidden; max-height: 56vh;">
 			<div class="p-1">
-				<p class="block text-base text-gray-900 dark:text-gray-200 p-3 hidden">No repertoire moves or book moves found.</p>
+				<p class="block text-base tc-base p-3 hidden">No repertoire moves or book moves found.</p>
 
 				<table id="movesTable" class="table-fixed min-w-full m-0">
 					<tbody></tbody>
@@ -63,26 +70,54 @@
 		</div>
 	</div>
 
-	<div id="repertoireContainer" class="hidden my-px border rounded text-sm bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-900">
-		<div class="flex justify-between items-center m-0 p-0 border-b border-slate-200 dark:border-slate-900">
-			<p class="block text-sm font-bold p-3 text-gray-900 dark:text-gray-200">Repertoire</p>
+	<div id="engineContainer" class="hidden my-0.5 border rounded text-sm bg-tacao-100/50 dark:bg-slate-700 border-tacao-300/60 dark:border-slate-900">
+		<div class="flex justify-between items-center m-0 p-3 border-b border-tacao-300/60 dark:border-slate-900">
+			<p class="block text-sm font-bold tc-sharp">Engine</p>
+			<label class="input-toggle" style="margin-inline-end: 0;">
+				<input id="engineCheckbox" type="checkbox" class="sr-only peer">
+				<div class="input-toggle-switch"></div>
+			</label>
+		</div>
+
+		<div class="p-1">
+			<p class="block text-base tc-base p-3 hidden">Start the engine to find the best moves.</p>
+
+			<table id="engineTable" class="table-fixed min-w-full m-0">
+				<tbody></tbody>
+			</table>
+		</div>
+	</div>
+
+	<div id="repertoireContainer" class="hidden my-0.5 border rounded text-sm bg-tacao-100/50 dark:bg-slate-700 border-tacao-300/60 dark:border-slate-900">
+		<div class="flex justify-between items-center m-0 p-0 border-b border-tacao-300/60 dark:border-slate-900">
+			<p class="block text-sm font-bold p-3 tc-sharp">Repertoire</p>
 			<div class="pr-2"></div>
 		</div>
 
 		<div class="w-full p-3">
-			<div class="pl-2">
-				<input id="repertoireAutoPlayCheckbox" type="checkbox" class="accent-primary-400">
-				<label for="repertoireAutoPlayCheckbox" class="inline-block text-base p-2 text-gray-900 dark:text-gray-200">Auto-play this move in practice</label>
+			<div class="py-1">
+				<label class="input-toggle">
+					<input id="repertoireAutoPlayCheckbox" type="checkbox" class="sr-only peer">
+					<div class="input-toggle-switch"></div>
+					<div class="ml-2">
+						<p class="text-base font-normal tc-base">Auto-play this move in practice</p>
+					</div>
+				</label>
 			</div>
-			<div class="mb-2 pl-2">
-				<input id="repertoireExcludeCheckbox" type="checkbox" class="accent-primary-400">
-				<label for="repertoireExcludeCheckbox" class="inline-block text-base p-2 text-gray-900 dark:text-gray-200">Temporarily exclude this line from practice</label>
+			<div class="mb-1 py-1">
+				<label class="input-toggle">
+					<input id="repertoireExcludeCheckbox" type="checkbox" class="sr-only peer">
+					<div class="input-toggle-switch"></div>
+					<div class="ml-2">
+						<p class="text-base font-normal tc-base">Temporarily exclude this line from practice</p>
+					</div>
+				</label>
 			</div>
 			<div class="mb-2">
-				<label class="block text-sm font-medium text-gray-900 dark:text-gray-200">Group:</label>
+				<label class="block text-sm font-medium tc-base">Group:</label>
 			</div>
 			<div class="w-full mb-1">
-				<input id="repertoireGroupInput" list="repertoireGroupDataList" name="repertoire_group" placeholder="Type and press Enter to add or select from list..." class="block w-full rounded-md border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600">
+				<input id="repertoireGroupInput" list="repertoireGroupDataList" name="repertoire_group" placeholder="Type and press Enter to add or select from list..." class="input-text-small">
 				<datalist id="repertoireGroupDataList"></datalist>
 			</div>
 			<div id="repertoireGroupTagsContainer" class="flex flex-wrap"></div>
@@ -95,8 +130,8 @@
 		</div>
 	</div>
 
-	<div id="initialFenContainer" class="hidden border my-px rounded text-sm bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-900">
-		<p class="block text-sm font-bold p-3 border-b text-gray-900 dark:text-gray-200 border-slate-200 dark:border-slate-900">Starting position</p>
+	<div id="initialFenContainer" class="hidden border my-0.5 rounded text-sm bg-tacao-100/50 dark:bg-slate-700 border-tacao-300/60 dark:border-slate-900">
+		<p class="block text-sm font-bold p-3 border-b tc-sharp border-tacao-300/60 dark:border-slate-900">Starting position</p>
 
 		<div class="p-3">
 			<div class="relative inline-block">

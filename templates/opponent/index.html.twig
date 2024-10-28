@@ -1,0 +1,204 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+	<div class="flex justify-around p-4">
+		<div id="opponentTabButtons" class="boxed-radio-menu">
+			<div class="boxed-radio">
+				<input class="peer hidden" type="radio" name="opponent_page" value="download" id="opponentDownloadRadio" checked/>
+				<label class="boxed-radio-label" for="opponentDownloadRadio"></label>
+				<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500">Download</span>
+			</div>
+			<div class="boxed-radio">
+				<input class="peer hidden" type="radio" name="opponent_page" value="analysis" id="opponentAnalysisRadio"/>
+				<label class="boxed-radio-label" for="opponentAnalysisRadio"></label>
+				<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500">Analysis</span>
+			</div>
+		</div>
+	</div>
+
+	<div id="opponentDownloadTab" class="w-full md:w-4/5 lg:w-3/5 m-auto text-center">
+		<p class="text-base font-medium tc-base mt-10 mb-6">On which website does your opponent play?</p>
+
+		<div id="analyseWebsiteButtons" class="boxed-radio-group m-2">
+			<div class="boxed-radio">
+				<input class="peer hidden" type="radio" name="website" value="Chess.com" id="siteChessDotComRadio" checked/>
+				<label class="boxed-radio-label" for="siteChessDotComRadio"></label>
+				<div class="boxed-radio-circle"></div>
+				<span class="boxed-radio-text">Chess.com</span>
+			</div>
+			<div class="boxed-radio">
+				<input class="peer hidden" type="radio" name="website" value="Lichess" id="siteLichessRadio"/>
+				<label class="boxed-radio-label" for="siteLichessRadio"></label>
+				<div class="boxed-radio-circle"></div>
+				<span class="boxed-radio-text">Lichess</span>
+			</div>
+		</div>
+
+		<p class="text-base font-medium tc-base mt-10 mb-4">What is their username there?</p>
+
+		<div>
+			<input id="siteUsername" type="text" name="username" value="" list="siteUsernameDataListChessCom" placeholder="Enter your opponent's account name.." class="input-text-faded"/>
+			<datalist id="siteUsernameDataListChessCom">
+				{% for opp in opponents %}
+					{% if opp.site is same as ("Chess.com") %}
+						<option value="{{ opp.username|e }}">{{ opp.site|e }}</option>
+					{% endif %}
+				{% endfor %}
+			</datalist>
+			<datalist id="siteUsernameDataListLichess">
+				{% for opp in opponents %}
+					{% if opp.site is same as("Lichess") %}
+						<option value="{{ opp.username|e }}">{{ opp.site|e }}</option>
+					{% endif %}
+				{% endfor %}
+			</datalist>
+		</div>
+
+		<p class="text-base font-medium tc-base mt-10 mb-6">Which time controls do you want to include?</p>
+
+		<div class="boxed-checkbox-group m-2">
+			<div class="boxed-checkbox">
+				<input class="peer hidden" type="checkbox" name="type_daily" value="daily" id="typeDailyCheckbox" checked/>
+				<label class="boxed-checkbox-label" for="typeDailyCheckbox"></label>
+				<div class="relative hidden peer-checked:flex">
+					<div class="absolute top-1 right-1 bottom-1 left-1 rounded-full bg-white"></div>
+					<div class="boxed-checkbox-circle icon-[mdi--checkbox-marked-circle]"></div>
+				</div>
+				<div class="boxed-checkbox-circle peer-checked:hidden text-gray-300 dark:text-slate-500 icon-[mdi--checkbox-blank-circle-outline]"></div>
+				<span class="boxed-checkbox-text">Daily</span>
+			</div>
+			<div class="boxed-checkbox">
+				<input class="peer hidden" type="checkbox" name="type_rapid" value="rapid" id="typeRapidCheckbox" checked/>
+				<label class="boxed-checkbox-label" for="typeRapidCheckbox"></label>
+				<div class="relative hidden peer-checked:flex">
+					<div class="absolute top-1 right-1 bottom-1 left-1 rounded-full bg-white"></div>
+					<div class="boxed-checkbox-circle icon-[mdi--checkbox-marked-circle]"></div>
+				</div>
+				<div class="boxed-checkbox-circle peer-checked:hidden text-gray-300 dark:text-slate-500 icon-[mdi--checkbox-blank-circle-outline]"></div>
+				<span class="boxed-checkbox-text">Rapid</span>
+			</div>
+			<div class="boxed-checkbox">
+				<input class="peer hidden" type="checkbox" name="type_blitz" value="blitz" id="typeBlitzCheckbox" checked/>
+				<label class="boxed-checkbox-label" for="typeBlitzCheckbox"></label>
+				<div class="relative hidden peer-checked:flex">
+					<div class="absolute top-1 right-1 bottom-1 left-1 rounded-full bg-white"></div>
+					<div class="boxed-checkbox-circle icon-[mdi--checkbox-marked-circle]"></div>
+				</div>
+				<div class="boxed-checkbox-circle peer-checked:hidden text-gray-300 dark:text-slate-500 icon-[mdi--checkbox-blank-circle-outline]"></div>
+				<span class="boxed-checkbox-text">Blitz</span>
+			</div>
+			<div class="boxed-checkbox">
+				<input class="peer hidden" type="checkbox" name="type_bullet" value="bullet" id="typeBulletCheckbox"/>
+				<label class="boxed-checkbox-label" for="typeBulletCheckbox"></label>
+				<div class="relative hidden peer-checked:flex">
+					<div class="absolute top-1 right-1 bottom-1 left-1 rounded-full bg-white"></div>
+					<div class="boxed-checkbox-circle icon-[mdi--checkbox-marked-circle]"></div>
+				</div>
+				<div class="boxed-checkbox-circle peer-checked:hidden text-gray-300 dark:text-slate-500 icon-[mdi--checkbox-blank-circle-outline]"></div>
+				<span class="boxed-checkbox-text">Bullet</span>
+			</div>
+		</div>
+
+		<div class="mt-10 mb-6">
+			<button type="button" id="startButton" disabled class="btn btn-primary">
+				Start analysing
+				<span class="hidden inline-block icon-[svg-spinners--90-ring-with-bg] ml-3 w-5 h-5"></span>
+			</button>
+		</div>
+	</div>
+
+	<div id="opponentAnalysisTab" class="hidden flex justify-around text-center">
+		<div>
+			{% if opponents|length > 1 %}
+				<p class="text-base font-medium tc-base mt-6 mb-6">Choose your opponent:</p>
+			{% endif %}
+
+			<div id="opponentContainer" class="boxed-radio-group m-2 {% if opponents|length == 1 %}mt-6{% endif %}">
+				{% for opp in opponents %}
+					<div class="boxed-radio">
+						<input class="peer hidden" type="radio" name="opponent_box" value="{{ opp.username }}" data-id="{{ opp.id }}" data-site="{{ opp.site }}" id="opponentBoxRadio_{{ opp.id }}" {% if opponents|length == 1 %} checked {% endif %}/>
+						<label class="boxed-radio-label" for="opponentBoxRadio_{{ opp.id }}"></label>
+						<div class="boxed-radio-circle"></div>
+						<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500">
+							<p class="text-left mb-1">{{ opp.username }}</p>
+							<p class="text-left text-sm opacity-70">{{ opp.site }}</p>
+						</span>
+					</div>
+				{% endfor %}
+			</div>
+
+			<p class="text-base font-medium tc-base mt-10 mb-6">Which side of your opponent do you want to see?</p>
+
+			<div id="opponentColorButtons" class="boxed-radio-group m-2">
+				<div class="boxed-radio">
+					<input class="peer hidden" type="radio" name="opponent_color" value="white" id="opponentColorWhiteRadio" checked/>
+					<label class="boxed-radio-label" for="opponentColorWhiteRadio"></label>
+					<div class="boxed-radio-circle"></div>
+					<span class="boxed-radio-text">White</span>
+				</div>
+				<div class="boxed-radio">
+					<input class="peer hidden" type="radio" name="opponent_color" value="black" id="opponentColorBlackRadio"/>
+					<label class="boxed-radio-label" for="opponentColorBlackRadio"></label>
+					<div class="boxed-radio-circle"></div>
+					<span class="boxed-radio-text">Black</span>
+				</div>
+			</div>
+
+			<div id="opponentMovesContainer" class="hidden flex flex-col items-center mt-10">
+				<div id="opponentMovesHeader" class="flex flex-col mb-6 min-w-72 rounded bg-tacao-100/50 dark:bg-slate-700 border border-tacao-300/60 dark:border-slate-900">
+					<div id="opponentMovesEco" class="flex justify-between items-center gap-x-5 px-4 py-3 tc-base border-b border-tacao-300/60 dark:border-slate-900"></div>
+					<div class="flex gap-x-5 justify-between items-center">
+						<div class="flex items-center px-2 py-3">
+							<button id="opponentMovesFirstButton" disabled class="shrink-0 w-7 h-7 mr-2 tc-link-shade icon-[mdi--page-first]"></button>
+							<div id="opponentMovesPgn" class="flex flex-wrap items-center text-left tc-base"></div>
+						</div>
+						<div id="opponentMovesInfo" class="shrink-0 px-3 py-2 text-right">
+							<p class="text-xs mb-px tc-faded">Wins:
+								<span class="ml-0.5 tc-sharp">0</span>
+							</p>
+							<p class="text-xs tc-faded">Losses:
+								<span class="ml-0.5 tc-sharp">0</span>
+							</p>
+						</div>
+					</div>
+					<div id="opponentMovesRepertoire" class="hidden flex justify-between items-center gap-x-5 p-2 border-t border-tacao-300/60 dark:border-slate-900">
+						<div class="text-sm pl-0.5 tc-faded"></div>
+						<button id="opponentMoveSubmitButton" type="button" class="flex appearance-none">
+							<span class="inline-block text-2xl px-1 tc-link-shade icon-[mdi--open-in-new]"></span>
+						</button>
+					</div>
+					<form id="opponentMoveForm" method="post" action="./repertoire" target="blank"></form>
+					<div id="opponentMoveSuggestions" class="hidden flex justify-between items-center gap-x-5 p-2 max-h-96 overflow-y-auto border-t border-tacao-300/60 dark:border-slate-900">
+						<div class="text-sm pl-0.5 tc-faded"></div>
+						<button id="opponentMoveSuggestionsButton" type="button" class="flex appearance-none">
+							<span class="inline-block text-2xl px-1 tc-link-shade icon-[mdi--show-outline]"></span>
+						</button>
+					</div>
+				</div>
+
+				<div id="opponentMoveSuggestionsContainer" class="hidden flex flex-col mb-6 min-w-72 rounded bg-tacao-100/50 dark:bg-slate-700 border border-tacao-300/60 dark:border-slate-900">
+					<div class="flex items-center px-4 py-3 tc-sharp border-b border-tacao-300/60 dark:border-slate-900">
+						Suggestions
+					</div>
+					<div class="flex flex-col bg-tacao-100/50 dark:bg-slate-700"></div>
+				</div>
+
+				<div id="opponentMovesTable" class="flex flex-wrap gap-1 justify-center"></div>
+			</div>
+		</div>
+	</div>
+
+
+	{{ include('opponent/dialogs/analyse.html.twig') }}
+{% endblock %}
+{% block stylesheets %}
+	{{ parent() }}
+
+	{{ encore_entry_link_tags('opponent') }}
+	{{ encore_entry_link_tags('modal') }}
+{% endblock %}
+{% block javascripts %}
+	{{ parent() }}
+
+	{{ encore_entry_script_tags('opponent') }}
+{% endblock %}

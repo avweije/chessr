@@ -1,12 +1,23 @@
 import { MyChess } from "./chess.js";
-import { BOARD_STATUS, MyChessBoard } from "./chessboard.js";
+import { BOARD_STATUS, MyChessBoard, PIECE_TILESIZE } from "./chessboard.js";
+import {
+  MARKER_TYPE,
+  Markers,
+} from "cm-chessboard/src/extensions/markers/Markers.js";
 import { COLOR } from "cm-chessboard/src/view/ChessboardView.js";
 import { Utils } from "./utils.js";
 import { Modal } from "./modal.js";
+import { UCI } from "./uci.js";
 
 import "../styles/chessboard.css";
 
 class Repertoire extends MyChessBoard {
+  whiteRepertoireRadio = null;
+  blackRepertoireRadio = null;
+
+  currentFen = "";
+  currentTurn = "";
+  engineFen = "";
   previewMove = "";
 
   statusField = null;
@@ -15,6 +26,7 @@ class Repertoire extends MyChessBoard {
   pgnStartPositionContainer = null;
 
   color = "white";
+  gotoFirstButton = null;
   loadPgnButton = null;
   closePgnButton = null;
   saveRepertoireButton = null;
@@ -23,6 +35,12 @@ class Repertoire extends MyChessBoard {
   analyseGameButton = null;
 
   pgnLoaded = false;
+
+  engineContainer = null;
+  engineCheckbox = null;
+  engineTable = null;
+
+  uci = null;
 
   repertoireContainer = null;
   repertoireAutoPlayCheckbox = null;
@@ -61,6 +79,20 @@ class Repertoire extends MyChessBoard {
     // show the page loader
     Utils.showLoading();
 
+    // get the repertoire color radio buttons
+    this.whiteRepertoireRadio = document.getElementById("whiteRepertoireRadio");
+    this.blackRepertoireRadio = document.getElementById("blackRepertoireRadio");
+
+    // add event listeners
+    this.whiteRepertoireRadio.addEventListener(
+      "click",
+      this.onRepertoireColorSwitch.bind(this)
+    );
+    this.blackRepertoireRadio.addEventListener(
+      "click",
+      this.onRepertoireColorSwitch.bind(this)
+    );
+
     // get the status fields
     this.statusField = document.getElementById("statusField");
     this.ecoField = document.getElementById("ecoField");
@@ -73,6 +105,7 @@ class Repertoire extends MyChessBoard {
     );
 
     // get the buttons
+    this.gotoFirstButton = document.getElementById("gotoFirstButton");
     this.loadPgnButton = document.getElementById("loadPgnButton");
     this.closePgnButton = document.getElementById("closePgnButton");
     this.saveRepertoireButton = document.getElementById("saveRepertoireButton");
@@ -81,6 +114,17 @@ class Repertoire extends MyChessBoard {
 
     // get the moves table
     this.movesTable = document.getElementById("movesTable");
+
+    // get the engine container & table
+    this.engineContainer = document.getElementById("engineContainer");
+    this.engineCheckbox = document.getElementById("engineCheckbox");
+    this.engineTable = document.getElementById("engineTable");
+
+    this.engineCheckbox.addEventListener(
+      "click",
+      this.onEngineToggle.bind(this)
+    );
+
     // get the repertoire container and elements
     this.repertoireContainer = document.getElementById("repertoireContainer");
     this.repertoireAutoPlayCheckbox = document.getElementById(
@@ -110,6 +154,7 @@ class Repertoire extends MyChessBoard {
     );
 
     // attach the event handlers
+    this.gotoFirstButton.addEventListener("click", this.onGotoFirst.bind(this));
     this.loadPgnButton.addEventListener("click", this.onLoadPgn.bind(this));
     this.closePgnButton.addEventListener("click", this.onClosePgn.bind(this));
 
@@ -256,6 +301,15 @@ class Repertoire extends MyChessBoard {
     // get the repertoire color
     this.color = el.getAttribute("data-color");
 
+    // get the repertoire initial fen & line (in case we need to jump to a certain position through a POST)
+    var fen = el.getAttribute("data-fen");
+    var line = el.getAttribute("data-line");
+
+    line = line && line != "" ? line.split(",") : [];
+
+    console.log("onGetSettings:");
+    console.log(fen, line);
+
     // the board settings
     var boardSettings = {
       orientation: this.color == "white" ? COLOR.white : COLOR.black,
@@ -268,12 +322,11 @@ class Repertoire extends MyChessBoard {
     }
     if (settings.pieces) {
       boardSettings.style.pieces.file = "pieces/" + settings.pieces;
+      boardSettings.style.pieces.tileSize = PIECE_TILESIZE.get(settings.pieces);
     }
     if (settings.animation) {
       boardSettings.style.animationDuration = settings.animation;
     }
-
-    console.log(boardSettings);
 
     // create the chess board
     this.init(el, boardSettings, {
@@ -281,12 +334,63 @@ class Repertoire extends MyChessBoard {
       navigationEnabled: true,
     });
 
+    // if we have a position we need to jump to
+    if (line.length > 0) {
+      // make the moves
+      try {
+        for (var i = 0; i < line.length; i++) {
+          // make the move
+          this.game.move(line[i]);
+        }
+        // update the board
+        this.board.setPosition(this.game.fen());
+        // set the new position
+        this.resetToCurrent(fen);
+      } catch (err) {
+        console.log(err);
+        // reset the game
+        this.game.reset();
+      }
+    }
+
     // set the board status
     this.setStatus(BOARD_STATUS.waitingOnMove);
     // enable move input
     this.enableMoveInput();
     // update the status
     this.updateStatus();
+  }
+
+  onRepertoireColorSwitch() {
+    // get the color
+    var color = this.whiteRepertoireRadio.checked ? "white" : "black";
+
+    // if switched
+    if (color != this.color) {
+      // reset the board
+      this.game.reset();
+      this.board.setPosition(this.game.fen());
+      // remove the markers
+      this.board.removeMarkers();
+      // set the orientation
+      var orient = color == "black" ? COLOR.black : COLOR.white;
+      if (this.board.getOrientation() != orient) {
+        this.board.setOrientation(orient);
+      }
+
+      // update the current color
+      this.color = color;
+      // set the new position
+      this.resetToCurrent("");
+      // update the status & get the moves
+      this.updateStatus();
+    }
+  }
+
+  // called when the button is clicked
+  onGotoFirst(event) {
+    // goto the 1st move
+    this.gotoFirst();
   }
 
   onLoadPgn(event) {
@@ -366,8 +470,6 @@ class Repertoire extends MyChessBoard {
 
     var parts = pgnMoves.split(" ");
 
-    console.log(parts);
-
     var moves = [];
     var vars = [];
     var currvar = -1;
@@ -405,38 +507,22 @@ class Repertoire extends MyChessBoard {
           });
 
           currvar = vars.length - 1;
-
-          console.log("variation added: " + currvar);
           break;
-
         case ")":
-          //_closeCurrentVariation(game);
-
-          console.log(
-            "variation ended: " + currvar + ", " + vars[currvar].parent
-          );
-
           currvar = vars[currvar].parent;
           break;
-
         case "$":
           break;
         case "*":
           break;
-
         default:
           var moveNumberRegex = /\d+\.+/;
           if (moveNumberRegex.exec(parts[i])) {
-            //console.log("moveNumber: " + parts[i]);
-
             continue;
           }
 
-          //console.log("move found: " + parts[i]);
-
           if (currvar == -1) {
             moves.push(parts[i]);
-
             movenr++;
           } else {
             vars[currvar].moves.push(parts[i]);
@@ -445,10 +531,6 @@ class Repertoire extends MyChessBoard {
           break;
       }
     }
-
-    console.log("moves & variations:");
-    console.log(moves);
-    console.log(vars);
 
     //
     if (moves.length > 0) {
@@ -471,8 +553,6 @@ class Repertoire extends MyChessBoard {
 
           history.push(game.history({ verbose: true }).pop());
         }
-
-        console.log("-- main line validated");
 
         game.reset();
         if (fen != "") {
@@ -497,9 +577,6 @@ class Repertoire extends MyChessBoard {
 
           line = [...moves.slice(0, start), ...line];
 
-          console.log("variation: " + i);
-          console.log(line);
-
           variations.push({
             moveNr: vars[i].moveNr,
             parent: vars[i].parent == -1 ? null : vars[i].parent,
@@ -517,8 +594,6 @@ class Repertoire extends MyChessBoard {
               game.history({ verbose: true }).pop()
             );
           }
-
-          console.log("-- variation validated");
 
           game.reset();
           if (fen != "") {
@@ -572,8 +647,6 @@ class Repertoire extends MyChessBoard {
 
   // fired when the remove repertoire modal has been confirmed
   onRemoveLineConfirmed(event) {
-    console.log("Remove the line confirmed.");
-
     // close the modal
     Modal.close(this.confirmDialog.modal);
 
@@ -643,10 +716,9 @@ class Repertoire extends MyChessBoard {
       });
   }
 
-  //
+  // load the groups
   loadGroups(ecoCode = "") {
-    console.log("loadGroups: " + ecoCode);
-    //
+    // clear the groups
     while (this.repertoireGroupDataList.firstChild) {
       this.repertoireGroupDataList.removeChild(
         this.repertoireGroupDataList.lastChild
@@ -687,7 +759,6 @@ class Repertoire extends MyChessBoard {
     var url = "/api/moves";
     var data = {
       color: this.color,
-      //fen: this.game.fen(),
       fen: this.getFen(),
       fen2: this.game.fen(),
       pgn: this.game.pgn(),
@@ -748,12 +819,15 @@ class Repertoire extends MyChessBoard {
     this.ecoField.innerHTML =
       data.eco.current && data.eco.current.name ? data.eco.current.name : "";
 
-    console.log("onGetMoves:");
-    console.log(data);
-    console.log(this.ecoField.innerHTML);
-
     // load the moves table
     this.loadMovesTable(data);
+
+    // toggle the engine container (if no game moves)
+    if (data.games.moves.length > 0) {
+      this.toggleEngineContainer(false);
+    } else {
+      this.toggleEngineContainer(true);
+    }
 
     // set the autoplay & exclude checkboxes
     this.repertoireAutoPlayCheckbox.checked = this.repertoireAutoPlay;
@@ -784,6 +858,246 @@ class Repertoire extends MyChessBoard {
       "https://lichess.org/analysis?fen=" + encodeURIComponent(this.getFen()),
       "_blank"
     );
+  }
+
+  /*
+   * Engine functions
+   */
+
+  toggleEngineContainer(show) {
+    // turn off the engine by default
+    this.engineCheckbox.checked = false;
+
+    if (show) {
+      // clear the table
+      this.engineTableReset();
+      // show the container & the start engine text
+      this.engineContainer.classList.remove("hidden");
+      this.engineTable.parentNode.firstElementChild.classList.remove("hidden");
+      // disable the toggle if the game has ended
+      this.engineCheckbox.disabled = this.game.isGameOver();
+    } else {
+      // hide the container
+      this.engineContainer.classList.add("hidden");
+
+      // make sure the engine is stopped
+      this.onEngineToggle();
+    }
+  }
+
+  engineTableReset() {
+    // clear the table
+    while (this.engineTable.firstChild) {
+      this.engineTable.removeChild(this.engineTable.lastChild);
+    }
+  }
+
+  onEngineToggle() {
+    console.info("onEngineToggle:", this.engineCheckbox.checked);
+
+    if (this.engineCheckbox.checked) {
+      // start the engine
+      this.engineStart();
+
+      // hide the start engine text
+      this.engineTable.parentNode.firstElementChild.classList.add("hidden");
+    } else {
+      // stop the engine
+      this.engineStop();
+
+      // show the start engine text
+      //this.engineTable.parentNode.firstElementChild.classList.remove("hidden");
+    }
+  }
+
+  engineStart() {
+    console.info("Starting the engine.", this.uci);
+
+    if (this.uci == null) {
+      this.uci = new UCI();
+
+      this.uci.onReceive("uciok", this.onEngineOK.bind(this));
+
+      // start the engine
+      this.uci.startEngine();
+      this.uci.sendUCI();
+    } else {
+      // start the evaluation
+      this.onEngineReady();
+    }
+  }
+
+  engineStop() {
+    console.info("Stopping the engine.");
+
+    if (this.uci !== null) {
+      this.uci.stopEngine();
+      this.uci = null;
+    }
+  }
+
+  engineInterrupt() {
+    console.info("Interrupting the engine..");
+
+    this.uci.interrupt();
+    //this.uci.isReady();
+
+    //this.uci.onReceive("readyok", stockfish.stopEngine.bind(stockfish));
+  }
+
+  onEngineOK() {
+    console.info("onEngineOK");
+
+    this.uci.setMultiPV(3);
+
+    this.uci.onReceive("readyok", this.onEngineReady.bind(this));
+
+    this.uci.isReady();
+
+    this.uci.onReceive("info", this.onEngineInfo.bind(this), false);
+    this.uci.onReceive("bestmove", this.onEngineBestMove.bind(this), false);
+  }
+
+  onEngineReady() {
+    console.info("onEngineReady");
+
+    //
+    var fen = "";
+    var moves = "";
+    //
+    var history = this.game.historyWithCorrectFen();
+    for (var i = 0; i < history.length; i++) {
+      //
+      moves =
+        moves + (moves !== "" ? " " : "") + history[i].from + history[i].to;
+    }
+
+    console.info("moves", moves);
+
+    // remember the FEN we are calculating for
+    this.engineFen = this.currentFen;
+
+    // start the evaluation (stop after 10 seconds)
+    this.uci.evaluate(fen, moves, 10 * 1000);
+  }
+
+  onEngineInfo(info) {
+    // if for an old position
+    if (this.currentFen !== this.engineFen) {
+      return false;
+    }
+
+    // get the san moves
+    var moves = [];
+    var line = "";
+
+    // make sure we have a line
+    if (info.pv && info.pv.length) {
+      try {
+        // create a game
+        var game = new MyChess();
+        game.load(this.currentFen);
+
+        // go through the moves
+        for (var i = 0; i < info.pv.length; i++) {
+          game.move({
+            from: info.pv[i].substring(0, 2),
+            to: info.pv[i].substring(2, 4),
+            promotion: info.pv[i].length == 5 ? info.pv[i].substring(4, 5) : "",
+          });
+
+          var last = game.history({ verbose: true }).pop();
+
+          moves.push(last);
+
+          line = line + (line !== "" ? " " : "") + last.san;
+        }
+      } catch (err) {
+        console.error("Error:", err, info);
+      }
+    }
+
+    var multipv = parseInt(info["multipv"]);
+    var row;
+
+    // if we already have this row
+    if (this.engineTable.rows.length > multipv - 1) {
+      // get the row
+      row = this.engineTable.rows[multipv - 1];
+    } else {
+      // add the row
+      row = this.engineTable.insertRow(-1);
+      row.className =
+        "overflow-hidden hover:cursor-pointer hover:bg-tacao-100 hover:dark:bg-slate-600";
+
+      var cell = row.insertCell(-1);
+      cell.className =
+        "p-2 font-semibold whitespace-nowrap tc-base rounded-l-md";
+
+      cell = row.insertCell(-1);
+      cell.className = "w-full p-2 tc-base rounded-r-md";
+
+      // add event listeners
+      row.addEventListener("mouseover", (event) => {
+        // make sure we have the row as target
+        var targ = event.target;
+        while (targ.parentNode && targ.tagName.toLowerCase() != "tr") {
+          targ = targ.parentNode;
+        }
+
+        this.showPreviewMove(targ.dataset.move);
+      });
+
+      row.addEventListener("mouseleave", (event) => {
+        this.undoPreviewMove();
+      });
+
+      row.addEventListener("click", (event) => {
+        // make sure we have the row as target
+        var targ = event.target;
+        while (targ.parentNode && targ.tagName.toLowerCase() != "tr") {
+          targ = targ.parentNode;
+        }
+
+        // only make the move if the table is not disabled (if it is, the moves are being loaded)
+        if (!targ.parentNode.parentNode.disabled) {
+          // get the move
+          var move = targ.dataset.move;
+          // turn the engine off
+          this.engineCheckbox.checked = false;
+          this.onEngineToggle();
+          // goto this move
+          this.clickMove(move);
+        }
+      });
+    }
+
+    // we need to invert the score if it's the opposite color move
+    var invert =
+      (this.board.getOrientation() == COLOR.white && this.currentTurn == "b") ||
+      (this.board.getOrientation() == COLOR.black && this.currentTurn == "w");
+    var cp =
+      info.score.cp !== null && invert ? info.score.cp * -1 : info.score.cp;
+    var mate =
+      info.score.mate !== null && invert
+        ? info.score.mate * -1
+        : info.score.mate;
+    // get the score
+    var score =
+      cp !== null
+        ? (cp > 0 ? "+" : "") + cp / 100
+        : mate !== null
+        ? "M" + mate
+        : "";
+
+    // update the pv
+    row.setAttribute("data-move", moves.length > 0 ? moves[0].san : "");
+    row.cells[0].innerHTML = score;
+    row.cells[1].innerHTML = line;
+  }
+
+  onEngineBestMove(bestMove) {
+    console.info("onEngineBestMove", bestMove);
   }
 
   /**
@@ -867,15 +1181,11 @@ class Repertoire extends MyChessBoard {
 
   // onChange event for repertoire autoplay checkbox
   onRepertoireAutoPlayChange(event) {
-    console.log("onRepertoireAutoPlayChange:");
-
     // set the data object
     var data = {
       repertoire: this.repertoireId,
       autoplay: this.repertoireAutoPlayCheckbox.checked,
     };
-
-    console.log(data);
 
     // send the API request
     var url = "/api/repertoire/autoplay";
@@ -899,15 +1209,11 @@ class Repertoire extends MyChessBoard {
 
   // onChange event for repertoire exclude checkbox
   onRepertoireExcludeChange(event) {
-    console.log("onRepertoireExcludeChange:");
-
     // set the data object
     var data = {
       repertoire: this.repertoireId,
       exclude: this.repertoireExcludeCheckbox.checked,
     };
-
-    console.log(data);
 
     // send the API request
     var url = "/api/repertoire/exclude";
@@ -993,15 +1299,11 @@ class Repertoire extends MyChessBoard {
 
   // save the repertoire group
   saveRepertoireGroup(group) {
-    console.log("saveRepertoireGroup:");
-
     // set the data object
     var data = {
       repertoire: this.repertoireId,
       group: group.name,
     };
-
-    console.log(data);
 
     // send the API request
     var url = "/api/repertoire/group";
@@ -1025,15 +1327,11 @@ class Repertoire extends MyChessBoard {
 
   // remove the repertoire group
   removeRepertoireGroup(groupName) {
-    console.log("removeRepertoireGroup:");
-
     // set the data object
     var data = {
       repertoire: this.repertoireId,
       group: groupName,
     };
-
-    console.log(data);
 
     // send the API request
     var url = "/api/repertoire/group";
@@ -1057,11 +1355,6 @@ class Repertoire extends MyChessBoard {
 
   // toggle the buttons
   toggleButtons(saved) {
-    console.log("toggleButtons: " + saved);
-    console.log(this.color);
-    console.log(this.game.turn());
-    console.log("moveNumber: " + this.game.moveNumber());
-
     // make sure we've made a move
     var hasMoved =
       (this.color == "white" &&
@@ -1199,11 +1492,12 @@ class Repertoire extends MyChessBoard {
   movesAddRow(data) {
     var row = this.movesTable.tBodies[0].insertRow(-1);
     row.className =
-      "hover:cursor-pointer hover:bg-slate-100 hover:dark:bg-slate-600 text-gray-900 dark:text-gray-200";
+      "overflow-hidden hover:cursor-pointer hover:bg-tacao-100 hover:dark:bg-slate-600 tc-base";
     row.setAttribute("data-move", data.move);
 
     var cell = row.insertCell(-1);
-    cell.className = "w-12 pl-3 pr-2 py-2 font-semibold whitespace-nowrap";
+    cell.className =
+      "w-12 pl-3 pr-2 py-2 font-semibold whitespace-nowrap rounded-l-md";
     cell.innerHTML = data.move;
 
     cell = row.insertCell(-1);
@@ -1211,8 +1505,7 @@ class Repertoire extends MyChessBoard {
     cell.innerHTML = data.name;
 
     cell = row.insertCell(-1);
-    cell.className =
-      "w-full px-2 py-2 text-xs text-center text-gray-600 dark:text-gray-400";
+    cell.className = "w-full px-2 py-2 text-xs text-center tc-faded";
 
     // set the CP eval
     cell.innerHTML =
@@ -1274,10 +1567,10 @@ class Repertoire extends MyChessBoard {
 
     // show a dot if in repertoire
     cell = row.insertCell(-1);
-    cell.className = "w-8 px-2 py-2 text-center align-middle";
+    cell.className = "w-8 px-2 py-2 text-center align-middle rounded-r-md";
     if (data.repertoire) {
       cell.innerHTML =
-        '<div class="inline-block w-3 h-3 bg-primary-400 rounded-full"></div>';
+        '<div class="inline-block w-3 h-3 bg-sky-700 dark:bg-primary-400 rounded-full"></div>';
     }
 
     // add event listeners
@@ -1323,11 +1616,19 @@ class Repertoire extends MyChessBoard {
       if (this.previewMove != "") {
         this.previewMove = "";
         this.game.undo();
+        // remove the markers
+        this.board.removeMarkers();
       }
 
       try {
         // make the move
         this.game.move(move);
+
+        // highlight the move
+        var last = this.game.history({ verbose: true }).pop();
+
+        this.board.addMarker(MARKER_TYPE.square, last.from);
+        this.board.addMarker(MARKER_TYPE.square, last.to);
 
         // remember the current preview move
         this.previewMove = move;
@@ -1344,13 +1645,7 @@ class Repertoire extends MyChessBoard {
 
   // get the number of games as formatted text
   getNumberOfGames(total) {
-    if (total < 5000) {
-      return total + " games";
-    } else if (total < 1000000) {
-      return Math.floor(total / 1000) + "k+ games";
-    } else {
-      return Math.round(total / 100000) / 10 + " million games";
-    }
+    return Utils.getAbbreviatedNumber(total) + " games";
   }
 
   // undo the preview move
@@ -1361,6 +1656,8 @@ class Repertoire extends MyChessBoard {
       // undo the preview move
       this.game.undo();
       this.board.setPosition(this.game.fen());
+      // remove the markers
+      this.board.removeMarkers();
     }
   }
 
@@ -1412,8 +1709,6 @@ class Repertoire extends MyChessBoard {
   }
 
   onSelectInitialFen(event) {
-    console.log("onSelectInitialFen: " + this.initialFenSelect.value);
-
     // set the initial fen
     this.initialFen = this.initialFenSelect.value;
 
@@ -1436,15 +1731,11 @@ class Repertoire extends MyChessBoard {
 
   // event handlers
   afterMove(move) {
-    console.log("afterMove:");
-
     // update the status, get the ECO codes for next position.. etc
     this.updateStatus();
   }
 
   afterGotoMove(moveNr, variationIdx) {
-    console.log("afterGotoMove: " + this.initialFen);
-
     // reset the history to the current position
     if (!this.pgnLoaded) {
       //this.resetToCurrent(this.initialFen);
@@ -1484,8 +1775,13 @@ class Repertoire extends MyChessBoard {
 
     this.statusField.innerHTML = status;
 
+    // remember the current FEN (without any preview moves, etc)
+    this.currentFen = this.getFen();
+    this.currentTurn = this.game.turn();
     // update the pgn field
     this.updatePgnField();
+    // toggle the goto first move button
+    this.gotoFirstButton.disabled = this.currentMove == 0;
 
     // get the moves for the new position
     this.getMoves();

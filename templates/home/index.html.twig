@@ -3,113 +3,63 @@
 {% block body %}
 	{% if app.user %}
 		<div class="p-10">
-			<div class="my-8">
-				<h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-200">Your repertoire</h2>
-				<p id="repertoireStatisticsField" class="text-md text-gray-600 dark:text-gray-300 mx-1 my-6">Gathering statistics...
-					<span class="inline-block icon-[svg-spinners--90-ring-with-bg] ml-1 w-4 h-4"></span>
-				</p>
-
-				<div class="flex items-center text-gray-900 dark:text-gray-200 my-8">
-					<span class="mr-2 text-base">&#x25C7;</span>
-					<a href="/repertoire/white" class="whitespace-nowrap">
-						Build your white repertoire
-					</a>
-					<span class="mx-2 text-base">&#x25C7;</span>
-					<a href="/repertoire/black" class="whitespace-nowrap">
-						Build your black repertoire
-					</a>
-					<span class="mx-2 text-base">&#x25C7;</span>
-					<a href="/practice" class="whitespace-nowrap">
-						Start practicing your moves
-					</a>
-					<span class="mx-2 text-base">&#x25C7;</span>
-				</div>
-			</div>
-
-			<div class="my-10">
-				<h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-200">Analysis</h2>
-				<p class="text-md text-gray-600 dark:text-gray-300 mx-1 my-6">Analyse your games from
-					<a href="https://www.chess.com/" target="blank">chess.com</a>
-					and
-					<a href="https://lichess.org/" target="blank">Lichess</a>
-					for opening mistakes.
-				</p>
-
-				<div class="flex items-center text-gray-900 dark:text-gray-200 my-8">
-					<span class="mr-2 text-base">&#x25C7;</span>
-					<a href="/analyse" class="whitespace-nowrap">
-						Go to analyse games
-					</a>
-					<span class="mx-2 text-base">&#x25C7;</span>
-				</div>
-			</div>
-
-			<div class="my-12">
-				<h2 class="text-2xl font-semibold text-gray-900 dark:text-gray-200">Settings</h2>
-				<div class="flex justify-between">
-					<div class="my-6">
-						<div id="boardSettingsContainer" class="flex items-center">
-							<div class="mr-2">
-								<label class="block mb-1 text-sm font-medium text-gray-900 dark:text-gray-300">Theme</label>
-								<div class="relative">
-									<select id="boardThemeSelect" class="appearance-none inline-block rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600">
-										<option value="chess-club">Chess Club</option>
-										<option value="green">Green</option>
-										<option value="blue">Blue</option>
-									</select>
-									<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-										<svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-									</div>
-								</div>
-							</div>
-							<div class="m2-2">
-								<label class="block mb-1 text-sm font-medium text-gray-900 dark:text-gray-300">Pieces</label>
-								<div class="relative">
-									<select id="boardPiecesSelect" class="appearance-none inline-block rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600">
-										<option value="standard.svg">Standard</option>
-										<option value="staunty.svg">Staunty</option>
-									</select>
-									<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-										<svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-									</div>
-								</div>
-							</div>
-						</div>
-
-						<div id="animationSettingsContainer" class="flex items-center my-6">
-							<div class="mr-2">
-								<label class="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-300">Animation Duration</label>
-								<input id="animationDurationInput" type="range" min="0" max="500" step="50" value="300" class="w-full h-3 bg-gray-300 dark:bg-gray-400 border border-gray-400 dark:border-gray-500 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-blue-500">
-							</div>
-						</div>
-
-						<div id="variationSettingsContainer" class="flex items-center my-6">
-							<div class="mr-2">
-								<label class="block mb-2 text-sm font-medium text-gray-900 dark:text-gray-300">Animate Variations</label>
-								<div class="inline-flex items-start">
-									<label class="flex items-start cursor-pointer relative" for="variationAnimateCheckbox">
-										<input id="variationAnimateCheckbox" type="checkbox" checked class="peer h-5 w-5 cursor-pointer transition-all appearance-none rounded shadow hover:shadow-md border border-gray-300 dark:border-slate-600 checked:bg-blue-500 checked:border-blue-600 dark:checked:border-blue-400"/>
-										<span class="absolute text-white opacity-0 peer-checked:opacity-100 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-											<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewbox="0 0 20 20" fill="currentColor" stroke="currentColor" stroke-width="1">
-												<path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-											</svg>
-										</span>
-									</label>
-									<label class="cursor-pointer ml-2 text-slate-600 text-sm" for="variationAnimateCheckbox">
-										<div>
-											<p class="font-normal text-gray-600 dark:text-gray-300">Animate from the beginning of the line</p>
-											<p class="my-1 text-gray-500 dark:text-gray-400">Instead of from the start of the variation.</p>
-										</div>
-									</label>
-								</div>
-							</div>
-						</div>
-
-						<p class="text-md text-gray-600 dark:text-gray-300 mx-1 mt-6 mb-4">-- analyse settings</p>
+			<div id="boxedCardContainer" class="flex flex-wrap gap-2">
+				<div class="boxed-card relative" style="width: 26rem; height: 13rem;">
+					<h2 class="text-xl font-semibold tc-sharp">Your repertoire</h2>
+					<p class="p-1 mt-3 text-base tc-faded">Work on your opening repertoire.</p>
+					<div class="flex flex-col grow justify-center items-start p-2">
+						<p id="statsWhiteField" class="text-base tc-base py-0.5 pulse-skeleton">White:
+							<span class="font-semibold">99 moves</span>
+						</p>
+						<p id="statsBlackField" class="text-base tc-base py-0.5 pulse-skeleton">Black:
+							<span class="font-semibold">99 moves</span>
+						</p>
 					</div>
-					<div class="flex w-2/4">
-						<div id="board" class="sm:w-32 md:w-48 lg:w-96"></div>
+					<span class="boxed-card-arrow"></span>
+				</div>
+				<div class="boxed-card relative" style="width: 26rem; height: 13rem;">
+					<h2 class="text-xl font-semibold tc-sharp">Practice</h2>
+					<p class="p-1 mt-3 text-base tc-faded">Practice your moves to keep improving.</p>
+					<div class="flex flex-col grow justify-center items-start p-2">
+						<p id="statsNewField" class="text-base tc-base py-0.5 pulse-skeleton">New:
+							<span class="font-semibold">99 moves</span>
+						</p>
+						<p id="statsRecommendedField" class="text-base tc-base py-0.5 pulse-skeleton">Recommended:
+							<span class="font-semibold">99 moves</span>
+						</p>
 					</div>
+					<span class="boxed-card-arrow"></span>
+				</div>
+				<div class="boxed-card relative" style="width: 26rem; height: 13rem;">
+					<h2 class="text-xl font-semibold tc-sharp">Analysis</h2>
+					<p class="p-1 mt-3 text-base tc-faded">Analyse your games from
+						<span class="font-semibold tc-base">chess.com</span>
+						and
+						<span class="font-semibold tc-base">Lichess</span>
+						for opening mistakes. You can then practice these moves and add them to your repertoire if you want.</p>
+					<div class="flex flex-col grow justify-center items-start p-2">
+						<p id="statsAnalysisField" class="text-base tc-base py-0.5 pulse-skeleton">Analysis:
+							<span class="font-semibold">99 lines</span>
+						</p>
+					</div>
+					<span class="boxed-card-arrow"></span>
+				</div>
+				{% if template.hasRepertoire() %}
+					<div class="boxed-card relative" style="width: 26rem; height: 13rem;">
+						<h2 class="text-xl font-semibold tc-sharp">The Roadmap</h2>
+						<p class="p-1 mt-3 text-base tc-faded">Use the roadmap to get an overview of your opening repertoire and see your accuracy for each line and variation.</p>
+						<span class="boxed-card-arrow"></span>
+					</div>
+				{% endif %}
+				<div class="boxed-card relative" style="width: 26rem; height: 13rem;">
+					<h2 class="text-xl font-semibold tc-sharp">Opponents</h2>
+					<p class="p-1 mt-3 text-base tc-faded">Download your opponent's games and analyse them against your opening repertoire. Find their most played moves and see their win percentages for different moves.</p>
+					<span class="boxed-card-arrow"></span>
+				</div>
+				<div class="boxed-card relative" style="width: 26rem; height: 13rem;">
+					<h2 class="text-xl font-semibold tc-sharp">Settings</h2>
+					<p class="p-1 mt-3 text-base tc-faded">Change the settings for the chess board, the piece animations and for analysing your games.</p>
+					<span class="boxed-card-arrow"></span>
 				</div>
 			</div>
 		</div>

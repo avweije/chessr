@@ -25,7 +25,15 @@ class PracticeController extends AbstractController
 
         // get the practice repertoire type
         $type = isset($data["type"]) ? $data["type"] : "all";
+        // get the repertoire id (from the roadmap)
+        $id = isset($data["id"]) ? $data["id"] : "";
 
-        return $this->render('practice/index.html.twig', ['repertoireType' => $type]);
+        // the data to send to the page
+        $data = [
+            'repertoireType' => $id != "" ? "custom" : $type,
+            'repertoireId' => $id
+        ];
+
+        return $this->render('practice/index.html.twig', $data);
     }
 }

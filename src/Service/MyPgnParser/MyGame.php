@@ -14,6 +14,19 @@ class MyGame extends Game
     protected $fen;
     protected $link;
 
+    public function getMovesPgn()
+    {
+        $pgn = "";
+        $moves = $this->getMovesArray();
+        for ($i = 0; $i < count($moves); $i++) {
+            if ($i % 2 == 0) {
+                $pgn .= ($pgn == "" ? "" : " ") . ($i / 2 + 1) . ".";
+            }
+            $pgn .= " " . $moves[$i];
+        }
+        return $pgn;
+    }
+
     /**
      * Set initial FEN
      * @param string $fen

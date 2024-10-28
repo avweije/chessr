@@ -35,7 +35,19 @@ class Settings
     private ?string $Pieces = null;
 
     #[ORM\Column(type: Types::SMALLINT)]
-    private ?int $Animation = null;
+    private ?int $AnimationDuration = null;
+
+    #[ORM\Column(type: Types::SMALLINT)]
+    private ?int $AnimateVariation = null;
+
+    #[ORM\Column(type: Types::SMALLINT)]
+    private ?int $RepertoireEngineTime = null;
+
+    #[ORM\Column(type: Types::SMALLINT)]
+    private ?int $AnalyseEngineTime = null;
+
+    #[ORM\Column]
+    private ?bool $AnalyseIgnoreInaccuracy = null;
 
     public function getId(): ?int
     {
@@ -114,14 +126,62 @@ class Settings
         return $this;
     }
 
-    public function getAnimation(): ?int
+    public function getAnimationDuration(): ?int
     {
-        return $this->Animation;
+        return $this->AnimationDuration;
     }
 
-    public function setAnimation(int $Animation): static
+    public function setAnimationDuration(int $AnimationDuration): static
     {
-        $this->Animation = $Animation;
+        $this->AnimationDuration = $AnimationDuration;
+
+        return $this;
+    }
+
+    public function getAnimateVariation(): ?int
+    {
+        return $this->AnimateVariation;
+    }
+
+    public function setAnimateVariation(int $AnimateVariation): static
+    {
+        $this->AnimateVariation = $AnimateVariation;
+
+        return $this;
+    }
+
+    public function getRepertoireEngineTime(): ?int
+    {
+        return $this->RepertoireEngineTime;
+    }
+
+    public function setRepertoireEngineTime(int $RepertoireEngineTime): static
+    {
+        $this->RepertoireEngineTime = $RepertoireEngineTime;
+
+        return $this;
+    }
+
+    public function getAnalyseEngineTime(): ?int
+    {
+        return $this->AnalyseEngineTime;
+    }
+
+    public function setAnalyseEngineTime(int $AnalyseEngineTime): static
+    {
+        $this->AnalyseEngineTime = $AnalyseEngineTime;
+
+        return $this;
+    }
+
+    public function isAnalyseIgnoreInaccuracy(): ?bool
+    {
+        return $this->AnalyseIgnoreInaccuracy;
+    }
+
+    public function setAnalyseIgnoreInaccuracy(bool $AnalyseIgnoreInaccuracy): static
+    {
+        $this->AnalyseIgnoreInaccuracy = $AnalyseIgnoreInaccuracy;
 
         return $this;
     }

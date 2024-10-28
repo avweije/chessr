@@ -11,6 +11,9 @@ use App\Entity\Main\Group;
 use App\Entity\Main\Analysis;
 use App\Entity\Evaluations\Evaluation;
 use App\Entity\Main\IgnoreList;
+use App\Entity\Main\Opponent;
+use App\Entity\Main\OpponentGame;
+use App\Entity\Main\OpponentMove;
 use App\Entity\Main\Repertoire;
 use App\Entity\Main\RepertoireGroup;
 use App\Entity\Main\Settings;
@@ -18,6 +21,7 @@ use App\Entity\Main\User;
 use App\Library\ChessJs;
 use App\Library\GameDownloader;
 use App\Library\UCI;
+use App\Repository\Main\OpponentMoveRepository;
 use App\Service\MyPgnParser\MyGame;
 use App\Service\MyPgnParser\MyPgnParser;
 use DateTime;
@@ -28,6 +32,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
@@ -43,6 +48,77 @@ class ApiController extends AbstractController
         $this->em = $em;
         $this->myPgnParser = $myPgnParser;
         $this->em2 = $doctrine->getManager("evaluations");
+    }
+
+    #[Route('/api/find/similar', name: 'app_api_find_similar_positions')]
+    public function apiFindSimilarFen(Request $request): JsonResponse
+    {
+        //dd($fen);
+        $color = "white";
+        //$fen = "rnbqk2r/ppp2ppp/4pn2/3p4/1bPP4/2N2N2/PP2PPPP/R1BQKB1R w KQkq - 2 5";
+        $fen = "rnbq1rk1/ppppppbp/5np1/8/2PPP3/2N5/PP3PPP/R1BQKBNR w KQ - 1 5";
+
+        // 1st close to 2nd, but 3rd is found (also close, but would prefer 2nd to be found..)
+        // rnbqk2r/ppp2ppp/4pn2/3p4/1bPP4/2N2N2/PP2PPPP/R1BQKB1R w KQkq - 2 5
+        // rnbqk2r/pppp1ppp/4pn2/8/1bPP4/2N5/PP2PPPP/R1BQKBNR w KQkq - 2 4
+        // r1bqk2r/ppp2ppp/2n1pn2/3p4/QbPP4/2N2N2/PP2PPPP/R1B1KB1R w KQkq - 4 6
+
+        $closest = -1;
+        $matches = [];
+
+        // get the fen without the move numbers
+        $parts = explode(" ", $fen);
+        $fenColor = $parts[1];
+        $fenWithout = implode(" ", array_slice($parts, 0, 3));
+        $fenWithout = $this->replaceFenEmptySquares($fenWithout);
+
+        //dd($fenColor, $fenWithout);
+
+        $repo = $this->em->getRepository(Repertoire::class);
+
+        $res = $repo->findBy(['Color' => $color]);
+        foreach ($res as $rec) {
+            // skip if exactly the same
+            if ($fen === $rec->getFenAfter()) {
+                continue;
+            }
+
+            $parts = explode(" ", $rec->getFenAfter());
+            $fenColor2 = $parts[1];
+            $fenWithout2 = implode(" ", array_slice($parts, 0, 3));
+            $fenWithout2 = $this->replaceFenEmptySquares($fenWithout2);
+
+            if ($fenColor !== $fenColor2) {
+                continue;
+            }
+
+            /*
+            $lev = levenshtein($fenWithout, $fenWithout2);
+            if ($lev < $closest || $closest < 0) {
+                $closest = $lev;
+                $matches = ["lev" => $lev, "rec" => $rec];
+            } else if ($lev === $closest) {
+                $matches[] = ["lev" => $lev, "rec" => $rec];
+            }*/
+
+            $sim = similar_text($fenWithout, $fenWithout2, $pct);
+            if ($pct > $closest) {
+                $closest = $pct;
+                $matches = ["chars" => $sim, "percentage" => $pct, "rec" => $rec];
+            } else if ($pct == $closest) {
+                $matches[] = ["chars" => $sim, "percentage" => $pct, "rec" => $rec];
+            }
+        }
+
+        dd($matches);
+    }
+
+    private function replaceFenEmptySquares($fen): string
+    {
+        for ($i = 1; $i < 9; $i++) {
+            $fen = str_replace($i, str_pad("x", $i), $fen);
+        }
+        return $fen;
     }
 
     #[Route('/api/analyse/test', name: 'app_api_analyse_test')]
@@ -79,27 +155,26 @@ Rad8 15. Bc4 Qe3+ 16. Kb1 Qf2 17. Rdf1 Qxg2 18. Rhg1 Qxh2 19. f4 Bd4 20. Rg4 Qh3
 h3 40. Rdd7 Rh5 41. Rxf7+ Kg8 42. Rfe7 Kf8 43. Rxe6 h2 44. Rxa6 h1=Q 45. Ra8#
 1-0';
 
-        $pgnText = '[Event "Live Chess"]
-[Site "Chess.com"]
-[Date "2024.01.29"]
-[Round "?"]
-[White "pararu123"]
-[Black "avweije"]
-[Result "1-0"]
-[ECO "D06"]
-[WhiteElo "2111"]
-[BlackElo "2023"]
-[TimeControl "600"]
-[EndTime "3:07:30 PST"]
-[Termination "pararu123 won by resignation"]
+        $pgnText = '[Event "Rated blitz game"]
+[Site "https://lichess.org/hz2XldTW"]
+[Date "2024.10.09"]
+[White "anonymouse123"]
+[Black "JunMalate"]
+[Result "0-1"]
+[UTCDate "2024.10.09"]
+[UTCTime "08:14:59"]
+[WhiteElo "2090"]
+[BlackElo "2130"]
+[WhiteRatingDiff "-9"]
+[BlackRatingDiff "+5"]
+[Variant "Standard"]
+[TimeControl "180+0"]
+[ECO "A43"]
+[Opening "Benoni Defense: Old Benoni"]
+[Termination "Normal"]
+[Annotator "lichess.org"]
 
-1. d4 Nf6 2. c4 d5 3. cxd5 Qxd5 4. Nc3 Qd8 5. e4 e5 6. dxe5 Qxd1+ 7. Kxd1 Ng4 8.
-Ke2 Bc5 9. Nh3 Nxe5 10. f4 Bg4+ 11. Ke1 Nec6 12. Nf2 Bd7 13. Nd3 Bb6 14. Nd5 O-O
-15. Nxb6 axb6 16. Bd2 Re8 17. e5 f6 18. Kf2 fxe5 19. fxe5 Nxe5 20. Nxe5 Rxe5 21.
-Bc4+ Kh8 22. Rhe1 Rf5+ 23. Kg1 Nc6 24. Bc3 Raf8 25. Rad1 Bc8 26. Re3 b5 27. Bd3
-Rg5 28. Bc2 b4 29. Be1 Bf5 30. Bb3 Bg6 31. Rd7 Rgf5 32. h3 Rf1+ 33. Kh2 Na5 34.
-Bxb4 Be8 35. Rxc7 Bc6 36. Bxf8 Rxf8 37. Bd1 h6 38. Bf3 Rd8 39. Bxc6 bxc6 40.
-Ree7 Rd2 41. Rxg7 Rxb2 42. Rgd7 Rb8 43. Rh7+ Kg8 44. Rxh6 1-0';
+1. d4 c5 2. d5 d6 { A43 Benoni Defense: Old Benoni } 3. c4 Nd7 4. Nc3 Ngf6 5. e4 g6 6. Nf3 Bg7 7. Be2 O-O 8. h4 h5 9. Ng5 Ne5 10. f3 Nh7 11. Be3 Nxg5 12. hxg5 e6 13. Qd2 exd5 14. Nxd5 Be6 15. O-O-O Bxd5 16. exd5 Rb8 17. g4 hxg4 18. fxg4 Re8 19. Bf4 b5 20. Bxe5 Bxe5 21. Bd3 bxc4 22. Bxc4 Rxb2 23. Qd3 Qxg5+ 24. Rd2 Rxd2 0-1';
 
         /*
         $pgnText = '[Event "Live Chess"]
@@ -452,8 +527,8 @@ Ree7 Rd2 41. Rxg7 Rxb2 42. Rgd7 Rb8 43. Rh7+ Kg8 44. Rxh6 1-0';
             if ($res) {
                 $repertoireId = $res->getId();
                 $repertoireAutoPlay = $res->isAutoPlay();
-                //$repertoireExclude = $res->isExclude();
-                //$repertoireIncluded = $repository->isIncluded($res->FenBefore());
+                $repertoireExclude = $res->isExclude();
+                $repertoireIncluded = $repository->isIncluded($res->getFenBefore());
                 foreach ($res->getRepertoireGroups() as $grp) {
                     $groups[] = ["id" => $grp->getGrp()->getId(), "name" => $grp->getGrp()->getName()];
                 }
@@ -585,8 +660,8 @@ Ree7 Rd2 41. Rxg7 Rxb2 42. Rgd7 Rb8 43. Rh7+ Kg8 44. Rxh6 1-0';
         usort($reps, function ($a, $b) {
             global $turn;
 
-            if ($a["percentage"] > $b["percentage"]) return -1;
-            if ($a["percentage"] < $b["percentage"]) return 1;
+            if ($a["total"] > $b["total"]) return -1;
+            if ($a["total"] < $b["total"]) return 1;
 
             if ($a["mate"] !== null && $b["mate"] == null) return -1;
             if ($a["mate"] == null && $b["mate"] !== null) return 1;
@@ -605,8 +680,8 @@ Ree7 Rd2 41. Rxg7 Rxb2 42. Rgd7 Rb8 43. Rh7+ Kg8 44. Rxh6 1-0';
         usort($games['moves'], function ($a, $b) {
             global $turn;
 
-            if ($a["percentage"] > $b["percentage"]) return -1;
-            if ($a["percentage"] < $b["percentage"]) return 1;
+            if ($a["total"] > $b["total"]) return -1;
+            if ($a["total"] < $b["total"]) return 1;
 
             /*
             if ($a["mate"] !== null && $b["mate"] == null) {
@@ -864,7 +939,11 @@ Ree7 Rd2 41. Rxg7 Rxb2 42. Rgd7 Rb8 43. Rh7+ Kg8 44. Rxh6 1-0';
             // create the settings
             $settings = new Settings();
             $settings->setUser($this->getUser());
-            $settings->setAnimation(300);
+            $settings->setAnimationDuration(300);
+            $settings->setRepertoireEngineTime(30);
+            $settings->setAnimateVariation(0);
+            $settings->setAnalyseEngineTime(1000);
+            $settings->setAnalyseIgnoreInaccuracy(false);
 
             // save the settings
             $this->em->persist($settings);
@@ -874,7 +953,11 @@ Ree7 Rd2 41. Rxg7 Rxb2 42. Rgd7 Rb8 43. Rh7+ Kg8 44. Rxh6 1-0';
         return new JsonResponse(["settings" => [
             "board" => $settings->getBoard(),
             "pieces" => $settings->getPieces(),
-            "animation" => $settings->getAnimation()
+            "animation_duration" => $settings->getAnimationDuration(),
+            "animate_variation" => $settings->getAnimateVariation(),
+            "repertoire_engine_time" => $settings->getRepertoireEngineTime(),
+            "analyse_engine_time" => $settings->getAnalyseEngineTime(),
+            "analyse_ignore_inaccuracy" => $settings->isAnalyseIgnoreInaccuracy()
         ]]);
     }
 
@@ -892,7 +975,11 @@ Ree7 Rd2 41. Rxg7 Rxb2 42. Rgd7 Rb8 43. Rh7+ Kg8 44. Rxh6 1-0';
             // create the settings
             $settings = new Settings();
             $settings->setUser($this->getUser());
-            $settings->setAnimation(300);
+            $settings->setAnimationDuration(300);
+            $settings->setRepertoireEngineTime(30);
+            $settings->setAnimateVariation(0);
+            $settings->setAnalyseEngineTime(1000);
+            $settings->setAnalyseIgnoreInaccuracy(false);
         }
 
         // update all the settings
@@ -904,8 +991,20 @@ Ree7 Rd2 41. Rxg7 Rxb2 42. Rgd7 Rb8 43. Rh7+ Kg8 44. Rxh6 1-0';
                 case "pieces":
                     $settings->setPieces($value);
                     break;
-                case "animation":
-                    $settings->setAnimation($value);
+                case "animation_duration":
+                    $settings->setAnimationDuration($value);
+                    break;
+                case "repertoire_engine_time":
+                    $settings->setRepertoireEngineTime($value);
+                    break;
+                case "animate_variation":
+                    $settings->setAnimateVariation($value);
+                    break;
+                case "analyse_engine_time":
+                    $settings->setAnalyseEngineTime($value);
+                    break;
+                case "analyse_ignore_inaccuracy":
+                    $settings->setAnalyseIgnoreInaccuracy($value);
                     break;
             }
         }
@@ -928,7 +1027,11 @@ Ree7 Rd2 41. Rxg7 Rxb2 42. Rgd7 Rb8 43. Rh7+ Kg8 44. Rxh6 1-0';
             // create the settings
             $settings = new Settings();
             $settings->setUser($this->getUser());
-            $settings->setAnimation(300);
+            $settings->setAnimationDuration(300);
+            $settings->setRepertoireEngineTime(30);
+            $settings->setAnimateVariation(0);
+            $settings->setAnalyseEngineTime(1000);
+            $settings->setAnalyseIgnoreInaccuracy(false);
 
             // save the settings
             $this->em->persist($settings);
@@ -953,7 +1056,7 @@ Ree7 Rd2 41. Rxg7 Rxb2 42. Rgd7 Rb8 43. Rh7+ Kg8 44. Rxh6 1-0';
             // create the settings
             $settings = new Settings();
             $settings->setUser($this->getUser());
-            $settings->setAnimation(300);
+            $settings->setAnimationDuration(300);
         }
 
         // get the site
@@ -1014,6 +1117,1717 @@ Ree7 Rd2 41. Rxg7 Rxb2 42. Rgd7 Rb8 43. Rh7+ Kg8 44. Rxh6 1-0';
         $resp = ['games' => $games];
 
         return new JsonResponse($resp);
+    }
+
+    #[Route('/api/analyse/download', methods: ['POST'], name: 'app_api_analyse_download')]
+    public function apiAnalyseDownload(Request $request): JsonResponse
+    {
+        // get the payload
+        $payload = $request->getPayload()->all();
+
+        $data = [
+            "site" => isset($payload["site"]) ? $payload["site"] : "",
+            "username" => isset($payload["username"]) ? $payload["username"] : "",
+            "type" => isset($payload["type"]) ? $payload["type"] : [],
+            "period" => isset($payload["period"]) ? $payload["period"] : ["recent" => 0, "older" => 0]
+        ];
+
+        // get & validate the site
+        $site = DownloadSite::tryFrom($data["site"]);
+        // get the site username
+        $siteUsername = $data["username"];
+
+        // get recent and/or older
+        $periodRecent = isset($data["period"]["recent"]) ? ($data["period"]["recent"] ? true : false) : false;
+        $periodOlder = isset($data["period"]["older"]) ? ($data["period"]["older"] ? true : false) : false;
+        // get & validate the types
+        $types = [];
+        $tps = is_array($data["type"]) ? $data["type"] : [$data["type"]];
+        foreach ($tps as $tp) {
+            $dtype = DownloadType::tryFrom(ucfirst($tp));
+            if ($dtype !== null) {
+                $types[$tp] = $dtype;
+            }
+        }
+
+        // if the payload is invalid
+        if ($site == null || $siteUsername == "" || (!$periodRecent && !$periodOlder) || count($types) == 0) {
+            // set the error response
+            $response = new JsonResponse(['error' => "Invalid payload."]);
+            $response->setStatusCode(411);
+
+            return $response;
+        }
+
+        // get the settings
+        $user = $this->em->getRepository(User::class)->find($this->getUser());
+        $settings = $user->getSettings();
+
+        if ($settings == null) {
+            // create the settings
+            $settings = new Settings();
+            $settings->setUser($this->getUser());
+            $settings->setAnimationDuration(300);
+            $settings->setRepertoireEngineTime(30);
+            $settings->setAnimateVariation(0);
+            $settings->setAnalyseEngineTime(1000);
+            $settings->setAnalyseIgnoreInaccuracy(false);
+        }
+
+        // update the settings
+        $settings->setSite($site);
+        if ($site == DownloadSite::ChessDotCom) {
+            $settings->setChessUsername($siteUsername);
+        } else {
+            $settings->setLichessUsername($siteUsername);
+        }
+
+        // save the settings
+        $this->em->persist($settings);
+        $this->em->flush();
+
+        // update in the user (just in case)
+        $user->setSettings($settings);
+
+        // check to see if any downloads are still in progress
+        $repo = $this->em->getRepository(Downloads::class);
+
+        $rec = $repo->findOneBy([
+            'User' => $this->getUser(),
+            'Status' => DownloadStatus::Downloading
+        ]);
+
+        // if there is a download in progress
+        if ($rec !== null) {
+            // check the datetime
+            $now = new DateTime();
+
+            $secs =  $now->getTimestamp() - $rec->getDateTime()->getTimestamp();
+            $mins = floor($secs / 60);
+
+            // if 5 minutes ago or more
+            if ($mins > 4) {
+                //if (true) {
+                // update status for record
+                $rec->setStatus(DownloadStatus::Partial);
+                $rec->setDateTime(new DateTime());
+
+                $this->em->persist($rec);
+                $this->em->flush();
+            } else {
+                // send an error response
+                $response = new JsonResponse(['error' => "Downloading already in progress, please try again later."]);
+                $response->setStatusCode(409);
+
+                return $response;
+            }
+        }
+
+        // get the current year & month
+        $today = new DateTime();
+        $currentYear = intval($today->format('Y'));
+        $currentMonth = intval($today->format('m'));
+
+        // get the recent (from) year/month and the older (until) year/month
+        $recent = new DateTime();
+        $recent->modify("-11 months");
+        $recentYear = intval($recent->format('Y'));
+        $recentMonth = intval($recent->format('m'));
+
+        $recent->modify("-1 months");
+        $olderYear = intval($recent->format('Y'));
+        $olderMonth = intval($recent->format('m'));
+
+        // get the game downloader
+        $downloader = new GameDownloader($this->em, $this->getUser());
+
+        // get user - createdAt
+        $createdAt = $downloader->getCreatedAt();
+
+        // get the created year & month
+        $created = new DateTime();
+        $created->setTimestamp($createdAt / 1000);
+        $createdYear = intval($created->format('Y'));
+        $createdMonth = intval($created->format('m'));
+
+        // get the year & month from & to
+        $fromYear = $periodOlder ? $createdYear : $recentYear;
+        $fromMonth = $periodOlder ? $createdMonth : $recentMonth;
+        $toYear = $periodRecent ? $currentYear : $olderYear;
+        $toMonth = $periodRecent ? $currentMonth : $olderMonth;
+
+        // the max games to process
+        $maxGames = 2; // 3
+        $downloaded = 0;
+        $completed = false;
+
+        $games = [];
+
+        // loop through the months
+        $year = $toYear;
+        $month = $toMonth;
+
+        while ($year > $fromYear || $month >= $fromMonth) {
+            // loop through the types
+            foreach ($types as $type => $dtype) {
+                // get the download record
+                $rec = $this->getDownloadRecord($this->getUser(), null, $settings->getSite(), $year, $month, $dtype->value);
+                if ($rec !== null) {
+                    // if this download is completed, skip it
+                    if ($rec->getStatus() == DownloadStatus::Completed) {
+                        continue;
+                    }
+
+                    // get the last UUID
+                    $lastUUID = $rec->getLastUUID() !== null ? $rec->getLastUUID() : "";
+
+                    // download the games
+                    $downloads = $downloader->downloadGames($year, $month, $type, $lastUUID, $maxGames);
+                    $cnt = count($downloads);
+
+                    // loop through the games
+                    for ($i = 0; $i < $cnt; $i++) {
+                        // process the game
+                        $evals = $this->getGameEvaluations($downloads[$i], $siteUsername);
+
+                        // add download info
+                        $evals["site"] = $settings->getSite();
+                        $evals["username"] = $siteUsername;
+                        $evals["year"] = $year;
+                        $evals["month"] = $month;
+                        $evals["type"] = $dtype->value;
+
+                        // add to the downloaded games
+                        $games[] = $evals;
+
+                        $downloaded++;
+
+                        // stop when we've reached the max
+                        if ($downloaded >= $maxGames) {
+                            break;
+                        }
+                    }
+
+                    // completed if no more games for this month (not if it's the current month)
+                    $completed = count($downloads) == 0 && ($year != $currentYear || $month != $currentMonth);
+
+                    // update the download record
+                    $rec->setStatus($completed ? DownloadStatus::Completed : DownloadStatus::Partial);
+                    //$rec->setStatus(DownloadStatus::Partial);
+                    $rec->setDateTime(new DateTime());
+
+                    $this->em->persist($rec);
+                    $this->em->flush();
+                }
+
+                // stop when we've reached the max
+                if ($downloaded >= $maxGames) {
+                    break 2;
+                }
+            }
+
+            // previous month
+            if ($month > 1) {
+                $month--;
+            } else {
+                $year--;
+                $month = 12;
+            }
+        }
+
+        return new JsonResponse([
+            'message' => 'Download complete.',
+            'downloaded' => $downloaded,
+            'completed' => $downloaded == 0,
+            'games' => $games,
+            'period' => (new DateTime())->setDate($year, $month, 1)->format("F, Y")
+        ]);
+    }
+
+    #[Route('/api/analyse/evaluate', methods: ['POST'], name: 'app_api_analyse_evaluate')]
+    public function apiAnalyseEvaluate(Request $request): JsonResponse
+    {
+        // get the payload
+        $payload = $request->getPayload()->all();
+
+        // evaluate the game
+        $mistakes = $this->evaluateGame($payload["game"]);
+        // set the totals
+        $totals = ["inaccuracies" => 0, "mistakes" => 0, "blunders" => 0];
+
+        foreach ($mistakes as $mistake) {
+            switch ($mistake["type"]) {
+                case "inaccuracy":
+                    $totals["inaccuracies"]++;
+                    break;
+                case "mistake":
+                    $totals["mistakes"]++;
+                    break;
+                case "blunder":
+                    $totals["blunders"]++;
+                    break;
+            }
+        }
+
+        //dd($totals, $mistakes, $payload["game"]);
+
+        return new JsonResponse([
+            'message' => 'Analysis done.',
+            'totals' => $totals,
+            'mistakes' => $mistakes
+            //'period' => (new DateTime())->setDate($year, $month, 1)->format("F, Y")
+        ]);
+
+        dd($payload, $mistakes);
+
+        // if there are any mistakes
+        if (count($mistakes) > 0) {
+            // get the initial fen
+            $initialFen = $payload["game"]["fen"] !== null ? $payload["game"]["fen"] : "";
+            // add them to the database
+            foreach ($mistakes as $mistake) {
+                // add the analysis
+                $rc = new Analysis();
+
+                $rc->setUser($this->getUser());
+                $rc->setColor($payload["game"]["color"]);
+                $rc->setWhite($payload["game"]["color"] == "white" ? $payload["username"] : $payload["game"]["opponent"]);
+                $rc->setBlack($payload["game"]["color"] == "black" ? $payload["username"] : $payload["game"]["opponent"]);
+                $rc->setLink($payload["game"]["link"]);
+                $rc->setType($mistake["type"]);
+                $rc->setInitialFen($initialFen);
+                $rc->setFen($mistake["fen"]);
+                $rc->setPgn(trim($mistake["line"]["pgn"]));
+                $rc->setMove($mistake["move"]);
+                $rc->setBestMoves(json_encode($mistake["bestmoves"]));
+
+                // save it
+                $this->em->persist($rc);
+            }
+        }
+
+        // download record..
+        // getDownloadRecord
+        $rec = $this->getDownloadRecord($this->getUser(), null, $settings->getSite(), $year, $month, $dtype->value);
+        if ($rec !== null) {
+            // update the last UUID
+            $rec->setDateTime(new DateTime());
+            $rec->setLastUUID($payload["game"]["uuid"]);
+
+            $this->em->persist($rec);
+            $this->em->flush();
+        }
+
+        return $mistakes;
+
+
+        return new JsonResponse([
+            'message' => 'Download complete.'
+        ]);
+    }
+
+    #[Route('/api/analyse/new', methods: ['GET', 'POST'], name: 'app_api_analyse_new')]
+    public function apiAnalyseNewTest(Request $request): JsonResponse
+    {
+        // get the payload
+        $payload = $request->getPayload()->all();
+
+        $data = [
+            "site" => isset($payload["site"]) ? $payload["site"] : "",
+            "username" => isset($payload["username"]) ? $payload["username"] : "",
+            "type" => isset($payload["type"]) ? $payload["type"] : [],
+            "period" => isset($payload["period"]) ? $payload["period"] : ["recent" => 0, "older" => 0]
+        ];
+
+        // get & validate the site
+        $site = DownloadSite::tryFrom($data["site"]);
+        // get the site username
+        $siteUsername = $data["username"];
+
+        // get recent and/or older
+        $periodRecent = isset($data["period"]["recent"]) ? ($data["period"]["recent"] ? true : false) : false;
+        $periodOlder = isset($data["period"]["older"]) ? ($data["period"]["older"] ? true : false) : false;
+        // get & validate the types
+        $types = [];
+        $tps = is_array($data["type"]) ? $data["type"] : [$data["type"]];
+        foreach ($tps as $tp) {
+            $dtype = DownloadType::tryFrom(ucfirst($tp));
+            if ($dtype !== null) {
+                $types[$tp] = $dtype;
+            }
+        }
+
+        // if the payload is invalid
+        if ($site == null || $siteUsername == "" || (!$periodRecent && !$periodOlder) || count($types) == 0) {
+            // set the error response
+            $response = new JsonResponse(['error' => "Invalid payload."]);
+            $response->setStatusCode(411);
+
+            return $response;
+        }
+
+        // get the settings
+        $user = $this->em->getRepository(User::class)->find($this->getUser());
+        $settings = $user->getSettings();
+
+        if ($settings == null) {
+            // create the settings
+            $settings = new Settings();
+            $settings->setUser($this->getUser());
+            $settings->setAnimationDuration(300);
+        }
+
+        // update the settings
+        $settings->setSite($site);
+        if ($site == DownloadSite::ChessDotCom) {
+            $settings->setChessUsername($siteUsername);
+        } else {
+            $settings->setLichessUsername($siteUsername);
+        }
+
+        // save the settings
+        $this->em->persist($settings);
+        $this->em->flush();
+
+        // update in the user (just in case)
+        $user->setSettings($settings);
+
+        // check to see if any downloads are still in progress
+        $repo = $this->em->getRepository(Downloads::class);
+
+        $rec = $repo->findOneBy([
+            'User' => $this->getUser(),
+            'Status' => DownloadStatus::Downloading
+        ]);
+
+        // if there is a download in progress
+        if ($rec !== null) {
+            // check the datetime
+            $now = new DateTime();
+
+            $secs =  $now->getTimestamp() - $rec->getDateTime()->getTimestamp();
+            $mins = floor($secs / 60);
+
+            // if 5 minutes ago or more
+            if ($mins > 4) {
+                //if (true) {
+                // update status for record
+                $rec->setStatus(DownloadStatus::Partial);
+                $rec->setDateTime(new DateTime());
+
+                $this->em->persist($rec);
+                $this->em->flush();
+            } else {
+                // send an error response
+                $response = new JsonResponse(['error' => "Downloading already in progress, please try again later."]);
+                $response->setStatusCode(409);
+
+                return $response;
+            }
+        }
+
+        // get the current year & month
+        $today = new DateTime();
+        $currentYear = intval($today->format('Y'));
+        $currentMonth = intval($today->format('m'));
+
+        // get the recent (from) year/month and the older (until) year/month
+        $recent = new DateTime();
+        $recent->modify("-11 months");
+        $recentYear = intval($recent->format('Y'));
+        $recentMonth = intval($recent->format('m'));
+
+        $recent->modify("-1 months");
+        $olderYear = intval($recent->format('Y'));
+        $olderMonth = intval($recent->format('m'));
+
+        // get the game downloader
+        $downloader = new GameDownloader($this->em, $this->getUser());
+
+        // get user - createdAt
+        $createdAt = $downloader->getCreatedAt();
+
+        // get the created year & month
+        $created = new DateTime();
+        $created->setTimestamp($createdAt / 1000);
+        $createdYear = intval($created->format('Y'));
+        $createdMonth = intval($created->format('m'));
+
+        // get the year & month from & to
+        $fromYear = $periodOlder ? $createdYear : $recentYear;
+        $fromMonth = $periodOlder ? $createdMonth : $recentMonth;
+        $toYear = $periodRecent ? $currentYear : $olderYear;
+        $toMonth = $periodRecent ? $currentMonth : $olderMonth;
+
+        // start the engine
+        $uci = new UCI();
+        // request the 3 best moves
+        $uci->setOption("MultiPV", 3);
+
+        // the max games to process
+        $maxGames = 3; // 4
+        $processed = 0;
+        $completed = false;
+
+        // keep track of the mistakes per time control
+        $mistakesPerType = [];
+        foreach ($types as $type => $dtype) {
+            $mistakesPerType[$type] = [];
+        }
+
+        // loop through the months
+        $year = $toYear;
+        $month = $toMonth;
+
+        while ($year > $fromYear || $month >= $fromMonth) {
+
+            //print $year . " - " . $month . "<br>";
+
+            // loop through the types
+            foreach ($types as $type => $dtype) {
+
+                //print "download type: " . $type . "<br>";
+
+                // get the download record
+                $rec = $this->getDownloadRecord($this->getUser(), null, $settings->getSite(), $year, $month, $dtype->value);
+                if ($rec !== null) {
+                    // if this download is completed, skip it
+                    if ($rec->getStatus() == DownloadStatus::Completed) {
+
+                        //print "-- download completed, continue..<br>";
+
+                        continue;
+                    }
+
+                    // get the last UUID
+                    $lastUUID = $rec->getLastUUID() !== null ? $rec->getLastUUID() : "";
+
+                    // download the games
+                    $games = $downloader->downloadGames($year, $month, $type, $lastUUID, $maxGames);
+                    $cnt = count($games);
+
+                    // loop through the games
+                    for ($i = 0; $i < $cnt; $i++) {
+                        // process the game
+                        $mistakes = $this->processGame($uci, $games[$i], $siteUsername, $rec);
+
+                        if ($mistakes !== null) {
+                            $mistakesPerType[$type] = array_merge($mistakesPerType[$type], $mistakes);
+                        }
+
+                        $processed++;
+
+                        // update the last UUID
+                        $rec->setDateTime(new DateTime());
+                        $rec->setLastUUID($games[$i]["uuid"]);
+
+                        $this->em->persist($rec);
+                        $this->em->flush();
+
+                        // stop when we've reached the max
+                        if ($processed >= $maxGames) {
+                            break;
+                        }
+                    }
+
+                    // completed if no more games for this month (not if it's the current month)
+                    $completed = count($games) == 0 && ($year != $currentYear || $month != $currentMonth);
+
+                    //print count($games) . " games, completed = " . ($completed ? "yes" : "no") . "<br>";
+
+                    // update the download record
+                    $rec->setStatus($completed ? DownloadStatus::Completed : DownloadStatus::Partial);
+                    $rec->setDateTime(new DateTime());
+
+                    $this->em->persist($rec);
+                    $this->em->flush();
+                }
+
+                // stop when we've reached the max
+                if ($processed >= $maxGames) {
+                    break 2;
+                }
+            }
+
+            // previous month
+            if ($month > 1) {
+                $month--;
+            } else {
+                $year--;
+                $month = 12;
+            }
+        }
+
+        // set the totals
+        $totals = ["inaccuracies" => 0, "mistakes" => 0, "blunders" => 0];
+
+        foreach ($mistakesPerType as $type => $mistakes) {
+            foreach ($mistakes as $mistake) {
+                switch ($mistake["type"]) {
+                    case "inaccuracy":
+                        $totals["inaccuracies"]++;
+                        break;
+                    case "mistake":
+                        $totals["mistakes"]++;
+                        break;
+                    case "blunder":
+                        $totals["blunders"]++;
+                        break;
+                }
+            }
+        }
+
+        return new JsonResponse([
+            'message' => 'Analysis done.',
+            'processed' => $processed,
+            'completed' => $processed == 0,
+            'totals' => $totals,
+            'period' => (new DateTime())->setDate($year, $month, 1)->format("F, Y")
+        ]);
+    }
+
+    #[Route('/api/analyse/opponent', methods: ['GET', 'POST'], name: 'app_api_analyse_opponent')]
+    public function apiAnalyseOpponent(Request $request): JsonResponse
+    {
+        // get the payload
+        $payload = $request->getPayload()->all();
+
+        // set the data (with defaults for GET testing)
+        $data = [
+            "username" => isset($payload["username"]) ? $payload["username"] : "annacramling",
+            "site" => isset($payload["site"]) ? $payload["site"] : "Chess.com",
+            "type" => isset($payload["type"]) ? $payload["type"] : ["daily", "rapid", "blitz"]
+        ];
+
+        // recent and older games
+        $periodRecent = true;
+        $periodOlder = true;
+        // get & validate the website
+        $site = DownloadSite::tryFrom($data["site"]);
+        // get & validate the types
+        $types = [];
+        $tps = is_array($data["type"]) ? $data["type"] : [$data["type"]];
+        foreach ($tps as $tp) {
+            $dtype = DownloadType::tryFrom(ucfirst($tp));
+            if ($dtype !== null) {
+                $types[$tp] = $dtype;
+            }
+        }
+
+        // if the payload is invalid
+        if ((!$periodRecent && !$periodOlder) || $site == null || count($types) == 0) {
+            // set the error response
+            $response = new JsonResponse(['error' => "Invalid payload."]);
+            $response->setStatusCode(411);
+
+            return $response;
+        }
+
+        //
+        // - check to see if this opponent exists
+        // - add the opponent if needed
+        // - fetch opponent record
+        //
+
+        // check to see if opponent exists
+        $repo = $this->em->getRepository(Opponent::class);
+
+        $newOpponent = false;
+
+        $opp = $repo->findOneBy([
+            'Username' => $data["username"],
+            'Site' => $site
+        ]);
+        if ($opp == null) {
+            // add the opponent
+            $opp = new Opponent();
+            $opp->setUsername($data["username"]);
+            $opp->setSite($site);
+            $opp->setTotal(0);
+
+            $this->em->persist($opp);
+            $this->em->flush();
+
+            $newOpponent = true;
+        }
+
+        // check to see if any downloads are still in progress
+        $repo = $this->em->getRepository(Downloads::class);
+
+        $rec = $repo->findOneBy([
+            'Opponent' => $opp,
+            'Status' => DownloadStatus::Downloading
+        ]);
+
+        // if there is a download in progress
+        if ($rec !== null) {
+            // check the datetime
+            $now = new DateTime();
+
+            $secs =  $now->getTimestamp() - $rec->getDateTime()->getTimestamp();
+            $mins = floor($secs / 60);
+
+            // if 5 minutes ago or more
+            if ($mins > 4) {
+                //if (true) {
+                // update status for record
+                $rec->setStatus(DownloadStatus::Partial);
+                $rec->setDateTime(new DateTime());
+
+                $this->em->persist($rec);
+                $this->em->flush();
+            } else {
+                // send an error response
+                $response = new JsonResponse(['error' => "Downloading already in progress, please try again later."]);
+                $response->setStatusCode(409);
+
+                return $response;
+            }
+        }
+
+        // get the current year & month
+        $today = new DateTime();
+        $currentYear = intval($today->format('Y'));
+        $currentMonth = intval($today->format('m'));
+
+        // get the recent (from) year/month and the older (until) year/month
+        $recent = new DateTime();
+        $recent->modify("-11 months");
+        $recentYear = intval($recent->format('Y'));
+        $recentMonth = intval($recent->format('m'));
+
+        $recent->modify("-1 months");
+        $olderYear = intval($recent->format('Y'));
+        $olderMonth = intval($recent->format('m'));
+
+        // get the repertoire lines
+        $repo = $this->em->getRepository(Repertoire::class);
+
+        // get the repertoire lines and the group lines
+        [$lines, $groups] = $repo->getLines();
+
+        // get the game downloader
+        $downloader = new GameDownloader($this->em, null, $opp);
+
+        // get user - createdAt
+        $createdAt = $downloader->getCreatedAt();
+
+        // get the created year & month
+        $created = new DateTime();
+        $created->setTimestamp($createdAt / 1000);
+        $createdYear = intval($created->format('Y'));
+        $createdMonth = intval($created->format('m'));
+
+        // get the year & month from & to
+        $fromYear = $periodOlder ? $createdYear : $recentYear;
+        $fromMonth = $periodOlder ? $createdMonth : $recentMonth;
+        $toYear = $periodRecent ? $currentYear : $olderYear;
+        $toMonth = $periodRecent ? $currentMonth : $olderMonth;
+
+        // start the engine
+        $uci = new UCI();
+        // request the 3 best moves
+        $uci->setOption("MultiPV", 3);
+
+        // the max games to process
+        $maxGames = 100;
+        //$maxDownload = $site == DownloadSite::ChessDotCom ? 100 : 10;
+        $maxDownload = 100;
+        $processed = 0;
+        $matches = 0;
+        $completed = false;
+
+        // keep track of the mistakes per time control
+        $mistakesPerType = [];
+        foreach ($types as $type => $dtype) {
+            $mistakesPerType[$type] = [];
+        }
+
+        // keep track of the opponent move totals (to limit the amount of updates)
+        $oppMoves = ["white" => [], "black" => []];
+
+        // loop through the months
+        $year = $toYear;
+        $month = $toMonth;
+
+        while ($year > $fromYear || $month >= $fromMonth) {
+
+            //print $year . " - " . $month . "<br>";
+
+            // loop through the types
+            foreach ($types as $type => $dtype) {
+
+                //print "download type: " . $type . "<br>";
+
+                // get the download record
+                $rec = $this->getDownloadRecord(null, $opp, $site, $year, $month, $dtype->value);
+                if ($rec !== null) {
+                    // if this download is completed, skip it
+                    if ($rec->getStatus() == DownloadStatus::Completed) {
+
+                        //print "-- download completed, continue..<br>";
+
+                        continue;
+                    }
+
+                    // get the last UUID
+                    $lastUUID = $rec->getLastUUID() !== null ? $rec->getLastUUID() : "";
+
+                    // download the games
+                    $games = $downloader->downloadGames($year, $month, $type, $lastUUID, $maxDownload);
+                    $cnt = count($games);
+
+                    //dd($games);
+
+                    // loop through the games
+                    for ($i = 0; $i < $cnt; $i++) {
+
+                        /*
+
+                    - "initial_setup" => only if empty
+                    - "rules" => [chess, ?]
+                    - 
+
+                    */
+
+                        // don't analyse games with an initial position - [Chess.com]
+                        if (isset($games[$i]["initial_setup"]) && $games[$i]["initial_setup"] !== "") {
+                            continue;
+                        }
+
+                        // make sure it's a regular chess game (skip crazyhouse, bughouse, etc) - [Chess.com]
+                        if (isset($games[$i]["rules"]) && $games[$i]["rules"] !== "chess") {
+                            continue;
+                        }
+                        // [Lichess]
+                        if (isset($games[$i]["variant"]) && $games[$i]["variant"] !== "standard") {
+                            continue;
+                        }
+
+                        // process the game
+                        $oppGame = $this->analyseOpponentGame($games[$i], $opp, $lines);
+                        // if no game or no moves, skip it
+                        if ($oppGame === false || count($oppGame["moves"]) == 0) {
+                            continue;
+                        }
+
+                        if ($oppGame["match"]) {
+                            $matches++;
+                        }
+
+                        $processed++;
+
+                        // add the opponent game
+                        $oppg = new OpponentGame();
+                        $oppg->setOpponent($opp);
+                        $oppg->setColor($oppGame["color"]);
+                        $oppg->setResult($oppGame["result"]);
+                        $oppg->setPgn($oppGame["pgn"]);
+
+                        $this->em->persist($oppg);
+
+                        //dd($oppGame);
+
+                        // keep track of the move totals
+                        foreach ($oppGame["moves"] as $move) {
+                            // if we don't have this position yet
+                            if (!isset($oppMoves[$oppGame["color"]][$move["before"]])) {
+                                $oppMoves[$oppGame["color"]][$move["before"]] = [];
+                            }
+                            // if we don't have this move yet
+                            if (!isset($oppMoves[$oppGame["color"]][$move["before"]][$move["move"]])) {
+                                $oppMoves[$oppGame["color"]][$move["before"]][$move["move"]] = [
+                                    "pgn" => $move["pgn"],
+                                    "matches" => $move["match"],
+                                    "wins" => 0,
+                                    "draws" => 0,
+                                    "losses" => 0
+                                ];
+                            }
+
+                            switch ($oppGame["result"]) {
+                                case "win":
+                                    $oppMoves[$oppGame["color"]][$move["before"]][$move["move"]]["wins"]++;
+                                    break;
+                                case "draw":
+                                    $oppMoves[$oppGame["color"]][$move["before"]][$move["move"]]["draws"]++;
+                                    break;
+                                case "loss":
+                                    $oppMoves[$oppGame["color"]][$move["before"]][$move["move"]]["losses"]++;
+                                    break;
+                            }
+                        }
+
+                        // update the last UUID
+                        $rec->setDateTime(new DateTime());
+                        $rec->setLastUUID($games[$i]["uuid"]);
+
+                        $this->em->persist($rec);
+
+                        //$this->em->flush();
+
+                        // stop when we've reached the max
+                        if ($processed >= $maxGames) {
+                            break;
+                        }
+                    }
+
+                    // completed if no more games for this month (not if it's the current month)
+                    $completed = count($games) == 0 && ($year != $currentYear || $month != $currentMonth);
+
+                    //print count($games) . " games, completed = " . ($completed ? "yes" : "no") . "<br>";
+
+                    // update the download record
+                    $rec->setStatus($completed ? DownloadStatus::Completed : DownloadStatus::Partial);
+                    $rec->setDateTime(new DateTime());
+
+                    $this->em->persist($rec);
+                    //$this->em->flush();
+                }
+
+                // stop when we've reached the max
+                if ($processed >= $maxGames) {
+                    break;
+                }
+            }
+
+            // stop when we've reached the max
+            if ($processed >= $maxGames) {
+                break;
+            }
+
+            // previous month
+            if ($month > 1) {
+                $month--;
+            } else {
+                $year--;
+                $month = 12;
+            }
+        }
+
+        // save the opponent moves
+        $this->saveOpponentMoves($opp, $oppMoves);
+
+        // update the totals for the opponent
+        $opp->setTotal($opp->getTotal() + $processed);
+
+        $this->em->persist($opp);
+        $this->em->flush();
+
+        // set the totals
+        $totals = ["inaccuracies" => 0, "mistakes" => 0, "blunders" => 0];
+
+        foreach ($mistakesPerType as $type => $mistakes) {
+            foreach ($mistakes as $mistake) {
+                switch ($mistake["type"]) {
+                    case "inaccuracy":
+                        $totals["inaccuracies"]++;
+                        break;
+                    case "mistake":
+                        $totals["mistakes"]++;
+                        break;
+                    case "blunder":
+                        $totals["blunders"]++;
+                        break;
+                }
+            }
+        }
+
+        return new JsonResponse([
+            'message' => 'Analysis done.',
+            'opponent' => [
+                'id' => $opp->getId(),
+                'username' => $opp->getUsername(),
+                'site' => $opp->getSite()->value,
+                'total' => $opp->getTotal(),
+                'new' => $newOpponent
+            ],
+            'processed' => $processed,
+            'completed' => $processed == 0,
+            'matches' => $matches,
+            'period' => (new DateTime())->setDate($year, $month, 1)->format("F, Y")
+        ]);
+    }
+
+    //
+    private function saveOpponentMoves($opponent, $oppMoves)
+    {
+        // get the opponent move repository
+        $repo = $this->em->getRepository(OpponentMove::class);
+
+        // save the opponent moves
+        foreach ($oppMoves as $color => $fens) {
+            foreach ($fens as $fen => $moves) {
+                foreach ($moves as $move => $details) {
+                    // find the opponent move
+                    $rec = $repo->findOneBy([
+                        'Opponent' => $opponent,
+                        'Color' => $color,
+                        //'Fen' => $fen,
+                        'Pgn' => $details["pgn"],
+                        'Move' => $move
+                    ]);
+
+                    // if found
+                    if ($rec) {
+                        // update the totals
+                        $rec->setWins($rec->getWins() + $details["wins"]);
+                        $rec->setDraws($rec->getDraws() + $details["draws"]);
+                        $rec->setLosses($rec->getLosses() + $details["losses"]);
+                    } else {
+                        // add the move
+                        $rec = new OpponentMove();
+                        $rec->setOpponent($opponent);
+                        $rec->setColor($color);
+                        $rec->setFen($fen);
+                        $rec->setPgn($details["pgn"]);
+                        $rec->setMove($move);
+                        $rec->setMatches($details["matches"]);
+                        $rec->setWins($details["wins"]);
+                        $rec->setDraws($details["draws"]);
+                        $rec->setLosses($details["losses"]);
+                    }
+
+                    $this->em->persist($rec);
+                }
+            }
+        }
+
+        $this->em->flush();
+    }
+
+    #[Route('/api/opponent/{id}', methods: ['GET'], name: 'app_api_opponent_get')]
+    public function apiGetOpponent(Request $request, $id): JsonResponse
+    {
+        // the response
+        $resp = [];
+
+        // find the opponent
+        $repo = $this->em->getRepository(Opponent::class);
+
+        $opp = $repo->find($id);
+        if ($opp) {
+            // get the opponent lines for white & black
+            $resp = $this->getOpponentLines($opp);
+        } else {
+            $resp = [
+                "message" => "Opponent not found.",
+                "white" => [],
+                "black" => []
+            ];
+        }
+
+        return new JsonResponse($resp);
+    }
+
+    // get the opponent lines
+    private function getOpponentLines($opponent, $color = "", $pgn = "")
+    {
+        $moves = [
+            "white" => ["moves" => [], "suggestions" => []],
+            "black" => ["moves" => [], "suggestions" => []]
+        ];
+
+        $ecos = [];
+        $hasMore = true;
+
+        // in case an opponent move is now in our repertoire, we need to fetch the lines to get the new opponent moves
+        $linesFetched = false;
+        $lines = [];
+        $newRepertoireMoves = 0;
+
+        // in case we are getting a specific line, we need to skip the PGN moves
+        $skip = [];
+        if ($color !== "" && $pgn !== "") {
+            $temp = explode(" ", $pgn);
+            for ($i = 0; $i < count($temp); $i++) {
+                // if this is not a move number
+                if (preg_match('/^\\d+\\./', $temp[$i]) !== 1 && trim($temp[$i]) != "") {
+                    $skip[] = $temp[$i];
+                }
+            }
+        }
+
+        $repoRep = $this->em->getRepository(Repertoire::class);
+
+        // get the opponent moves
+        $qb = $this->em->createQueryBuilder('OpponentMove');
+        $query = $qb->select('om')
+            ->from('App\Entity\Main\OpponentMove', 'om')
+            ->where('om.Opponent = :opp')
+            ->setParameter('opp', $opponent);
+
+        // if we need to fetch a specific line
+        if ($color !== "" && $pgn !== "") {
+            $query = $query->andWhere('om.Color = :color')
+                ->andWhere($qb->expr()->like('om.Pgn', 'CONCAT(:pgn, \' %\')'))
+                ->setParameter('color', $color)
+                ->setParameter('pgn', $pgn);
+        }
+
+        $query = $query->addOrderBy('om.Color', 'ASC')
+            ->addOrderBy('om.Pgn', 'ASC')->getQuery();
+
+        $res = $query->getResult();
+
+        foreach ($res as $rec) {
+            // find the ECO from the parent moves
+            $eco = null;
+            $hasMore = true;
+            if ($rec->getPgn() !== "") {
+                foreach ($ecos as $parent) {
+                    if (substr($rec->getPgn(), 0, strlen($parent["pgn"])) == $parent["pgn"]) {
+                        $eco = $parent["eco"];
+                        //$eco = ["code" => "parent", "name" => $parent];
+                        $hasMore = $parent["hasMore"];
+
+                        if (!$hasMore) {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // find the ECO for this move
+            if ($rec->getPgn() !== "" && $hasMore) {
+
+                $thisEco = $this->em->getRepository(ECO::class)->findCode($rec->getPgn());
+                if ($thisEco) {
+                    $eco = $thisEco;
+                    $eco["pgn"] = $rec->getPgn();
+
+                    $hasMore = $this->em->getRepository(ECO::class)->hasMore($rec->getPgn());
+
+                    $ecos[] = [
+                        "pgn" => $rec->getPgn(),
+                        "eco" => $eco,
+                        "hasMore" => $hasMore
+                    ];
+                }
+            }
+
+            // the new child moves, in case we are adding new opponent moves based off this one (see below)
+            $newChildMoves = [];
+
+            // if this move wasn't matched earlier, check to see if we have it in our repertoire now
+            $rep = null;
+            // only if we are doing a top level call (not a specific line, that's called from the top level call only)
+            if ($color == "" && $pgn == "" && !$rec->isMatches()) {
+                // find the move in our repository (opposite color)
+                $rep = $repoRep->findOneBy([
+                    'Color' => $rec->getColor() == "white" ? "black" : "white",
+                    'FenBefore' => $rec->getFen(),
+                    'Move' => $rec->getMove()
+                ]);
+
+                // if we now have this move in our repertoire
+                if ($rep) {
+
+                    //dd($rec, $rep);
+
+                    $newRepertoireMoves++;
+
+                    // if we haven't fetched the lines yet
+                    if (!$linesFetched) {
+                        // get the repertoire lines
+                        [$lines, $groups] = $repoRep->getLines();
+
+                        $linesFetched = true;
+                    }
+
+                    $oppMoves = [];
+
+                    // get the opponent games
+                    $games = $this->getOpponentGames($opponent, $rec->getColor(), $rec->getPgn());
+                    foreach ($games as $game) {
+                        // get the new opponent moves
+                        $newMoves = $this->getOpponentMoves($rec->getColor(), $lines, $game["moves"]);
+
+                        // filter the moves based on the PGN (those opponent moves already exist)
+                        $filtered = [];
+                        foreach ($newMoves as $move) {
+                            if (strlen($move["pgn"]) > strlen($rec->getPgn())) {
+                                $filtered[] = $move;
+                            }
+                        }
+
+                        // keep track of the move totals
+                        foreach ($filtered as $move) {
+                            // if we don't have this position yet
+                            if (!isset($oppMoves[$rec->getColor()][$move["before"]])) {
+                                $oppMoves[$rec->getColor()][$move["before"]] = [];
+                            }
+                            // if we don't have this move yet
+                            if (!isset($oppMoves[$rec->getColor()][$move["before"]][$move["move"]])) {
+                                $oppMoves[$rec->getColor()][$move["before"]][$move["move"]] = [
+                                    "pgn" => $move["pgn"],
+                                    "matches" => $move["match"],
+                                    "wins" => 0,
+                                    "draws" => 0,
+                                    "losses" => 0
+                                ];
+                            }
+
+                            switch ($game["result"]) {
+                                case "win":
+                                    $oppMoves[$rec->getColor()][$move["before"]][$move["move"]]["wins"]++;
+                                    break;
+                                case "draw":
+                                    $oppMoves[$rec->getColor()][$move["before"]][$move["move"]]["draws"]++;
+                                    break;
+                                case "loss":
+                                    $oppMoves[$rec->getColor()][$move["before"]][$move["move"]]["losses"]++;
+                                    break;
+                            }
+                        }
+                    }
+
+                    // save the opponent moves
+                    $this->saveOpponentMoves($opponent, $oppMoves);
+
+                    // get the newly added moves for this line
+                    $newChildMoves = $this->getOpponentLines($opponent, $rec->getColor(), $rec->getPgn());
+
+                    // this move now matches, update it
+                    $rec->setMatches(true);
+
+                    $this->em->persist($rec);
+                    $this->em->flush();
+                }
+            }
+
+            // get the moves for this line
+            $line = [];
+            $idx = 0;
+            $temp = explode(" ", $rec->getPgn());
+            for ($i = 0; $i < count($temp); $i++) {
+                // if this is not a move number
+                if (preg_match('/^\\d+\\./', $temp[$i]) !== 1 && trim($temp[$i]) != "") {
+                    // if we can add this move
+                    if ($idx >= count($skip)) {
+                        //if (count($line) )
+                        $line[] = $temp[$i];
+                    }
+                    $idx++;
+                }
+            }
+
+            // remove the current move from the line
+            array_pop($line);
+
+            // get the correct moves array in the tree
+            $_moves = &$moves[$rec->getColor()]["moves"];
+            foreach ($line as $move) {
+                // safety, should not happen..
+                if (!isset($_moves[$move])) {
+                    $_moves[$move] = [
+                        "id" => -1,
+                        "wins" => 0,
+                        "draws" => 0,
+                        "losses" => 0,
+                        "matches" => 0,
+                        "fetched" => 1,
+                        "moves" => []
+                    ];
+                }
+                $_moves = &$_moves[$move]["moves"];
+            }
+
+            // add the move
+            $_moves[$rec->getMove()] = [
+                "fen" => $rec->getFen(),
+                "pgn" => $rec->getPgn(),
+                "id" => $rec->getId(),
+                "eco" => $eco,
+                "wins" => $rec->getWins(),
+                "draws" => $rec->getDraws(),
+                "losses" => $rec->getLosses(),
+                "matches" => $rec->isMatches(),
+                "fetched" => $rec->isMatches() ? 1 : 0,
+                "moves" => $newChildMoves
+            ];
+        }
+
+        $moves["newRepertoireMoves"] = $newRepertoireMoves;
+
+
+        /*
+
+        - if matches = 0 (not in our repertoire)
+        - check percentage played ?
+        - if high enough (> 10 ??)
+        - add to list of suggestions (to add to our repertoire)
+        - up to move 15?
+
+        */
+
+        // get the suggestions
+        if ($color == "") {
+
+            //dd($moves["white"]["moves"]);
+
+            // 1. d4 d5 2. c4 c6 3. Nf3 Nf6 4. Nc3 a6 5. c5 b5
+
+            //dd($moves["white"]["moves"]["d4"]["moves"]["d5"]["moves"]["c4"]["moves"]["c6"]["moves"]["Nf3"]["moves"]["Nf6"]);
+
+            //$this->getOpponentSuggestions($moves["white"]["moves"]);
+
+            //dd("after white");
+
+            $moves["white"]["suggestions"] = $this->getOpponentSuggestions("white", $moves["white"]["moves"]);
+            $moves["black"]["suggestions"] = $this->getOpponentSuggestions("black", $moves["black"]["moves"]);
+        }
+
+
+        return $color == "" ? $moves : $moves[$color]["moves"];
+    }
+
+    // get suggestions based on the opponent moves (to add to our repertoire)
+    private function getOpponentSuggestions($color, $moves, $halfmove = 1)
+    {
+        $suggestions = [];
+
+        // keep track of the total for all moves
+        $total = 0;
+        // we don't have to check percentage played if all moves are already in our repertoire
+        $matchAll = true;
+
+        // get the total of these moves and get the child moves suggestions
+        foreach ($moves as $move => $details) {
+            // if we have this move in our repertoire, check the child moves
+            if ($details["matches"]) {
+                $sugg = $this->getOpponentSuggestions($color, $details["moves"], $halfmove + 1);
+                foreach ($sugg as $s) {
+                    $suggestions[] = $s;
+                }
+            } else {
+                $matchAll = false;
+            }
+
+            $sub = $details["wins"] + $details["draws"] + $details["losses"];
+
+            $total += $sub;
+        }
+
+        // if this is the opponent's move and we need to check for suggestions (at least 10 games for this position)
+        if ((($color == "white" && $halfmove % 2 !== 0) || ($color == "black" && $halfmove % 2 == 0)) && !$matchAll && $total > 10) {
+            //
+            $repo = $this->em->getRepository(Repertoire::class);
+            //
+            foreach ($moves as $move => $details) {
+                if ($details["matches"]) {
+                    continue;
+                }
+
+                $sub = $details["wins"] + $details["draws"] + $details["losses"];
+
+                $pctPlayed = $total == 0 ? 100 : ($sub / $total) * 100;
+
+                // if this move is played 25% of the time or more
+                if ($pctPlayed >= 30) {
+                    // see if we have other moves for this position
+                    $res = $repo->findBy([
+                        'User' => $this->getUser(),
+                        'Color' => $color == "white" ? "black" : "white",
+                        'FenBefore' => $details["fen"]
+                    ]);
+
+                    // only add the suggestion if we have other moves here (not for end of line positions)
+                    if (count($res) > 0) {
+                        // get the line
+                        $line = [];
+                        $temp = explode(" ", $details["pgn"]);
+                        for ($i = 0; $i < count($temp); $i++) {
+                            // if this is not a move number
+                            if (preg_match('/^\\d+\\./', $temp[$i]) !== 1 && trim($temp[$i]) != "") {
+                                $line[] = $temp[$i];
+                            }
+                        }
+                        // add the suggestion
+                        $suggestions[] = [
+                            'halfmove' => $halfmove,
+                            'move' => $move,
+                            'eco' => $details["eco"],
+                            'pgn' => $details["pgn"],
+                            'line' => $line,
+                            'percentage' => $pctPlayed . "%"
+                        ];
+                    }
+                }
+            }
+        }
+
+        return $suggestions;
+    }
+
+    #[Route('/api/opponent/moves', methods: ['POST'], name: 'app_api_opponent_get_moves')]
+    public function apiGetOpponentMoves(Request $request): JsonResponse
+    {
+        // get the payload (if posted)
+        $data = $request->getPayload()->all();
+
+        $oppId = isset($data["id"]) ? $data["id"] : null;
+        $color = isset($data["color"]) ? $data["color"] : null;
+        $pgn = isset($data["pgn"]) ? $data["pgn"] : null;
+
+        // get the line
+        $line = [];
+        $temp = explode(" ", $pgn);
+        for ($i = 0; $i < count($temp); $i++) {
+            // if this is not a move number
+            if (preg_match('/^\\d+\\./', $temp[$i]) !== 1 && trim($temp[$i]) != "") {
+                $line[] = $temp[$i];
+            }
+        }
+
+        // the response
+        $resp = [];
+
+        // find the opponent
+        $repo = $this->em->getRepository(Opponent::class);
+
+        $opp = $repo->find($oppId);
+        if ($opp) {
+
+            $moves = [
+                "pgn" => $pgn,
+                "move" => end($line),
+                "moves" => []
+            ];
+
+            // get the ECO for this move
+            $rootEco = $this->em->getRepository(ECO::class)->findCode($pgn);
+            $rootMore = $rootEco == null ? false : $this->em->getRepository(ECO::class)->hasMore($pgn);
+
+            // get the opponent games
+            $games = $this->getOpponentGames($opp, $color, $pgn);
+            foreach ($games as $rec) {
+                // follow the games 5 moves deep
+                $slice = array_slice($rec["moves"], count($line), 5);
+
+                // set the parent ECO to the root ECO
+                $eco = $rootEco;
+                $hasMore = $rootMore;
+
+                // get the move pgn
+                $movePgn = "";
+                $moveIdx = 0;
+                foreach ($line as $mv) {
+                    $movePgn .= ($movePgn !== "" ? " " : "") . ($moveIdx % 2 == 0 ? ($moveIdx / 2 + 1) . ". " : "") . $mv;
+                    $moveIdx++;
+                }
+
+                // get the correct moves array in the tree
+                $_moves = &$moves["moves"];
+
+                // add the moves
+                $cnt = 0;
+                foreach ($slice as $move) {
+                    // add to the pgn
+                    $movePgn .= ($movePgn !== "" ? " " : "") . ($moveIdx % 2 == 0 ? ($moveIdx / 2 + 1) . ". " : "") . $move;
+                    $moveIdx++;
+                    // add the move if it doesn't exist yet
+                    if (!isset($_moves[$move])) {
+                        // get the ECO for this move
+                        if ($hasMore) {
+                            $thisEco = $this->em->getRepository(ECO::class)->findCode($movePgn);
+                            if ($thisEco) {
+                                $eco = $thisEco;
+                                $hasMore = $this->em->getRepository(ECO::class)->hasMore($movePgn);
+                            } else {
+                                $hasMore = false;
+                            }
+                        }
+
+                        $_moves[$move] = [
+                            "pgn" => $movePgn,
+                            "eco" => $eco,
+                            "wins" => 0,
+                            "draws" => 0,
+                            "losses" => 0,
+                            "matches" => 0,
+                            "fetched" => $cnt == 4 ? 0 : 1,
+                            "moves" => []
+                        ];
+                    }
+
+                    // add the totals
+                    switch ($rec["result"]) {
+                        case "win":
+                            $_moves[$move]["wins"]++;
+                            break;
+                        case "draw":
+                            $_moves[$move]["draws"]++;
+                            break;
+                        case "loss":
+                            $_moves[$move]["losses"]++;
+                            break;
+                    }
+
+                    $_moves = &$_moves[$move]["moves"];
+                    $cnt++;
+                }
+            }
+
+            return new JsonResponse($moves);
+        } else {
+            return new JsonResponse([
+                "message" => "Opponent not found.",
+                "color" => $color,
+                "moves" => []
+            ]);
+        }
+    }
+
+    // get the opponent games for a certain PGN, adding an array with the moves
+    private function getOpponentGames($opponent, $color, $pgn)
+    {
+        $games = [];
+
+        $qb = $this->em->createQueryBuilder();
+        $query = $qb->select('og')
+            ->from('App\Entity\Main\OpponentGame', 'og')
+            ->where('og.Opponent = :opp')
+            ->andWhere('og.Color = :color')
+            ->andWhere($qb->expr()->like('og.Pgn', 'CONCAT(:pgn, \'%\')'))
+            ->setParameter('opp', $opponent)
+            ->setParameter('color', $color)
+            ->setParameter('pgn', $pgn)
+            ->orderBy('og.Pgn', 'ASC')
+            ->getQuery();
+
+        $res = $query->getArrayResult();
+
+        foreach ($res as $rec) {
+            // get the game moves
+            $moves = [];
+            $temp = explode(" ", $rec["Pgn"]);
+            for ($i = 0; $i < count($temp); $i++) {
+                // if this is not a move number
+                if (preg_match('/^\\d+\\./', $temp[$i]) !== 1 && trim($temp[$i]) != "") {
+                    $moves[] = $temp[$i];
+                }
+            }
+
+            $games[] = [
+                "id" => $rec["id"],
+                "result" => $rec["Result"],
+                "pgn" => $rec["Pgn"],
+                "moves" => $moves
+            ];
+        }
+
+        return $games;
+    }
+
+    //
+    private function getDownloadRecord(?UserInterface $user, ?Opponent $opponent, $site, $year, $month, $type): mixed
+    {
+        // get the repository
+        $repository = $this->em->getRepository(Downloads::class);
+
+        // set the criteria
+        $crit = [
+            'Type' => $type,
+            'Year' => $year,
+            'Month' => $month
+        ];
+
+        if ($user) {
+            $crit['User'] = $user;
+        } else {
+            $crit['Opponent'] = $opponent;
+        }
+
+        // find the download record
+        $rec = $repository->findOneBy($crit);
+
+        // if there is a download record
+        if ($rec !== null) {
+            // depending the status
+            switch ($rec->getStatus()) {
+                case DownloadStatus::Downloading:
+                    break;
+                case DownloadStatus::Completed:
+                    break;
+                case DownloadStatus::Partial:
+                    // update the status
+                    $rec->setStatus(DownloadStatus::Downloading);
+                    $rec->setDateTime(new DateTime());
+
+                    $this->em->persist($rec);
+                    $this->em->flush();
+
+                    break;
+            }
+        } else {
+            // add download record
+            $rec = new Downloads();
+            if ($user) {
+                $rec->setUser($this->getUser());
+            } else {
+                $rec->setOpponent($opponent);
+            }
+            $rec->setSite($site);
+            $rec->setYear($year);
+            $rec->setMonth($month);
+            $rec->setType($type);
+            $rec->setStatus(DownloadStatus::Downloading);
+            $rec->setDateTime(new DateTime());
+
+            $this->em->persist($rec);
+            $this->em->flush();
+        }
+
+        return $rec;
+    }
+
+    // parse & analyse an opponent game
+    private function analyseOpponentGame($data, $opponent, $lines): array
+    {
+        // make sure we have a PGN
+        if (!isset($data["pgn"])) {
+            return false;
+        }
+
+        // parse the game
+        $game = $this->myPgnParser->parsePgnFromText($data["pgn"], true);
+
+        // get the color
+        $color = strtolower($game->getWhite()) == strtolower($opponent->getUsername()) ? "white" : "black";
+        // get the result
+        $result = '';
+        switch ($game->getResult()) {
+            case '1-0':
+                $result = $color == "white" ? "win" : "loss";
+                break;
+            case '0-1':
+                $result = $color == "black" ? "win" : "loss";
+                break;
+            case '1/2-1/2':
+                $result = 'draw';
+                break;
+        }
+
+        // get the opponent moves for our repertoire
+        $moves = $this->getOpponentMoves($color, $lines, $game->getMovesArray());
+
+        $oppGame = [
+            "color" => $color,
+            "result" => $result,
+            "pgn" => $game->getMovesPgn(),
+            "match" => $moves !== false ? true : false,
+            "moves" => $moves !== false ? $moves : []
+        ];
+
+        return $oppGame;
+    }
+
+    // get the opponent moves for a game, based off our repertoire
+    private function getOpponentMoves($color, $lines, $gameMoves)
+    {
+        $oppMoves = [];
+        $gameMatch = false;
+
+        foreach ($lines as $line) {
+            // we need the opposite color lines to check our own repertoire moves
+            if ($line["color"] !== $color) {
+                // keep track of the pgn
+                $pgn = "";
+                $idx = 0;
+                // loop through opponent moves until it stops matching
+                foreach ($gameMoves as $move) {
+                    // get the moves for this line
+                    $moves = isset($line["moves"]) ? $line["moves"] : [];
+                    // get the FEN after
+                    $after = $line["after"];
+                    // see if we have this move in our repertoire
+                    $match = false;
+                    foreach ($moves as $mov) {
+                        if ($mov["move"] == $move) {
+                            // we have a match, get the next line
+                            $match = true;
+                            $gameMatch = true;
+                            $line = $mov;
+                            break;
+                        }
+                    }
+
+                    // set the pgn for the next moves
+                    $pgn .= ($idx > 0 ? " " : "") . ($idx % 2 == 0 ? ($idx / 2 + 1) . ". " : "") . $move;
+
+                    // add to the opponent moves
+                    $oppMoves[] = [
+                        "before" => $after,
+                        "pgn" => $pgn,
+                        "move" => $move,
+                        "match" => $match
+                    ];
+
+                    // if this move was a match
+                    if ($match) {
+                        $idx++;
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            // if we have a game match, stop the loop
+            if ($gameMatch) {
+                break;
+            }
+        }
+
+        return $gameMatch ? $oppMoves : false;
+    }
+
+    private function processGame($uci, $game, $siteUsername, $drec)
+    {
+        if (!isset($game["pgn"])) {
+            return null;
+        }
+
+        // parse the game
+        $parsed = $this->myPgnParser->parsePgnFromText($game["pgn"], true);
+
+        // analyse the game
+        [$mistakes, $count] = $this->analyseGame($uci, $parsed, $siteUsername);
+
+        // if there are any mistakes
+        if (count($mistakes) > 0) {
+            // get the initial fen
+            $initialFen = $parsed->getFen() !== null ? $parsed->getFen() : "";
+            // add them to the database
+            foreach ($mistakes as $mistake) {
+                // add the analysis
+                $rc = new Analysis();
+
+                $rc->setUser($this->getUser());
+                $rc->setColor($parsed->getWhite() == $siteUsername ? "white" : "black");
+                $rc->setWhite($parsed->getWhite());
+                $rc->setBlack($parsed->getBlack());
+                $rc->setLink($parsed->getLink());
+                $rc->setType($mistake["type"]);
+                $rc->setInitialFen($initialFen);
+                $rc->setFen($mistake["fen"]);
+                $rc->setPgn(trim($mistake["line"]["pgn"]));
+                $rc->setMove($mistake["move"]);
+                $rc->setBestMoves(json_encode($mistake["bestmoves"]));
+
+                // save it
+                $this->em->persist($rc);
+            }
+        }
+
+        // update the last UUID
+        $drec->setDateTime(new DateTime());
+        $drec->setLastUUID($game["uuid"]);
+
+        $this->em->persist($drec);
+        $this->em->flush();
+
+        return $mistakes;
     }
 
     #[Route('/api/analyse/{type}/{year}/{month}', methods: ['GET'], name: 'app_api_analyse')]
@@ -1366,270 +3180,55 @@ Ree7 Rd2 41. Rxg7 Rxb2 42. Rgd7 Rb8 43. Rh7+ Kg8 44. Rxh6 1-0';
         return $resp;
     }
 
-    #[Route('/api/practice', methods: ['GET'], name: 'app_api_practice')]
-    public function apiPractice(Request $request): JsonResponse
+    #[Route('/api/roadmap', methods: ['GET'], name: 'app_api_roadmap')]
+    public function apiRoadmap(Request $request): JsonResponse
     {
-        // get the saved repository moves for this user
-        $repository = $this->em->getRepository(Repertoire::class);
-        $res = $repository->findBy(['User' => $this->getUser()], ['HalfMove' => 'ASC']);
+        return $this->apiPractice($request, true);
+    }
 
-        $ecoRepo = $this->em->getRepository(ECO::class);
-        /*
-        $user = $this->em->getRepository(User::class)->find($this->getUser());
-        //
-        $sql = 'SELECT rep.*, eco.code, eco.name FROM repertoire rep 
-        LEFT JOIN eco eco ON eco.pgn = rep.pgn 
-        WHERE rep.user_id = :user 
-        ORDER BY half_move';
-        //
-        $stmtReps = $this->conn->prepare($sql);
-        $stmtReps->bindValue('user', $user->getId());
-        //
-        $res = $stmtReps->executeQuery()->fetchAllAssociative();
+    #[Route('/api/statistics', methods: ['GET'], name: 'app_api_statistics')]
+    public function apiStatistics(Request $request, bool $isRoadmap = false): JsonResponse
+    {
+        return $this->apiPractice($request, false, true);
+    }
 
-        dd($sql, $user, $res);
+    #[Route('/api/practice', methods: ['GET', 'POST'], name: 'app_api_practice')]
+    public function apiPractice(Request $request, bool $isRoadmap = false, bool $statisticsOnly = false): JsonResponse
+    {
+        // get the payload (if posted)
+        $data = $request->getPayload()->all();
 
-        //
-        $sql = 'SELECT * FROM repertoire_groups WHERE repertoire_id = :repertoire';
-        $stmtRepGrps = $this->conn->prepare($sql);
-        $stmtRepGrps->bindValue('repertoire', $res["id"]);
-        //
-        $res = $stmtRepGrps->executeQuery()->fetchAllAssociative();
-        */
+        // get the repertoire id (from the roadmap)
+        $repertoireId = isset($data["id"]) ? intval($data["id"]) : null;
 
-        /*
-        $qb = $this->em->createQueryBuilder();
-        $qb->select('rep')
-            ->addSelect('eco')
-            ->from('App\Entity\Main\Repertoire', 'rep')
-            ->leftJoin('App\Entity\Main\ECO', 'eco', 'WITH', 'eco.PGN = rep.Pgn')
-            ->where('rep.User = :user')
-            ->orderBy('rep.HalfMove', 'ASC')
-            ->setParameter('user', $this->getUser());
+        // get the repertoire repository
+        $repoRep = $this->em->getRepository(Repertoire::class);
 
-        $res = $qb->getQuery()->getResult();
-        */
-
-        //dd($res);
-
-        // the lines
-        /*
-        $lines = [
-            ['color' => 'white', 'before' => '', 'after' => '', 'new' => 1, 'recommended' => 1, 'moves' => []],
-            ['color' => 'black', 'before' => '', 'after' => '', 'new' => 1, 'recommended' => 1, 'moves' => []]
-        ];*/
-        $lines = [];
-
-        // the groups & lines per group
-        $groups = [];
-
-        // find the 1st moves
-        foreach ($res as $rep) {
-            //for ($resIdx = 0; $resIdx < count($res); $resIdx = $resIdx + 2) {
-
-            //print "$resIdx--";
-
-            //$rep = $res[$resIdx];
-            //$repEco = $res[$resIdx + 1];
-
-            //dd($rep, $repEco);
-
-            // skip if this move is excluded
-            //if ($rep->isExclude() == false) {
-            //    continue;
-            //}
-
-            // if this is a 1st move
-            if ($rep->getHalfMove() == 1) {
-                /*
-                // see if we already have the starting position entry
-                if (count($lines) == 0) {
-                    //$lines[] = ['before' => $rep->getFenBefore(), 'after' => $rep->getFenAfter(), 'moves' => []];
-                    $lines[] = ['before' => $rep->getFenBefore(), 'moves' => []];
-                }
-                */
-
-                // see if we have this color / starting position already
-                $idx = 0;
-                foreach ($lines as $line) {
-                    if ($line["color"] == $rep->getColor() && $line["before"] == $rep->getFenBefore()) {
-                        break;
-                    }
-                    $idx++;
-                }
-
-                if ($idx >= count($lines)) {
-                    // get the ECO code
-                    //$eco = $ecoRepo->findCode($rep->getPgn());
-
-                    $lines[] = [
-                        'color' => $rep->getColor(),
-                        'initialFen' => $rep->getInitialFen(),
-                        //'eco' => $eco,
-                        'before' => $rep->getFenBefore(),
-                        'after' => $rep->getFenBefore(),
-                        'new' => 1,
-                        'recommended' => 1,
-                        'moves' => []
-                    ];
-                }
-
-                // set the FEN before/after for white & black
-                /*
-                $lines[0]['before'] = $rep->getFenBefore();
-                $lines[0]['after'] = $rep->getFenBefore();
-                $lines[1]['before'] = $rep->getFenBefore();
-                $lines[1]['after'] = $rep->getFenBefore();
-                */
-
-                // get the ECO code
-                //$eco = $ecoRepo->findCode($rep->getPgn());
-
-                // add the move
-                //$lines[($rep->getColor() == 'white' ? 0 : 1)]['moves'][] = [
-                $lines[$idx]['moves'][] = [
-                    'color' => $rep->getColor(),
-                    'initialFen' => $rep->getInitialFen(),
-                    'move' => $rep->getMove(),
-                    //'eco' => $eco,
-                    'autoplay' => $rep->isAutoPlay(),
-                    'halfmove' => $rep->getHalfMove(),
-                    'before' => $rep->getFenBefore(),
-                    'after' => $rep->getFenAfter(),
-                    'new' => $rep->getPracticeCount() == 0 ? 1 : 0,
-                    'failPercentage' => $rep->getPracticeCount() < 5 ? 1 : $rep->getPracticeFailed() / $rep->getPracticeCount(),
-                    'recommended' => $this->isRecommended($rep->getPracticeCount(), $rep->getPracticeFailed(), $rep->getPracticeInARow(), $rep->getLastUsed()) ? 1 : 0,
-                    'practiceCount' => $rep->getPracticeCount(),
-                    'practiceFailed' => $rep->getPracticeFailed(),
-                    'practiceInARow' => $rep->getPracticeInARow(),
-                    'line' => [],
-                    'moves' => []
-                ];
-            }
-
-            // if this move belongs to a group
-            foreach ($rep->getRepertoireGroups() as $grp) {
-                //
-                $idx = -1;
-                //
-                for ($i = 0; $i < count($groups); $i++) {
-                    if ($groups[$i]["id"] == $grp->getGrp()->getId()) {
-                        $idx = $i;
-                        break;
-                    }
-                }
-
-                //
-                if ($idx == -1) {
-                    $idx = count($groups);
-
-                    $groups[] = [
-                        "id" => $grp->getGrp()->getId(),
-                        "name" => $grp->getGrp()->getName(),
-                        "lines" => []
-                    ];
-                }
-                //
-                $groups[$idx]["lines"][] = [
-                    'color' => $rep->getColor(),
-                    'initialFen' => $rep->getInitialFen(),
-                    'move' => $rep->getMove(),
-                    //'eco' => ['code' => 'A00', 'name' => 'The Cow System'],
-                    'autoplay' => $rep->isAutoPlay(),
-                    'halfmove' => $rep->getHalfMove(),
-                    'before' => $rep->getFenBefore(),
-                    'after' => $rep->getFenAfter(),
-                    'new' => $rep->getPracticeCount() == 0 ? 1 : 0,
-                    'failPercentage' => $rep->getPracticeCount() < 5 ? 1 : $rep->getPracticeFailed() / $rep->getPracticeCount(),
-                    'recommended' => $this->isRecommended($rep->getPracticeCount(), $rep->getPracticeFailed(), $rep->getPracticeInARow(), $rep->getLastUsed()) ? 1 : 0,
-                    'practiceCount' => $rep->getPracticeCount(),
-                    'practiceFailed' => $rep->getPracticeFailed(),
-                    'practiceInARow' => $rep->getPracticeInARow(),
-                    'line' => $this->getLineBefore($rep, $res),
-                    'moves' => []
-                ];
-            }
-        }
-
-        //dd($groups);
-
-        /*
-
-        We need to disregard the opposite color moves in these filters..
-
-        If it's a white repertoire, only white recommended/new/etc counts, not for the black moves..
-
-        */
-
-        // now add the lines based off the 1st moves (so we can have transpositions)
-        for ($i = 0; $i < count($lines); $i++) {
-
-            $lines[$i]['moves'] = $this->getLines($lines[$i]['color'], $lines[$i]['after'], $res, []);
-            $lines[$i]['multiple'] = [];
-
-            // if we have multiple moves here, add them to an array
-            if (count($lines[$i]['moves']) > 1) {
-                foreach ($lines[$i]['moves'] as $move) {
-                    //$lines[$i]['multiple'][] = $move['move'];
-                    $lines[$i]['multiple'][] = [
-                        "move" => $move['move'],
-                        "cp" => isset($move['cp']) ? $move['cp'] : null,
-                        "mate" => isset($move['mate']) ? $move['mate'] : null,
-                        "pv" => isset($move['line']) ? $move['line'] : null
-                    ];
-                }
-            }
-
-
-            /*
-            for ($x = 0; $x < count($lines[$i]['moves']); $x++) {
-                $lines[$i]['moves'][$x]['moves'] = $this->getLines($lines[$i]['moves'][$x]['color'], $lines[$i]['moves'][$x]['after'], $res, [$lines[$i]['moves'][$x]['move']]);
-            }
-            */
-        }
-
-        // now add the group lines based off the 1st moves
-        for ($i = 0; $i < count($groups); $i++) {
-            for ($x = 0; $x < count($groups[$i]["lines"]); $x++) {
-
-                $groups[$i]["lines"][$x]['moves'] = $this->getLines($groups[$i]["lines"][$x]['color'], $groups[$i]["lines"][$x]['after'], $res, []);
-                $groups[$i]["lines"][$x]['multiple'] = [];
-
-                // if we have multiple moves here, add them to an array
-                if (count($groups[$i]["lines"][$x]['moves']) > 1) {
-                    foreach ($groups[$i]["lines"][$x]['moves'] as $move) {
-                        //$lines[$i]['multiple'][] = $move['move'];
-                        $groups[$i]["lines"][$x]['multiple'][] = [
-                            "move" => $move['move'],
-                            "cp" => isset($move['cp']) ? $move['cp'] : null,
-                            "mate" => isset($move['mate']) ? $move['mate'] : null,
-                            "pv" => isset($move['line']) ? $move['line'] : null
-                        ];
-                    }
-                }
-            }
-
-            //
-            //$resp['recommended'] = $this->findLines($lines, '', false, true);
-
-            // group the lines per starting position / color
-            $groups[$i]["lines"] = $this->groupByPosition($groups[$i]["lines"], $lines);
-        }
-
-        //dd($groups);
-
-        //dd($lines[2]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]["moves"][0]);
-
+        // get the ECO codes
         $ecoResult = $this->em->getRepository(ECO::class)->findAll();
 
+        // encode to JSON
         $encoders = [new JsonEncoder()];
         $normalizers = [new ObjectNormalizer()];
-
         $serializer = new Serializer($normalizers, $encoders);
 
-        //dd($serializer->normalize($ecoResult[0], 'json'));
-
         $jsonEco = $serializer->serialize($ecoResult, 'json');
+
+        // if we need a specific repertoire line
+        if ($repertoireId != null) {
+            // get the lines
+            $repertoireItem = $repoRep->getLines($repertoireId);
+
+            return new JsonResponse([
+                "custom" => $repertoireItem,
+                "eco" => json_decode($jsonEco)
+            ]);
+        }
+
+        // get the repertoire lines and the group lines
+        [$lines, $groups] = $repoRep->getLines(null, $isRoadmap, $statisticsOnly);
+
+        //return new JsonResponse(["test" => true]);
 
         // the response
         $resp = [
@@ -1645,19 +3244,43 @@ Ree7 Rd2 41. Rxg7 Rxb2 42. Rgd7 Rb8 43. Rh7+ Kg8 44. Rxh6 1-0';
         // if we have a repertoire
         if (count($lines) > 0) {
             // get the white lines
-            $resp['white'] = $this->findLines($lines, 'white', false, false);
+            $resp['white'] = $repoRep->getWhiteLines($lines);
             // get the black lines
-            $resp['black'] = $this->findLines($lines, 'black', false, false);
-            // find the new lines
-            $resp['new'] = $this->findLines($lines, '', true, false);
-            // find the recommended lines
-            $resp['recommended'] = $this->findLines($lines, '', false, true);
+            $resp['black'] = $repoRep->getBlackLines($lines);
 
-            // group the lines per starting position / color
-            $resp['white'] = $this->groupByPosition($resp['white'], $lines);
-            $resp['black'] = $this->groupByPosition($resp['black'], $lines);
-            $resp['new'] = $this->groupByPosition($resp['new'], $lines);
-            $resp['recommended'] = $this->groupByPosition($resp['recommended'], $lines);
+            // not needed for the roadmap
+            if (!$isRoadmap) {
+                // find the new lines
+                $resp['new'] = $repoRep->getNewLines($lines);
+                // find the recommended lines
+                $resp['recommended'] = $repoRep->getRecommendedLines($lines);
+            }
+        }
+
+        //dd($resp["white"]);
+
+        /*
+
+        - optionally add failPercentage totals to white/black reps
+        - optionally add ECO to white/black reps
+
+        */
+
+        // only for the roadmap
+        if ($isRoadmap) {
+            // add the roadmap values (ECO & fail totals)
+            $repoRep->addRoadmap($resp['white']);
+            $repoRep->addRoadmap($resp['black']);
+
+            //dd($resp['black']);
+
+            // get the roadmap
+            $roadmap = [
+                'white' => $repoRep->getRoadmapFor($resp['white'], true),
+                'black' => $repoRep->getRoadmapFor($resp['black'], true)
+            ];
+
+            return new JsonResponse($roadmap);
         }
 
         // get the analysis repository
@@ -1703,12 +3326,57 @@ Ree7 Rd2 41. Rxg7 Rxb2 42. Rgd7 Rb8 43. Rh7+ Kg8 44. Rxh6 1-0';
 
             // get the line up to this move
             $line = [];
+            // get the suggestion, based off our repertoire (1st move not in our repertoire)
+            $suggestion = null;
+            $fenBefore = $rec->getInitialFen();
             $temp = explode(" ", $rec->getPgn());
             for ($i = 0; $i < count($temp); $i++) {
                 // if this is not a move number
                 if (preg_match('/^\\d+\\./', $temp[$i]) !== 1) {
                     if (trim($temp[$i]) != "") {
                         $line[] = $temp[$i];
+
+                        // if no suggestion yet
+                        if ($suggestion == null) {
+                            // find this move in our repertoire
+                            $vars = [
+                                'User' => $this->getUser(),
+                                'Color' => $rec->getColor(),
+                                'Move' => $temp[$i]
+                            ];
+
+                            if ($fenBefore != "") {
+                                //$parts = explode(" ", $fenBefore);
+                                //$fenBefore2 = implode(" ", array_slice($parts, 0, 3)) . " - " . $parts[4];
+                                //$vars['FenBefore'] = [$fenBefore, $fenBefore2];
+                                $vars['FenBefore'] = $fenBefore;
+                            } else {
+                                $vars['HalfMove'] = 1;
+                            }
+
+                            $rs = $repoRep->findOneBy($vars);
+
+                            // if found, get the FEN, otherwise add as suggestion
+                            if ($rs) {
+                                $fenBefore = $rs->getFenAfter();
+                            } else {
+
+                                //
+                                // if opponent move, make move in Chess() object to get fen after
+                                // then get the eval from db
+                                // add to the suggestion (= cp)
+                                //
+
+                                // add the suggestion
+                                $suggestion = [
+                                    'move' => $temp[$i],
+                                    'display' => ceil(count($line) / 2) . (count($line) % 2 == 0 ? ".." : "") . ". " . $temp[$i],
+                                    'before' => $fenBefore,
+                                    'cp' => 0,
+                                    'line' => $line
+                                ];
+                            }
+                        }
                     }
                 }
             }
@@ -1726,11 +3394,12 @@ Ree7 Rd2 41. Rxg7 Rxb2 42. Rgd7 Rb8 43. Rh7+ Kg8 44. Rxh6 1-0';
                 "move" => $rec->getMove(),
                 "line" => $line,
                 "moves" => $moves,
-                "multiple" => $multiple
+                "multiple" => $multiple,
+                "suggestion" => $suggestion
             ];
 
             // check to see if this position is in our repertoire
-            $move = $this->findPosition($rec->getFen(), $resp[$rec->getColor()]);
+            $move = $repoRep->findPosition($rec->getFen(), $resp[$rec->getColor()]);
             if ($move !== false) {
                 $analysis["repertoire"] = $move["multiple"];
             }
@@ -1752,446 +3421,486 @@ Ree7 Rd2 41. Rxg7 Rxb2 42. Rgd7 Rb8 43. Rh7+ Kg8 44. Rxh6 1-0';
             return $ret;
         });
 
-        return new JsonResponse($resp);
-    }
-
-    // get the line before a certain repertoire move
-    private function getLineBefore($rep, $res)
-    {
-        // get the halfmove before this one
-        $halfMove = $rep->getHalfMove() - 1;
-        $fenBefore = $rep->getFenBefore();
-
-        if ($halfMove == 0) {
-            return [];
-        }
-
-        $line = [];
-
-        for ($i = 0; $i < count($res); $i++) {
-            if ($res[$i]->getHalfMove() == $halfMove && $res[$i]->getFenAfter() == $fenBefore) {
-                array_unshift($line, $res[$i]->getMove());
-
-                $halfMove--;
-                $fenBefore = $res[$i]->getFenBefore();
-
-                if ($halfMove == 0) {
-                    break;
+        // if we need the statistics only
+        if ($statisticsOnly) {
+            $stats = ["white" => 0, "black" => 0, "new" => 0, "recommended" => 0, "analysis" => 0];
+            foreach (array_keys($stats) as $key) {
+                $tot = 0;
+                foreach ($resp[$key] as $line) {
+                    if ($key == "analysis") {
+                        $tot++;
+                    } else if (isset($line["ourMoveCount"])) {
+                        $tot = $tot + $line["ourMoveCount"];
+                    }
                 }
-
-                // reset the loop
-                $i = -1;
-
-                continue;
+                $stats[$key] = $tot;
             }
-        }
 
-        return $line;
-    }
-
-    // find a position inside a line
-    private function findPosition(string $fen, array $line): mixed
-    {
-        // if this is the top level line
-        if (!isset($line["moves"])) {
-            foreach ($line as $ln) {
-                $ret = $this->findPosition($fen, $ln);
-                if ($ret !== false) {
-                    return $ret;
-                }
-            }
+            return new JsonResponse($stats);
         } else {
-            // if this is the position
-            if (isset($line["after"]) && $line["after"] == $fen) {
-                return $line;
-            }
-
-            // go through the moves in this line
-            foreach ($line["moves"] as $move) {
-                $ret = $this->findPosition($fen, $move);
-                if ($ret !== false) {
-                    return $ret;
-                }
-            }
+            return new JsonResponse($resp);
         }
-
-        return false;
     }
 
-    //
-    private function findMultiple($line, $res)
+    // get all the database evaluations for a game
+    private function getGameEvaluations($data, string $siteUsername): array
     {
-
-        foreach ($res as $rec) {
-            if ($rec['color'] == $line['color'] && $rec['after'] == $line['before']) {
-                return $rec['multiple'];
-            }
-
-            $ret = $this->findMultiple($line, $rec['moves']);
-            if ($ret !== false) {
-                return $ret;
-            }
+        if (!isset($data["pgn"])) {
+            return null;
         }
 
-        return false;
-    }
+        // parse the game
+        $game = $this->myPgnParser->parsePgnFromText($data["pgn"], true);
 
-    // group the lines per starting position/color
-    private function groupByPosition(array $lines, array $res = []): array
-    {
-        $temp = [];
-        foreach ($lines as $line) {
-            $idx = -1;
-            for ($i = 0; $i < count($temp); $i++) {
-                if ($temp[$i]['fen'] == $line['before'] && $temp[$i]['color'] == $line['color']) {
-                    $idx = $i;
-                    break;
-                }
+        // create a new game
+        $chess = new ChessJs($game->getFen());
+
+        // add te moves
+        foreach ($game->getMovesArray() as $move) {
+            $chess->move($move);
+        }
+        // get the UCI moves
+        $uciMoves = $chess->getUciMoves();
+
+        // set the current moves & pgn
+        $halfMove = 1;
+        $pgn = "";
+        $sanLine = [];
+        $uciLine = [];
+
+        // the game moves & evaluations
+        $evals = [
+            "uuid" => $data["uuid"],
+            "color" => $game->getWhite() == $siteUsername ? "white" : "black",
+            "opponent" => $game->getWhite() == $siteUsername ? $game->getBlack() : $game->getWhite(),
+            "result" => $game->getResult(),
+            "fen" => $game->getFen(),
+            "link" => $game->getLink(),
+            "evaluations" => 0,
+            "engine" => 0,
+            "moves" => []
+        ];
+
+        // reset the game
+        $chess->reset();
+        // if we have an initial position for this game (moves already played)
+        if ($game->getFen()) {
+            $chess->load($game->getFen());
+        }
+
+        // white to move
+        $whiteToMove = true;
+
+        // need to change this to user setting?
+        $analyseForBlack = $game->getBlack() == $siteUsername;
+
+        // get the ignore list repo
+        $repo = $this->em->getRepository(IgnoreList::class);
+
+        // stop analysing when we exceed the limit
+        $maxMoves = 15; // 15
+
+        foreach ($uciMoves as $move) {
+            // get the FEN before this move
+            $fen = $chess->fen();
+
+            // play the move
+            $chess->move($move["san"]);
+            // if the game is over, we can stop the analysis
+            if ($chess->gameOver()) {
+                break;
             }
 
-            // if we don't  have this FEN position yet
-            if ($idx == -1) {
-                // find the multiple moves from the original lines (we need all multiple moves, not just the new/recommended ones)
-                $multiple = $this->findMultiple($line, $res);
-
-                // if this is not the starting position
-                $temp[] = [
-                    'color' => $line['color'],
-                    'initialFen' => isset($line['initialFen']) ? $line['initialFen'] : '',
-                    //'eco' => isset($line['eco']) ? $line['eco'] : null,
-                    'fen' => $line['before'],
-                    'line' => isset($line['line']) ? $line['line'] : [],
-                    //'moves' => $line['before'] == $line['after'] ? $line['moves'] : [$line],
-                    'moves' => $line['before'] == $line['after'] ? $line['moves'] : [$line],
-                    'multiple' => $multiple,
-                    'multiple_old' => $line['before'] == $line['after'] ? $line['multiple'] : [$line['move']],
-                    'practiceCount' => isset($line['practiceCount']) ? $line['practiceCount'] : 0,
-                    'practiceFailed' => isset($line['practiceFailed']) ? $line['practiceFailed'] : 0,
-                    'practiceInARow' => isset($line['practiceInARow']) ? $line['practiceInARow'] : 0
-                ];
+            // get the database evaluations for this position
+            $bestMoves = $this->getEvaluationBestMoves($chess->fen(), 3);
+            if ($bestMoves == null) {
+                $evals["engine"]++;
             } else {
-                // make sure the move doesn't exist already (through transposition)
-                $found = false;
-                foreach ($temp[$idx]['moves'] as $move) {
-                    if ($move['move'] == $line['move']) {
-                        $found = true;
-                        break;
-                    }
-                }
-                // add it if not found
-                if (!$found) {
-                    $temp[$idx]['moves'][] = $line;
-                    $temp[$idx]['multiple_old'][] = $line['move'];
-                }
-                //$temp[$idx]['multiple'] = $line['multiple'];
-                //$temp[$idx]['multiplex'] = $line['multiple'];
+                $evals["evaluations"]++;
+            }
+
+            // if this is our move, check if it's on the ignore list
+            $ignore = false;
+            if ((!$whiteToMove && !$analyseForBlack) || ($whiteToMove && $analyseForBlack)) {
+                $ignore = $repo->isOnIgnoreList($this->getUser(), $fen, $move["san"]);
+            }
+
+            // add to the moves
+            $evals["moves"][] = [
+                "san" => $move["san"],
+                "uci" => $move["uci"],
+                "ignore" => $ignore,
+                "bestmoves" => $bestMoves,
+                "fen" => $fen,
+                "line" => [
+                    "pgn" => $pgn,
+                    "san" => $sanLine,
+                    "uci" => $uciLine,
+                ]
+            ];
+
+            $whiteToMove = !$whiteToMove;
+
+            $pgn .= ($pgn != "" ? " " : "") . ($halfMove % 2 == 1 ? ceil($halfMove / 2) . ". " : "") . $move['san'];
+
+            $sanLine[] = $move['san'];
+            $uciLine[] = $move['uci'];
+
+            // increase the halfmove
+            $halfMove++;
+            // if we need to stop analysing
+            if ($halfMove >= $maxMoves * 2) {
+                break;
             }
         }
 
-        return $temp;
+        return $evals;
     }
 
-    private function isRecommended(int $practiceCount, int $practiceFailed, int $practiceInARow, ?\DateTimeInterface $lastUsed): bool
+    // evaluate a game
+    private function evaluateGame($game): array
     {
-        // get the fail percentage
-        $failPercentage = $practiceCount == 0 ? 0 : max($practiceFailed / $practiceCount, 1);
+        // create a new game
+        $chess = new ChessJs($game["fen"]);
 
-        // 3 in a row is enough if the fail percentage is low enough, up to 5 in a row for high fail percentage
-        $inARowNeeded = max(3, 3 + round($failPercentage / .5));
-
-        // if the fail percentage is low, recommend after 8 weeks, up to 2 weeks for high fail percentage
-        $daysNeeded = 7 * max(8 - (8 * $failPercentage), 2);
-
-        $daysSince = 999;
-        if ($lastUsed !== null) {
-            $now = new DateTime();
-            $daysSince = $now->diff($lastUsed)->format("%a");
-        }
-
-        // if never practiced, recommended = false
-        // if practice in a row less than required (3-5) or based on last used and fail percentage
-        return $practiceCount == 0 ? false : ($practiceInARow < $inARowNeeded) || ($daysSince >= $daysNeeded);
-    }
-
-    // get the complete lines for a certain color and starting position
-    private function getLines(string $color, string $fen, array $res, $lineMoves = [], int $step = 1): array
-    {
-        $ecoRepo = $this->em->getRepository(ECO::class);
-
+        // set the current moves & pgn
         $moves = [];
+        $halfMove = 1;
+        $linePgn = "";
+        $lineMoves = [];
 
-        // find the follow up moves for a certain color and position
-        foreach ($res as $rep) {
-            //for ($resIdx = 0; $resIdx < count($res); $resIdx += 2) {
-
-            //$rep = $res[$resIdx];
-            //$repEco = $res[$resIdx + 1];
-
-            // if not excluded and a match
-            //if ($rep->isExclude() == false && $rep->getColor() == $color && $rep->getFenBefore() == $fen) {
-            if ($rep->getColor() == $color && $rep->getFenBefore() == $fen) {
-                // get the ECO code
-                //$eco = $ecoRepo->findCode($rep->getPgn());
-
-                $moves[] = [
-                    'color' => $color,
-                    'initialFen' => $rep->getInitialFen(),
-                    'move' => $rep->getMove(),
-                    //'eco' => $eco,
-                    'autoplay' => $rep->isAutoPlay(),
-                    'halfmove' => $rep->getHalfMove(),
-                    'before' => $rep->getFenBefore(),
-                    'after' => $rep->getFenAfter(),
-                    'new' => $rep->getPracticeCount() == 0 ? 1 : 0,
-                    'failPercentage' => $rep->getPracticeCount() < 5 ? 1 : $rep->getPracticeFailed() / $rep->getPracticeCount(),
-                    'recommended' => $this->isRecommended($rep->getPracticeCount(), $rep->getPracticeFailed(), $rep->getPracticeInARow(), $rep->getLastUsed()) ? 1 : 0,
-                    'practiceCount' => $rep->getPracticeCount(),
-                    'practiceFailed' => $rep->getPracticeFailed(),
-                    'practiceInARow' => $rep->getPracticeInARow(),
-                    'line' => $lineMoves,
-                    'moves' => [],
-                    'multiple' => []
-                ];
-            }
-        }
-
-        // if we have any moves
-        if (count($moves) > 0) {
-            // get the complete lines
-            for ($i = 0; $i < count($moves); $i++) {
-
-                //$temp = array_key_exists('move', $moves[$i]) ? array_merge($lineMoves, [$moves[$i]['move']]) : $lineMoves;
-                $temp = array_merge($lineMoves, [$moves[$i]['move']]);
-
-                $moves[$i]['moves'] = $this->getLines($color, $moves[$i]['after'], $res, $temp, $step + 1);
-
-                // if we have multiple moves here, add them to an array
-                if (count($moves[$i]['moves']) > 1) {
-                    foreach ($moves[$i]['moves'] as $move) {
-                        //$moves[$i]['multiple'][] = $move['move'];
-                        $moves[$i]['multiple'][] = [
-                            "move" => $move['move'],
-                            "cp" => isset($move['cp']) ? $move['cp'] : null,
-                            "mate" => isset($move['mate']) ? $move['mate'] : null,
-                            "line" => isset($move['line']) ? $move['line'] : null
-                        ];
-                    }
-                }
-            }
-        }
-
-        return $moves;
-    }
-
-    // find the lines of a certain type
-    private function findLines(array $lines, string $color = "", bool $isNew = false, bool $isRecommended = false, string $rootColor = "", int $level = 1, $rootVariation = null): array
-    {
-        $res = [];
-
-        //dd($lines);
-
-        // find the starting points for the lines
-        foreach ($lines as $line) {
-            // set the color (from the root object)
-            if ($rootColor != "") {
-                $line['color'] = $rootColor;
-            }
-
-            // is this our move?
-            //$ourMove = ($line["color"] == "white" && $level % 2 == 1) || ($line["color"] == "black" && $level % 2 == 0);
-            //$ourMove = ($line["color"] == "white" && $level % 2 == 0) || ($line["color"] == "black" && $level % 2 == 1);
-            $ourMove = isset($line['halfmove']) ? (($line['color'] == "white" && $line['halfmove'] % 2 == 1) || ($line['color'] == "black" && $line['halfmove'] % 2 == 0)) : $line['color'] == "white";
-
-            // if we need a certain color and this is a match
-            if ($ourMove && $color != "" && $line['color'] == $color) {
-                // add to the lines
-                $res[] = $line;
-                //$res[] = $isRecommended && $rootVariation !== null ? $rootVariation : $line;
-
-                continue;
-            }
-            // if we need the new lines and this is a match
-            if ($ourMove && $isNew && $line['new'] == 1 && (!isset($line['autoplay']) || !$line['autoplay'])) {
-                // add to the lines
-                $res[] = $line;
-                //$res[] = $isRecommended && $rootVariation !== null ? $rootVariation : $line;
-
-                continue;
-            }
-            // if we need the recommended lines and this is a match
-            if ($ourMove && $isRecommended && $line['recommended'] == 1 && (!isset($line['autoplay']) || !$line['autoplay'])) {
-
-                //print "- level (recommended): $level <br>";
-
-                // add to the lines
-                $res[] = $line;
-                //$res[] = $isRecommended && $rootVariation !== null ? $rootVariation : $line;
-
-                continue;
-            }
-
-            // set the root of the variation
-            $rootVariation = $rootVariation == null || count($line['moves']) > 1 ? $line : $rootVariation;
-
-            // check this line to see if any child moves match the criteria
-            $temp = $this->findLines($line['moves'], $color, $isNew, $isRecommended, $line['color'], $level + 1, $rootVariation);
-
-            //
-            // TEMP: testing for recommended - we need the move before in case of multiple!!
-            //
-
-            //if ($level == 1 && count($temp) > 0) {
-            // add this line also (the parent line of the line we actually want)
-            //$res[] = $line;
-            //}
-
-
-
-            foreach ($temp as $t) {
-                $res[] = $t;
-                //$res[] = $rootVariation;
-            }
-        }
-
-        // at top level of this function, return the lines until
-        if ($level == 1) {
-
-            //dd($lines, $res);
-
-            // we need to split the lines into parts (that match the criteria)
-            $parts = [];
-            // split the lines at the part(s) where it stops matching (and later in the line matches again)
-            foreach ($res as $line) {
-
-                $temp = $this->splitLine($line, $color, $isNew, $isRecommended);
-
-                //dd($line, $temp);
-
-                $parts[] = $line;
-                foreach ($temp as $t) {
-                    $parts[] = $t;
-                }
-            }
-
-            $linesUntil = [];
-
-            // get the line until
-            for ($i = 0; $i < count($parts); $i++) {
-                $parts[$i]['moves'] = $this->getLineUntil($parts[$i]['moves'], $color, $isNew, $isRecommended);
-                if (isset($parts[$i]["move"]) || count($parts[$i]['moves']) > 0) {
-                    $linesUntil[] = $parts[$i];
-                }
-            }
-
-            //dd($parts, $linesUntil);
-
-            return $linesUntil;
-        } else {
-            // return the line back to the findLines internal call
-            return $res;
-        }
-    }
-
-    // split the line into parts that match
-    private function splitLine($line, string $color = "", bool $isNew = false, bool $isRecommended = false, bool $match = true, $level = 1, $rootVariation = null): array
-    {
-        $parts = [];
-
-        // is this our move?
-        $ourMove = ($line['color'] == "white" && $level % 2 == 1) || ($line['color'] == "black" && $level % 2 == 0);
-        //$ourMove = ($color == "white" && $level % 2 == 0) || ($color == "black" && $level % 2 == 1);
-
-        //if ($line['color'] == "white" && $level == 1 && $isRecommended) {
-        //print "level: $level - ourMove: " . $ourMove . "<br>";
+        // reset the game
+        //$chess->reset();
+        // if we have an initial position for this game (moves already played)
+        //if ($game->getFen()) {
+        //$chess->load($game->getFen());
         //}
 
-        $rootVariation = $rootVariation == null || count($line['moves']) > 1 ? $line : $rootVariation;
+        // get the FEN
+        $fen = $chess->fen();
 
-        foreach ($line['moves'] as $move) {
-            $temp = [];
+        //dd($fen, $game["fen"]);
 
-            $autoplay = isset($move['autoplay']) ? $move['autoplay'] : false;
+        // always just use the 1st move ??
+        $bestMoves = $game["moves"][0]["bestmoves"];
 
-            // if the last move was a match
-            if ($match) {
-                // if this move matches also
-                if (!$ourMove || ($color != '' && $move['color'] == $color) || ($isNew && $move['new'] == 1 && !$autoplay) || ($isRecommended && $move['recommended'] == 1 && !$autoplay)) {
-                    // check next move for a non-match
-                    $temp = $this->splitLine($move, $color, $isNew, $isRecommended, true, $level + 1, $rootVariation);
+        // get the current best move
+        $bestCp = $bestMoves[0]["cp"];
+        $bestMate = $bestMoves[0]["mate"];
+
+        // white to move
+        $whiteToMove = true;
+
+        // need to change this to user setting?
+        $analyseForBlack = $game["color"] == "black";
+
+        // get the intial win percentage
+        if ($bestMate !== null) {
+            $prevWinPct = 100;
+        } else {
+            $prevWinPct = (50 + 50 * (2 / (1 + exp(-0.00368208 * $bestCp)) - 1));
+        }
+
+        $accuracy = [];
+        $mistakes = [];
+
+        // need to add this to settings?
+        $includeInnacuracies = true;
+
+        // stop analysing when we exceed the limit
+        $mistakesTotal = 0;
+        $mistakesLimit = 9;
+        $mistakesPoints = ["inaccuracy" => 1.5, "mistake" => 2, "blunder" => 3];
+
+        foreach ($game["moves"] as $move) {
+            // get the FEN before this move
+            $fenBefore = $chess->fen();
+
+            // remember the best moves for this move
+            $bestMovesBefore = [...$bestMoves];
+
+            //print "move(1): " . $move["san"] . "--";
+
+            // play the move
+            $ret = $chess->move($move["san"]);
+
+            // if the game is over, we can stop the analysis
+            if ($chess->gameOver()) {
+                break;
+            }
+
+            $bestMoves = $move["bestmoves"];
+            // ??
+            //$bestMovesBefore = $move["bestmoves"];
+
+            $whiteToMove = !$whiteToMove;
+
+            // get the current best move centipawn value
+            $moveCp = $bestMoves[0]["cp"];
+            $moveMate = $bestMoves[0]["mate"];
+
+            // if we need to check the CP loss
+            if ((!$whiteToMove && !$analyseForBlack) || ($whiteToMove && $analyseForBlack)) {
+
+                //print "evaluating move: ".$move["san"]."<br>";
+
+                //if ($move["san"] == "e3") {
+                //dd($bestMovesBefore);
+                //}
+
+                // get the current win percentage
+                if ($moveMate !== null) {
+                    $winPct = 100;
                 } else {
-                    // check next move for match
-                    $temp = $this->splitLine($move, $color, $isNew, $isRecommended, false, $level + 1, $rootVariation);
+                    $winPct = (50 + 50 * (2 / (1 + exp(-0.00368208 * $moveCp)) - 1));
+                    if ($analyseForBlack) {
+                        $winPct = 100 - $winPct;
+                    }
+                }
+
+                // calculate the percentage loss for this move
+                $pctLoss = $prevWinPct == -1 ? 0 : max(0, ($prevWinPct - $winPct) / 100);
+
+                // calculate the accuracy for this move (not used for now, but keep it in)
+                $acc = 103.1668 * exp(-0.04354 * ($prevWinPct - min($prevWinPct, $winPct))) - 3.1669;
+                $accuracy[] = $acc;
+
+                // set the mistake array
+                $mistake = [
+                    "move" => $move["san"],
+                    "moveCp" => $moveCp,
+                    "type" => "",
+                    "bestmoves" => [],
+                    "fen" => $fenBefore,
+                    "line" => ["pgn" => $linePgn, "moves" => $lineMoves]
+                ];
+
+                /*
+
+                - in case of mistake: check to see if move is on ignored list
+                - if it is, do not add as mistake.
+
+                - in case of mistake (and not on ignored list): check to see if that move is in our repertoire
+                - if it is, do not add as mistake. you played according to repertoire.
+
+                - at what point do we stop analysing?
+                - if we have 3 blunders? 5 mistakes? if eval is below 5?
+
+                */
+
+                // check the move quality
+                if ($pctLoss == 0) {
+                    // best move
+                } else if ($pctLoss < .02) {
+                    // excellent move
+                } else if ($pctLoss < .05) {
+                    // good move
+                } else if ($pctLoss < .1) {
+                    // inaccuracy
+                    if ($includeInnacuracies) {
+                        $mistake["type"] = "inaccuracy";
+                    }
+                } else if ($pctLoss < .2) {
+                    // mistake
+                    $mistake["type"] = "mistake";
+                } else {
+                    // blunder
+                    $mistake["type"] = "blunder";
+                }
+
+                // if we have a mistake
+                if ($mistake["type"] !== "" && !$move["ignore"]) {
+                    // add to the mistakes total
+                    $mistakesTotal = $mistakesTotal + $mistakesPoints[$mistake["type"]];
+
+                    //print "undo move " . $move["san"] . "-(1)--";
+
+                    // undo the current move so we can test the best moves
+                    $chess->undo();
+
+                    // make sure the best moves are sorted according to color
+                    if ($analyseForBlack) {
+                        usort($bestMovesBefore, function ($a, $b) {
+                            if ($a["mate"] !== null && $b["mate"] == null) return -1;
+                            if ($a["mate"] == null && $b["mate"] !== null) return 1;
+                            if ($a["mate"] !== null && $b["mate"] !== null) {
+                                if ($a["mate"] < $b["mate"]) return -1;
+                                if ($a["mate"] > $b["mate"]) return 1;
+                            }
+                            if ($a["cp"] > $b["cp"]) return 1;
+                            if ($a["cp"] < $b["cp"]) return -1;
+                            return 0;
+                        });
+                    } else {
+                        usort($bestMovesBefore, function ($a, $b) {
+                            if ($a["mate"] !== null && $b["mate"] == null) return -1;
+                            if ($a["mate"] == null && $b["mate"] !== null) return 1;
+                            if ($a["mate"] !== null && $b["mate"] !== null) {
+                                if ($a["mate"] < $b["mate"]) return -1;
+                                if ($a["mate"] > $b["mate"]) return 1;
+                            }
+                            if ($a["cp"] > $b["cp"]) return -1;
+                            if ($a["cp"] < $b["cp"]) return 1;
+                            return 0;
+                        });
+                    }
+
+                    foreach ($bestMovesBefore as $bm) {
+
+                        //print "BestMove: " . $bm["move"] . "<br>";
+
+                        // get the move details
+                        $fromSquare = substr($bm["move"], 0, 2);
+                        $toSquare = substr($bm["move"], 2, 2);
+                        $promotion = strlen($bm["move"] == 5) ? substr($bm["move"], 5) : "";
+
+                        //print "move(2): " . $bm["move"] . "--";
+
+                        // make the move
+                        $ret = $chess->move(["from" => $fromSquare, "to" => $toSquare, "promotion" => $promotion]);
+                        if ($ret == null) {
+
+                            print "Invalid move: " . $bm['move'] . "<br>";
+
+                            dd($chess->fen(), $chess->history(), $moves);
+
+                            // invalid move.. ? do something.. ?
+
+                        } else {
+                            // get the last move
+                            $history = $chess->history(['verbose' => true]);
+                            $last = array_pop($history);
+
+                            //print "undo move(2)--";
+
+                            // undo the last move
+                            $chess->undo();
+
+                            /*
+
+                            For 2nd and 3rd best moves:
+                            
+                            - we need to check if the move itself is not a mistake... 
+                            - if it is, we would be suggesting a slightly worse mistake instead of the mistake made
+                            - check using win pct??
+
+                            */
+
+                            // if this is the move we made (2nd or 3rd best)
+                            if ($move["san"] == $last["san"]) {
+                                // we have all the better moves, exit foreach
+                                break;
+                            }
+
+                            // add the move
+                            $add = true;
+
+                            // if this is not the 1st best move
+                            if (count($mistake["bestmoves"]) > 0) {
+                                // calculate the win percentage for this move
+                                if ($bm["mate"] !== null) {
+                                    $moveWinPct = 100;
+                                } else {
+                                    $moveWinPct = (50 + 50 * (2 / (1 + exp(-0.00368208 * $bm["cp"])) - 1));
+                                    if ($analyseForBlack) {
+                                        $moveWinPct = 100 - $moveWinPct;
+                                    }
+                                }
+
+                                // calculate the move percentage loss
+                                $movePctLoss = $prevWinPct == -1 ? 0 : max(0, ($prevWinPct - $moveWinPct) / 100);
+
+                                // add if not an inaccuracy or worse
+                                $add = $movePctLoss < .1;
+                            }
+
+                            // add to the bestmoves
+                            if ($add) {
+                                // get the san moves from the uci moves..
+                                foreach ($bm["line"] as $lmove) {
+                                    // get the move details
+                                    $fromSquare = substr($lmove, 0, 2);
+                                    $toSquare = substr($lmove, 2, 2);
+                                    $promotion = strlen($lmove == 5) ? substr($lmove, 5) : "";
+                                    // make the move
+                                    $ret = $chess->move(["from" => $fromSquare, "to" => $toSquare, "promotion" => $promotion]);
+                                    if ($ret == null) {
+                                        print "move is null?<br>";
+                                        dd($lmove, $chess->history(['verbose' => true]));
+                                    }
+                                }
+
+                                $sanMoves = [];
+                                foreach ($bm["line"] as $lmove) {
+                                    // get the last move
+                                    $history = $chess->history(['verbose' => true]);
+                                    $last = array_pop($history);
+                                    array_unshift($sanMoves, $last["san"]);
+                                    // undo the last move
+                                    $chess->undo();
+                                }
+
+                                $mistake["bestmoves"][] = [
+                                    "move" => $bm["move"],
+                                    "san" => $last["san"],
+                                    "cp" => $bm["cp"],
+                                    "mate" => $bm["mate"],
+                                    //"line" => $bm["line"],
+                                    "line" => $sanMoves
+                                ];
+
+                                // if we have 3 best moves, break the loop (lichess evals sometimes has more than 3)
+                                if (count($mistake["bestmoves"]) == 3) {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    //print "move(3): " . $move["san"] . "--";
+
+                    // redo the current move
+                    $chess->move($move["san"]);
+
+                    /*
+
+                    If no best moves known, do we need to add?
+                    Not sure how this could happen, but as safety measure perhaps.. ?
+
+                    */
+
+                    // add the mistake
+                    if (count($mistake["bestmoves"]) > 0) {
+                        $mistakes[] = $mistake;
+                    }
                 }
             } else {
-                // if this move matches
-                if ($ourMove && (($color != '' && $move['color'] == $color) || ($isNew && $move['new'] == 1 && !$autoplay) || ($isRecommended && $move['recommended'] == 1 && !$autoplay))) {
-                    // add this this line as a part
-                    $parts[] = $move;
-                    //$parts[] = $isRecommended ? $rootVariation : $move;
+                // calculate the win percentage for the previous move (for next loop)
+                if ($moveMate !== null) {
+                    $prevWinPct = 100;
                 } else {
-                    // check next move for match
-                    $temp = $this->splitLine($move, $color, $isNew, $isRecommended, false, $level + 1, $rootVariation);
+                    $prevWinPct = (50 + 50 * (2 / (1 + exp(-0.00368208 * $moveCp)) - 1));
+                    if ($analyseForBlack) {
+                        $prevWinPct = 100 - $prevWinPct;
+                    }
                 }
             }
 
-            $parts = array_merge($parts, $temp);
-        }
+            $bestCp = $moveCp;
 
-        return $parts;
-    }
+            $linePgn .= ($linePgn != "" ? " " : "") . ($halfMove % 2 == 1 ? ceil($halfMove / 2) . ". " : "") . $move['san'];
+            $lineMoves[] = $move['san'];
 
-    // get the line until the criteria doesn't match anymore
-    private function getLineUntil(array $moves, string $color = '', bool $isNew = false, bool $isRecommended = false, $level = 1, $match = false): array
-    {
-        $line = [];
+            // increase the halfmove
+            $halfMove++;
 
-        // is this our move
-        //$ourMove = ($color == "white" && $level % 2 == 1) || ($color == "black" && $level % 2 == 0);
-
-        // check the line to see if it matches
-        foreach ($moves as $move) {
-
-            // is this our move
-            //$ourMove = ($move['color'] == "white" && $level % 2 == 1) || ($move['color'] == "black" && $level % 2 == 0);
-            $ourMove = isset($move['halfmove']) ? (($move['color'] == "white" && $move['halfmove'] % 2 == 1) || ($move['color'] == "black" && $move['halfmove'] % 2 == 0)) : $move['color'] == "white";
-
-            //print "- level: " . $level . " / move: " . $move['move'] . " / ourMove: " . $ourMove . "<br>";
-            //if ($move['move'] == 'Nxa6') {
-            //print "- level: " . $level . " / halfmove: " . $move['halfmove'] . "/ move: " . $move['move'] . " / " . $move['color'] . " / ourMove: " . $ourMove . "<br>";
-            //}
-
-            $autoplay = isset($move['autoplay']) ? $move['autoplay'] : false;
-
-            $isMatch = (($color != '' && $move['color'] == $color) || ($isNew && $move['new'] == 1 && !$autoplay) || ($isRecommended && $move['recommended'] == 1 && !$autoplay));
-
-            // if this move matches the criteria
-            if (!$ourMove || $isMatch) {
-
-                $match = $isMatch;
-
-                // get the rest of the line
-                $temp = $this->getLineUntil($move['moves'], $color, $isNew, $isRecommended, $level + 1, $match);
-
-                // add this move if its our move or there are child moves
-                if ($ourMove || count($temp) > 0) {
-                    // add to the lines
-                    $line[] = [
-                        'initialFen' => isset($move['initialFen']) ? $move['initialFen'] : "",
-                        'move' => $move['move'],
-                        'autoplay' => isset($move['autoplay']) ? $move['autoplay'] : false,
-                        'new' => isset($move['new']) ? $move['new'] : 0,
-                        'recommended' => isset($move['recommended']) ? $move['recommended'] : 0,
-                        'moves' => $temp,
-                        'multiple' => $move['multiple'],
-                        'practiceCount' => isset($move['practiceCount']) ? $move['practiceCount'] : 0,
-                        'practiceFailed' => isset($move['practiceFailed']) ? $move['practiceFailed'] : 0,
-                        'practiceInARow' => isset($move['practiceInARow']) ? $move['practiceInARow'] : 0
-                    ];
-                }
+            // if we exceeded the mistakes limit
+            if ($mistakesTotal >= $mistakesLimit) {
+                break;
             }
         }
 
-        return $line;
+        return $mistakes;
     }
 
     // analyse a game
@@ -2349,19 +4058,19 @@ Ree7 Rd2 41. Rxg7 Rxb2 42. Rgd7 Rb8 43. Rh7+ Kg8 44. Rxh6 1-0';
 
                     $count["engine"]++;
                     //print "--engine<br>";
+
+                    // if these evals are for a black move
+                    if ($whiteToMove) {
+                        // uno reverse the cp value
+                        for ($i = 0; $i < count($bestMoves); $i++) {
+                            if ($bestMoves[$i]["cp"] !== null) {
+                                $bestMoves[$i]["cp"] = $bestMoves[$i]["cp"] * -1;
+                            }
+                        }
+                    }
                 } else {
                     $count["evaluation"]++;
                     //print "--eval<br>";
-                }
-
-                // if these evals are for a black move
-                if ($whiteToMove) {
-                    // uno reverse the cp value
-                    for ($i = 0; $i < count($bestMoves); $i++) {
-                        if ($bestMoves[$i]["cp"] !== null) {
-                            $bestMoves[$i]["cp"] = $bestMoves[$i]["cp"] * -1;
-                        }
-                    }
                 }
             }
 
@@ -2410,6 +4119,7 @@ Ree7 Rd2 41. Rxg7 Rxb2 42. Rgd7 Rb8 43. Rh7+ Kg8 44. Rxh6 1-0';
                 // set the mistake array
                 $mistake = [
                     "move" => $move["san"],
+                    "moveCp" => $moveCp,
                     "type" => "",
                     "bestmoves" => [],
                     "fen" => $fenBefore,

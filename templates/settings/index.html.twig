@@ -1,0 +1,135 @@
+{% extends "./base.html.twig" %}
+
+{% block body %}
+	{% if app.user %}
+		<div class="p-10">
+			<div class="my-12">
+				<div class="flex justify-between">
+					<div>
+						<h2 class="text-xl mb-5 font-semibold tc-sharp">Board Settings</h2>
+
+						<div id="boardSettingsContainer" class="flex items-center mb-5">
+							<div class="mr-2">
+								<label class="block mb-1 text-sm font-medium tc-base">Theme</label>
+								<div class="input-select">
+									<select id="boardThemeSelect">
+										<option value="chess-club">Chess Club</option>
+										<option value="green">Green</option>
+										<option value="blue">Blue</option>
+									</select>
+									<div class="input-select-caret">
+										<svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+									</div>
+								</div>
+							</div>
+							<div class="m2-2">
+								<label class="block mb-1 text-sm font-medium tc-base">Pieces</label>
+								<div class="input-select">
+									<select id="boardPiecesSelect">
+										<option value="standard.svg">Standard</option>
+										<option value="companion.svg">Companion</option>
+										<option value="gioco.svg">Gioco</option>
+										<option value="horsey.svg">Horsey</option>
+										<option value="kiwen-suwi.svg">Kiwen-Suwi</option>
+										<option value="monarchy.svg">Monarchy</option>
+										<option value="staunty.svg">Staunty</option>
+										<option value="tatiana.svg">Tatiana</option>
+									</select>
+									<div class="input-select-caret">
+										<svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div id="animationSettingsContainer" class="flex items-center">
+							<div class="mr-2">
+								<label class="block mb-2 text-sm font-medium tc-base">Animation Duration</label>
+								<div class="relative pb-5">
+									<div class="absolute left-0 right-0 bottom-0 flex justify-between">
+										<span class="text-xs tc-base">0ms</span>
+										<span class="text-xs tc-base">500ms</span>
+									</div>
+									<input id="animationDurationInput" type="range" min="0" max="500" step="50" value="300" class="w-48 h-3 bg-gray-300 dark:bg-gray-400 border border-gray-400 dark:border-gray-500 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-tacao-500 [&::-webkit-slider-thumb]:dark:bg-blue-500">
+								</div>
+							</div>
+						</div>
+
+						<h2 class="text-xl mt-8 mb-5 font-semibold tc-sharp">Repertoire Settings</h2>
+
+						<div id="animationSettingsContainer" class="flex items-center">
+							<div class="mr-2">
+								<label class="block mb-2 text-sm font-medium tc-base">Max. Engine Search Time</label>
+								<div class="relative pb-5">
+									<div class="absolute left-0 right-0 bottom-0 flex justify-between">
+										<span class="text-xs tc-base">10s</span>
+										<span class="text-xs tc-base">120s</span>
+									</div>
+									<input id="repertoireEngineTimeInput" type="range" min="10" max="120" step="10" value="30" class="w-48 h-3 bg-gray-300 dark:bg-gray-400 border border-gray-400 dark:border-gray-500 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-tacao-500 [&::-webkit-slider-thumb]:dark:bg-blue-500">
+								</div>
+							</div>
+						</div>
+
+						<h2 class="text-xl mt-8 mb-5 font-semibold tc-sharp">Practice Settings</h2>
+
+						<div id="variationSettingsContainer" class="flex items-center">
+							<div class="mr-2">
+								<label class="block mb-2 text-sm font-medium tc-base">Animate Variations</label>
+								<label class="input-toggle">
+									<input id="animateVariationCheckbox" type="checkbox" value="1" class="sr-only peer">
+									<div class="input-toggle-switch"></div>
+									<div class="ml-3">
+										<p class="text-sm font-normal tc-base">Animate from the beginning of the line.</p>
+										<p class="text-xs tc-faded">Instead of from the start of the variation.</p>
+									</div>
+								</label>
+							</div>
+						</div>
+
+						<h2 class="text-xl mt-8 mb-5 font-semibold tc-sharp">Analyse Settings</h2>
+
+						<div id="analyseSettingsContainer" class="flex flex-col items-start">
+							<div class="mr-2 mb-5">
+								<label class="block mb-2 text-sm font-medium tc-base">Engine Search Time Per Move</label>
+								<div class="relative pb-5">
+									<div class="absolute left-0 right-0 bottom-0 flex justify-between">
+										<span class="text-xs tc-base">500ms</span>
+										<span class="text-xs tc-base">5s</span>
+									</div>
+									<input id="analyseEngineTimeInput" type="range" min="500" max="5000" step="500" value="1000" class="w-48 h-3 bg-gray-300 dark:bg-gray-400 border border-gray-400 dark:border-gray-500 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-tacao-500 [&::-webkit-slider-thumb]:dark:bg-blue-500">
+								</div>
+							</div>
+							<div class="mr-2">
+								<label class="block mb-2 text-sm font-medium tc-base">Mistakes</label>
+								<label class="input-toggle">
+									<input id="analyseIgnoreInaccuracyCheckbox" type="checkbox" name="animate_complete" value="1" class="sr-only peer">
+									<div class="input-toggle-switch"></div>
+									<div class="ml-3">
+										<p class="text-sm font-normal tc-base">Ignore inaccuracies during analysis.</p>
+										<p class="text-xs tc-faded">Only count mistakes and blunders.</p>
+									</div>
+								</label>
+							</div>
+						</div>
+					</div>
+					<div class="flex w-2/4">
+						<div id="board" class="sm:w-32 md:w-48 lg:w-96"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+	{% endif %}
+{% endblock %}
+
+{% block stylesheets %}
+	{{ parent() }}
+
+	{{ encore_entry_link_tags('chessboard') }}
+	{{ encore_entry_link_tags('markers') }}
+{% endblock %}
+
+{% block javascripts %}
+	{{ parent() }}
+
+	{{ encore_entry_script_tags('settings') }}
+{% endblock %}

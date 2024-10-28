@@ -7,6 +7,9 @@ interface ChessSiteInterface
     // store username to be used for getting archives and games
     function setUsername(string $username): void;
 
+    // get the created at timestamp for the user
+    function getCreatedAt(): int;
+
     // chess: get archives
     // lichess: get user creation timestamp, get years & months between creation and now
     // returns: [<year>: [<month>,<month>,<etc>]]
@@ -18,7 +21,7 @@ interface ChessSiteInterface
 
     // download actual games
     // returns: [??]
-    function downloadGames(int $year, int $month, string $type, string $lastId): array;
+    function downloadGames(int $year, int $month, string $type, string $lastId, int $max): array;
 
     /**
      * -

@@ -28,11 +28,15 @@ Encore
   .addEntry("app", "./assets/app.js")
   .addEntry("modal", "./assets/js/modal.js")
   .addEntry("chessboard", "./assets/js/chessboard.js")
+  .addEntry("uci", "./assets/js/uci.js")
   .addEntry("home", "./assets/js/home.js")
   .addEntry("repertoire", "./assets/js/repertoire.js")
   .addEntry("practice", "./assets/js/practice.js")
-  .addEntry("practiceWorker", "./assets/js/workers/practice.js")
+  //.addEntry("practice_worker", "./assets/js/workers/practice.js")
   .addEntry("analyse", "./assets/js/analyse.js")
+  .addEntry("opponent", "./assets/js/opponent.js")
+  .addEntry("roadmap", "./assets/js/roadmap.js")
+  .addEntry("settings", "./assets/js/settings.js")
   .addEntry("admin", "./assets/js/admin.js")
 
   .addStyleEntry("markers", "./assets/markers/markers.css")
@@ -123,7 +127,7 @@ Encore
   .copyFiles({
     from: "./assets/stockfish",
     to: "stockfish/[name].[ext]",
-    pattern: /\.(exe)$/,
+    pattern: /\.(js|wasm)$/,
   });
 
 module.exports = Encore.getWebpackConfig();

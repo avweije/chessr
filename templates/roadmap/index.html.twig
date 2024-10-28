@@ -1,0 +1,66 @@
+{% extends "./base.html.twig" %}
+
+{% block body_header %}
+	<div class="flex justify-around p-4">
+		<div id="roadmapTypeButtons" class="boxed-radio-menu">
+			<div class="boxed-radio">
+				<input class="peer hidden" type="radio" name="roadmap_type" value="white" id="roadmapWhite" checked/>
+				<label class="boxed-radio-label peer-checked:border-blue-300 peer-checked:bg-blue-100" for="roadmapWhite"></label>
+				<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500 peer-checked:text-gray-700">White</span>
+			</div>
+			<div class="boxed-radio">
+				<input class="peer hidden" type="radio" name="roadmap_type" value="black" id="roadmapBlack"/>
+				<label class="boxed-radio-label peer-checked:border-blue-300 peer-checked:bg-blue-100" for="roadmapBlack"></label>
+				<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500 peer-checked:text-gray-700">Black</span>
+			</div>
+		</div>
+	</div>
+
+	<div id="roadmapIntro" class="flex justify-around p-4 mb-8">
+		<div class="flex flex-col items-center">
+			<h2 class="text-2xl font-semibold tc-sharp">The Roadmap</h2>
+			<p class="text-md mx-1 my-6 tc-base">
+				Click on a move to see the details and open it in the repertoire or use it for practice.
+			</p>
+		</div>
+	</div>
+
+	<div id="roadmapDetails" class="hidden flex justify-around p-4 mb-8">
+		<div class="flex flex-col items-center">
+			<div class="flex text-md p-4 tc-base">
+				<div>
+					<span class="font-bold tc-faded">ECO:</span>
+					<span id="roadmapDetailsEco"></span>
+				</div>
+				<div class="mx-5">
+					<span class="font-bold tc-faded">PGN:</span>
+					<span id="roadmapDetailsPgn"></span>
+				</div>
+				<div>
+					<span class="font-bold tc-faded">Accuracy:</span>
+					<span id="roadmapDetailsAccuracy"></span>
+				</div>
+			</div>
+
+			<div class="text-md p-4 tc-faded">
+				<a id="openInRepertoireLink" href="#">Open in your repertoire</a>
+				<span class="mx-1">|</span>
+				<a id="openInPracticeLink" href="#">Use in practice run</a>
+			</div>
+		</div>
+	</div>
+
+	<form id="roadmapForm" method="POST" action="./roadmap">
+		<input id="roadmapIdInput" type="hidden" name="id" value=""/>
+		<input id="roadmapColorInput" type="hidden" name="color" value=""/>
+		<input id="roadmapPgnInput" type="hidden" name="pgn" value=""/>
+		<input id="roadmapFenInput" type="hidden" name="fen" value=""/>
+	</form>
+{% endblock %}
+{% block body %}
+	<div id="roadmapContainerWhite" class="flex justify-around"></div>
+	<div id="roadmapContainerBlack" class="hidden flex justify-around"></div>
+{% endblock %}
+{% block javascripts %}
+	{{ parent() }}{{ encore_entry_script_tags('roadmap') }}
+{% endblock %}

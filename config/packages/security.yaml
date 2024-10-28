@@ -38,8 +38,12 @@ security:
   # Easy way to control access for large sections of your site
   # Note: Only the *first* access control that matches will be used
   access_control:
-    # - { path: ^/admin, roles: ROLE_ADMIN }
-    # - { path: ^/profile, roles: ROLE_USER }
+    - { path: ^/home, roles: ROLE_USER }
+    - { path: ^/repertoire, roles: ROLE_USER }
+    - { path: ^/practice, roles: ROLE_USER }
+    - { path: ^/roadmap, roles: ROLE_USER }
+    - { path: ^/analyse, roles: ROLE_USER }
+    - { path: ^/admin, roles: ROLE_ADMIN }
 
 when@test:
   security:
