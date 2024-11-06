@@ -13,7 +13,7 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class RoadmapController extends AbstractController
 {
-    public function __construct(private Connection $conn, private EntityManagerInterface $em, private ManagerRegistry $doctrine) {}
+    public function __construct(private Connection $conn, private EntityManagerInterface $em, private ManagerRegistry $doctrine, private PracticeController $practice) {}
 
     #[Route('/roadmap', name: 'app_roadmap')]
     public function index(): Response
@@ -31,6 +31,6 @@ class RoadmapController extends AbstractController
      */
     public function apiRoadmap(Request $request): JsonResponse
     {
-        return (new PracticeController($this->conn, $this->em, $this->doctrine))->apiPractice($request, true);
+        return $this->practice->apiPractice($request, true);
     }
 }

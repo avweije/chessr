@@ -20,7 +20,7 @@ use Symfony\Component\Serializer\Serializer;
 
 class PracticeController extends AbstractController
 {
-    public function __construct(private Connection $conn, private EntityManagerInterface $em, private ManagerRegistry $doctrine) {}
+    public function __construct(private Connection $conn, private EntityManagerInterface $em, private ManagerRegistry $doctrine, private RepertoireController $repertoire) {}
 
     #[Route('/practice', methods: ['GET', 'POST'], name: 'app_practice')]
     /**
@@ -351,11 +351,8 @@ class PracticeController extends AbstractController
 
         $message = "";
 
-        // create the repertoire controller
-        $repCtrl = new RepertoireController($this->conn, $this->em, $this->doctrine);
-
         // save the repertoire
-        $saved = $repCtrl->saveRepertoire($data['color'], $data["initialFen"], $data['moves']);
+        $saved = $this->repertoire->saveRepertoire($data['color'], $data["initialFen"], $data['moves']);
         //$saved = $this->saveRepertoire($data['color'], $data["initialFen"], $data['moves']);
 
         if ($saved) {

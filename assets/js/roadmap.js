@@ -275,7 +275,7 @@ class Roadmap {
     var variation = document.createElement("div");
     variation.id = "roadmapTreeItem_" + (data !== null ? data.id : "root");
     variation.className =
-      "relative flex flex-col shrink-0 grow-0 justify-center gap-y-px rounded-lg overflow-hidden bg-slate-600 border border-slate-600 shadow";
+      "relative flex flex-col shrink-0 grow-0 justify-center gap-y-px rounded-lg overflow-hidden bg-slate-600 dark:bg-slate-600 border border-slate-600 dark:border-slate-600 shadow";
     if (data !== null) {
       variation.setAttribute("data-id", data.id);
       variation.setAttribute("data-level", index);
@@ -283,7 +283,7 @@ class Roadmap {
     //
     var clickable = document.createElement("label");
     clickable.className =
-      "flex justify-between items-center grow cursor-pointer tc-sharp hover:text-marigold-500 bg-slate-800 hover:bg-slate-700";
+      "flex justify-between items-center grow cursor-pointer tc-sharp hover:text-marigold-500 dark:hover:text-marigold-500 bg-slate-800 dark:bg-slate-800 hover:bg-slate-700 dark:hover:bg-slate-700";
     //
     if (data !== null) {
       //
@@ -379,7 +379,7 @@ class Roadmap {
       var variation = document.createElement("div");
       variation.id = "roadmapTreeItem_" + data[i].id;
       variation.className =
-        "relative flex flex-col shrink-0 grow-0 justify-center gap-y-px w-56 rounded-lg overflow-hidden bg-slate-600 border border-slate-600 shadow";
+        "relative flex flex-col shrink-0 grow-0 justify-center gap-y-px w-56 rounded-lg overflow-hidden bg-slate-600 dark:bg-slate-600 border border-slate-600 dark:border-slate-600 shadow";
       variation.setAttribute("data-id", data[i].id);
       variation.setAttribute("data-level", level);
       //
@@ -403,7 +403,7 @@ class Roadmap {
       var clickable = document.createElement("label");
       clickable.htmlFor = "roadmapTreeRadio_" + data[i].id;
       clickable.className =
-        "flex flex-col grow bg-slate-800 tc-sharp hover:bg-slate-700 hover:text-marigold-500" +
+        "flex flex-col grow bg-slate-800 dark:bg-slate-800 tc-sharp hover:bg-slate-700 dark:hover:bg-slate-700 hover:text-marigold-500 dark:hover:text-marigold-500" +
         (data[i].lines.length > 0 ? " cursor-pointer" : "");
       //
       var header = document.createElement("div");
@@ -488,61 +488,76 @@ class Roadmap {
       //
       var footer = document.createElement("div");
       footer.className =
-        "flex justify-end items-center text-gray-200 bg-slate-700 px-1";
+        "flex justify-end items-center text-gray-200 dark:text-gray-200 bg-slate-700 dark:bg-slate-700 px-1";
 
-      // find the lowest accuracy in this line
-      var lowestAcc = this.findLowestAccuracy(data[i].lines);
-
-      console.info("lowestAcc", lowestAcc);
-
-      // only show it if it's lower than the current
-      if (lowestAcc.fail > data[i].fail) {
-        //
-        accuracyIdx = Math.max(0, Math.ceil((1 - lowestAcc.fail) * 4) - 1);
-        //
-        var lowest = document.createElement("span");
-        lowest.title = "Lowest accuracy move";
-        lowest.className =
-          "cursor-pointer flex items-center px-2 py-1 " +
-          colors[accuracyIdx][0] +
-          " " +
-          colors[accuracyIdx][1];
-
-        //
+      // if there are any variations
+      if (data[i].vcount > 0) {
         // find the lowest accuracy in this line
+        var lowestAcc = this.findLowestAccuracy(data[i].lines);
+
+        console.info("lowestAcc", lowestAcc);
+
+        // only show it if it's lower than the current
+        if (lowestAcc.fail > data[i].fail) {
+          //
+          accuracyIdx = Math.max(0, Math.ceil((1 - lowestAcc.fail) * 4) - 1);
+          //
+          var lowest = document.createElement("span");
+          lowest.title = "Lowest accuracy move";
+          lowest.className =
+            "cursor-pointer flex items-center px-2 py-1 " +
+            colors[accuracyIdx][0] +
+            " " +
+            colors[accuracyIdx][1];
+
+          //
+          // find the lowest accuracy in this line
+          //
+          // make sure we can jump directly to that line
+          //
+          // get the accuracyIdx for it
+          //
+          // get the right color to display it
+          //
+
+          sp = document.createElement("span");
+          sp.className = "w-5 h-5 icon-[mdi--trending-down]";
+
+          lowest.appendChild(sp);
+
+          sp = document.createElement("span");
+          sp.className = "px-1 text-sm";
+          sp.innerHTML = Math.round((1 - lowestAcc.fail) * 100) + "%";
+
+          lowest.appendChild(sp);
+
+          lowest.addEventListener(
+            "click",
+            this.loadRoadmapTree.bind(this, [
+              ...this.tree,
+              i,
+              ...lowestAcc.tree.slice(0, lowestAcc.tree.length - 1),
+            ])
+          );
+
+          footer.appendChild(lowest);
+        }
+      } else {
         //
-        // make sure we can jump directly to that line
-        //
-        // get the accuracyIdx for it
-        //
-        // get the right color to display it
-        //
+        var last = document.createElement("span");
+        last.title = "Last variation in line";
+        last.className = "px-2 py-1 text-slate-500 dark:text-slate-500";
 
         sp = document.createElement("span");
-        sp.className = "w-5 h-5 icon-[mdi--trending-down]";
+        sp.className = "w-5 h-5 icon-[mdi--lastpass]";
+        // lastpass
+        // ray-end
 
-        lowest.appendChild(sp);
+        last.appendChild(sp);
 
-        sp = document.createElement("span");
-        sp.className = "px-1 text-sm";
-        sp.innerHTML = Math.round((1 - lowestAcc.fail) * 100) + "%";
-
-        lowest.appendChild(sp);
-
-        lowest.addEventListener(
-          "click",
-          this.loadRoadmapTree.bind(this, [
-            ...this.tree,
-            i,
-            ...lowestAcc.tree.slice(0, lowestAcc.tree.length - 1),
-          ])
-        );
-
-        footer.appendChild(lowest);
+        footer.appendChild(last);
       }
 
-      //
-      // find missing top played moves? -> must be done in API..
       //
       var missing = this.findMissingTopPlayedMoves(data[i].lines);
       if (missing.length > 0) {
@@ -555,7 +570,7 @@ class Roadmap {
         var missing = document.createElement("span");
         missing.title = "Missing top played moves";
         missing.className =
-          "cursor-pointer flex items-center px-2 py-1 text-sky-600 hover:text-sky-400";
+          "cursor-pointer flex items-center px-2 py-1 text-sky-600 hover:text-sky-400 dark:text-sky-600 dark:hover:text-sky-400";
 
         sp = document.createElement("span");
         sp.className = "w-5 h-5 icon-[mdi--feature-highlight]";
@@ -575,7 +590,7 @@ class Roadmap {
       var repertoire = document.createElement("span");
       repertoire.title = "Open in repertoire";
       repertoire.className =
-        "cursor-pointer flex items-center px-2 py-1 text-slate-500 hover:text-marigold-500";
+        "cursor-pointer flex items-center px-2 py-1 text-slate-500 dark:text-slate-500 hover:text-marigold-500 dark:hover:text-marigold-500";
 
       sp = document.createElement("span");
       sp.className = "w-5 h-5 icon-[mdi--checkerboard]";
@@ -591,7 +606,7 @@ class Roadmap {
       var practice = document.createElement("span");
       practice.title = "Open in practice";
       practice.className =
-        "cursor-pointer flex items-center px-2 py-1 text-slate-500 hover:text-marigold-500";
+        "cursor-pointer flex items-center px-2 py-1 text-slate-500 dark:text-slate-500 hover:text-marigold-500 dark:hover:text-marigold-500";
 
       sp = document.createElement("span");
       sp.className = "w-5 h-5 icon-[mdi--controller]";
@@ -614,31 +629,10 @@ class Roadmap {
     }
 
     // add this row as 1st child (keep the children container as last)
-    //parent.insertBefore(row, parent.firstChild);
     parent.appendChild(row);
-
-    return true;
-
-    // see if we already have the container for the children of this level
-    var children = document.getElementById(
-      "roadmapTreeRow_" + level + "_Children"
-    );
-
-    if (children == null) {
-      //
-      var children = document.createElement("div");
-      children.id = "roadmapTreeRow_" + level + "_Children";
-      children.className = "mt-5";
-      children.setAttribute("data-level", level);
-
-      parent.appendChild(children);
-    }
-
-    // create container for children of this row
   }
 
   findLowestAccuracy(lines, highest = 0, tree = []) {
-    //data[i].fail
     //
     var highestTree = tree;
     //
@@ -799,53 +793,6 @@ class Roadmap {
       this.roadmapTreeContainer,
       index !== null ? level + 1 : 0
     );
-
-    return false;
-
-    // hide all levels from here on down
-    var lvl = level;
-    while (lvl < 99) {
-      console.info("Hiding tree level: ", lvl);
-
-      // get the children container
-      var children = document.getElementById(
-        "roadmapTreeRow_" + lvl + "_Children"
-      );
-
-      if (children == null) {
-        break;
-      }
-
-      // hide the currently visible children on this level
-      for (var i = 0; i < children.children.length; i++) {
-        if (children.children[i].getAttribute("data-type") == "tree-row") {
-          console.info(
-            "hiding existing row:",
-            groupId,
-            children.children[i].id
-          );
-
-          children.children[i].classList.add("hidden");
-        }
-      }
-
-      lvl++;
-    }
-
-    // find the children for this item (if already existing)
-    var existing = document.getElementById("roadmapTreeRow_" + groupId);
-    if (existing) {
-      console.info("Showing existing row:", groupId);
-      // show it (no need to reload, keep open what was open last time on this line)
-      existing.classList.remove("hidden");
-    } else {
-      // get the children container
-      var children = document.getElementById(
-        "roadmapTreeRow_" + level + "_Children"
-      );
-      // load the children for this item
-      this.loadTree(data, children, level + 1);
-    }
   }
 
   //

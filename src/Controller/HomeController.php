@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class HomeController extends AbstractController
 {
-    public function __construct(private Connection $conn, private EntityManagerInterface $em, private ManagerRegistry $doctrine) {}
+    public function __construct(private Connection $conn, private EntityManagerInterface $em, private ManagerRegistry $doctrine, private PracticeController $practice) {}
 
     #[Route(['/', '/home'], name: 'app_main')]
     public function index(): Response
@@ -38,6 +38,6 @@ class HomeController extends AbstractController
      */
     public function apiStatistics(Request $request, bool $isRoadmap = false): JsonResponse
     {
-        return (new PracticeController($this->conn, $this->em, $this->doctrine))->apiPractice($request, false, true);
+        return $this->practice->apiPractice($request, false, true);
     }
 }
