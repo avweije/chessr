@@ -37,7 +37,7 @@
 		<p class="text-base font-medium tc-base mt-10 mb-4">What is their username there?</p>
 
 		<div>
-			<input id="siteUsername" type="text" name="username" value="" list="siteUsernameDataListChessCom" placeholder="Enter your opponent's account name.." class="input-text-faded"/>
+			<input id="siteUsername" type="search" name="username" value="" list="siteUsernameDataListChessCom" placeholder="Enter your opponent's account name.." class="input-text-faded"/>
 			<datalist id="siteUsernameDataListChessCom">
 				{% for opp in opponents %}
 					{% if opp.site is same as ("Chess.com") %}
@@ -109,25 +109,12 @@
 
 	<div id="opponentAnalysisTab" class="hidden flex justify-around text-center">
 		<div>
-			{% if opponents|length > 1 %}
-				<p class="text-base font-medium tc-base mt-6 mb-6">Choose your opponent:</p>
-			{% endif %}
-
-			<div id="opponentContainer" class="boxed-radio-group m-2 {% if opponents|length == 1 %}mt-6{% endif %}">
-				{% for opp in opponents %}
-					<div class="boxed-radio">
-						<input class="peer hidden" type="radio" name="opponent_box" value="{{ opp.username }}" data-id="{{ opp.id }}" data-site="{{ opp.site }}" id="opponentBoxRadio_{{ opp.id }}" {% if opponents|length == 1 %} checked {% endif %}/>
-						<label class="boxed-radio-label" for="opponentBoxRadio_{{ opp.id }}"></label>
-						<div class="boxed-radio-circle"></div>
-						<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500">
-							<p class="text-left mb-1">{{ opp.username }}</p>
-							<p class="text-left text-sm opacity-70">{{ opp.site }}</p>
-						</span>
-					</div>
-				{% endfor %}
+			<div id="opponentTextAndContainer" class="p-6">
+				<p id="chooseOpponentText" class="text-base font-medium tc-base">Choose your opponent:</p>
+				<div id="opponentContainer" class="boxed-radio-group m-2 mt-6"></div>
 			</div>
 
-			<p class="text-base font-medium tc-base mt-10 mb-6">Which side of your opponent do you want to see?</p>
+			<p class="text-base font-medium tc-base mt-4 mb-6">Which side of your opponent do you want to see?</p>
 
 			<div id="opponentColorButtons" class="boxed-radio-group m-2">
 				<div class="boxed-radio">
@@ -183,13 +170,19 @@
 					<div class="flex flex-col bg-tacao-100/50 dark:bg-slate-700"></div>
 				</div>
 
-				<div id="opponentMovesTable" class="flex flex-wrap gap-1 justify-center"></div>
+				<div id="opponentMovesTable" class="flex flex-wrap gap-1 justify-center mx-6 mb-2"></div>
+			</div>
+
+			<div class="fixed right-2 bottom-2 dialog-open-hide">
+				<button id="opponentRemoveButton" type="button" title="Remove this opponent" class="hidden w-7 h-7 text-red-500 dark:text-red-400 hover:text-red-300 dark:hover:text-red-200 icon-[mdi--delete]"></button>
 			</div>
 		</div>
 	</div>
 
-
 	{{ include('opponent/dialogs/analyse.html.twig') }}
+	{{ include('opponent/dialogs/confirm.html.twig') }}
+	{{ include('opponent/dialogs/connect.html.twig') }}
+	{{ include('opponent/dialogs/disconnect.html.twig') }}
 {% endblock %}
 {% block stylesheets %}
 	{{ parent() }}

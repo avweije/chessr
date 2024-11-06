@@ -19,6 +19,8 @@ class ChessDotComInterface implements ChessSiteInterface
     private $inTimeout = false;
     private $timeoutEnd = 0;
 
+    private $debugInfo = [];
+
     public function __construct()
     {
         $this->client = HttpClient::create();
@@ -38,7 +40,7 @@ class ChessDotComInterface implements ChessSiteInterface
             // get the profile
             $response = $this->request('GET', $url);
             if ($response !== null && $response->getStatusCode() == 200) {
-                $this->joined = $response->toArray()['joined'];
+                $this->joined = intval($response->toArray()['joined']);
             }
         }
 
@@ -232,5 +234,10 @@ class ChessDotComInterface implements ChessSiteInterface
         //usleep(500000);
 
         return $response;
+    }
+
+    public function getDebugInfo(): array
+    {
+        return $this->debugInfo;
     }
 }

@@ -61,9 +61,9 @@ export class MyChessBoard {
   game = null;
 
   status = BOARD_STATUS.default;
-  premove = null;
+  premoves = [];
 
-  settings = {
+  boardSettings = {
     useVariations: true,
     premoveEnabled: false,
     navigationEnabled: false, // enable prev/next by using left/right arrow keys
@@ -152,7 +152,7 @@ export class MyChessBoard {
     document.addEventListener("keydown", (event) => {
       // if navigation is enabled and arrow left/right was hit
       if (
-        this.settings.navigationEnabled &&
+        this.boardSettings.navigationEnabled &&
         (event.key == "ArrowRight" || event.key == "ArrowLeft") &&
         (!document.activeElement ||
           !["INPUT", "SELECT", "TEXTAREA"].includes(
@@ -213,14 +213,14 @@ export class MyChessBoard {
     this.board = new Chessboard(boardElement, _boardSettings);
 
     // apply the chessboard settings (for this class, not the board itself)
-    this.settings = this.deepMerge(this.settings, settings);
+    this.boardSettings = this.deepMerge(this.boardSettings, settings);
   }
 
   setOption(setting, value) {
     try {
       // get the (nested) setting keys
       var parts = setting.split(".");
-      var temp = this.settings;
+      var temp = this.boardSettings;
       for (var i = 1; i < parts.length; i++) {
         temp = temp[parts[i - 1]];
       }
@@ -374,6 +374,8 @@ export class MyChessBoard {
           this.game.fen(),
           movesThatMatch.length > 0
         );
+
+        console.info("resetToPosition: board updated..");
       }
 
       //movesToMake = moves;
@@ -712,7 +714,7 @@ export class MyChessBoard {
         } else {
           //
 
-          if (this.settings.useVariations) {
+          if (this.boardSettings.useVariations) {
             //
             var addVariation = true;
             //
@@ -926,14 +928,14 @@ export class MyChessBoard {
   }
 
   setPgnWithLinks(toggle = true) {
-    this.settings.pgn.withLinks = toggle;
+    this.boardSettings.pgn.withLinks = toggle;
     // update the pgn field
     this.updatePgnField();
   }
 
   updatePgnField() {
     if (this.pgnField) {
-      this.getPgn(this.settings.useVariations, this.pgnField);
+      this.getPgn(this.boardSettings.useVariations, this.pgnField);
     }
   }
 
@@ -951,9 +953,9 @@ export class MyChessBoard {
       if (this.history.length == 0) {
         var sp = document.createElement("span");
         sp.className =
-          this.settings.pgn.styling.main +
+          this.boardSettings.pgn.styling.main +
           " " +
-          this.settings.pgn.styling.mainText;
+          this.boardSettings.pgn.styling.mainText;
         sp.innerHTML = "1.";
 
         pgnField.appendChild(sp);
@@ -972,9 +974,9 @@ export class MyChessBoard {
         if (pgnField) {
           var sp = document.createElement("span");
           sp.className =
-            this.settings.pgn.styling.main +
+            this.boardSettings.pgn.styling.main +
             " " +
-            this.settings.pgn.styling.mainText;
+            this.boardSettings.pgn.styling.mainText;
           sp.innerHTML = moveNr + ".";
 
           pgnField.appendChild(sp);
@@ -985,22 +987,23 @@ export class MyChessBoard {
 
       if (pgnField) {
         var sp = document.createElement("span");
-        sp.className = this.settings.pgn.styling.main + " ";
+        sp.className = this.boardSettings.pgn.styling.main + " ";
 
         // if this is the current move
         if (this.currentVariation == -1 && currentMove == i + 1) {
-          sp.className = sp.className + this.settings.pgn.styling.currentMove;
-        } else if (this.settings.pgn.withLinks) {
-          sp.className = sp.className + this.settings.pgn.styling.mainLink;
+          sp.className =
+            sp.className + this.boardSettings.pgn.styling.currentMove;
+        } else if (this.boardSettings.pgn.withLinks) {
+          sp.className = sp.className + this.boardSettings.pgn.styling.mainLink;
         } else {
-          sp.className = sp.className + this.settings.pgn.styling.mainText;
+          sp.className = sp.className + this.boardSettings.pgn.styling.mainText;
         }
 
         sp.innerHTML = this.history[i].san;
         sp.setAttribute("data-move", i + 1);
 
         // add event listener
-        if (this.settings.pgn.withLinks) {
+        if (this.boardSettings.pgn.withLinks) {
           sp.addEventListener("click", (event) => {
             // goto a certain move
             this.gotoMove(event.target.getAttribute("data-move"));
@@ -1010,7 +1013,7 @@ export class MyChessBoard {
         pgnField.appendChild(sp);
       }
 
-      if (this.settings.useVariations && withVariations) {
+      if (this.boardSettings.useVariations && withVariations) {
         for (var x = 0; x < this.variations.length; x++) {
           if (
             this.variations[x].parent == null &&
@@ -1031,9 +1034,9 @@ export class MyChessBoard {
     if (pgnField) {
       var sp = document.createElement("span");
       sp.className =
-        this.settings.pgn.styling.variation +
+        this.boardSettings.pgn.styling.variation +
         " " +
-        this.settings.pgn.styling.variationText;
+        this.boardSettings.pgn.styling.variationText;
 
       sp.innerHTML = "(";
 
@@ -1048,9 +1051,9 @@ export class MyChessBoard {
       if (pgnField) {
         var sp = document.createElement("span");
         sp.className =
-          this.settings.pgn.styling.variation +
+          this.boardSettings.pgn.styling.variation +
           " " +
-          this.settings.pgn.styling.variationText;
+          this.boardSettings.pgn.styling.variationText;
         sp.innerHTML = moveNr + "...";
         pgnField.appendChild(sp);
       }
@@ -1066,9 +1069,9 @@ export class MyChessBoard {
         if (pgnField) {
           var sp = document.createElement("span");
           sp.className =
-            this.settings.pgn.styling.variation +
+            this.boardSettings.pgn.styling.variation +
             " " +
-            this.settings.pgn.styling.variationText;
+            this.boardSettings.pgn.styling.variationText;
           sp.innerHTML = moveNr + ".";
           pgnField.appendChild(sp);
         }
@@ -1077,15 +1080,18 @@ export class MyChessBoard {
 
       if (pgnField) {
         var sp = document.createElement("span");
-        sp.className = this.settings.pgn.styling.variation + " ";
+        sp.className = this.boardSettings.pgn.styling.variation + " ";
 
         // if this is the current move
         if (this.currentVariation == x && this.currentMove == i + y + 1) {
-          sp.className = sp.className + this.settings.pgn.styling.currentMove;
-        } else if (this.settings.pgn.withLinks) {
-          sp.className = sp.className + this.settings.pgn.styling.variationLink;
+          sp.className =
+            sp.className + this.boardSettings.pgn.styling.currentMove;
+        } else if (this.boardSettings.pgn.withLinks) {
+          sp.className =
+            sp.className + this.boardSettings.pgn.styling.variationLink;
         } else {
-          sp.className = sp.className + this.settings.pgn.styling.variationText;
+          sp.className =
+            sp.className + this.boardSettings.pgn.styling.variationText;
         }
 
         sp.innerHTML = this.variations[x].moves[y].san;
@@ -1093,7 +1099,7 @@ export class MyChessBoard {
         sp.setAttribute("data-move", i + y + 1);
 
         // add event listener
-        if (this.settings.pgn.withLinks) {
+        if (this.boardSettings.pgn.withLinks) {
           sp.addEventListener("click", (event) => {
             // goto a certain move
             this.gotoMove(
@@ -1121,9 +1127,9 @@ export class MyChessBoard {
     if (pgnField) {
       var sp = document.createElement("span");
       sp.className =
-        this.settings.pgn.styling.variation +
+        this.boardSettings.pgn.styling.variation +
         " " +
-        this.settings.pgn.styling.variationText;
+        this.boardSettings.pgn.styling.variationText;
 
       sp.innerHTML = ")";
 
@@ -1161,7 +1167,7 @@ export class MyChessBoard {
     this.status = status;
 
     // if we need to make a premove
-    if (this.status == BOARD_STATUS.waitingOnMove && this.premove !== null) {
+    if (this.status == BOARD_STATUS.waitingOnMove && this.premoves.length > 0) {
       try {
         console.info("setStatus, has premove, making it now..");
 
@@ -1169,16 +1175,20 @@ export class MyChessBoard {
         this.board.removeMarkers(this.markers.squareRed);
         // make the move
         this.makeMove({
-          from: this.premove.squareFrom,
-          to: this.premove.squareTo,
-          promotion: this.premove.promotion ? this.premove.promotion : "q",
+          from: this.premoves[0].squareFrom,
+          to: this.premoves[0].squareTo,
+          promotion: this.premoves[0].promotion
+            ? this.premoves[0].promotion
+            : "q",
         });
+        // remove the premove
+        this.premoves.splice(0, 1);
         // remove the last move markers
         this.board.removeMarkers();
       } catch (err) {
         console.log(err);
-      } finally {
-        this.premove = null;
+        // clear the premoves
+        this.premoves = [];
       }
     }
   }
@@ -1279,9 +1289,10 @@ export class MyChessBoard {
             if (result && result.piece) {
               // if this is a premove
               if (this.status !== BOARD_STATUS.waitingOnMove) {
-                this.premove = event;
-                this.premove.promotion = result.piece.charAt(1);
-
+                // add the premove
+                var temp = event;
+                temp.promotion = result.piece.charAt(1);
+                this.premoves.push(temp);
                 // remember the premove (only 1 premove allowed, check if there already was one.. etc)
                 this.board.addMarker(this.markers.squareRed, event.squareFrom);
                 this.board.addMarker(this.markers.squareRed, event.squareTo);
@@ -1306,7 +1317,7 @@ export class MyChessBoard {
 
       // if this is a premove
       if (this.status !== BOARD_STATUS.waitingOnMove) {
-        this.premove = event;
+        this.premoves.push(event);
 
         // remember the premove (only 1 premove allowed, check if there already was one.. etc)
         this.board.addMarker(this.markers.squareRed, event.squareFrom);
@@ -1348,8 +1359,8 @@ export class MyChessBoard {
     console.log(event);
 
     // if we have a premove
-    if (this.premove !== null) {
-      this.premove = null;
+    if (this.premoves.length > 0) {
+      this.premoves = [];
     }
     // remove the premove markers
     this.board.removeMarkers(this.markers.squareRed);
@@ -1366,7 +1377,7 @@ export class MyChessBoard {
     if (event.squareFrom && event.squareTo) {
       // if this is a premove
       if (this.status !== BOARD_STATUS.waitingOnMove) {
-        this.premove = event;
+        this.premoves.push(event);
 
         // remember the premove (only 1 premove allowed, check if there already was one.. etc)
         this.board.addMarker(this.markers.squareRed, event.squareFrom);

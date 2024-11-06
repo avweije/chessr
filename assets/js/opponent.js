@@ -32,7 +32,9 @@ class Opponent {
 
   startButton = null;
 
+  chooseOpponentText = null;
   opponentContainer = null;
+  opponentRemoveButton = null;
 
   opponentColorRadio = {
     white: null,
@@ -57,8 +59,10 @@ class Opponent {
   };
 
   opponentData = {
+    id: null,
     moves: null,
     line: [],
+    needsRefresh: false,
   };
 
   analyseDialog = {
@@ -83,8 +87,15 @@ class Opponent {
     period: "",
   };
 
+  confirmDialog = {};
+  connectDialog = {};
+  disconnectDialog = {};
+
   // the settings
   settings = [];
+
+  // the opponents
+  opponents = [];
 
   constructor() {
     // get the elements
@@ -110,7 +121,14 @@ class Opponent {
 
     this.startButton = document.getElementById("startButton");
 
+    this.chooseOpponentText = document.getElementById("chooseOpponentText");
     this.opponentContainer = document.getElementById("opponentContainer");
+
+    this.opponentRemoveButton = document.getElementById("opponentRemoveButton");
+    this.opponentRemoveButton.addEventListener(
+      "click",
+      this.onRemoveOpponent.bind(this)
+    );
 
     this.opponentColorRadio.white = document.getElementById(
       "opponentColorWhiteRadio"
@@ -188,14 +206,6 @@ class Opponent {
 
     this.startButton.addEventListener("click", this.analyseGames.bind(this));
 
-    // switch opponent event handlers
-    for (var i = 0; i < this.opponentContainer.children.length; i++) {
-      this.opponentContainer.children[i].children[0].addEventListener(
-        "click",
-        this.onSwitchOpponent.bind(this)
-      );
-    }
-
     // switch opponent color event handlers
     this.opponentColorRadio.white.addEventListener(
       "click",
@@ -266,8 +276,114 @@ class Opponent {
       this.onCloseDialog.bind(this)
     );
 
+    // get the modal elements
+    this.confirmDialog.modal = document.getElementById("confirmModal");
+    this.confirmDialog.closeButton = document.getElementById(
+      "confirmModalCloseButton"
+    );
+    this.confirmDialog.cancelButton = document.getElementById(
+      "confirmModalCancelButton"
+    );
+    this.confirmDialog.confirmButton = document.getElementById(
+      "confirmModalConfirmButton"
+    );
+
+    // register the modal
+    Modal.register(this.confirmDialog.modal, [
+      {
+        element: this.confirmDialog.closeButton,
+        action: "close",
+      },
+      {
+        element: this.confirmDialog.cancelButton,
+        action: "close",
+      },
+      {
+        element: this.confirmDialog.confirmButton,
+        action: "handler",
+        handler: this.onRemoveOpponentConfirmed.bind(this),
+      },
+    ]);
+
+    // get the modal elements
+    this.connectDialog.modal = document.getElementById("connectModal");
+    this.connectDialog.closeButton = document.getElementById(
+      "connectModalCloseButton"
+    );
+    this.connectDialog.cancelButton = document.getElementById(
+      "connectModalCancelButton"
+    );
+    this.connectDialog.confirmButton = document.getElementById(
+      "connectModalConfirmButton"
+    );
+    this.connectDialog.opponentUsername = document.getElementById(
+      "connectModalOpponentUsername"
+    );
+    this.connectDialog.parentAccountContainer = document.getElementById(
+      "connectModalParentAccountContainer"
+    );
+
+    console.info(this.connectDialog);
+
+    // register the modal
+    Modal.register(this.connectDialog.modal, [
+      {
+        element: this.connectDialog.closeButton,
+        action: "close",
+      },
+      {
+        element: this.connectDialog.cancelButton,
+        action: "close",
+      },
+      {
+        element: this.connectDialog.confirmButton,
+        action: "handler",
+        handler: this.onConnectOpponentConfirmed.bind(this),
+      },
+    ]);
+
+    // get the modal elements
+    this.disconnectDialog.modal = document.getElementById("disconnectModal");
+    this.disconnectDialog.closeButton = document.getElementById(
+      "disconnectModalCloseButton"
+    );
+    this.disconnectDialog.cancelButton = document.getElementById(
+      "disconnectModalCancelButton"
+    );
+    this.disconnectDialog.confirmButton = document.getElementById(
+      "disconnectModalConfirmButton"
+    );
+    this.disconnectDialog.opponentUsername = document.getElementById(
+      "disconnectModalOpponentUsername"
+    );
+    this.disconnectDialog.childAccountContainer = document.getElementById(
+      "disconnectModalChildAccountContainer"
+    );
+
+    console.info(this.disconnectDialog);
+
+    // register the modal
+    Modal.register(this.disconnectDialog.modal, [
+      {
+        element: this.disconnectDialog.closeButton,
+        action: "close",
+      },
+      {
+        element: this.disconnectDialog.cancelButton,
+        action: "close",
+      },
+      {
+        element: this.disconnectDialog.confirmButton,
+        action: "handler",
+        handler: this.onDisconnectOpponentConfirmed.bind(this),
+      },
+    ]);
+
     // get settings
     this.getSettings();
+
+    // get the opponents
+    this.getOpponents();
   }
 
   // get the settings
@@ -309,6 +425,41 @@ class Opponent {
     this.toggleStartButton();
   }
 
+  // get the opponents
+  getOpponents() {
+    var url = "/api/opponent";
+
+    // show the page loader
+    Utils.showLoading();
+
+    fetch(url, {
+      method: "GET",
+    })
+      .then((res) => res.json())
+      .then((response) => {
+        console.log("Success:");
+        console.log(response);
+
+        // handle the response
+        this.onGetOpponents(response["opponents"]);
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      })
+      .finally(() => {
+        // hide the page loader
+        Utils.hideLoading();
+      });
+  }
+
+  // store the opponents
+  onGetOpponents(data) {
+    this.opponents = data;
+
+    // load the opponents radio boxes
+    this.loadOpponents();
+  }
+
   // switch tabs
   switchTab() {
     if (this.tabButtons.download.checked) {
@@ -319,44 +470,54 @@ class Opponent {
       this.tabContainers.analysis.classList.remove("hidden");
 
       // make sure we have the opponent moves
-      this.getOpponentMoves();
+      this.getOpponentMoves(this.opponentData.needsRefresh);
     }
   }
 
   // get the currently selected opponent
-  getSelectedOpponentId() {
+  getSelectedOpponent() {
     for (var i = 0; i < this.opponentContainer.children.length; i++) {
       if (this.opponentContainer.children[i].children[0].checked) {
-        // return the id
-        return this.opponentContainer.children[i].children[0].getAttribute(
-          "data-id"
-        );
+        return {
+          id: this.opponentContainer.children[i].children[0].getAttribute(
+            "data-id"
+          ),
+          username: this.opponentContainer.children[i].children[0].value,
+        };
       }
     }
 
-    return null;
+    return { id: "", username: "" };
   }
 
   // get the opponent details
   getOpponentMoves(refresh = false) {
     console.log("getOpponentMoves:", this.opponentData);
 
-    // only if we don't have the data yet
-    if (this.opponentData.moves !== null && !refresh) {
-      return true;
-    }
+    // get the current opponent
+    var sel = this.getSelectedOpponent();
 
-    // get the current opponent id
-    var id = this.getSelectedOpponentId();
-
-    console.log("currentlySelectedId:", id);
+    console.log("currentlySelectedId:", sel);
 
     // if no opponent is selected
-    if (id == null || id == "") {
+    if (sel.id == "") {
       return false;
     }
 
-    var url = "/api/opponent/" + encodeURIComponent(id);
+    // only if we don't have the data yet
+    if (
+      this.opponentData.id == sel.id &&
+      this.opponentData.moves !== null &&
+      !refresh
+    ) {
+      return true;
+    }
+
+    // store the opponent id
+    this.opponentData.id = sel.id;
+    this.opponentData.moves = [];
+
+    var url = "/api/opponent/" + encodeURIComponent(sel.id);
 
     // show the page loader
     Utils.showLoading();
@@ -389,6 +550,7 @@ class Opponent {
     // store the moves
     this.opponentData.moves = moves;
     this.opponentData.line = [];
+    this.opponentData.needsRefresh = false;
 
     // load the suggestions
     this.loadMoveSuggestions();
@@ -491,6 +653,9 @@ class Opponent {
 
     // update the dialog fields
     this.updateDialogFields();
+
+    // clear the elapsed time field
+    this.analyseDialog.elapsedTimeField.innerHTML = "";
 
     // set the stop button text
     this.analyseDialog.stopButton.innerHTML = "Stop analysing";
@@ -603,8 +768,7 @@ class Opponent {
     // update the dialog fields
     this.updateDialogFields();
 
-    //var url = "/api/download/games/{year}/{month}";
-    var url = "/api/analyse/opponent";
+    var url = "/api/opponent/analyse";
 
     var data = {
       site: this.siteRadio.chesscom.checked ? "Chess.com" : "Lichess",
@@ -654,9 +818,29 @@ class Opponent {
           this.analyseDialog.isCompleted = true;
         }
 
+        // get the selected opponent
+        var sel = this.getSelectedOpponent();
+
         // if the opponent is new, we need to add them to the analysis tab
         if (response.opponent.new) {
           this.addOpponentToAnalysis(response.opponent);
+        } else if (sel.id == response.opponent.id) {
+          this.opponentData.needsRefresh = true;
+        } else {
+          // check if it's a child of the selected opponent
+          for (var i = 0; i < this.opponents.length; i++) {
+            if (this.opponents[i].id == sel.id) {
+              for (var y = 0; y < this.opponents[i].children.length; y++) {
+                if (this.opponents[i].children[y].id == response.opponent.id) {
+                  this.opponentData.needsRefresh = true;
+
+                  break;
+                }
+              }
+
+              break;
+            }
+          }
         }
 
         // analyse the next set of games
@@ -712,7 +896,10 @@ class Opponent {
     console.log("onSwitchOpponent:");
 
     // get the opponent moves
-    this.getOpponentMoves(true);
+    this.getOpponentMoves();
+
+    // show the remove opponent button
+    this.opponentRemoveButton.classList.remove("hidden");
   }
 
   // switch opponent color
@@ -732,82 +919,674 @@ class Opponent {
     this.loadOpponentMoves();
   }
 
-  // check if opponent is new, if so, see if we need to add them to analysis tab
-  addOpponentToAnalysis(opponent) {
-    var found = false;
+  // connect the opponent
+  onConnectOpponent() {
+    console.info("onConnectOpponent");
 
-    for (var i = 0; i < this.opponentContainer.children.length; i++) {
-      // if this is the correct username
+    // get the currently selected opponent
+    var selected = this.getSelectedOpponent();
+
+    // if no opponent is selected
+    if (selected.id == "") {
+      return false;
+    }
+
+    // set the username
+    this.connectDialog.opponentUsername.innerHTML = selected.username;
+    // disable the confirm button
+    this.connectDialog.confirmButton.disabled = true;
+    // load the parent accounts radio boxes
+    this.loadConnectDialogParentAccounts(selected);
+
+    // open the dialog
+    Modal.open(this.connectDialog.modal);
+  }
+
+  // fired when the connect  opponent modal has been confirmed
+  onConnectOpponentConfirmed(event) {
+    var parentId = null;
+    // get the selected main account
+    for (
+      var i = 0;
+      i < this.connectDialog.parentAccountContainer.children.length;
+      i++
+    ) {
       if (
-        this.opponentContainer.children[i].children[0].value ==
-        opponent.username
+        this.connectDialog.parentAccountContainer.children[i].children[0]
+          .checked
       ) {
-        // get the site
-        var site =
-          this.opponentContainer.children[i].children[0].getAttribute(
-            "data-site"
-          );
-        // it's a match if the site also matches
-        found = site == opponent.site;
-        if (found) {
-          break;
-        }
+        parentId =
+          this.connectDialog.parentAccountContainer.children[
+            i
+          ].children[0].getAttribute("data-id");
+        break;
       }
     }
 
-    if (!found) {
-      // add the opponent box
-      var box = document.createElement("div");
-      box.className = "boxed-radio";
+    // close the modal
+    Modal.close(this.connectDialog.modal);
 
-      var inp = document.createElement("input");
-      inp.id = "opponentBoxRadio_" + opponent.id;
-      inp.type = "radio";
-      inp.name = "opponent_box";
-      inp.value = opponent.username;
-      inp.className = "peer hidden";
+    // get the current opponent
+    var selected = this.getSelectedOpponent();
 
-      // store the opponent id & site
-      inp.setAttribute("data-id", opponent.site);
-      inp.setAttribute("data-site", opponent.site);
+    console.info("onConnectConfirm:", parentId, selected);
 
-      // add the event listener to switch opponents
-      inp.addEventListener("click", this.onSwitchOpponent.bind(this));
+    // if no opponent is selected
+    if (parentId == null || parentId == "" || selected.id == "") {
+      return false;
+    }
 
-      box.appendChild(inp);
+    var url = "/api/opponent/connect";
 
-      var lbl = document.createElement("label");
-      lbl.className =
-        "boxed-radio-label peer-checked:border-blue-300 peer-checked:bg-blue-100";
-      lbl.htmlFor = "opponentBoxRadio_" + opponent.id;
+    var data = {
+      opponent: selected.id,
+      parent: parentId,
+    };
 
-      box.appendChild(lbl);
+    console.info(data);
 
-      var circle = document.createElement("div");
-      circle.className =
-        "boxed-radio-circle peer-checked:border-transparent peer-checked:bg-blue-400 peer-checked:ring-2";
+    fetch(url, {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((res) => res.json())
+      .then((response) => {
+        console.log(response);
 
-      box.appendChild(circle);
+        // update the opponents
+        this.connectOpponentToParent(parentId, selected);
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        // show the error icon
+        Utils.showError();
+      });
+  }
 
-      var sp = document.createElement("span");
-      sp.className =
-        "boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500 peer-checked:text-gray-700";
+  // update the opponents array, remove the child radio box, update the parent radio box
+  connectOpponentToParent(parentId, opponent) {
+    // remove the opponent as main account
+    var opp = null;
+    for (var i = 0; i < this.opponents.length; i++) {
+      if (opponent.id == this.opponents[i].id) {
+        opp = this.opponents.splice(i, 1)[0];
+        break;
+      }
+    }
 
-      var p1 = document.createElement("p");
-      p1.className = "text-left mb-1";
-      p1.innerHTML = opponent.username;
+    console.info("child removed:", opp);
 
-      sp.appendChild(p1);
+    if (opp == null) {
+      return false;
+    }
 
-      var p2 = document.createElement("p");
-      p2.className = "text-left text-sm opacity-70";
-      p2.innerHTML = opponent.site;
+    // add the opponent as child
+    var parent = null;
+    for (var i = 0; i < this.opponents.length; i++) {
+      if (parentId == this.opponents[i].id) {
+        this.opponents[i].children.push(opp);
 
-      sp.appendChild(p2);
+        parent = this.opponents[i];
 
-      box.appendChild(sp);
+        console.info("added to parent", parent);
+        break;
+      }
+    }
 
+    // remove the child radio box
+    for (var i = 0; i < this.opponentContainer.children.length; i++) {
+      var id =
+        this.opponentContainer.children[i].children[0].getAttribute("data-id");
+
+      console.info("id", id, opp);
+      if (id == opp.id) {
+        // remove it
+        this.opponentContainer.removeChild(this.opponentContainer.children[i]);
+
+        console.info("child radio removed");
+
+        break;
+      }
+    }
+
+    // update the parent radio box
+    for (var i = 0; i < this.opponentContainer.children.length; i++) {
+      var id =
+        this.opponentContainer.children[i].children[0].getAttribute("data-id");
+
+      console.info("id", id, parent);
+
+      if (id == parent.id) {
+        // add the connect link
+        this.addOpponentRadioBoxConnect(
+          this.opponentContainer.children[i],
+          parent
+        );
+
+        console.info("connect div replaced");
+
+        break;
+      }
+    }
+
+    // refresh the opponent moves
+    this.getOpponentMoves(true);
+  }
+
+  // load the connect dialog parent accounts container
+  loadConnectDialogParentAccounts(selected) {
+    // remove all radio boxes
+    while (this.connectDialog.parentAccountContainer.firstChild) {
+      this.connectDialog.parentAccountContainer.removeChild(
+        this.connectDialog.parentAccountContainer.lastChild
+      );
+    }
+
+    console.info("loadConnectDialogParentAccounts");
+    console.info(this);
+    console.info(this.opponents);
+    console.info(this.connectDialog);
+
+    // add the parent accounts
+    for (var i = 0; i < this.opponents.length; i++) {
+      // skip the selected opponent
+      if (this.opponents[i].id == selected.id) {
+        continue;
+      }
+
+      // create the radio box
+      var box = this.createOpponentRadioBox(this.opponents[i], false, true);
+      // add it
+      this.connectDialog.parentAccountContainer.appendChild(box);
+    }
+  }
+
+  // disconnect the opponent
+  onDisconnectOpponent() {
+    console.info("onDisconnectOpponent");
+
+    // get the currently selected opponent
+    var selected = this.getSelectedOpponent();
+
+    // if no opponent is selected
+    if (selected.id == "") {
+      return false;
+    }
+
+    // set the username
+    this.disconnectDialog.opponentUsername.innerHTML = selected.username;
+    // disable the confirm button
+    this.disconnectDialog.confirmButton.disabled = true;
+    // load the child accounts radio boxes
+    this.loadDisconnectDialogChildAccounts(selected);
+
+    // open the dialog
+    Modal.open(this.disconnectDialog.modal);
+  }
+
+  // fired when the disconnect opponent modal has been confirmed
+  onDisconnectOpponentConfirmed(event) {
+    var childsToRemove = [];
+    // get the unchecked child account(s)
+    for (
+      var i = 0;
+      i < this.disconnectDialog.childAccountContainer.children.length;
+      i++
+    ) {
+      if (
+        !this.disconnectDialog.childAccountContainer.children[i].children[0]
+          .checked
+      ) {
+        childsToRemove.push(
+          this.disconnectDialog.childAccountContainer.children[
+            i
+          ].children[0].getAttribute("data-id")
+        );
+
+        break;
+      }
+    }
+
+    // close the modal
+    Modal.close(this.disconnectDialog.modal);
+
+    // get the current opponent
+    var selected = this.getSelectedOpponent();
+
+    console.info("onDisconnectConfirm:", childsToRemove, selected);
+
+    // if no opponent is selected
+    if (childsToRemove.length == 0 || selected.id == "") {
+      return false;
+    }
+
+    var url = "/api/opponent/disconnect";
+
+    var data = {
+      parent: selected.id,
+      children: childsToRemove,
+    };
+
+    console.info(data);
+
+    fetch(url, {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((res) => res.json())
+      .then((response) => {
+        console.log(response);
+
+        // update the opponents
+        this.disconnectOpponentsFromParent(selected.id, childsToRemove);
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        // show the error icon
+        Utils.showError();
+      });
+  }
+
+  // update opponents array, add radio boxes for disconnected children, update parent radio box
+  disconnectOpponentsFromParent(parentId, children) {
+    // add the children as main accounts (and remove them as children)
+    var parent = null;
+    for (var i = 0; i < this.opponents.length; i++) {
+      if (parentId == this.opponents[i].id) {
+        var children = [];
+        // add the children as main account
+        for (var y = 0; y < this.opponents[i].children.length; y++) {
+          var found = false;
+          for (var z = 0; z < children.length; z++) {
+            if (children[z] == this.opponents[i].children[y].id) {
+              // add the children array
+              var main = this.opponents[i].children[y];
+              main.children = [];
+
+              // add the radio box
+              var box = this.createOpponentRadioBox(main);
+              this.opponentContainer.appendChild(box);
+
+              // add the opponent
+              this.opponents.push(main);
+
+              found = true;
+            }
+          }
+
+          if (!found) {
+            children.push(this.opponents[i].children[y]);
+          }
+        }
+
+        // override the children
+        this.opponents[i].children = children;
+
+        parent = this.opponents[i];
+
+        break;
+      }
+    }
+
+    // update the parent radio box
+    for (var i = 0; i < this.opponentContainer.children.length; i++) {
+      var id =
+        this.opponentContainer.children[i].children[0].getAttribute("data-id");
+
+      console.info("id", id, parent);
+
+      if (id == parent.id) {
+        // add the connect spans
+        this.addOpponentRadioBoxConnect(
+          this.opponentContainer.children[i],
+          parent
+        );
+
+        console.info("connect span replaced");
+
+        break;
+      }
+    }
+
+    // refresh the opponent moves
+    this.getOpponentMoves(true);
+  }
+
+  // load the disconnect dialog child accounts container
+  loadDisconnectDialogChildAccounts(selected) {
+    // remove all radio boxes
+    while (this.disconnectDialog.childAccountContainer.firstChild) {
+      this.disconnectDialog.childAccountContainer.removeChild(
+        this.disconnectDialog.childAccountContainer.lastChild
+      );
+    }
+
+    console.info("loadDisconnectDialogChildAccounts");
+    console.info(this.opponents);
+    console.info(this.disconnectDialog);
+
+    // find the parent, add the child accounts
+    for (var i = 0; i < this.opponents.length; i++) {
+      if (this.opponents[i].id == selected.id) {
+        for (var y = 0; y < this.opponents[i].children.length; y++) {
+          // create the checkbox
+          var box = this.createOpponentChildCheckBox(
+            this.opponents[i].children[y]
+          );
+          // add it
+          this.disconnectDialog.childAccountContainer.appendChild(box);
+        }
+      }
+    }
+  }
+
+  // remove the opponent
+  onRemoveOpponent() {
+    console.info("onRemoveOpponent");
+
+    // open the dialog
+    Modal.open(this.confirmDialog.modal);
+  }
+
+  // fired when the remove opponent modal has been confirmed
+  onRemoveOpponentConfirmed(event) {
+    // close the modal
+    Modal.close(this.confirmDialog.modal);
+
+    // get the current opponent id
+    var id = this.getSelectedOpponent().id;
+
+    // if no opponent is selected
+    if (id == null || id == "") {
+      return false;
+    }
+
+    var url = "/api/opponent/" + encodeURIComponent(id);
+
+    fetch(url, {
+      method: "DELETE",
+    })
+      .then((res) => res.json())
+      .then((response) => {
+        console.log(response);
+
+        // remove the opponent from the analysis tab
+        this.removeOpponentFromAnalysis();
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        // show the error icon
+        Utils.showError();
+      });
+  }
+
+  // load the opponents container
+  loadOpponents() {
+    // remove all radio boxes
+    while (this.opponentContainer.firstChild) {
+      this.opponentContainer.removeChild(this.opponentContainer.lastChild);
+    }
+
+    console.info("loadOpponents");
+    console.info(this.opponents);
+
+    // toggle the choose opponent text
+    if (this.opponents.length > 1) {
+      this.chooseOpponentText.classList.remove("hidden");
+    } else {
+      this.chooseOpponentText.classList.add("hidden");
+    }
+
+    // add the parent accounts
+    for (var i = 0; i < this.opponents.length; i++) {
+      // create the radio box
+      var box = this.createOpponentRadioBox(
+        this.opponents[i],
+        this.opponents.length == 1
+      );
+      // add it
       this.opponentContainer.appendChild(box);
+    }
+  }
+
+  // check if opponent is new, if so, see if we need to add them to analysis tab
+  addOpponentToAnalysis(opponent) {
+    // add the children array
+    opponent.children = [];
+    // add to the opponents
+    this.opponents.push(opponent);
+
+    // toggle the choose opponent text
+    if (this.opponents.length > 1) {
+      this.chooseOpponentText.classList.remove("hidden");
+    } else {
+      this.chooseOpponentText.classList.add("hidden");
+    }
+
+    // add the opponent box
+    var box = this.createOpponentRadioBox(opponent);
+
+    this.opponentContainer.appendChild(box);
+  }
+
+  // create an opponent radio box
+  createOpponentRadioBox(opponent, isChecked = false, forModal = false) {
+    // add the opponent box
+    var box = document.createElement("div");
+    box.className = "boxed-radio";
+
+    var inp = document.createElement("input");
+    inp.id = "opponentBoxRadio_" + opponent.id + (forModal ? "_modal" : "");
+    inp.type = "radio";
+    inp.name = "opponent_box" + (forModal ? "_modal" : "");
+    inp.value = opponent.username;
+    inp.checked = isChecked;
+    inp.className = "peer hidden";
+
+    // store the opponent id & site
+    inp.setAttribute("data-id", opponent.id);
+    inp.setAttribute("data-site", opponent.site);
+
+    // enable the confirm button
+    if (forModal) {
+      inp.addEventListener("click", () => {
+        this.connectDialog.confirmButton.disabled = false;
+      });
+    } else {
+      inp.addEventListener("click", this.onSwitchOpponent.bind(this));
+    }
+
+    box.appendChild(inp);
+
+    var lbl = document.createElement("label");
+    lbl.className =
+      "boxed-radio-label peer-checked:border-blue-300 peer-checked:bg-blue-100";
+    lbl.htmlFor =
+      "opponentBoxRadio_" + opponent.id + (forModal ? "_modal" : "");
+
+    box.appendChild(lbl);
+
+    var circle = document.createElement("div");
+    circle.className =
+      "boxed-radio-circle peer-checked:border-transparent peer-checked:bg-blue-400 peer-checked:ring-2";
+
+    box.appendChild(circle);
+
+    var sp = document.createElement("span");
+    sp.className =
+      "boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500 peer-checked:text-gray-700";
+
+    var p1 = document.createElement("p");
+    p1.className = "text-left mb-1 pr-3";
+    p1.innerHTML = opponent.username;
+
+    sp.appendChild(p1);
+
+    var p2 = document.createElement("p");
+    p2.className = "text-left text-sm pr-4 opacity-70";
+    p2.innerHTML = opponent.site;
+
+    sp.appendChild(p2);
+
+    box.appendChild(sp);
+
+    // add the bottom right element (icon or +3) only if needed
+    if (!forModal || opponent.children.length > 0) {
+      this.addOpponentRadioBoxConnect(box, opponent, forModal);
+    }
+
+    return box;
+  }
+
+  // create the radio box connect link or children count span
+  addOpponentRadioBoxConnect(box, opponent, forModal = false) {
+    // remove the current count & link spans
+    var curr = box.getElementsByClassName("opponent-connect-children");
+    if (curr.length == 1) {
+      box.removeChild(curr[0]);
+    }
+    curr = box.getElementsByClassName("opponent-connect-link");
+    if (curr.length == 1) {
+      box.removeChild(curr[0]);
+    }
+
+    // add the child count span
+    if (opponent.children.length > 0) {
+      var cntSpan = document.createElement("span");
+      cntSpan.className =
+        "opponent-connect-children absolute right-2 top-1 inline-block text-xs p-1 text-tacao-600 dark:text-slate-500";
+      cntSpan.innerHTML = "+" + opponent.children.length;
+
+      box.appendChild(cntSpan);
+    }
+
+    // add the (dis)connect span
+    if (!forModal) {
+      var conSpan = document.createElement("span");
+      conSpan.className =
+        "opponent-connect-link hidden peer-checked:inline-block absolute right-2 bottom-1 w-6 h-6 cursor-pointer text-tacao-500 hover:text-tacao-700 dark:text-slate-400 hover:dark:text-slate-600";
+      if (opponent.children.length > 0) {
+        conSpan.className = conSpan.className + " icon-[mdi--link-off]";
+
+        conSpan.addEventListener("click", this.onDisconnectOpponent.bind(this));
+      } else {
+        conSpan.className = conSpan.className + " icon-[mdi--link]";
+
+        conSpan.addEventListener("click", this.onConnectOpponent.bind(this));
+      }
+
+      box.appendChild(conSpan);
+    }
+  }
+
+  // create an opponent child check box
+  createOpponentChildCheckBox(opponent) {
+    // add the opponent box
+    var box = document.createElement("div");
+    box.className = "boxed-checkbox";
+
+    var inp = document.createElement("input");
+    inp.id = "opponentChildBoxCheck_" + opponent.id;
+    inp.type = "checkbox";
+    inp.name = "opponent_child_checkbox";
+    inp.value = opponent.username;
+    inp.checked = true;
+    inp.className = "peer hidden";
+
+    // store the opponent id & site
+    inp.setAttribute("data-id", opponent.id);
+
+    // enable the confirm button
+    inp.addEventListener("click", () => {
+      this.disconnectDialog.confirmButton.disabled = false;
+    });
+
+    box.appendChild(inp);
+
+    var lbl = document.createElement("label");
+    lbl.className = "boxed-checkbox-label";
+    lbl.htmlFor = "opponentChildBoxCheck_" + opponent.id;
+
+    box.appendChild(lbl);
+
+    var check = document.createElement("div");
+    check.className = "relative hidden peer-checked:flex";
+
+    var ch1 = document.createElement("div");
+    ch1.className =
+      "absolute top-1 right-1 bottom-1 left-1 rounded-full bg-white";
+
+    var ch2 = document.createElement("div");
+    ch2.className = "boxed-checkbox-circle icon-[mdi--checkbox-marked-circle]";
+
+    check.appendChild(ch1);
+    check.appendChild(ch2);
+
+    box.appendChild(check);
+
+    var blank = document.createElement("div");
+    blank.className =
+      "boxed-checkbox-circle peer-checked:hidden text-gray-300 dark:text-slate-500 icon-[mdi--checkbox-blank-circle-outline]";
+
+    box.appendChild(blank);
+
+    var sp = document.createElement("span");
+    sp.className = "boxed-checkbox-text";
+    sp.innerHTML = opponent.username;
+
+    box.appendChild(sp);
+
+    return box;
+  }
+
+  // remove an opponent from the analysis tab
+  removeOpponentFromAnalysis() {
+    for (var i = 0; i < this.opponentContainer.children.length; i++) {
+      if (this.opponentContainer.children[i].children[0].checked) {
+        // get the id
+        var id =
+          this.opponentContainer.children[i].children[0].getAttribute(
+            "data-id"
+          );
+
+        // see if the opponent has children
+        for (var y = 0; y < this.opponents.length; y++) {
+          if (id == this.opponents[y].id) {
+            if (this.opponents[y].children.length > 0) {
+              for (var z = 0; z < this.opponents[y].children.length; z++) {
+                // add the children array
+                var main = this.opponents[y].children[z];
+                main.children = [];
+
+                // add the radio box
+                var box = this.createOpponentRadioBox(main);
+                this.opponentContainer.appendChild(box);
+
+                // add the opponent
+                this.opponents.push(main);
+              }
+            }
+
+            // remove from the opponents array
+            this.opponents.splice(y, 1);
+            break;
+          }
+        }
+
+        // remove the opponent radio box
+        this.opponentContainer.removeChild(this.opponentContainer.children[i]);
+        // hide the moves container & the remove button
+        this.opponentMoves.container.classList.add("hidden");
+        this.opponentRemoveButton.classList.add("hidden");
+
+        break;
+      }
     }
   }
 
@@ -883,21 +1662,19 @@ class Opponent {
     for (var i = 0; i < sugg.length; i++) {
       var row = document.createElement("div");
       row.className =
-        "flex justify-between items-center p-2" +
+        "flex justify-between items-center py-2 px-3" +
         (i > 0 ? " border-t border-tacao-300/60 dark:border-slate-900" : "");
 
       var col1 = document.createElement("div");
       col1.className = "text-left mr-6";
 
       // if we have an ECO code
-      if (sugg[i].eco) {
-        var pEco = document.createElement("p");
-        pEco.className = "text-xs mb-px tc-faded";
-        pEco.innerHTML = sugg[i].eco.name;
-      }
+      var pEco = document.createElement("p");
+      pEco.className = "text-xs mb-0.5 tc-faded";
+      pEco.innerHTML = sugg[i].eco ? sugg[i].eco.name : "";
 
       var pPgn = document.createElement("p");
-      pPgn.className = "text-sm cursor-pointer font-semibold tc-link";
+      pPgn.className = "text-sm p-0.5 cursor-pointer font-semibold tc-link";
       pPgn.title = "Jump to this line";
       pPgn.innerHTML = sugg[i].pgn;
       pPgn.addEventListener(
@@ -916,6 +1693,7 @@ class Opponent {
       col1.appendChild(pPgn);
 
       var col2 = document.createElement("div");
+      //col2.className = "px-1";
 
       var btn = document.createElement("button");
       btn.type = "button";
@@ -931,7 +1709,7 @@ class Opponent {
 
       var icon = document.createElement("span");
       icon.className =
-        "inline-block text-2xl px-1 tc-link-shade icon-[mdi--open-in-new]";
+        "inline-block text-2xl tc-link-shade icon-[mdi--open-in-new]";
       icon.title = "Open in repertoire";
 
       btn.appendChild(icon);
@@ -1034,9 +1812,9 @@ class Opponent {
       var lossPct = Math.round((moves[i].losses / moves[i].total) * 100);
       var diff = Math.abs(winPct - lossPct);
 
-      // even = win/loss difference less than 3 or win/loss percentage difference of less than 10
+      // even = win/loss difference less than 3 or win/loss percentage difference of less than 8%
       var rate =
-        diff < 10 || Math.abs(moves[i].wins - moves[i].losses) < 3
+        diff < 8 || Math.abs(moves[i].wins - moves[i].losses) < 3
           ? "even"
           : winPct > lossPct
           ? "win"
@@ -1349,11 +2127,10 @@ class Opponent {
     // show the page loader
     Utils.showLoading();
 
-    //var url = "/api/download/games/{year}/{month}";
     var url = "/api/opponent/moves";
 
     var data = {
-      id: this.getSelectedOpponentId(),
+      id: this.getSelectedOpponent().id,
       color: this.opponentColorRadio.white.checked ? "white" : "black",
       pgn: this.getCurrentPgn(),
     };

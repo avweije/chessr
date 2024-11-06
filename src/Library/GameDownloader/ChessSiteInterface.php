@@ -23,6 +23,9 @@ interface ChessSiteInterface
     // returns: [??]
     function downloadGames(int $year, int $month, string $type, string $lastId, int $max): array;
 
+    // get debug info (for testing purposes)
+    function getDebugInfo(): array;
+
     /**
      * -
      * - no totals for lichess ?

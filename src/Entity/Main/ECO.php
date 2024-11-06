@@ -8,6 +8,7 @@ use Symfony\Component\Serializer\Annotation\Ignore;
 use Symfony\Component\Serializer\Annotation\SerializedName;
 
 #[ORM\Entity(repositoryClass: ECORepository::class)]
+#[ORM\Index(columns: ['pgn'], name: 'idx_eco_pgn')]
 class ECO
 {
     #[ORM\Id]

@@ -49,6 +49,9 @@ class Settings
     #[ORM\Column]
     private ?bool $AnalyseIgnoreInaccuracy = null;
 
+    #[ORM\Column(type: Types::SMALLINT)]
+    private ?int $RecommendInterval = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -182,6 +185,18 @@ class Settings
     public function setAnalyseIgnoreInaccuracy(bool $AnalyseIgnoreInaccuracy): static
     {
         $this->AnalyseIgnoreInaccuracy = $AnalyseIgnoreInaccuracy;
+
+        return $this;
+    }
+
+    public function getRecommendInterval(): ?int
+    {
+        return $this->RecommendInterval;
+    }
+
+    public function setRecommendInterval(int $RecommendInterval): static
+    {
+        $this->RecommendInterval = $RecommendInterval;
 
         return $this;
     }

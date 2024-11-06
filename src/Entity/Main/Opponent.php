@@ -37,6 +37,9 @@ class Opponent
     #[ORM\OneToMany(targetEntity: OpponentMove::class, mappedBy: 'Opponent', orphanRemoval: true)]
     private Collection $Moves;
 
+    #[ORM\ManyToOne(targetEntity: self::class)]
+    private ?self $Parent = null;
+
     public function __construct()
     {
         $this->Games = new ArrayCollection();
@@ -140,6 +143,18 @@ class Opponent
                 $move->setOpponent(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getParent(): ?self
+    {
+        return $this->Parent;
+    }
+
+    public function setParent(?self $Parent): static
+    {
+        $this->Parent = $Parent;
 
         return $this;
     }

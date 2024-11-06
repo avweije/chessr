@@ -1,0 +1,22 @@
+<dialog id="disconnectModal" class="relative p-6 bg-tacao-50 dark:bg-slate-700 rounded-lg shadow-lg">
+	<button id="disconnectModalCloseButton" class="close-button outline-none">
+		<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-gray-700 hover:text-gray-900 dark:text-gray-500 dark:hover:text-gray-300" fill="none" viewbox="0 0 24 24" stroke="currentColor">
+			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+		</svg>
+	</button>
+	<h2 class="mb-6 mr-32 text-lg font-semibold tc-sharp">Disconnect from main account</h2>
+
+	<p class="w-full tc-base my-6">Uncheck the account(s) you want to disconnect from
+		<span id="disconnectModalOpponentUsername" class="font-semibold">Opponent</span>:</p>
+
+	<div id="disconnectModalChildAccountContainer" class="boxed-checkbox-group m-2"></div>
+
+	<div class="flex justify-end space-x-2 mt-8">
+		<button id="disconnectModalCancelButton" class="btn btn-outline">
+			Cancel
+		</button>
+		<button id="disconnectModalConfirmButton" class="btn btn-warning">
+			Confirm
+		</button>
+	</div>
+</dialog>

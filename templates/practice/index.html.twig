@@ -173,12 +173,11 @@
 		<p class="block text-sm font-bold tc-sharp p-3 border-b border-tacao-300/60 dark:border-slate-900">Suggestion</p>
 		<div class="flex items-center p-2">
 			<div id="suggestionField" class="p-2 inline-block text-base tc-base"></div>
-			<button id="suggestionSubmitButton" type="button" class="flex appearance-none">
-				<span class="inline-block text-2xl px-1 tc-link-shade icon-[mdi--open-in-new]"></span>
-			</button>
+			<button id="suggestionSubmitButton" type="button" class="mx-1 w-6 h-6 tc-link-shade icon-[mdi--open-in-new]"></button>
 		</div>
-		<form id="suggestionForm" method="post" target="blank" action="./repertoire"></form>
 	</div>
+
+	<form id="repertoireForm" method="post" target="blank" action="./repertoire"></form>
 
 	<div id="analysisGameContainer" class="hidden my-0.5">
 		<div class="border rounded text-sm bg-tacao-100/50 dark:bg-slate-700 border-tacao-300/60 dark:border-slate-900">
@@ -197,8 +196,15 @@
 	</div>
 
 	<div id="practiceInfoContainer" class="hidden my-0.5">
-		<div class="border rounded text-sm bg-tacao-100/50 dark:bg-slate-700 border-tacao-300/60 dark:border-slate-900">
-			<p class="block text-sm font-bold tc-sharp p-3 border-b border-tacao-300/60 dark:border-slate-900">Info</p>
+		<div
+			class="border rounded text-sm bg-tacao-100/50 dark:bg-slate-700 border-tacao-300/60 dark:border-slate-900">
+			<!--<p class="block text-sm font-bold tc-sharp p-3 border-b border-tacao-300/60 dark:border-slate-900">Info</p>-->
+			<div class="flex justify-between items-center m-0 border-b border-tacao-300/60 dark:border-slate-900">
+				<p class="block text-sm p-3 font-bold tc-sharp">Info</p>
+				<div class="flex items-center px-3">
+					<button id="practiceInfoOpenInRepertoireButton" type="button" title="Open in repertoire" class="w-6 h-6 tc-link-shade icon-[mdi--open-in-new]"></button>
+				</div>
+			</div>
 			<div id="practiceInfoFields" class="grid grid-cols-[_auto_1fr] items-center p-2">
 				<label class="p-2 text-xs font-semibold whitespace-nowrap tc-faded">ECO:</label>
 				<p class="p-2 text-sm w-full truncate tc-base"></p>

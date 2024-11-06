@@ -2,7 +2,8 @@
 
 namespace App\Repository;
 
-use App\Entity\Main\ECO;
+use App\Entity\Main\Moves;
+use App\Entity\Main\User;
 use App\Entity\Main\Repertoire;
 use DateTime;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -14,9 +15,17 @@ use Symfony\Bundle\SecurityBundle\Security;
  */
 class RepertoireRepository extends ServiceEntityRepository
 {
+    private $user = null;
+    private $settings = null;
+
     public function __construct(ManagerRegistry $registry, private Security $security)
     {
         parent::__construct($registry, Repertoire::class);
+
+        $this->user = $security->getUser();
+        if ($this->user instanceof User) {
+            $this->settings = $this->user->getSettings();
+        }
     }
 
     public function fenCompare($fenSource, $fenTarget): string
@@ -128,22 +137,34 @@ class RepertoireRepository extends ServiceEntityRepository
             $daysSince = $now->diff($rep->getLastUsed())->format("%a");
         }
 
-        // if still new (< 10 practices) recommended after a week not used
-        if ($rep->getPracticeCount() < 9 && $daysSince >= 7) {
+        // get the recommend interval (0-3, add 1 to get 1-4, 1 = less, 4 = more)
+        $recommendInterval = $this->settings->getRecommendInterval() + 1;
+        $intervalReverse = 5 - $recommendInterval;
+
+        // if still new (< 10 practices) recommended after 3-12 days
+        if ($rep->getPracticeCount() < 9 && $daysSince >= $intervalReverse * 3) {
             return true;
         }
 
         //
         // - what other method did we have ??
         //
-        // - 
+        // Acc.  Less  Avg.  More  Most
+        // 100%  16wk   8wk   4wk   2wk
+        //  75%  12wk   6wk   3wk 1.5wk
+        //  50%   8wk   4wk   2wk   1wk
+        //  25%   4wk   2wk   1wk  .5wk
+        //
+        // less = 1, 100% score = every month?
+        // more = 4, 100% score = every week?
         //
 
         // need at least 3 correct guesses in a row for low fail %, up to 5 in a row for high fail %
-        $inARowNeeded = max(3, 3 + round($failPercentage * 2));
+        $inARowNeeded = $recommendInterval + 1;
+        //$inARowNeeded = max(3, 3 + round($failPercentage * 2));
 
         // recommend periodically, based on fail %: every 1-4 weeks
-        $daysNeeded = 7 * max(4 - (3 * $failPercentage), 1);
+        $daysNeeded = 3 * $intervalReverse * max(4 - (3 * $failPercentage), 1);
 
         // if practice in a row less than required (3-5) or based on last used and fail percentage
         return $rep->getPracticeInARow() < $inARowNeeded || $daysSince >= $daysNeeded;
@@ -169,6 +190,8 @@ class RepertoireRepository extends ServiceEntityRepository
     {
         // get the black lines
         $black = $this->findLines($lines, 'black', false, false);
+
+        //dd("black:", $black[2]);
         // group by position and return
         return $this->groupByPosition($black, $lines);
     }
@@ -202,14 +225,22 @@ class RepertoireRepository extends ServiceEntityRepository
         return $this->groupByPosition($recommended, $lines);
     }
 
+    // get all lines, including the excluded ones
+    public function getAllLines(): array
+    {
+        return $this->getLines(null, false, false, true);
+    }
+
     // get the repertoire lines
-    public function getLines(int $repertoireId = null, bool $isRoadmap = false, bool $statisticsOnly = false): array
+    public function getLines(int $repertoireId = null, bool $isRoadmap = false, bool $statisticsOnly = false, $includeAll = false): array
     {
         // get the saved repository moves for this user
-        $res = $this->findBy([
-            'User' => $this->security->getUser(),
-            'Exclude' => false
-        ], ['HalfMove' => 'ASC']);
+        $criteria = ['User' => $this->security->getUser()];
+        if (!$includeAll) {
+            $criteria["Exclude"] = false;
+        }
+
+        $res = $this->findBy($criteria, ['HalfMove' => 'ASC']);
 
         $lines = [];
 
@@ -452,7 +483,9 @@ class RepertoireRepository extends ServiceEntityRepository
         WHERE r.user_id = :user ORDER BY g.id';
         $stmtFind = $this->getEntityManager()->getConnection()->prepare($sql);
 
-        $stmtFind->bindValue('user', $this->security->getUser()->getId());
+        if ($this->user instanceof User) {
+            $stmtFind->bindValue('user', $this->user->getId());
+        }
 
         $result = $stmtFind->executeQuery();
 
@@ -723,7 +756,7 @@ class RepertoireRepository extends ServiceEntityRepository
             $ourMove = isset($line['halfmove']) ? (($line['color'] == "white" && $line['halfmove'] % 2 == 1) || ($line['color'] == "black" && $line['halfmove'] % 2 == 0)) : $line['color'] == "white";
 
             // if we need a certain color and this is a match
-            if ($ourMove && $color != "" && $line['color'] == $color) {
+            if (($ourMove || $level == 1) && $color != "" && $line['color'] == $color) {
                 // prevent doubles
                 if (!isset($line["id"]) || !in_array($line["id"], $usedIds)) {
                     // add to the lines
@@ -739,7 +772,7 @@ class RepertoireRepository extends ServiceEntityRepository
                 continue;
             }
             // if we need the new lines and this is a match
-            if ($ourMove && $isNew && $line['new'] == 1 && (!isset($line['autoplay']) || !$line['autoplay'])) {
+            if (($ourMove || $level == 1) && $isNew && $line['new'] == 1 && (!isset($line['autoplay']) || !$line['autoplay'])) {
                 // prevent doubles
                 if (!isset($line["id"]) || !in_array($line["id"], $usedIds)) {
                     // add to the lines
@@ -755,7 +788,7 @@ class RepertoireRepository extends ServiceEntityRepository
                 continue;
             }
             // if we need the recommended lines and this is a match
-            if ($ourMove && $isRecommended && $line['recommended'] == 1 && (!isset($line['autoplay']) || !$line['autoplay'])) {
+            if (($ourMove || $level == 1) && $isRecommended && $line['recommended'] == 1 && (!isset($line['autoplay']) || !$line['autoplay'])) {
                 // prevent doubles
                 if (!isset($line["id"]) || !in_array($line["id"], $usedIds)) {
                     // add to the lines
@@ -796,6 +829,11 @@ class RepertoireRepository extends ServiceEntityRepository
 
         // at top level of this function, return the lines until
         if ($level == 1) {
+
+            //if ($color == "black") {
+            //dd($res[2]);
+            //}
+
             // we need to split the lines into parts (that match the criteria)
             $parts = [];
             // split the lines at the part(s) where it stops matching (and later in the line matches again)
@@ -1009,12 +1047,17 @@ class RepertoireRepository extends ServiceEntityRepository
                 // find the multiple moves from the original lines (we need all multiple moves, not just the new/recommended ones)
                 $multiple = $this->findMultiple($line, $res);
 
+                //if (isset($line['id']) && $line['id'] == 273) {
+                //dd("group:", $line);
+                //}
+
                 // if this is not the starting position
                 $temp[] = [
                     'color' => $line['color'],
                     'initialFen' => isset($line['initialFen']) ? $line['initialFen'] : '',
                     //'eco' => isset($line['eco']) ? $line['eco'] : null,
                     'fen' => $line['before'],
+                    'id' => isset($line['id']) ? $line['id'] : 0,
                     'line' => isset($line['line']) ? $line['line'] : [],
                     //'moves' => $line['before'] == $line['after'] ? $line['moves'] : [$line],
                     'moves' => $line['before'] == $line['after'] ? $line['moves'] : [$line],
@@ -1059,12 +1102,18 @@ class RepertoireRepository extends ServiceEntityRepository
         $parentEcoCount = 0;
         $parentEcoFailed = 0;
 
+        $ourMoveCount = 0;
+        $variationCount = 0;
+
         for ($i = 0; $i < count($lines); $i++) {
 
             //$lines[$i]["xxx"] = 1;
 
             $movePgn = $pgn;
             $moveIdx = $idx;
+
+            $lineMoveCount = 0;
+            $lineVariationCount = 0;
 
             // if we have a move
             if (isset($lines[$i]["move"])) {
@@ -1077,6 +1126,10 @@ class RepertoireRepository extends ServiceEntityRepository
                 // add the move
                 $movePgn .= " " . $lines[$i]["move"];
                 $moveIdx++;
+
+                if (isset($lines[$i]["ourMove"]) && $lines[$i]["ourMove"]) {
+                    $lineMoveCount++;
+                }
             } else if (isset($lines[$i]["line"])) {
                 //
                 foreach ($lines[$i]["line"] as $move) {
@@ -1156,23 +1209,23 @@ class RepertoireRepository extends ServiceEntityRepository
 
             // testing..
             //if (substr($movePgn, 0, strlen("1. e4 c5 2. Nf3 d6")) == "1. e4 c5 2. Nf3 d6") {
-            if (isset($lines[$i]["practiceCount"]) && $lines[$i]["practiceCount"] > 0) {
-                //$lineFailPercentage = 0.8;
-                //$lineFailCount = 1;
-                //$linePracticeCount = 10;
-                //$linePracticeFailed = 8;
-            } else {
-                $lineFailPercentage = 0;
-                $lineFailCount = 0;
-                $linePracticeCount = 0;
-                $linePracticeFailed = 0;
-            }
+            //if (isset($lines[$i]["practiceCount"]) && $lines[$i]["practiceCount"] > 0) {
+            //$lineFailPercentage = 0.8;
+            //$lineFailCount = 1;
+            //$linePracticeCount = 10;
+            //$linePracticeFailed = 8;
+            //} else {
+            //  $lineFailPercentage = 0;
+            //                $lineFailCount = 0;
+            //              $linePracticeCount = 0;
+            //            $linePracticeFailed = 0;
+            //      }
             //}
 
 
             // if we have child moves
             if (isset($lines[$i]["moves"]) && count($lines[$i]["moves"]) > 0) {
-                [$pct, $count, $pcount, $pfailed] = $this->addRoadmap($lines[$i]["moves"], $moveIdx, $movePgn, $moveEco, $hasMore);
+                [$pct, $count, $pcount, $pfailed, $mcount, $vcount] = $this->addRoadmap($lines[$i]["moves"], $moveIdx, $movePgn, $moveEco, $hasMore);
 
                 $lineFailPercentage += $pct;
                 $lineFailCount += $count;
@@ -1182,6 +1235,9 @@ class RepertoireRepository extends ServiceEntityRepository
 
                 $moveEcoCount += $pcount;
                 $moveEcoFailed += $pfailed;
+
+                $lineMoveCount += $mcount;
+                $lineVariationCount += $vcount;
 
                 //
                 if ($ecoMatch) {
@@ -1196,6 +1252,12 @@ class RepertoireRepository extends ServiceEntityRepository
             $lines[$i]["linePracticeCount"] = $moveEcoCount;
             $lines[$i]["linePracticeFailed"] = $moveEcoFailed;
 
+            $lines[$i]["lineMoveCount"] = $lineMoveCount;
+            $lines[$i]["lineVariationCount"] = $lineVariationCount;
+
+            $ourMoveCount += $lineMoveCount;
+            $variationCount += $lineVariationCount;
+
             $failPercentage += $lineFailPercentage;
             $failCount += $lineFailCount;
 
@@ -1207,13 +1269,17 @@ class RepertoireRepository extends ServiceEntityRepository
         //$failPercentage = $failPercentage / $failCount;
         //}
 
-        return [$failPercentage, $failCount, $parentEcoCount, $parentEcoFailed];
+        $variationCount += count($lines) > 1 ? count($lines) : 0;
+
+        return [$failPercentage, $failCount, $parentEcoCount, $parentEcoFailed, $ourMoveCount, $variationCount];
     }
 
-    public function getRoadmapFor($lines, $forEverySplit = false, $parentEco = null): array
+    public function getRoadmapFor($color, $lines, $forEverySplit = false, $parentEco = null): array
     {
         $roadmap = [];
         $i = 0;
+
+        $mrepo = $this->getEntityManager()->getRepository(Moves::class);
 
         foreach ($lines as $line) {
 
@@ -1226,7 +1292,7 @@ class RepertoireRepository extends ServiceEntityRepository
 
             if ($split) {
 
-                $temp = $this->getRoadmapFor($line["moves"], $forEverySplit, $line['eco']);
+                $temp = $this->getRoadmapFor($color, $line["moves"], $forEverySplit, $line['eco']);
 
                 //
                 // if we have an ECO code, add it as new line
@@ -1234,7 +1300,7 @@ class RepertoireRepository extends ServiceEntityRepository
                 // - only if splitting by ECO ??
                 //
 
-                if (isset($line['eco']) && isset($line['eco']['code']) && $line['eco']['code'] != "") {
+                if ($lineCode != "" || $forEverySplit) {
 
                     // get the line up to this move
                     $ln = [];
@@ -1245,6 +1311,68 @@ class RepertoireRepository extends ServiceEntityRepository
                         }
                     }
 
+                    // the missing top played moves
+                    $missing = [];
+
+                    // get the top played responses to this move that we don't have in our repertoire
+                    if (count($line["moves"]) > 0 && isset($line["before"]) && $line["before"] != "" && isset($line["after"]) && $line["after"] != "") {
+                        $turn = explode(" ", $line["before"])[1];
+
+                        // if this is our move
+                        if ($turn == substr($color, 0, 1)) {
+                            //
+                            // check the opponent moves after this move and check for missing top level moves
+                            //
+                            // get the most played moves for this position
+                            $qb = $this->getEntityManager()->createQueryBuilder();
+                            $qb->select('m')
+                                ->from('App\Entity\Main\Moves', 'm')
+                                ->where('m.Fen = :fen')
+                                ->orderBy('m.Wins + m.Draws + m.Losses', 'DESC')
+                                ->setParameter('fen', $line["after"]);
+
+                            $res = $qb->getQuery()->getResult();
+
+                            $top = [];
+                            $total = 0;
+
+                            foreach ($res as $mov) {
+                                // get the total
+                                $subtotal = $mov->getWins() + $mov->getDraws() + $mov->getLosses();
+                                // add to grand total
+                                $total += $subtotal;
+                                // add the move
+                                $top[] = [
+                                    'move' => $mov->getMove(),
+                                    'total' => $subtotal,
+                                    'wins' => $mov->getWins(),
+                                    'draws' => $mov->getDraws(),
+                                    'losses' => $mov->getLosses()
+                                ];
+                            }
+
+                            // get the top moves only
+                            foreach ($top as $mov) {
+                                // if played at least 10% of the time
+                                if ($mov["total"] >= $total / 10) {
+                                    // check to see if we have this move in our repertoire
+                                    $found = false;
+                                    foreach ($line["moves"] as $mv) {
+                                        if ($mv["move"] == $mov["move"]) {
+                                            $found = true;
+                                            break;
+                                        }
+                                    }
+
+                                    if (!$found) {
+                                        $missing[] = $mov;
+                                    }
+                                }
+                            }
+
+                            // $line["moves"]
+                        }
+                    }
 
                     // add to the roadmap
                     $roadmap[] = [
@@ -1257,6 +1385,9 @@ class RepertoireRepository extends ServiceEntityRepository
                         'fail' => $line['lineFailPercentage'],
                         'pcount' => $line['linePracticeCount'],
                         'pfailed' => $line['linePracticeFailed'],
+                        'mcount' => isset($line['lineMoveCount']) ? $line['lineMoveCount'] : null,
+                        'vcount' => isset($line['lineVariationCount']) ? $line['lineVariationCount'] : null,
+                        'missing' => $missing,
                         'lines' => $temp
                     ];
                 } else {
@@ -1268,7 +1399,7 @@ class RepertoireRepository extends ServiceEntityRepository
                 }
             } else {
                 //
-                $temp = $this->getRoadmapFor($line["moves"], $forEverySplit, $parentEco);
+                $temp = $this->getRoadmapFor($color, $line["moves"], $forEverySplit, $parentEco);
                 //
                 if (count($temp) > 0) {
                     foreach ($temp as $t) {

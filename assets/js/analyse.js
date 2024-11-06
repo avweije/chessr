@@ -315,6 +315,8 @@ class Analyse {
 
     // update the dialog fields
     this.updateDialogFields();
+    // update the elapsed time field
+    this.analyseDialog.elapsedTimeField.innerHTML = "";
 
     // set the stop button text
     this.analyseDialog.stopButton.innerHTML = "Stop analysing";
@@ -350,9 +352,6 @@ class Analyse {
       // show the fields
       this.analyseDialog.fieldsContainer.classList.remove("hidden");
 
-      console.log("updateFields:");
-      console.log(this.analyseDialog.totals);
-
       // set the mistakes text
       var mistakes =
         this.analyseDialog.totals.inaccuracies > 0
@@ -363,8 +362,6 @@ class Analyse {
               : "inaccuracies")
           : "";
 
-      console.log(mistakes);
-
       mistakes +=
         this.analyseDialog.totals.mistakes > 0
           ? (mistakes != "" ? ", " : "") +
@@ -372,8 +369,6 @@ class Analyse {
             " " +
             (this.analyseDialog.totals.mistakes == 1 ? "mistake" : "mistakes")
           : "";
-
-      console.log(mistakes);
 
       mistakes +=
         this.analyseDialog.totals.blunders > 0
@@ -408,7 +403,6 @@ class Analyse {
       //this.analyseDialog.gameField.innerHTML = this.analyseDialog.processed > 0 ? "" : "";
       this.analyseDialog.mistakesField.innerHTML = mistakes;
       this.analyseDialog.periodField.innerHTML = this.analyseDialog.period;
-      //this.analyseDialog.elapsedTimeField.innerHTML = "0s";
       // hide the error
       this.analyseDialog.errorContainer.classList.add("hidden");
       this.analyseDialog.errorField.innerHTML = "";
@@ -474,18 +468,7 @@ class Analyse {
         : this.siteRadio.lichess.value) +
       "</span>";
     this.analyseDialog.gameField.innerHTML = "";
-    /*
-    this.analyseDialog.gameField.innerHTML =
-      this.analyseDialog.processed > 0
-        ? this.analyseDialog.processed +
-          " game" +
-          (this.analyseDialog.processed > 1 ? "s" : "") +
-          " analysed so far"
-        : "";
-        */
 
-    //var url = "/api/download/games/{year}/{month}";
-    //var url = "/api/analyse/new";
     var url = "/api/analyse/download";
 
     var data = {
@@ -567,24 +550,19 @@ class Analyse {
     this.startButton.disabled = false;
   }
 
-  //
+  // get the engine moves
   getEngineMoves(response) {
-    console.info("getEngineMoves:", response.games);
-
     this.games = response.games;
 
-    // TEMP - testing 3rd game for errors..
     this.currentGame = 0;
     this.currentMove = 0;
     this.engineMoveCount = 0;
 
-    //
+    // start the engine
     this.engineStart();
   }
 
   engineStart() {
-    console.info("Starting the engine.");
-
     if (this.uci == null) {
       this.uci = new UCI();
 
@@ -601,8 +579,6 @@ class Analyse {
   }
 
   engineStop() {
-    console.info("Stopping the engine.");
-
     if (this.uci !== null) {
       this.uci.stopEngine();
       this.uci = null;
@@ -690,8 +666,6 @@ class Analyse {
         // add the current move
         moves = moves + " " + game.moves[this.currentMove].uci;
 
-        console.info("get eval for: ", moves);
-
         //
         this.analyseDialog.statusField.innerHTML =
           'Evaluating with <span class="font-medium">Stockfish</span> (' +
@@ -701,21 +675,14 @@ class Analyse {
         //
         this.engineMoveCount++;
 
-        // start the evaluation (stop after 1 second)
-        this.uci.evaluate("", moves, 1 * 1000);
+        // start the evaluation
+        this.uci.evaluate("", moves, this.settings.analyse_engine_time);
 
         return true;
       }
 
       this.currentMove++;
     }
-
-    //
-    // goto next game.. ?
-    //
-
-    console.info("GAME COMPLETED");
-    console.info(this.games[this.currentGame]);
 
     //
     this.analyseDialog.statusField.innerHTML = "Analysing game for mistakes";
@@ -737,9 +704,6 @@ class Analyse {
       month: game.month,
       type: game.type,
     };
-
-    console.log("before fetch:");
-    console.log(data);
 
     fetch(url, {
       method: "POST",
@@ -785,12 +749,6 @@ class Analyse {
         this.currentMove = 0;
         this.engineMoveCount = 0;
 
-        console.info(
-          "after evaluate game, before engineNextGame",
-          this.currentGame,
-          this.currentMove
-        );
-
         // get the next game evals
         this.engineNextGame();
       })
@@ -828,12 +786,28 @@ class Analyse {
       depth: info.depth,
       cp: cp,
       mate: mate,
+      inverted: invert,
       line: info.pv,
     };
   }
 
   onEngineBestMove(bestMove) {
     console.info("onEngineBestMove", bestMove);
+
+    var game = this.games[this.currentGame];
+
+    console.info(game.moves[this.currentMove]);
+
+    // remove null evals (in case of multipv)
+    for (
+      var i = game.moves[this.currentMove].bestmoves.length - 1;
+      i >= 0;
+      i--
+    ) {
+      if (game.moves[this.currentMove].bestmoves[i] == null) {
+        game.moves[this.currentMove].bestmoves.splice(i, 1);
+      }
+    }
 
     // get the next move eval
     this.currentMove++;

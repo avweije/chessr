@@ -59,6 +59,8 @@ class Repertoire extends MyChessBoard {
     removeButton: null,
   };
 
+  cache = [];
+
   repertoireId = 0;
   repertoireAutoPlay = false;
   repertoireExclude = false;
@@ -72,6 +74,8 @@ class Repertoire extends MyChessBoard {
 
   confirmDialog = {};
   loadPgnDialog = {};
+
+  settings = null;
 
   constructor() {
     super();
@@ -296,6 +300,8 @@ class Repertoire extends MyChessBoard {
   }
 
   onGetSettings(settings) {
+    // store the settings
+    this.settings = settings;
     // get the board element
     var el = document.getElementById("board");
     // get the repertoire color
@@ -382,6 +388,8 @@ class Repertoire extends MyChessBoard {
       this.color = color;
       // set the new position
       this.resetToCurrent("");
+      // reset the cache
+      this.resetCache();
       // update the status & get the moves
       this.updateStatus();
     }
@@ -677,6 +685,8 @@ class Repertoire extends MyChessBoard {
         this.repertoireId = 0;
         this.repertoireAutoPlay = false;
         this.repertoireExclude = false;
+        // reset the cache
+        this.resetCache();
         // toggle the buttons
         this.toggleButtons(false);
         // remove the dots for any child moves that have been deleted
@@ -691,7 +701,7 @@ class Repertoire extends MyChessBoard {
 
   // fetch the repertoire groups
   getGroups() {
-    var url = "/api/groups";
+    var url = "/api/repertoire/groups";
 
     fetch(url, {
       method: "GET",
@@ -748,15 +758,48 @@ class Repertoire extends MyChessBoard {
     }
   }
 
-  // fetch moves for current position
-  getMoves() {
-    // show the page loader
-    Utils.showLoading();
+  // reset the get api/moves cache
+  resetCache(current = false) {
+    if (current) {
+      for (var i = 0; i < this.cache.length; i++) {
+        if (this.cache[i].pgn == this.game.pgn()) {
+          this.cache.splice(i, 1);
+          break;
+        }
+      }
+    } else {
+      this.cache = [];
+    }
+  }
 
+  getMoves() {
     // clear the moves table
     this.clearMovesTable();
 
-    var url = "/api/moves";
+    console.info("find in cache");
+
+    // find the data in our cache
+    for (var i = 0; i < this.cache.length; i++) {
+      if (this.cache[i].pgn == this.game.pgn()) {
+        console.info("found", i, this.game.pgn());
+        // handle the response
+        this.onGetMoves(this.cache[i].data, true);
+
+        return true;
+      }
+    }
+
+    // get the moves from the api
+    this.getMovesFromApi();
+  }
+
+  // fetch moves for current position
+  getMovesFromApi() {
+    // show the page loader
+    Utils.showLoading();
+
+    var url = "/api/repertoire/moves";
+
     var data = {
       color: this.color,
       fen: this.getFen(),
@@ -792,7 +835,12 @@ class Repertoire extends MyChessBoard {
   }
 
   // show the moves, the groups
-  onGetMoves(data) {
+  onGetMoves(data, fromCache = false) {
+    // cache the data if needed
+    if (!fromCache) {
+      this.cache.push({ pgn: this.game.pgn(), data: data });
+    }
+
     // remember the current repertoire details
     this.repertoireId = data["current"]["id"];
     this.repertoireAutoPlay = data["current"]["autoplay"];
@@ -977,8 +1025,11 @@ class Repertoire extends MyChessBoard {
     // remember the FEN we are calculating for
     this.engineFen = this.currentFen;
 
-    // start the evaluation (stop after 10 seconds)
-    this.uci.evaluate(fen, moves, 10 * 1000);
+    console.info("starting evaluation using settings:");
+    console.info(this.settings);
+
+    // start the evaluation
+    this.uci.evaluate(fen, moves, this.settings.repertoire_engine_time * 1000);
   }
 
   onEngineInfo(info) {
@@ -1199,6 +1250,9 @@ class Repertoire extends MyChessBoard {
       .then((res) => res.json())
       .then((response) => {
         console.log("Success:", JSON.stringify(response));
+
+        // reset the cache
+        this.resetCache(true);
       })
       .catch((error) => {
         console.error("Error:", error);
@@ -1227,6 +1281,9 @@ class Repertoire extends MyChessBoard {
       .then((res) => res.json())
       .then((response) => {
         console.log("Success:", JSON.stringify(response));
+
+        // reset the cache
+        this.resetCache(true);
       })
       .catch((error) => {
         console.error("Error:", error);
@@ -1317,6 +1374,9 @@ class Repertoire extends MyChessBoard {
       .then((res) => res.json())
       .then((response) => {
         console.log("Success:", JSON.stringify(response));
+
+        // reset the cache
+        this.resetCache(true);
       })
       .catch((error) => {
         console.error("Error:", error);
@@ -1345,6 +1405,9 @@ class Repertoire extends MyChessBoard {
       .then((res) => res.json())
       .then((response) => {
         console.log("Success:", JSON.stringify(response));
+
+        // reset the cache
+        this.resetCache(true);
       })
       .catch((error) => {
         console.error("Error:", error);
@@ -1413,6 +1476,8 @@ class Repertoire extends MyChessBoard {
       .then((response) => {
         console.log("Success:", JSON.stringify(response));
 
+        // reset the cache
+        this.resetCache();
         // toggle the buttons
         this.toggleButtons(true);
       })
@@ -1570,7 +1635,7 @@ class Repertoire extends MyChessBoard {
     cell.className = "w-8 px-2 py-2 text-center align-middle rounded-r-md";
     if (data.repertoire) {
       cell.innerHTML =
-        '<div class="inline-block w-3 h-3 bg-sky-700 dark:bg-primary-400 rounded-full"></div>';
+        '<div class="inline-block w-3 h-3 bg-marigold-600 dark:bg-marigold-500 rounded-full"></div>';
     }
 
     // add event listeners
@@ -1743,8 +1808,11 @@ class Repertoire extends MyChessBoard {
     // update the status, get the ECO codes for next position.. etc
     this.updateStatus();
   }
-
-  // update the status fields
+  /**
+   * Called after a move was move. Update the status fields and fetch the moves.
+   *
+   * @memberof Repertoire
+   */
   updateStatus() {
     var status = "";
 

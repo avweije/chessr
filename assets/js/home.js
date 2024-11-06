@@ -17,7 +17,13 @@ class Home {
 
   statistics = [];
 
+  abortController = null;
+  abortSignal = null;
+
   constructor() {
+    this.abortController = new AbortController();
+    this.abortSignal = this.abortController.signal;
+
     // get the elements
     this.boxedCardContainer = document.getElementById("boxedCardContainer");
 
@@ -29,21 +35,27 @@ class Home {
 
     // add event listeners
     this.boxedCardContainer.children[0].addEventListener("click", () => {
+      this.abortController.abort();
       window.location.href = "./repertoire";
     });
     this.boxedCardContainer.children[1].addEventListener("click", () => {
+      this.abortController.abort();
       window.location.href = "./practice";
     });
     this.boxedCardContainer.children[2].addEventListener("click", () => {
+      this.abortController.abort();
       window.location.href = "./analyse";
     });
     this.boxedCardContainer.children[3].addEventListener("click", () => {
+      this.abortController.abort();
       window.location.href = "./roadmap";
     });
     this.boxedCardContainer.children[4].addEventListener("click", () => {
+      this.abortController.abort();
       window.location.href = "./opponent";
     });
     this.boxedCardContainer.children[5].addEventListener("click", () => {
+      this.abortController.abort();
       window.location.href = "./settings";
     });
 
@@ -55,8 +67,10 @@ class Home {
   getStatistics() {
     var url = "/api/statistics";
 
+    //fetch(url, {..., signal: signal}).then(response => ...);
     fetch(url, {
       method: "GET",
+      signal: this.abortSignal,
     })
       .then((res) => res.json())
       .then((response) => {
@@ -67,9 +81,11 @@ class Home {
         this.onGetStatistics(response);
       })
       .catch((error) => {
-        console.error("Error:", error);
-        // show the error icon
-        Utils.showError();
+        if (error.name !== "AbortError") {
+          console.error("Error:", error);
+          // show the error icon
+          Utils.showError();
+        }
       });
   }
 

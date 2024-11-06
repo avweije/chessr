@@ -14,6 +14,18 @@ import { PIECE_TILESIZE } from "./chessboard.js";
  * Controller class for the settings page.
  */
 class Settings {
+  tabs = {
+    buttons: null,
+    board: null,
+    engine: null,
+    practice: null,
+    account: null,
+  };
+
+  unlockEmailAddressButton = null;
+  accountConfirmContainer = null;
+  sendVerificationEmailButton = null;
+
   board = null;
   boardElement = null;
 
@@ -22,8 +34,10 @@ class Settings {
   animationDurationInput = null;
   repertoireEngineTimeInput = null;
   animateVariationCheckbox = null;
+  recommendIntervalInput = null;
   analyseEngineTimeInput = null;
   analyseIgnoreInaccuracyCheckbox = null;
+  accountEmailAddress = null;
 
   settings = [];
 
@@ -33,6 +47,23 @@ class Settings {
 
   constructor() {
     // get the elements
+    this.tabs.buttons = document.getElementById("settingsTabButtons");
+    this.tabs.account = document.getElementById("settingsTabAccount");
+    this.tabs.board = document.getElementById("settingsTabBoard");
+    this.tabs.engine = document.getElementById("settingsTabEngine");
+    this.tabs.practice = document.getElementById("settingsTabPractice");
+
+    this.accountEmailAddress = document.getElementById("accountEmailAddress");
+    this.unlockEmailAddressButton = document.getElementById(
+      "unlockEmailAddressButton"
+    );
+    this.accountConfirmContainer = document.getElementById(
+      "accountConfirmContainer"
+    );
+    this.sendVerificationEmailButton = document.getElementById(
+      "sendVerificationEmailButton"
+    );
+
     this.boardElement = document.getElementById("board");
     this.boardThemeSelect = document.getElementById("boardThemeSelect");
     this.boardPiecesSelect = document.getElementById("boardPiecesSelect");
@@ -45,6 +76,9 @@ class Settings {
     this.animateVariationCheckbox = document.getElementById(
       "animateVariationCheckbox"
     );
+    this.recommendIntervalInput = document.getElementById(
+      "recommendIntervalInput"
+    );
     this.analyseEngineTimeInput = document.getElementById(
       "analyseEngineTimeInput"
     );
@@ -53,6 +87,45 @@ class Settings {
     );
 
     // add event listeners
+    this.tabs.buttons.children[0].children[0].addEventListener(
+      "click",
+      this.onSwitchTab.bind(this)
+    );
+    this.tabs.buttons.children[1].children[0].addEventListener(
+      "click",
+      this.onSwitchTab.bind(this)
+    );
+    this.tabs.buttons.children[2].children[0].addEventListener(
+      "click",
+      this.onSwitchTab.bind(this)
+    );
+    this.tabs.buttons.children[3].children[0].addEventListener(
+      "click",
+      this.onSwitchTab.bind(this)
+    );
+
+    // toggle send email button on email address change
+    this.accountEmailAddress.addEventListener("input", () => {
+      if (
+        this.accountEmailAddress.value == "" ||
+        this.accountEmailAddress.value == this.settings.email
+      ) {
+        this.accountConfirmContainer.classList.remove("opacity-100");
+      } else {
+        this.accountConfirmContainer.classList.add("opacity-100");
+      }
+    });
+    // unlock email address input
+    this.unlockEmailAddressButton.addEventListener("click", () => {
+      this.accountEmailAddress.disabled = false;
+      this.unlockEmailAddressButton.classList.add("hidden");
+    });
+    // send verification email
+    this.sendVerificationEmailButton.addEventListener(
+      "click",
+      this.sendVerificationEmail.bind(this)
+    );
+
     this.boardThemeSelect.addEventListener(
       "change",
       this.onChangeBoardSettings.bind(this)
@@ -73,6 +146,10 @@ class Settings {
       "change",
       this.updateSettings.bind(this)
     );
+    this.recommendIntervalInput.addEventListener(
+      "change",
+      this.updateSettings.bind(this)
+    );
     this.analyseEngineTimeInput.addEventListener(
       "change",
       this.updateSettings.bind(this)
@@ -84,6 +161,32 @@ class Settings {
 
     // get the settings
     this.getSettings();
+  }
+
+  // switch tabs
+  onSwitchTab() {
+    this.tabs.account.classList.add("hidden");
+    this.tabs.board.classList.add("hidden");
+    this.tabs.engine.classList.add("hidden");
+    this.tabs.practice.classList.add("hidden");
+
+    if (this.tabs.buttons.children[0].children[0].checked) {
+      this.tabs.account.classList.remove("hidden");
+    }
+    if (this.tabs.buttons.children[1].children[0].checked) {
+      this.tabs.board.classList.remove("hidden");
+    }
+    if (this.tabs.buttons.children[2].children[0].checked) {
+      this.tabs.engine.classList.remove("hidden");
+    }
+    if (this.tabs.buttons.children[3].children[0].checked) {
+      this.tabs.practice.classList.remove("hidden");
+    }
+  }
+
+  // send the verification email
+  sendVerificationEmail() {
+    console.info("sendVerificationEmail");
   }
 
   // switch board theme
@@ -200,6 +303,10 @@ class Settings {
 
   // get the settings
   getSettings() {
+    // show the page loader
+    Utils.showLoading();
+
+    // show
     var url = "/api/settings";
 
     fetch(url, {
@@ -217,6 +324,10 @@ class Settings {
         console.error("Error:", error);
         // show the error icon
         Utils.showError();
+      })
+      .finally(() => {
+        // hide the page loader
+        Utils.hideLoading();
       });
   }
 
@@ -225,6 +336,8 @@ class Settings {
     this.settings = settings;
 
     // update the inputs with the settings
+    this.accountEmailAddress.value = settings.email;
+
     if (settings.board) {
       this.boardThemeSelect.value = settings.board;
     }
@@ -235,9 +348,13 @@ class Settings {
     this.animationDurationInput.value = settings.animation_duration;
     this.repertoireEngineTimeInput.value = settings.repertoire_engine_time;
     this.animateVariationCheckbox.checked = settings.animate_variation;
+    this.recommendIntervalInput.value = settings.recommend_interval;
     this.analyseEngineTimeInput.value = settings.analyse_engine_time;
     this.analyseIgnoreInaccuracyCheckbox.checked =
       settings.analyse_ignore_inaccuracy;
+
+    // update the range input titles
+    this.updateRangeInputTitles();
 
     // create the chess board
     this.createChessboard(
@@ -247,10 +364,32 @@ class Settings {
     );
   }
 
+  // update the range input titles
+  updateRangeInputTitles() {
+    var m = Math.floor(parseInt(this.repertoireEngineTimeInput.value) / 60);
+    var s = parseInt(this.repertoireEngineTimeInput.value) - m * 60;
+
+    this.animationDurationInput.title =
+      this.animationDurationInput.value + "ms";
+    this.repertoireEngineTimeInput.title =
+      m > 0 ? m + "m " + (s > 0 ? s + "s" : "") : s + "s";
+    this.analyseEngineTimeInput.title =
+      parseInt(this.analyseEngineTimeInput.value) == 500
+        ? this.analyseEngineTimeInput.value + "ms"
+        : parseInt(this.analyseEngineTimeInput.value) / 1000 + "s";
+    this.recommendIntervalInput.title = ["Less", "Average", "More", "Most"][
+      parseInt(this.recommendIntervalInput.value)
+    ];
+  }
+
   // update the settings
   updateSettings() {
     var url = "/api/settings";
 
+    // update the range input titles
+    this.updateRangeInputTitles();
+
+    // set the data object
     var data = {
       settings: {
         board: this.boardThemeSelect.value,
@@ -258,6 +397,7 @@ class Settings {
         animation_duration: this.animationDurationInput.value,
         repertoire_engine_time: this.repertoireEngineTimeInput.value,
         animate_variation: this.animateVariationCheckbox.checked,
+        recommend_interval: this.recommendIntervalInput.value,
         analyse_engine_time: this.analyseEngineTimeInput.value,
         analyse_ignore_inaccuracy: this.analyseIgnoreInaccuracyCheckbox.checked,
       },

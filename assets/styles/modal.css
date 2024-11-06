@@ -2,6 +2,14 @@ html:has(dialog[open]) {
   overflow: hidden;
 }
 
+html:has(dialog[open]) body {
+  width: 100vw !important;
+}
+
+html:has(dialog[open]) .dialog-open-hide {
+  display: none;
+}
+
 @keyframes scaleDown {
   0% {
     opacity: 1;

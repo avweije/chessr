@@ -2,19 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
+/* full width minus (fixed) vertical scrollbar */
+.page-width {
+  width: calc(100vw - 10px);
+}
+
 @layer utilities {
+  /* datalist arrow */
+  input[type="search"] {
+    -webkit-appearance: searchfield;
+  }
+
+  input[type="search"]::-webkit-calendar-picker-indicator {
+    -webkit-appearance: none;
+    @apply cursor-pointer text-marigold-500 dark:text-slate-400 icon-[mdi--triangle-small-down];
+    font-size: 1.25rem;
+  }
+
+  input[type="search"]::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    @apply cursor-pointer text-marigold-500 dark:text-slate-400 icon-[mdi--clear-circle-outline];
+    font-size: 1.25rem;
+  }
+
   /* standard link */
 
   a {
-    @apply font-semibold text-sky-800 hover:text-sky-600 dark:text-blue-400 dark:hover:text-blue-200;
+    /*@apply font-semibold text-sky-800 hover:text-sky-600 dark:text-blue-400 dark:hover:text-blue-200;*/
+    @apply font-semibold text-marigold-700 hover:text-marigold-500 dark:text-slate-400 dark:hover:text-marigold-500;
+  }
+
+  a,
+  .tc-link,
+  .tc-link-shade {
+    @apply transition duration-200 hover:ease-in-out motion-reduce:transition-none;
   }
 
   .tc-link {
-    @apply text-sky-800 hover:text-sky-600 dark:text-blue-400 dark:hover:text-blue-200;
+    /*@apply text-sky-800 hover:text-sky-600 dark:text-blue-400 dark:hover:text-blue-200;*/
+    @apply text-marigold-700 hover:text-marigold-500 dark:text-slate-400 dark:hover:text-marigold-500;
   }
 
   .tc-link-shade {
-    @apply text-tacao-400 hover:text-tacao-200 dark:text-gray-400 dark:hover:text-gray-200 disabled:text-tacao-200 dark:disabled:text-gray-600;
+    @apply text-tacao-300 hover:text-tacao-400 dark:text-slate-400 dark:hover:text-marigold-500 disabled:text-tacao-200 dark:disabled:text-slate-600;
   }
 
   /* skeleton elements - pulse while loading */
@@ -28,26 +58,26 @@
 
   .tc-base,
   .tc-base-hover {
-    @apply text-gray-600 text-tacao-950 dark:text-gray-300;
+    @apply text-tacao-900 dark:text-gray-300;
   }
   .tc-base-hover:hover {
-    @apply text-gray-400 text-tacao-800 dark:text-gray-100;
+    @apply text-tacao-800 dark:text-gray-100;
   }
 
   .tc-faded,
   .tc-faded-hover {
-    @apply text-gray-500 text-tacao-700 dark:text-gray-400;
+    @apply text-tacao-700 dark:text-gray-400;
   }
   .tc-faded-hover:hover {
-    @apply text-gray-300 text-tacao-500 dark:text-gray-200;
+    @apply text-tacao-500 dark:text-gray-200;
   }
 
   .tc-sharp,
   .tc-sharp-hover {
-    @apply text-gray-700 text-tacao-800 dark:text-gray-200;
+    @apply text-tacao-800 dark:text-gray-200;
   }
   .tc-sharp-hover:hover {
-    @apply text-gray-500 text-tacao-600 dark:text-gray-50;
+    @apply text-tacao-600 dark:text-gray-50;
   }
 
   /* boxed checkboxes, radios and links */
@@ -138,7 +168,7 @@
     > .boxed-radio
     input:not(:disabled):checked
     ~ .boxed-radio-label {
-    @apply bg-tacao-500 dark:bg-blue-100 border-tacao-700 dark:border-blue-300;
+    @apply bg-tacao-400 dark:bg-blue-100 border-tacao-600 dark:border-blue-300;
   }
 
   div:not(.boxed-radio-menu)
@@ -208,7 +238,7 @@
   }
 
   .boxed-card .boxed-card-arrow {
-    @apply absolute right-0 bottom-0 text-2xl m-2 opacity-0 text-sky-600 dark:text-blue-400 icon-[mdi--arrow-right-thin];
+    @apply absolute right-0 bottom-0 text-2xl m-2 opacity-0 text-marigold-500 dark:text-marigold-600 icon-[mdi--arrow-right-thin];
   }
   .boxed-card:hover .boxed-card-arrow {
     @apply opacity-100;
@@ -252,7 +282,13 @@
   .input-text:focus,
   .input-text-faded:focus,
   .input-text-small:focus {
-    @apply ring-2 ring-inset ring-sky-800 dark:ring-blue-600;
+    @apply ring-2 ring-inset ring-marigold-600 dark:ring-marigold-500;
+  }
+
+  .input-text:disabled,
+  .input-text-faded:disabled,
+  .input-text-small:disabled {
+    @apply text-gray-600 dark:text-gray-400 bg-tacao-50/50 dark:bg-slate-800;
   }
 
   .input-text-faded {
@@ -270,15 +306,15 @@
   }
 
   .input-toggle > .input-toggle-switch {
-    @apply relative w-11 h-6 bg-gray-200 rounded-full dark:bg-gray-700 after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600;
+    @apply relative w-11 h-6 bg-tacao-200 rounded-full dark:bg-slate-500 after:content-[''] after:absolute after:top-0.5 after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600;
   }
 
   .input-toggle > input:focus ~ .input-toggle-switch {
-    @apply ring-4 ring-tacao-300 dark:ring-primary-800;
+    @apply ring-4 ring-marigold-700 dark:ring-marigold-600;
   }
 
   .input-toggle > input:checked ~ .input-toggle-switch {
-    @apply after:translate-x-full rtl:after:-translate-x-full after:border-white bg-tacao-500 dark:bg-primary-400;
+    @apply after:translate-x-full rtl:after:-translate-x-full after:border-white bg-marigold-600 dark:bg-marigold-500;
   }
 
   /* buttons */
@@ -305,6 +341,19 @@
     @apply opacity-50 cursor-default;
   }
 
+  .btn-icon-hover > span:first-of-type {
+    @apply inline-block;
+  }
+  .btn-icon-hover > span:last-of-type {
+    @apply hidden;
+  }
+  .btn-icon-hover:hover > span:first-of-type {
+    @apply hidden;
+  }
+  .btn-icon-hover:hover > span:last-of-type {
+    @apply inline-block;
+  }
+
   .btn-primary {
     @apply text-white bg-sky-700 dark:bg-blue-400;
   }
@@ -316,10 +365,10 @@
   }
 
   .btn-primary.btn-checked {
-    @apply text-sky-800 bg-sky-300 dark:text-blue-600 dark:bg-blue-200 border-sky-400 dark:border-blue-400 shadow-inner;
+    @apply bg-sky-600 dark:bg-blue-500 shadow-inner;
   }
   .btn-primary.btn-checked:not(:disabled):hover {
-    @apply bg-sky-200 dark:bg-blue-100;
+    @apply bg-sky-500 dark:bg-blue-400;
   }
 
   .btn-warning {

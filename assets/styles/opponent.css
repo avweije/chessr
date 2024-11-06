@@ -1,8 +1,33 @@
 @tailwind utilities;
 
 @layer utilities {
+  .opponent-grayed-out-container {
+    @apply border border-transparent;
+    transition: linear all 100ms;
+  }
+
+  .opponent-grayed-out-container
+    > .boxed-radio-group
+    > .boxed-radio
+    > input
+    ~ .boxed-radio-label {
+    @apply text-red-400;
+  }
+
+  .opponent-grayed-out-container
+    > .boxed-radio-group
+    > .boxed-radio
+    > input:checked
+    ~ .boxed-radio-label {
+    @apply cursor-default;
+  }
+
+  body.grayed-out .opponent-grayed-out-container {
+    @apply bg-white dark:bg-slate-700 rounded-lg border border-tacao-200 dark:border-slate-800 shadow-lg;
+  }
+
   .opponent-move-holder {
-    @apply flex flex-col justify-between cursor-pointer rounded border border-tacao-300/60 dark:border-slate-900 overflow-hidden;
+    @apply flex flex-col justify-between cursor-pointer rounded border border-tacao-300/60 dark:border-slate-600 overflow-hidden;
   }
 
   .opponent-move-holder:hover {
@@ -50,7 +75,7 @@
   }
 
   .opponent-move-holder .opponent-move-footer {
-    @apply flex justify-around items-center text-xs font-medium mt-2 bg-tacao-800 dark:bg-slate-700 border-t border-tacao-300/60 dark:border-slate-900;
+    @apply flex justify-around items-center text-xs font-medium mt-2 bg-tacao-800 dark:bg-slate-700 border-t border-tacao-300/60 dark:border-slate-600;
   }
 
   .opponent-move-holder .opponent-move-footer span {
@@ -58,7 +83,7 @@
   }
 
   .opponent-move-holder .opponent-move-footer span:first-of-type {
-    @apply border-r border-tacao-300/60 dark:border-slate-900;
+    @apply border-r border-tacao-300/60 dark:border-slate-600;
   }
 
   .opponent-pgn-text:not(:first-child) {

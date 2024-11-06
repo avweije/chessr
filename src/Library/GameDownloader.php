@@ -435,4 +435,9 @@ class GameDownloader
 
         return $games;
     }
+
+    public function getDebugInfo()
+    {
+        return $this->siteInterface->getDebugInfo();
+    }
 }

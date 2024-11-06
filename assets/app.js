@@ -8,17 +8,17 @@
 // any CSS you import will output into a single css file (app.css in this case)
 import "./styles/app.css";
 
-document.addEventListener("DOMContentLoaded", (event) => {
-  if (
-    localStorage.getItem("dark-mode") === "true" ||
-    (!("dark-mode" in localStorage) &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches)
-  ) {
-    document.querySelector("html").classList.add("dark");
-  } else {
-    document.querySelector("html").classList.remove("dark");
-  }
+if (
+  localStorage.getItem("dark-mode") === "true" ||
+  (!("dark-mode" in localStorage) &&
+    window.matchMedia("(prefers-color-scheme: dark)").matches)
+) {
+  document.querySelector("html").classList.add("dark");
+} else {
+  document.querySelector("html").classList.remove("dark");
+}
 
+document.addEventListener("DOMContentLoaded", (event) => {
   const lightSwitches = document.querySelectorAll(".light-switch");
 
   if (lightSwitches.length > 0) {

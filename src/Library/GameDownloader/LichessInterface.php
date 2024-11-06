@@ -10,6 +10,8 @@ use Symfony\Contracts\HttpClient\ResponseInterface;
 class LichessInterface implements ChessSiteInterface
 {
     private $client;
+    private $token = "lip_0l50mkRcAVUQE1YlcIOC";
+
     private $username = "";
     private $createdAt = null;
 
@@ -25,6 +27,8 @@ class LichessInterface implements ChessSiteInterface
     private $inTimeout = false;
     private $timeoutEnd = 0;
 
+    private $debugInfo = [];
+
     public function __construct()
     {
         $this->client = HttpClient::create();
@@ -33,6 +37,9 @@ class LichessInterface implements ChessSiteInterface
     public function setUsername($username): void
     {
         $this->username = $username;
+
+        // add debug info
+        $this->debugInfo[] = "Set username to '$username'.";
     }
 
     public function getCreatedAt(): int
@@ -42,10 +49,16 @@ class LichessInterface implements ChessSiteInterface
             // set the url
             $url = "https://lichess.org/api/user/" . $this->username;
 
+            // add debug info
+            $this->debugInfo[] = "Getting createdAt: " . $url;
+
             // get the user public data
             $response = $this->request('GET', $url);
             if ($response !== null && $response->getStatusCode() == 200) {
-                $this->createdAt = $response->toArray()["createdAt"];
+                $this->createdAt = intval($response->toArray()["createdAt"]) / 1000;
+
+                // add debug info
+                $this->debugInfo[] = "Received createdAt: " . $this->createdAt;
             }
         }
 
@@ -66,6 +79,9 @@ class LichessInterface implements ChessSiteInterface
     {
         // set the url
         $url = "https://lichess.org/api/user/" . $this->username;
+
+        // add debug info
+        $this->debugInfo[] = "Getting archives: " . $url;
 
         // get the user public data
         $response = $this->request('GET', $url);
@@ -264,6 +280,9 @@ class LichessInterface implements ChessSiteInterface
             $url .= "&max=1";
             $url .= "&perfType=" . $type;
 
+            // add debug info
+            $this->debugInfo[] = "Getting games: " . $url;
+
             // get the user public data
             $response = $this->request('GET', $url, ['headers' => ['Accept' => 'application/x-ndjson']]);
 
@@ -301,6 +320,9 @@ class LichessInterface implements ChessSiteInterface
         $url .= "&max=" . ($max + 1);
         $url .= "&perfType=" . $type;
         $url .= "&pgnInJson=true&sort=dateAsc";
+
+        // add debug info
+        $this->debugInfo[] = "Download games: " . $url;
 
         // get the user public data
         $response = $this->request('GET', $url, ['headers' => ['Accept' => 'application/x-ndjson']]);
@@ -341,6 +363,9 @@ class LichessInterface implements ChessSiteInterface
         }
         $url .= "&max=1";
         $url .= "&perfType=" . $type;
+
+        // add debug info
+        $this->debugInfo[] = "Get first and last: " . $url;
 
         $first = 0;
         $last = 0;
@@ -424,6 +449,9 @@ class LichessInterface implements ChessSiteInterface
             $now = new DateTime();
             if ($now->getTimestamp() < $this->timeoutEnd) {
 
+                // add debug info
+                $this->debugInfo[] = "In timeout, waiting 1 min: " . $url;
+
                 //print "In timeout, waiting.\n";
 
                 // add 2 mins to the time limit
@@ -445,10 +473,23 @@ class LichessInterface implements ChessSiteInterface
 
         $this->requestCount++;
 
+        // add the bearer token to the request
+        if (!isset($options["headers"])) {
+            $options["headers"] = [];
+        }
+
+        $options["headers"]["Authorization"] = "Bearer: " . $this->token;
+
         // try a 2nd time if we get a timeout
         for ($i = 0; $i < $this->retryMax + 1; $i++) {
 
+            // add debug info
+            $this->debugInfo[] = "Request: " . $url;
+
             $response = $this->client->request($method, $url, $options);
+
+            // add debug info
+            $this->debugInfo[] = "Status code: " . $response->getStatusCode();
 
             //print "Response: " . $response->getStatusCode() . "\n";
 
@@ -463,6 +504,10 @@ class LichessInterface implements ChessSiteInterface
 
                     // if we've retried enough times
                     if ($this->retryCount >= $this->retryMax) {
+
+                        // add debug info
+                        $this->debugInfo[] = "Stop retrying.";
+
                         // stop retrying
                         break 2;
                     } else {
@@ -470,6 +515,9 @@ class LichessInterface implements ChessSiteInterface
 
                         // add 2 mins to the time limit
                         set_time_limit(120);
+
+                        // add debug info
+                        $this->debugInfo[] = "Retrying in 30 sec.";
 
                         // wait for 30 seconds
                         sleep(30);
@@ -483,6 +531,10 @@ class LichessInterface implements ChessSiteInterface
 
         if ($response->getStatusCode() == 429) {
 
+
+            // add debug info
+            $this->debugInfo[] = "Received timeout.";
+
             //print "Received 429, in timeout (" . $this->requestCount . " requests were made -- retried " . $this->retryCount . " times).\n";
             //print "Url: $url\n";
 
@@ -495,5 +547,10 @@ class LichessInterface implements ChessSiteInterface
         //usleep($delay);
 
         return $response;
+    }
+
+    public function getDebugInfo(): array
+    {
+        return $this->debugInfo;
     }
 }
