@@ -26,6 +26,9 @@ class Roadmap {
   };
 
   roadmapTreePath = null;
+  roadmapTreeCurrent = null;
+  roadmapTreeCurrentEco = null;
+  roadmapTreeCurrentPgn = null;
   roadmapTreeContainer = null;
 
   // the roadmap data
@@ -50,6 +53,13 @@ class Roadmap {
     this.openInPracticeLink = document.getElementById("openInPracticeLink");
 
     this.roadmapTreePath = document.getElementById("roadmapTreePath");
+    this.roadmapTreeCurrent = document.getElementById("roadmapTreeCurrent");
+    this.roadmapTreeCurrentEco = document.getElementById(
+      "roadmapTreeCurrentEco"
+    );
+    this.roadmapTreeCurrentPgn = document.getElementById(
+      "roadmapTreeCurrentPgn"
+    );
     this.roadmapTreeContainer = document.getElementById("roadmapTreeContainer");
 
     this.roadmapContainerWhite = document.getElementById(
@@ -91,6 +101,13 @@ class Roadmap {
 
     // get the roadmap
     this.getRoadmap();
+  }
+
+  // get the currently selected color
+  getCurrentColor() {
+    return this.roadmapTypeButtons.children[0].children[0].checked
+      ? "white"
+      : "black";
   }
 
   // toggle white/black
@@ -200,9 +217,7 @@ class Roadmap {
   //
   loadRoadmapTree(tree = []) {
     //
-    var color = this.roadmapTypeButtons.children[0].children[0].checked
-      ? "white"
-      : "black";
+    var color = this.getCurrentColor();
     //
     var con = document.getElementById("roadmapTreeContainer");
 
@@ -221,6 +236,9 @@ class Roadmap {
     this.loadTreePath();
 
     //
+    this.loadTreeCurrent();
+
+    //
     this.loadTree(data, con);
   }
 
@@ -232,9 +250,7 @@ class Roadmap {
     }
 
     // get the data
-    var color = this.roadmapTypeButtons.children[0].children[0].checked
-      ? "white"
-      : "black";
+    var color = this.getCurrentColor();
     var data = this.roadmap[color];
 
     console.info("loadTreePath:", this.tree, this.tree.length);
@@ -258,6 +274,37 @@ class Roadmap {
 
       this.roadmapTreePath.appendChild(variation);
     }
+  }
+
+  //
+  loadTreeCurrent() {
+    console.info("loadTreeCurrent:", this.tree, this.tree.length);
+
+    // if we have no tree
+    if (this.tree.length == 0) {
+      // hide the tree current
+      this.roadmapTreeCurrent.classList.add("hidden");
+
+      return true;
+    }
+
+    // show the tree current
+    this.roadmapTreeCurrent.classList.remove("hidden");
+
+    // get the color
+    var color = this.getCurrentColor();
+
+    // get the currently selected data
+    var data = this.roadmap[color];
+    for (var i = 0; i < this.tree.length; i++) {
+      data = i == 0 ? data[this.tree[i]] : data.lines[this.tree[i]];
+    }
+
+    console.info("data:", data);
+
+    // show the current ECO and PGN
+    this.roadmapTreeCurrentEco.innerHTML = data.eco ? data.eco.name : "Unknown";
+    this.roadmapTreeCurrentPgn.innerHTML = data.pgn;
   }
 
   //
@@ -671,10 +718,7 @@ class Roadmap {
   openIn(line, action = "./repertoire") {
     // updat the info in the form
     this.roadmapForm.id.value = line.id;
-    this.roadmapForm.color.value = this.roadmapTypeButtons.children[0]
-      .children[0].checked
-      ? "white"
-      : "black";
+    this.roadmapForm.color.value = this.getCurrentColor();
     this.roadmapForm.pgn.value = line.pgn;
     this.roadmapForm.pgn.value = "";
     this.roadmapForm.fen.value = "";
@@ -767,10 +811,11 @@ class Roadmap {
     // load the tree path
     this.loadTreePath();
 
+    // load the tree current
+    this.loadTreeCurrent();
+
     // get the color
-    var color = this.roadmapTypeButtons.children[0].children[0].checked
-      ? "white"
-      : "black";
+    var color = this.getCurrentColor();
 
     // get the data
     var data = this.roadmap[color];

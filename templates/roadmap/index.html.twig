@@ -16,17 +16,33 @@
 		</div>
 	</div>
 
-	<div id="roadmapIntro" class="flex justify-around p-4 mb-6">
+	<div id="roadmapIntro" class="flex justify-around p-4 mb-4">
 		<div class="flex flex-col items-center">
 			<h2 class="text-2xl font-semibold tc-sharp">The Roadmap</h2>
-			<p class="text-md mx-1 mt-6 tc-base">
-				Click on a move to see the details and open it in the repertoire or use it for practice.
+			<p class="text-base text-center mx-1 mt-6 tc-base">
+				Click on a move to browse through your opening repertoire.
 			</p>
 		</div>
 	</div>
 
-	<div id="roadmapTreePath" class="flex flex-wrap gap-1 justify-center mb-8"></div>
-	<div id="roadmapTreeContainer" class="flex flex-col gap-y-2 items-center mb-2"></div>
+	<div id="roadmapTreeCurrent" class="hidden flex justify-center mb-6 px-4">
+		<div class="flex justify-center sm:w-full md:w-4/5">
+			<div class="flex flex-wrap overflow-hidden bg-slate-800 dark:bg-slate-900/50 rounded-lg border border-slate-700 dark:border-slate-700">
+				<div class="flex items-center whitespace-nowrap overflow-hidden px-3 py-3">
+					<span class="text-xs tc-faded">ECO:</span>
+					<span id="roadmapTreeCurrentEco" class="text-xs tc-base mx-2 truncate"></span>
+				</div>
+				<div class="flex items-center whitespace-nowrap overflow-hidden px-3 py-3">
+					<span class="text-xs tc-faded">PGN:</span>
+					<span id="roadmapTreeCurrentPgn" class="text-xs tc-base mx-2 truncate"></span>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div id="roadmapTreePath" class="flex flex-wrap gap-1 justify-center"></div>
+
+	<div id="roadmapTreeContainer" class="flex flex-col gap-y-2 items-center mt-8 mb-12"></div>
 
 	<div id="roadmapDetails" class="hidden flex justify-around p-4 mb-8">
 		<div class="flex flex-col items-center">
@@ -49,6 +65,27 @@
 				<a id="openInRepertoireLink" href="#">Open in your repertoire</a>
 				<span class="mx-1">|</span>
 				<a id="openInPracticeLink" href="#">Use in practice run</a>
+			</div>
+		</div>
+	</div>
+
+	<div class="fixed bottom-0 left-0 right-0 flex justify-center mx-8 mb-2 text-sm shadow">
+		<div class="flex gap-px overflow-hidden bg-slate-700 dark:bg-slate-700 rounded-lg border border-slate-700 dark:border-slate-700">
+			<div class="flex items-center whitespace-nowrap overflow-hidden px-2 py-2 bg-slate-900 dark:bg-slate-900">
+				<span class="text-slate-400 w-4 h-4 icon-[mdi--bullseye-arrow]"></span>
+				<span class="text-xs tc-faded ml-2 mr-1 truncate">Accuracy</span>
+			</div>
+			<div class="flex items-center whitespace-nowrap overflow-hidden px-2 py-2 bg-slate-900 dark:bg-slate-900">
+				<span class="text-slate-400 w-4 h-4 icon-[mdi--trending-down]"></span>
+				<span class="text-xs tc-faded ml-2 mr-1 truncate">Lowest Accuracy Variation</span>
+			</div>
+			<div class="flex items-center whitespace-nowrap overflow-hidden px-2 py-2 bg-slate-900 dark:bg-slate-900">
+				<span class="text-slate-400 w-4 h-4 icon-[mdi--feature-highlight]"></span>
+				<span class="text-xs tc-faded ml-2 mr-1 truncate">Missing Top Responses</span>
+			</div>
+			<div class="flex items-center whitespace-nowrap overflow-hidden px-2 py-2 bg-slate-900 dark:bg-slate-900">
+				<span class="text-slate-400 w-4 h-4 icon-[mdi--lastpass]"></span>
+				<span class="text-xs tc-faded ml-2 mr-1 truncate">Last Variation In Line</span>
 			</div>
 		</div>
 	</div>
