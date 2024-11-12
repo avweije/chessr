@@ -40,6 +40,7 @@
         "@iconify-json/mdi": "^1.1.67",
         "@iconify-json/svg-spinners": "^1.1.2",
         "@lubert/node-uci-engine": "^1.13.1",
+        "canvas-confetti": "^1.9.3",
         "chess.js": "^1.0.0-beta.8",
         "child_process": "^1.0.2",
         "cm-chessboard": "^8.7.4",

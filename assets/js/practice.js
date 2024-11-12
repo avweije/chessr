@@ -16,6 +16,9 @@ import { Modal } from "./modal.js";
 
 import "../styles/chessboard.css";
 
+//const confetti = require("canvas-confetti");
+import confetti from "canvas-confetti";
+
 /**
  * The controller class for the practice page.
  * Runs the practice lines, updates counters, etc.
@@ -522,6 +525,9 @@ class Practice extends MyChessBoard {
    */
   afterMove(move) {
     try {
+      // update the board status
+      this.setStatus(BOARD_STATUS.default);
+
       // if practice is paused..
       if (this.practice.paused) {
         return true;
@@ -1996,6 +2002,45 @@ class Practice extends MyChessBoard {
     return pgn;
   }
 
+  // show the confetti
+  showConfetti() {
+    this.confettiFire(0.25, {
+      spread: 26,
+      startVelocity: 55,
+    });
+    this.confettiFire(0.2, {
+      spread: 60,
+    });
+    this.confettiFire(0.35, {
+      spread: 100,
+      decay: 0.91,
+      scalar: 0.8,
+    });
+    this.confettiFire(0.1, {
+      spread: 120,
+      startVelocity: 25,
+      decay: 0.92,
+      scalar: 1.2,
+    });
+    this.confettiFire(0.1, {
+      spread: 120,
+      startVelocity: 45,
+    });
+  }
+
+  confettiFire(particleRatio, opts) {
+    var count = 200;
+    var defaults = {
+      origin: { y: 0.7 },
+    };
+
+    confetti({
+      ...defaults,
+      ...opts,
+      particleCount: Math.floor(count * particleRatio),
+    });
+  }
+
   // run the practice
   async runPractice(
     _lineIdx = this.practice.lineIdx,
@@ -2021,12 +2066,23 @@ class Practice extends MyChessBoard {
       // stop the current practice
       this.stopPractice();
       // update the status
-      this.showInfo("You completed all the lines in this repertoire.");
+      this.showInfo("You have completed all the lines in this repertoire.");
       // set the button text
       this.buttons.startPractice.innerHTML = "Start again";
 
       // this function is no longer running
       this.practice.isRunning = false;
+
+      console.info(
+        "practice completed..",
+        this.containers.failedCounter.innerHTML,
+        parseInt(this.containers.failedCounter.innerHTML)
+      );
+
+      // if no mistakes, show confetti
+      if (parseInt(this.containers.failedCounter.innerHTML) == 0) {
+        this.showConfetti();
+      }
 
       return;
     }
@@ -2527,6 +2583,9 @@ class Practice extends MyChessBoard {
     // disable the board
     //this.disableMoveInput();
 
+    // update the board status
+    this.setStatus(BOARD_STATUS.default);
+
     setTimeout(() => {
       // enable move input
       //this.enableMoveInput();
@@ -2624,8 +2683,6 @@ class Practice extends MyChessBoard {
       ) {
         // update the status
         this.showConfirm(msg);
-
-        //
         this.onMoveFinished();
       } else {
         // update the status

@@ -8,9 +8,11 @@ class Roadmap {
   roadmapTypeButtons = null;
 
   roadmapIntro = null;
+  roadmapIntroText = null;
   roadmapDetails = null;
   roadmapDetailsEco = null;
   roadmapDetailsPgn = null;
+  roadmapTreeCurrentButtons = null;
   roadmapDetailsAccuracy = null;
 
   roadmapContainerWhite = null;
@@ -29,6 +31,7 @@ class Roadmap {
   roadmapTreeCurrent = null;
   roadmapTreeCurrentEco = null;
   roadmapTreeCurrentPgn = null;
+  roadmapTreeMissingMoves = null;
   roadmapTreeContainer = null;
 
   // the roadmap data
@@ -42,6 +45,7 @@ class Roadmap {
     this.roadmapTypeButtons = document.getElementById("roadmapTypeButtons");
 
     this.roadmapIntro = document.getElementById("roadmapIntro");
+    this.roadmapIntroText = document.getElementById("roadmapIntroText");
     this.roadmapDetails = document.getElementById("roadmapDetails");
     this.roadmapDetailsEco = document.getElementById("roadmapDetailsEco");
     this.roadmapDetailsPgn = document.getElementById("roadmapDetailsPgn");
@@ -60,7 +64,13 @@ class Roadmap {
     this.roadmapTreeCurrentPgn = document.getElementById(
       "roadmapTreeCurrentPgn"
     );
+    this.roadmapTreeCurrentButtons = document.getElementById(
+      "roadmapTreeCurrentButtons"
+    );
     this.roadmapTreeContainer = document.getElementById("roadmapTreeContainer");
+    this.roadmapTreeMissingMoves = document.getElementById(
+      "roadmapTreeMissingMoves"
+    );
 
     this.roadmapContainerWhite = document.getElementById(
       "roadmapContainerWhite"
@@ -232,13 +242,14 @@ class Roadmap {
       data = data[this.tree[i]].lines;
     }
 
-    //
-    this.loadTreePath();
+    // hide the missing moves
+    this.roadmapTreeMissingMoves.classList.add("hidden");
 
-    //
+    // load the tree current (ECO, PGN)
     this.loadTreeCurrent();
-
-    //
+    // load the tree path
+    this.loadTreePath();
+    // load the tree
     this.loadTree(data, con);
   }
 
@@ -284,10 +295,14 @@ class Roadmap {
     if (this.tree.length == 0) {
       // hide the tree current
       this.roadmapTreeCurrent.classList.add("hidden");
+      // show the intro text
+      this.roadmapIntroText.classList.remove("hidden");
 
       return true;
     }
 
+    // hide the intro text
+    this.roadmapIntroText.classList.add("hidden");
     // show the tree current
     this.roadmapTreeCurrent.classList.remove("hidden");
 
@@ -305,6 +320,169 @@ class Roadmap {
     // show the current ECO and PGN
     this.roadmapTreeCurrentEco.innerHTML = data.eco ? data.eco.name : "Unknown";
     this.roadmapTreeCurrentPgn.innerHTML = data.pgn;
+
+    return;
+
+    // clear the buttons
+    while (this.roadmapTreeCurrentButtons.firstChild) {
+      this.roadmapTreeCurrentButtons.removeChild(
+        roadmapTreeCurrentButtons.lastChild
+      );
+    }
+
+    // add the buttons
+    var sp = document.createElement("span");
+    sp.className = "w-5 h-5 icon-[mdi--checkerboard]";
+
+    sp.addEventListener("click", this.onOpenInRepertoire.bind(this, data));
+
+    this.roadmapTreeCurrentButtons.appendChild(sp);
+
+    sp = document.createElement("span");
+    sp.className = "w-5 h-5 icon-[mdi--controller]";
+
+    sp.addEventListener("click", this.onOpenInPractice.bind(this, data));
+
+    this.roadmapTreeCurrentButtons.appendChild(sp);
+  }
+
+  // load the missing moves container and show it
+  loadMissingMoves(missing, event) {
+    console.info("loadMissingMoves", missing, event);
+    console.info(
+      this.roadmapTreeMissingMoves,
+      this.roadmapTreeMissingMoves.firstElementChild
+    );
+
+    // clear current rows
+    while (this.roadmapTreeMissingMoves.firstElementChild.firstChild) {
+      this.roadmapTreeMissingMoves.firstElementChild.removeChild(
+        this.roadmapTreeMissingMoves.firstElementChild.lastChild
+      );
+    }
+
+    // add the header row
+    var div = document.createElement("div");
+    div.className =
+      "flex justify-center items-center rounded bg-tacao-100 dark:bg-slate-700 text-sm font-medium text-center tc-sharp p-2";
+    //div.innerHTML = "%";
+
+    var sp = document.createElement("span");
+    sp.className = "tc-sharp w-5 h-5 icon-[mdi--feature-highlight]";
+
+    div.appendChild(sp);
+
+    this.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
+
+    div = document.createElement("div");
+    div.className =
+      "rounded bg-tacao-100 dark:bg-slate-700 text-sm font-medium tc-sharp p-2";
+    div.innerHTML = "ECO";
+
+    this.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
+
+    div = document.createElement("div");
+    div.className =
+      "rounded bg-tacao-100 dark:bg-slate-700 text-sm font-medium tc-sharp p-2";
+    div.innerHTML = "PGN";
+
+    this.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
+
+    div = document.createElement("div");
+    div.className =
+      "rounded bg-tacao-100 dark:bg-slate-700 text-sm font-medium text-center tc-sharp p-2";
+    div.innerHTML = "Response";
+
+    this.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
+
+    // get the missing moves
+    var moves = [];
+    for (var i = 0; i < missing.length; i++) {
+      for (var x = 0; x < missing[i].missing.length; x++) {
+        moves.push({
+          id: missing[i].id,
+          eco: missing[i].eco,
+          line: missing[i].line,
+          move: missing[i].missing[x].move,
+          percentage: missing[i].missing[x].percentage,
+          pgn: missing[i].pgn,
+        });
+      }
+    }
+
+    // sort by percentage played
+    moves.sort((a, b) => {
+      if (a.percentage > b.percentage) return -1;
+      if (a.percentage < b.percentage) return 1;
+      return 0;
+    });
+
+    // add the missing moves
+    for (var i = 0; i < moves.length; i++) {
+      //
+      var row = document.createElement("div");
+      row.className = "grid-row-hover contents cursor-pointer tc-link";
+
+      // add the percentage played
+      div = document.createElement("div");
+      div.className = "rounded text-sm text-center p-2";
+      div.innerHTML = moves[i].percentage + "%";
+      div.addEventListener(
+        "click",
+        this.onOpenMissingMove.bind(this, moves[i])
+      );
+
+      row.appendChild(div);
+      //this.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
+
+      // add the ECO
+      div = document.createElement("div");
+      div.className = "rounded text-sm p-2";
+      div.innerHTML = moves[i].eco.name;
+      div.addEventListener(
+        "click",
+        this.onOpenMissingMove.bind(this, moves[i])
+      );
+
+      row.appendChild(div);
+      //this.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
+
+      // add the PGN
+      div = document.createElement("div");
+      div.className = "rounded text-sm p-2";
+      div.innerHTML = moves[i].pgn;
+      div.addEventListener(
+        "click",
+        this.onOpenMissingMove.bind(this, moves[i])
+      );
+
+      row.appendChild(div);
+      //this.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
+
+      // add the move
+      div = document.createElement("div");
+      div.className = "rounded text-sm text-center p-2";
+      div.innerHTML = moves[i].move;
+      div.addEventListener(
+        "click",
+        this.onOpenMissingMove.bind(this, moves[i])
+      );
+
+      row.appendChild(div);
+      //this.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
+
+      this.roadmapTreeMissingMoves.firstElementChild.appendChild(row);
+    }
+
+    // show the missing moves
+    this.roadmapTreeMissingMoves.classList.remove("hidden");
+  }
+
+  //
+  onOpenMissingMove(move, event) {
+    console.info("onOpenMissingMove", move, event);
+
+    this.openIn(move, "./repertoire");
   }
 
   //
@@ -313,16 +491,17 @@ class Roadmap {
 
     // the accuracy colors
     var colors = [
-      ["text-red-500", "hover:text-red-300"],
-      ["text-orange-400", "hover:text-orange-200"],
-      ["text-yellow-500", "hover:text-yellow-300"],
-      ["text-secondary-500", "hover:text-secondary-300"],
+      ["accuracy-red", "accuracy-red-hover"],
+      ["accuracy-orange", "accuracy-orange-hover"],
+      ["accuracy-yellow", "accuracy-yellow-hover"],
+      ["accuracy-green", "accuracy-green-hover"],
     ];
+
     //
     var variation = document.createElement("div");
     variation.id = "roadmapTreeItem_" + (data !== null ? data.id : "root");
     variation.className =
-      "relative flex flex-col shrink-0 grow-0 justify-center gap-y-px rounded-lg overflow-hidden bg-slate-600 dark:bg-slate-600 border border-slate-600 dark:border-slate-600 shadow";
+      "relative flex flex-col shrink-0 grow-0 justify-center gap-y-px rounded-lg overflow-hidden border border-tacao-200 dark:border-slate-600 shadow";
     if (data !== null) {
       variation.setAttribute("data-id", data.id);
       variation.setAttribute("data-level", index);
@@ -330,7 +509,7 @@ class Roadmap {
     //
     var clickable = document.createElement("label");
     clickable.className =
-      "flex justify-between items-center grow cursor-pointer tc-sharp hover:text-marigold-500 dark:hover:text-marigold-500 bg-slate-800 dark:bg-slate-800 hover:bg-slate-700 dark:hover:bg-slate-700";
+      "flex justify-between items-center grow cursor-pointer tc-sharp hover:text-marigold-600 dark:hover:text-marigold-500 bg-tacao-50/50 dark:bg-slate-800 hover:bg-tacao-100 dark:hover:bg-slate-700";
     //
     if (data !== null) {
       //
@@ -396,10 +575,10 @@ class Roadmap {
 
     // the accuracy colors
     var colors = [
-      ["text-red-500", "hover:text-red-300"],
-      ["text-orange-400", "hover:text-orange-200"],
-      ["text-yellow-500", "hover:text-yellow-300"],
-      ["text-secondary-500", "hover:text-secondary-300"],
+      ["accuracy-red", "accuracy-red-hover"],
+      ["accuracy-orange", "accuracy-orange-hover"],
+      ["accuracy-yellow", "accuracy-yellow-hover"],
+      ["accuracy-green", "accuracy-green-hover"],
     ];
 
     // clear the tree container
@@ -408,6 +587,12 @@ class Roadmap {
         this.roadmapTreeContainer.lastChild
       );
     }
+
+    data.sort((a, b) => {
+      if (a.mcount > b.mcount) return -1;
+      if (a.mcount < b.mcount) return 1;
+      return 0;
+    });
 
     //
     var groupId = this.tree.join("_");
@@ -426,7 +611,7 @@ class Roadmap {
       var variation = document.createElement("div");
       variation.id = "roadmapTreeItem_" + data[i].id;
       variation.className =
-        "relative flex flex-col shrink-0 grow-0 justify-center gap-y-px w-56 rounded-lg overflow-hidden bg-slate-600 dark:bg-slate-600 border border-slate-600 dark:border-slate-600 shadow";
+        "relative flex flex-col shrink-0 grow-0 justify-center w-56 rounded-lg overflow-hidden border border-tacao-200 dark:border-slate-600 shadow";
       variation.setAttribute("data-id", data[i].id);
       variation.setAttribute("data-level", level);
       //
@@ -450,7 +635,7 @@ class Roadmap {
       var clickable = document.createElement("label");
       clickable.htmlFor = "roadmapTreeRadio_" + data[i].id;
       clickable.className =
-        "flex flex-col grow bg-slate-800 dark:bg-slate-800 tc-sharp hover:bg-slate-700 dark:hover:bg-slate-700 hover:text-marigold-500 dark:hover:text-marigold-500" +
+        "flex flex-col grow bg-tacao-50/50 dark:bg-slate-800 tc-sharp hover:bg-tacao-100 dark:hover:bg-slate-700 hover:text-marigold-600 dark:hover:text-marigold-500" +
         (data[i].lines.length > 0 ? " cursor-pointer" : "");
       //
       var header = document.createElement("div");
@@ -470,8 +655,6 @@ class Roadmap {
       pgn.innerHTML = move;
 
       var accuracyIdx = Math.max(0, Math.ceil((1 - data[i].fail) * 4) - 1);
-
-      //
 
       //
       var accuracy = document.createElement("span");
@@ -535,7 +718,7 @@ class Roadmap {
       //
       var footer = document.createElement("div");
       footer.className =
-        "flex justify-end items-center text-gray-200 dark:text-gray-200 bg-slate-700 dark:bg-slate-700 px-1";
+        "flex justify-end items-center bg-tacao-100 dark:bg-slate-700 px-1 border-t border-tacao-200 dark:border-slate-600";
 
       // if there are any variations
       if (data[i].vcount > 0) {
@@ -550,7 +733,7 @@ class Roadmap {
           accuracyIdx = Math.max(0, Math.ceil((1 - lowestAcc.fail) * 4) - 1);
           //
           var lowest = document.createElement("span");
-          lowest.title = "Lowest accuracy move";
+          lowest.title = "Lowest accuracy variation";
           lowest.className =
             "cursor-pointer flex items-center px-2 py-1 " +
             colors[accuracyIdx][0] +
@@ -593,7 +776,7 @@ class Roadmap {
         //
         var last = document.createElement("span");
         last.title = "Last variation in line";
-        last.className = "px-2 py-1 text-slate-500 dark:text-slate-500";
+        last.className = "px-2 py-1 text-tacao-300 dark:text-slate-500";
 
         sp = document.createElement("span");
         sp.className = "w-5 h-5 icon-[mdi--lastpass]";
@@ -606,16 +789,16 @@ class Roadmap {
       }
 
       //
-      var missing = this.findMissingTopPlayedMoves(data[i].lines);
-      if (missing.length > 0) {
+      var missingMoves = this.findMissingTopPlayedMoves(data[i].lines);
+      if (missingMoves.length > 0) {
         //
         var total = 0;
-        for (var x = 0; x < missing.length; x++) {
-          total += missing[x].missing.length;
+        for (var x = 0; x < missingMoves.length; x++) {
+          total += missingMoves[x].missing.length;
         }
         //
         var missing = document.createElement("span");
-        missing.title = "Missing top played moves";
+        missing.title = "Missing top responses";
         missing.className =
           "cursor-pointer flex items-center px-2 py-1 text-sky-600 hover:text-sky-400 dark:text-sky-600 dark:hover:text-sky-400";
 
@@ -630,6 +813,11 @@ class Roadmap {
 
         missing.appendChild(sp);
 
+        missing.addEventListener(
+          "click",
+          this.loadMissingMoves.bind(this, missingMoves)
+        );
+
         footer.appendChild(missing);
       }
 
@@ -637,7 +825,7 @@ class Roadmap {
       var repertoire = document.createElement("span");
       repertoire.title = "Open in repertoire";
       repertoire.className =
-        "cursor-pointer flex items-center px-2 py-1 text-slate-500 dark:text-slate-500 hover:text-marigold-500 dark:hover:text-marigold-500";
+        "cursor-pointer flex items-center px-2 py-1 tc-link-shade";
 
       sp = document.createElement("span");
       sp.className = "w-5 h-5 icon-[mdi--checkerboard]";
@@ -653,7 +841,7 @@ class Roadmap {
       var practice = document.createElement("span");
       practice.title = "Open in practice";
       practice.className =
-        "cursor-pointer flex items-center px-2 py-1 text-slate-500 dark:text-slate-500 hover:text-marigold-500 dark:hover:text-marigold-500";
+        "cursor-pointer flex items-center px-2 py-1 tc-link-shade";
 
       sp = document.createElement("span");
       sp.className = "w-5 h-5 icon-[mdi--controller]";
@@ -767,7 +955,12 @@ class Roadmap {
       if (lines[i].missing.length > 0) {
         //
         missing.push({
+          id: lines[i].id,
+          eco: lines[i].eco,
+          before: lines[i].before,
           move: lines[i].move,
+          pgn: lines[i].pgn,
+          line: lines[i].line,
           missing: lines[i].missing,
           tree: [...tree, i],
         });
@@ -813,6 +1006,9 @@ class Roadmap {
 
     // load the tree current
     this.loadTreeCurrent();
+
+    // hide the missing moves
+    this.roadmapTreeMissingMoves.classList.add("hidden");
 
     // get the color
     var color = this.getCurrentColor();

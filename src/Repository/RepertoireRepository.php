@@ -150,10 +150,18 @@ class RepertoireRepository extends ServiceEntityRepository
         // - what other method did we have ??
         //
         // Acc.  Less  Avg.  More  Most
-        // 100%  16wk   8wk   4wk   2wk
-        //  75%  12wk   6wk   3wk 1.5wk
-        //  50%   8wk   4wk   2wk   1wk
-        //  25%   4wk   2wk   1wk  .5wk
+        // 100%  16wk   8wk   4wk   2wk    2wk * .50 (of 7)
+        //  75%  12wk   6wk   3wk 1.5wk    1wk
+        //  50%   8wk   4wk   2wk   1wk   .5wk 
+        //  25%   4wk   2wk   1wk  .5wk  .25wk * .25 (of 7)
+        //
+        // 1.75 * intervalReverse = .25 (*1) / .50 (*2) / 1 (*4) / 2 (*8)
+        //
+        // Interval of 4 (reverseInterval = 1) needs to become .25
+        // Interval of 1 (reverseInterval = 4) needs to become .50
+        // make it 0 and 3, times that by .25/3
+
+
         //
         // less = 1, 100% score = every month?
         // more = 4, 100% score = every week?
@@ -164,7 +172,9 @@ class RepertoireRepository extends ServiceEntityRepository
         //$inARowNeeded = max(3, 3 + round($failPercentage * 2));
 
         // recommend periodically, based on fail %: every 1-4 weeks
-        $daysNeeded = 3 * $intervalReverse * max(4 - (3 * $failPercentage), 1);
+        $multiplier = (.25 + ($intervalReverse - 1) * (.25 / 3)) * 7;
+        //$multiplier = 1.75;
+        $daysNeeded = $multiplier * $intervalReverse * max(4 - (3 * $failPercentage), 1);
 
         // if practice in a row less than required (3-5) or based on last used and fail percentage
         return $rep->getPracticeInARow() < $inARowNeeded || $daysSince >= $daysNeeded;
@@ -1344,7 +1354,7 @@ class RepertoireRepository extends ServiceEntityRepository
                                 // add the move
                                 $top[] = [
                                     'move' => $mov->getMove(),
-                                    'total' => $subtotal,
+                                    'subtotal' => $subtotal,
                                     'wins' => $mov->getWins(),
                                     'draws' => $mov->getDraws(),
                                     'losses' => $mov->getLosses()
@@ -1354,7 +1364,7 @@ class RepertoireRepository extends ServiceEntityRepository
                             // get the top moves only
                             foreach ($top as $mov) {
                                 // if played at least 10% of the time
-                                if ($mov["total"] >= $total / 10) {
+                                if ($mov["subtotal"] >= $total / 10) {
                                     // check to see if we have this move in our repertoire
                                     $found = false;
                                     foreach ($line["moves"] as $mv) {
@@ -1365,6 +1375,9 @@ class RepertoireRepository extends ServiceEntityRepository
                                     }
 
                                     if (!$found) {
+                                        // add % played
+                                        $mov['percentage'] = round(($mov["subtotal"] / $total) * 100);
+
                                         $missing[] = $mov;
                                     }
                                 }

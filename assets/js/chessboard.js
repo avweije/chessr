@@ -1173,6 +1173,7 @@ export class MyChessBoard {
 
         // remove the premove markers
         this.board.removeMarkers(this.markers.squareRed);
+
         // make the move
         this.makeMove({
           from: this.premoves[0].squareFrom,
@@ -1185,6 +1186,18 @@ export class MyChessBoard {
         this.premoves.splice(0, 1);
         // remove the last move markers
         this.board.removeMarkers();
+
+        // re-add next premove markers
+        for (var i = 0; i < this.premoves.length; i++) {
+          this.board.addMarker(
+            this.markers.squareRed,
+            this.premoves[i].squareFrom
+          );
+          this.board.addMarker(
+            this.markers.squareRed,
+            this.premoves[i].squareTo
+          );
+        }
       } catch (err) {
         console.log(err);
         // clear the premoves
@@ -1232,7 +1245,7 @@ export class MyChessBoard {
   }
 
   moveInputStarted(event) {
-    console.log("moveInputStarted:");
+    console.log("moveInputStarted:", this.status);
     console.log(event);
 
     // do not pick up pieces if the game is over
@@ -1275,6 +1288,11 @@ export class MyChessBoard {
 
   validateMoveInput(event) {
     try {
+      //
+      // if waiting on move, do as below -> check turn and rank
+      // if not waiting (=premove) -> check color (orientation) and rank
+      //
+
       // if this is a promotion
       if (
         ((this.game.turn() === "b" && event.squareTo.charAt(1) === "1") ||
@@ -1293,7 +1311,9 @@ export class MyChessBoard {
                 var temp = event;
                 temp.promotion = result.piece.charAt(1);
                 this.premoves.push(temp);
-                // remember the premove (only 1 premove allowed, check if there already was one.. etc)
+                // remove any markers before adding the premove markers
+                this.board.removeMarkers(undefined, event.squareFrom);
+                this.board.removeMarkers(undefined, event.squareTo);
                 this.board.addMarker(this.markers.squareRed, event.squareFrom);
                 this.board.addMarker(this.markers.squareRed, event.squareTo);
               } else {
@@ -1319,7 +1339,9 @@ export class MyChessBoard {
       if (this.status !== BOARD_STATUS.waitingOnMove) {
         this.premoves.push(event);
 
-        // remember the premove (only 1 premove allowed, check if there already was one.. etc)
+        // remove any markers before adding the premove markers
+        this.board.removeMarkers(undefined, event.squareFrom);
+        this.board.removeMarkers(undefined, event.squareTo);
         this.board.addMarker(this.markers.squareRed, event.squareFrom);
         this.board.addMarker(this.markers.squareRed, event.squareTo);
 
@@ -1379,7 +1401,9 @@ export class MyChessBoard {
       if (this.status !== BOARD_STATUS.waitingOnMove) {
         this.premoves.push(event);
 
-        // remember the premove (only 1 premove allowed, check if there already was one.. etc)
+        // remove any markers before adding the premove markers
+        this.board.removeMarkers(undefined, event.squareFrom);
+        this.board.removeMarkers(undefined, event.squareTo);
         this.board.addMarker(this.markers.squareRed, event.squareFrom);
         this.board.addMarker(this.markers.squareRed, event.squareTo);
 
