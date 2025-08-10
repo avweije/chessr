@@ -1,6 +1,8 @@
 import { Utils } from "./utils.js";
 import { Modal } from "./modal.js";
 
+import "../styles/roadmap.css";
+
 /**
  * Controller class for the practice page.
  */
@@ -29,8 +31,7 @@ class Roadmap {
 
   roadmapTreePath = null;
   roadmapTreeCurrent = null;
-  roadmapTreeCurrentEco = null;
-  roadmapTreeCurrentPgn = null;
+  roadmapTreeCurrentField = null;
   roadmapTreeMissingMoves = null;
   roadmapTreeContainer = null;
 
@@ -58,11 +59,8 @@ class Roadmap {
 
     this.roadmapTreePath = document.getElementById("roadmapTreePath");
     this.roadmapTreeCurrent = document.getElementById("roadmapTreeCurrent");
-    this.roadmapTreeCurrentEco = document.getElementById(
-      "roadmapTreeCurrentEco"
-    );
-    this.roadmapTreeCurrentPgn = document.getElementById(
-      "roadmapTreeCurrentPgn"
+    this.roadmapTreeCurrentField = document.getElementById(
+      "roadmapTreeCurrentField"
     );
     this.roadmapTreeCurrentButtons = document.getElementById(
       "roadmapTreeCurrentButtons"
@@ -184,7 +182,7 @@ class Roadmap {
     // show the page loader
     Utils.showLoading();
 
-    var url = "/api/roadmap";
+    var url = "./api/roadmap";
 
     fetch(url, {
       method: "GET",
@@ -318,8 +316,12 @@ class Roadmap {
     console.info("data:", data);
 
     // show the current ECO and PGN
-    this.roadmapTreeCurrentEco.innerHTML = data.eco ? data.eco.name : "Unknown";
-    this.roadmapTreeCurrentPgn.innerHTML = data.pgn;
+    this.roadmapTreeCurrentField.innerHTML = data.eco
+      ? data.eco.name +
+        ' (<span class="text-base font-normal">' +
+        data.pgn +
+        "</span>)"
+      : data.pgn;
 
     return;
 
@@ -421,7 +423,7 @@ class Roadmap {
     for (var i = 0; i < moves.length; i++) {
       //
       var row = document.createElement("div");
-      row.className = "grid-row-hover contents cursor-pointer tc-link";
+      row.className = "grid-row-hover contents cursor-pointer tc-base";
 
       // add the percentage played
       div = document.createElement("div");
@@ -599,7 +601,7 @@ class Roadmap {
     //
     var row = document.createElement("div");
     row.id = "roadmapTreeRow_" + groupId;
-    row.className = "flex flex-wrap justify-center gap-1";
+    row.className = "flex flex-wrap justify-center gap-2";
     row.setAttribute("data-type", "tree-row");
     row.setAttribute("data-level", level);
 

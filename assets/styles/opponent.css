@@ -27,39 +27,35 @@
   }
 
   .opponent-move-holder {
-    @apply flex flex-col justify-between cursor-pointer rounded border border-tacao-300/60 dark:border-slate-600 overflow-hidden;
+    @apply flex flex-col justify-between cursor-pointer rounded overflow-hidden border border-tacao-200 dark:border-slate-600 shadow;
   }
 
   .opponent-move-holder:hover {
-    @apply bg-tacao-800 dark:bg-slate-700;
+    @apply bg-tacao-100 dark:bg-slate-700;
   }
 
   .opponent-move-holder .opponent-move-header {
-    @apply relative flex justify-between items-center px-2.5 pt-2.5 gap-x-3;
+    @apply relative flex justify-between items-center px-3 pt-3 gap-x-3;
   }
 
   .opponent-move-holder .opponent-move-header > span {
     @apply text-base text-gray-600 dark:text-gray-300;
   }
 
-  .opponent-move-holder:hover .opponent-move-header > span {
-    @apply text-base text-gray-200 dark:text-gray-300;
-  }
-
   .opponent-move-holder.sporadic-move {
-    @apply opacity-50;
+    @apply opacity-70;
   }
 
   .opponent-move-holder .opponent-move-header > span:first-of-type {
-    @apply font-medium px-1 rounded-md;
+    @apply font-medium px-1 rounded;
   }
 
   .opponent-move-holder.white .opponent-move-header > span:first-of-type {
-    @apply border text-gray-700 bg-gray-50 border-black/30;
+    @apply border text-gray-700 bg-gray-50 border-black/20;
   }
 
   .opponent-move-holder.black .opponent-move-header > span:first-of-type {
-    @apply border text-gray-200 bg-gray-950 border-white/30;
+    @apply border text-gray-200 bg-gray-950 border-white/20;
   }
 
   .opponent-move-holder .opponent-move-header > span:nth-of-type(2) {
@@ -75,7 +71,7 @@
   }
 
   .opponent-move-holder .opponent-move-footer {
-    @apply flex justify-around items-center text-xs font-medium mt-2 bg-tacao-800 dark:bg-slate-700 border-t border-tacao-300/60 dark:border-slate-600;
+    @apply flex justify-around items-center text-xs font-medium mt-3 bg-tacao-100 dark:bg-slate-700 border-t border-tacao-200 dark:border-slate-600;
   }
 
   .opponent-move-holder .opponent-move-footer span {
@@ -83,7 +79,7 @@
   }
 
   .opponent-move-holder .opponent-move-footer span:first-of-type {
-    @apply border-r border-tacao-300/60 dark:border-slate-600;
+    @apply border-r border-tacao-200 dark:border-slate-600;
   }
 
   .opponent-pgn-text:not(:first-child) {

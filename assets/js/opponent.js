@@ -388,7 +388,7 @@ class Opponent {
 
   // get the settings
   getSettings() {
-    var url = "/api/download/settings";
+    var url = "./api/download/settings";
 
     // show the page loader
     Utils.showLoading();
@@ -427,7 +427,7 @@ class Opponent {
 
   // get the opponents
   getOpponents() {
-    var url = "/api/opponent";
+    var url = "./api/opponent";
 
     // show the page loader
     Utils.showLoading();
@@ -517,7 +517,7 @@ class Opponent {
     this.opponentData.id = sel.id;
     this.opponentData.moves = [];
 
-    var url = "/api/opponent/" + encodeURIComponent(sel.id);
+    var url = "./api/opponent/" + encodeURIComponent(sel.id);
 
     // show the page loader
     Utils.showLoading();
@@ -768,7 +768,7 @@ class Opponent {
     // update the dialog fields
     this.updateDialogFields();
 
-    var url = "/api/opponent/analyse";
+    var url = "./api/opponent/analyse";
 
     var data = {
       site: this.siteRadio.chesscom.checked ? "Chess.com" : "Lichess",
@@ -976,7 +976,7 @@ class Opponent {
       return false;
     }
 
-    var url = "/api/opponent/connect";
+    var url = "./api/opponent/connect";
 
     var data = {
       opponent: selected.id,
@@ -1163,7 +1163,7 @@ class Opponent {
       return false;
     }
 
-    var url = "/api/opponent/disconnect";
+    var url = "./api/opponent/disconnect";
 
     var data = {
       parent: selected.id,
@@ -1307,7 +1307,7 @@ class Opponent {
       return false;
     }
 
-    var url = "/api/opponent/" + encodeURIComponent(id);
+    var url = "./api/opponent/" + encodeURIComponent(id);
 
     fetch(url, {
       method: "DELETE",
@@ -1828,18 +1828,18 @@ class Opponent {
       ftr.innerHTML =
         '<span class="' +
         (rate == "win"
-          ? "text-green-500"
+          ? "accuracy-green"
           : rate == "even"
-          ? "text-yellow-500"
-          : "text-red-500") +
+          ? "accuracy-yellow"
+          : "accuracy-red") +
         '">W: ' +
         moves[i].wins +
         '</span><span class="' +
         (rate == "loss"
-          ? "text-red-500"
+          ? "accuracy-red"
           : rate == "even"
-          ? "text-yellow-500"
-          : "text-green-500") +
+          ? "accuracy-yellow"
+          : "accuracy-green") +
         '">L: ' +
         moves[i].losses +
         "</span>";
@@ -2127,7 +2127,7 @@ class Opponent {
     // show the page loader
     Utils.showLoading();
 
-    var url = "/api/opponent/moves";
+    var url = "./api/opponent/moves";
 
     var data = {
       id: this.getSelectedOpponent().id,

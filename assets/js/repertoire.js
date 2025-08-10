@@ -37,6 +37,7 @@ class Repertoire extends MyChessBoard {
   pgnLoaded = false;
 
   engineContainer = null;
+  engineDepth = null;
   engineCheckbox = null;
   engineTable = null;
 
@@ -121,6 +122,7 @@ class Repertoire extends MyChessBoard {
 
     // get the engine container & table
     this.engineContainer = document.getElementById("engineContainer");
+    this.engineDepth = document.getElementById("engineDepth");
     this.engineCheckbox = document.getElementById("engineCheckbox");
     this.engineTable = document.getElementById("engineTable");
 
@@ -275,7 +277,7 @@ class Repertoire extends MyChessBoard {
     // show the page loader
     Utils.showLoading();
 
-    var url = "/api/settings";
+    var url = "./api/settings";
 
     fetch(url, {
       method: "GET",
@@ -658,7 +660,7 @@ class Repertoire extends MyChessBoard {
     // close the modal
     Modal.close(this.confirmDialog.modal);
 
-    var url = "/api/repertoire";
+    var url = "./api/repertoire";
 
     var last = this.game.history({ verbose: true }).pop();
 
@@ -701,7 +703,7 @@ class Repertoire extends MyChessBoard {
 
   // fetch the repertoire groups
   getGroups() {
-    var url = "/api/repertoire/groups";
+    var url = "./api/repertoire/groups";
 
     fetch(url, {
       method: "GET",
@@ -798,7 +800,7 @@ class Repertoire extends MyChessBoard {
     // show the page loader
     Utils.showLoading();
 
-    var url = "/api/repertoire/moves";
+    var url = "./api/repertoire/moves";
 
     var data = {
       color: this.color,
@@ -922,6 +924,8 @@ class Repertoire extends MyChessBoard {
       // show the container & the start engine text
       this.engineContainer.classList.remove("hidden");
       this.engineTable.parentNode.firstElementChild.classList.remove("hidden");
+      // clear the depth
+      this.engineDepth.innerHTML = "";
       // disable the toggle if the game has ended
       this.engineCheckbox.disabled = this.game.isGameOver();
     } else {
@@ -1042,9 +1046,16 @@ class Repertoire extends MyChessBoard {
     var moves = [];
     var line = "";
 
+    console.info(info);
+
     // make sure we have a line
     if (info.pv && info.pv.length) {
       try {
+        // show the depth
+        if (info.depth) {
+          this.engineDepth.innerHTML = "Depth " + info.depth;
+        }
+
         // create a game
         var game = new MyChess();
         game.load(this.currentFen);
@@ -1124,9 +1135,13 @@ class Repertoire extends MyChessBoard {
     }
 
     // we need to invert the score if it's the opposite color move
-    var invert =
-      (this.board.getOrientation() == COLOR.white && this.currentTurn == "b") ||
-      (this.board.getOrientation() == COLOR.black && this.currentTurn == "w");
+    //var invert =
+    //(this.board.getOrientation() == COLOR.white && this.currentTurn == "b") ||
+    //(this.board.getOrientation() == COLOR.black && this.currentTurn == "w");
+    // we need to invert if it's blacks turn (centipawn is always from the engine's pov)
+    var invert = this.currentTurn == "b";
+
+    // invert the centipawn and mate values
     var cp =
       info.score.cp !== null && invert ? info.score.cp * -1 : info.score.cp;
     var mate =
@@ -1239,7 +1254,7 @@ class Repertoire extends MyChessBoard {
     };
 
     // send the API request
-    var url = "/api/repertoire/autoplay";
+    var url = "./api/repertoire/autoplay";
     fetch(url, {
       method: "POST",
       body: JSON.stringify(data),
@@ -1270,7 +1285,7 @@ class Repertoire extends MyChessBoard {
     };
 
     // send the API request
-    var url = "/api/repertoire/exclude";
+    var url = "./api/repertoire/exclude";
     fetch(url, {
       method: "POST",
       body: JSON.stringify(data),
@@ -1363,7 +1378,7 @@ class Repertoire extends MyChessBoard {
     };
 
     // send the API request
-    var url = "/api/repertoire/group";
+    var url = "./api/repertoire/group";
     fetch(url, {
       method: "POST",
       body: JSON.stringify(data),
@@ -1394,7 +1409,7 @@ class Repertoire extends MyChessBoard {
     };
 
     // send the API request
-    var url = "/api/repertoire/group";
+    var url = "./api/repertoire/group";
     fetch(url, {
       method: "DELETE",
       body: JSON.stringify(data),
@@ -1464,7 +1479,7 @@ class Repertoire extends MyChessBoard {
     };
 
     // send the API request
-    var url = "/api/repertoire";
+    var url = "./api/repertoire";
     fetch(url, {
       method: "POST", // or 'PUT'
       body: JSON.stringify(data), // data can be `string` or {object}!

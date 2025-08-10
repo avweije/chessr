@@ -173,6 +173,7 @@ class RepertoireRepository extends ServiceEntityRepository
 
         // recommend periodically, based on fail %: every 1-4 weeks
         $multiplier = (.25 + ($intervalReverse - 1) * (.25 / 3)) * 7;
+        //$multiplier = (.5 + ($intervalReverse - 1) * (.5 / 3)) * 7;
         //$multiplier = 1.75;
         $daysNeeded = $multiplier * $intervalReverse * max(4 - (3 * $failPercentage), 1);
 

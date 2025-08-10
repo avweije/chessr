@@ -27,14 +27,9 @@
 
 	<div id="roadmapTreeCurrent" class="hidden flex justify-center mb-8 px-4">
 		<div class="flex justify-center sm:w-full md:w-4/5 lg:w-3/5">
-			<div class="flex w-full justify-between overflow-hidden border-b border-tacao-300 dark:border-slate-600">
+			<div class="flex w-full justify-center overflow-hidden">
 				<div class="flex items-center whitespace-nowrap overflow-hidden px-3 py-2">
-					<span class="text-xs font-medium tc-faded">ECO:</span>
-					<span id="roadmapTreeCurrentEco" class="text-sm tc-base ml-2 truncate"></span>
-				</div>
-				<div class="flex items-center whitespace-nowrap overflow-hidden px-3 py-2">
-					<span class="text-xs font-medium tc-faded">PGN:</span>
-					<span id="roadmapTreeCurrentPgn" class="text-sm tc-base ml-2 truncate"></span>
+					<span id="roadmapTreeCurrentField" class="text-lg font-medium tc-base truncate"></span>
 				</div>
 				<!--<div id="roadmapTreeCurrentButtons" class="flex items-center pr-3"></div>-->
 			</div>
@@ -74,28 +69,28 @@
 		</div>
 	</div>
 
-	<div class="fixed bottom-0 left-0 right-0 flex justify-center mx-8 mb-2 text-sm shadow">
-		<div class="flex gap-px overflow-hidden bg-tacao-300/40 dark:bg-slate-700 rounded-lg border border-tacao-300/40 dark:border-slate-700">
-			<div class="flex items-center whitespace-nowrap overflow-hidden px-2 py-2 bg-tacao-100 dark:bg-slate-900">
+	<div class="fixed bottom-0 left-0 right-0 flex justify-center mx-8 mb-2 text-sm">
+		<div class="flex overflow-hidden rounded bg-white dark:bg-slate-700 border border-tacao-300/40 dark:border-slate-700 shadow">
+			<div class="flex items-center whitespace-nowrap overflow-hidden px-2 py-2 bg-tacao-50/25 dark:bg-slate-900 border-r border-tacao-300/40 dark:border-slate-700">
 				<span class="tc-faded w-4 h-4 icon-[mdi--bullseye-arrow]"></span>
 				<span class="text-xs tc-faded ml-2 mr-1 truncate">Accuracy</span>
 			</div>
-			<div class="flex items-center whitespace-nowrap overflow-hidden px-2 py-2 bg-tacao-100 dark:bg-slate-900">
+			<div class="flex items-center whitespace-nowrap overflow-hidden px-2 py-2 bg-tacao-50/25 dark:bg-slate-900 border-r border-tacao-300/40 dark:border-slate-700">
 				<span class="tc-faded w-4 h-4 icon-[mdi--trending-down]"></span>
 				<span class="text-xs tc-faded ml-2 mr-1 truncate">Lowest Accuracy Variation</span>
 			</div>
-			<div class="flex items-center whitespace-nowrap overflow-hidden px-2 py-2 bg-tacao-100 dark:bg-slate-900">
+			<div class="flex items-center whitespace-nowrap overflow-hidden px-2 py-2 bg-tacao-50/25 dark:bg-slate-900 border-r border-tacao-300/40 dark:border-slate-700">
 				<span class="tc-faded w-4 h-4 icon-[mdi--feature-highlight]"></span>
 				<span class="text-xs tc-faded ml-2 mr-1 truncate">Missing Top Responses</span>
 			</div>
-			<div class="flex items-center whitespace-nowrap overflow-hidden px-2 py-2 bg-tacao-100 dark:bg-slate-900">
+			<div class="flex items-center whitespace-nowrap overflow-hidden px-2 py-2 bg-tacao-50/25 dark:bg-slate-900">
 				<span class="tc-faded w-4 h-4 icon-[mdi--lastpass]"></span>
 				<span class="text-xs tc-faded ml-2 mr-1 truncate">Last Variation in Line</span>
 			</div>
 		</div>
 	</div>
 
-	<form id="roadmapForm" method="POST" action="./roadmap" target="blank">
+	<form id="roadmapForm" method="POST" action="./roadmap" target="_blank">
 		<input id="roadmapIdInput" type="hidden" name="id" value=""/>
 		<input id="roadmapColorInput" type="hidden" name="color" value=""/>
 		<input id="roadmapPgnInput" type="hidden" name="pgn" value=""/>
@@ -105,6 +100,11 @@
 {% block body %}
 	<div id="roadmapContainerWhite" class="flex justify-around"></div>
 	<div id="roadmapContainerBlack" class="hidden flex justify-around"></div>
+{% endblock %}
+{% block stylesheets %}
+	{{ parent() }}
+
+	{{ encore_entry_link_tags('roadmap') }}
 {% endblock %}
 {% block javascripts %}
 	{{ parent() }}{{ encore_entry_script_tags('roadmap') }}

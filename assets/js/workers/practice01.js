@@ -6,12 +6,12 @@ self.onmessage = function (msg) {
       ecoData = msg.data[1];
       break;
     case "getEco":
-      getEco(msg.data[1]);
+      getEco(msg.data[1], msg.data[2]);
       break;
   }
 };
 
-function getEco(pgn) {
+function getEco(pgn, forTag = "") {
   // filter the ECO's by the current PGN
   var res = ecoData.filter((rec) => pgn.indexOf(rec.PGN) == 0);
 
@@ -21,5 +21,5 @@ function getEco(pgn) {
   });
 
   // update the ECO field
-  self.postMessage(["getEco", res[0]]);
+  self.postMessage(["getEco", res[0], pgn, forTag]);
 }

@@ -90,7 +90,7 @@ class Admin {
   nextImport() {
     console.log("nextImport:");
 
-    var url = "/admin/evaluations/import";
+    var url = "./admin/evaluations/import";
 
     var data = {
       maxLines: this.maxLinesInput.value,

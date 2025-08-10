@@ -170,7 +170,7 @@ class Analyse {
   getSettings() {
     console.log("getSettings:");
 
-    var url = "/api/download/settings";
+    var url = "./api/download/settings";
 
     // show the page loader
     Utils.showLoading();
@@ -469,7 +469,7 @@ class Analyse {
       "</span>";
     this.analyseDialog.gameField.innerHTML = "";
 
-    var url = "/api/analyse/download";
+    var url = "./api/analyse/download";
 
     var data = {
       site: this.siteRadio.chesscom.checked ? "Chess.com" : "Lichess",
@@ -694,7 +694,7 @@ class Analyse {
   }
 
   evaluateGame(game) {
-    var url = "/api/analyse/evaluate";
+    var url = "./api/analyse/evaluate";
 
     var data = {
       game: game,

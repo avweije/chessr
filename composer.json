@@ -17,6 +17,7 @@
         "onspli/chess": "^0.2.0",
         "ryanhs/chess.php": "^1.0",
         "sensio/framework-extra-bundle": "*",
+        "symfony/apache-pack": "^1.0",
         "symfony/asset": "6.4.*",
         "symfony/console": "6.4.*",
         "symfony/dotenv": "6.4.*",

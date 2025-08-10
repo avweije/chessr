@@ -1,9 +1,11 @@
 import {
   MyChessBoard,
+  CUSTOM_MARKER_TYPE,
   BOARD_STATUS,
   BOARD_SETTINGS,
   PIECE_TILESIZE,
 } from "./chessboard.js";
+import { CUSTOM_ARROW_TYPE } from "./ThickerArrows.js";
 import { MyChess } from "./chess.js";
 import { COLOR } from "cm-chessboard/src/view/ChessboardView.js";
 import {
@@ -149,7 +151,7 @@ class Practice extends MyChessBoard {
     );
 
     this.worker.onerror = function (e) {
-      console.error("Worker error:", e);
+      console.warn("Worker error:", e);
     };
 
     // listen to the results
@@ -325,7 +327,7 @@ class Practice extends MyChessBoard {
     // show the page loader
     Utils.showLoading();
 
-    var url = "/api/settings";
+    var url = "./api/settings";
 
     fetch(url, {
       method: "GET",
@@ -336,7 +338,7 @@ class Practice extends MyChessBoard {
         this.onGetSettings(response.settings);
       })
       .catch((error) => {
-        console.error("Error:", error);
+        console.warn("Error:", error);
         // show the error icon
         Utils.showError();
       })
@@ -508,10 +510,19 @@ class Practice extends MyChessBoard {
    * @memberof Practice
    */
   onWorkerMessage(e) {
+    console.info("onWorkerMessage", e);
+
     switch (e.data[0]) {
       case "getEco":
-        this.practiceInfoFields.children[1].innerHTML =
-          e.data[1].Code + ", " + e.data[1].Name;
+        if (e.data[3] == "custom") {
+          // set the custom repertoire field
+          this.customRepertoireField.children[0].children[0].innerHTML =
+            e.data[1].Name + " (" + e.data[2] + ")";
+        } else {
+          // set the practice info ECO field
+          this.practiceInfoFields.children[1].innerHTML =
+            e.data[1].Code + ", " + e.data[1].Name;
+        }
         break;
     }
   }
@@ -543,9 +554,12 @@ class Practice extends MyChessBoard {
       if (isCorrect) {
         // highlight the correct move
         this.board.removeMarkers();
-        this.board.addMarker(this.markers.checkmark, move.to);
-        this.board.addMarker(this.markers.squareGreen, move.from);
-        this.board.addMarker(this.markers.squareGreen, move.to);
+        // remove arrows
+        this.board.removeArrows();
+
+        this.board.addMarker(CUSTOM_MARKER_TYPE.checkmark, move.to);
+        this.board.addMarker(CUSTOM_MARKER_TYPE.squareGreen, move.from);
+        this.board.addMarker(CUSTOM_MARKER_TYPE.squareGreen, move.to);
 
         // handle the next steps
         this.correctMovePlayed();
@@ -611,9 +625,12 @@ class Practice extends MyChessBoard {
 
         // highlight the error move
         this.board.removeMarkers();
-        this.board.addMarker(this.markers.cancel, move.to);
-        this.board.addMarker(this.markers.squareRed, move.from);
-        this.board.addMarker(this.markers.squareRed, move.to);
+        // remove arrows
+        this.board.removeArrows();
+
+        this.board.addMarker(CUSTOM_MARKER_TYPE.cancel, move.to);
+        this.board.addMarker(CUSTOM_MARKER_TYPE.squareRed, move.from);
+        this.board.addMarker(CUSTOM_MARKER_TYPE.squareRed, move.to);
 
         // pause the board for a moment
         this.pauseBoard(() => {
@@ -621,6 +638,8 @@ class Practice extends MyChessBoard {
           this.gameUndo();
           // remove markers
           this.board.removeMarkers();
+          // remove arrows
+          this.board.removeArrows();
           // wait on the next move
           this.waitOnMove();
         });
@@ -628,7 +647,7 @@ class Practice extends MyChessBoard {
 
       return true;
     } catch (err) {
-      console.log(err);
+      console.warn(err);
 
       return false;
     }
@@ -929,7 +948,7 @@ class Practice extends MyChessBoard {
     this.needsRefresh = true;
 
     // set the API url
-    var url = "/api/analysis/save";
+    var url = "./api/analysis/save";
 
     // set the data object
     var data = {
@@ -951,7 +970,7 @@ class Practice extends MyChessBoard {
       .then((res) => res.json())
       .then((response) => {})
       .catch((error) => {
-        console.error("Error:", error);
+        console.warn("Error:", error);
         // show the error icon
         Utils.showError();
       });
@@ -1000,7 +1019,7 @@ class Practice extends MyChessBoard {
   // fired when the ignore dialog is confirmed
   onAnalysisIgnoreConfirmed() {
     // set the API url
-    var url = "/api/analysis/ignore";
+    var url = "./api/analysis/ignore";
     // set the data
     var data = {
       fen: this.practice.lines[this.practice.lineIdx].fen,
@@ -1018,7 +1037,7 @@ class Practice extends MyChessBoard {
       .then((res) => res.json())
       .then((response) => {})
       .catch((error) => {
-        console.error("Error:", error);
+        console.warn("Error:", error);
         // show the error icon
         Utils.showError();
       });
@@ -1039,7 +1058,7 @@ class Practice extends MyChessBoard {
     if (removeFromDb) {
       //if (false) {
       // set the API url
-      var url = "/api/analysis";
+      var url = "./api/analysis";
       // set the data
       var data = {
         fen: this.practice.lines[this.practice.lineIdx].fen,
@@ -1057,7 +1076,7 @@ class Practice extends MyChessBoard {
         .then((res) => res.json())
         .then((response) => {})
         .catch((error) => {
-          console.error("Error:", error);
+          console.warn("Error:", error);
           // show the error icon
           Utils.showError();
         });
@@ -1095,11 +1114,22 @@ class Practice extends MyChessBoard {
         }
 
         i = i - 1;
+      } else if (reduceTotal > 0 && this.practice.lines[i].ourMoveTotal) {
+        // we need to reduce the 'ourMoveTotal' values following a deleted line
+        this.practice.lines[i].ourMoveTotal =
+          this.practice.lines[i].ourMoveTotal - reduceTotal;
       }
     }
 
     // update the move counter
     if (reduceBy > 0) {
+      console.info(
+        "-- REDUCEBY",
+        reduceBy,
+        reduceTotal,
+        this.practice.lineMovesPlayed
+      );
+
       this.reduceMoveCount(reduceBy);
     }
     if (reduceTotal > 0) {
@@ -1116,6 +1146,8 @@ class Practice extends MyChessBoard {
 
     // remove all markers
     this.board.removeMarkers();
+    // remove arrows
+    this.board.removeArrows();
     // continue the practice
     this.continuePractice(false);
   }
@@ -1219,6 +1251,8 @@ class Practice extends MyChessBoard {
 
           // remove markers
           this.board.removeMarkers();
+          // remove arrows
+          this.board.removeArrows();
         }
       }, 1500);
     } else {
@@ -1285,6 +1319,8 @@ class Practice extends MyChessBoard {
 
     // remove markers
     this.removeMarkers();
+    // remove arrows
+    this.board.removeArrows();
 
     // goto the next move or line
     if (gotoNext) {
@@ -1343,7 +1379,7 @@ class Practice extends MyChessBoard {
     this.needsRefresh = false;
     // if we need to refresh
     if (refresh) {
-      var url = "/api/practice";
+      var url = "./api/practice";
 
       // show the page loader
       Utils.showLoading();
@@ -1363,7 +1399,7 @@ class Practice extends MyChessBoard {
           this.onGetRepertoire(response);
         })
         .catch((error) => {
-          console.error("Error:", error);
+          console.warn("Error:", error);
           // show the error icon
           Utils.showError();
         })
@@ -1422,9 +1458,13 @@ class Practice extends MyChessBoard {
       ) {
         moves.push(this.repertoire["custom"][0]["moves"][0]["move"]);
       }
+      // get the PGN
+      var pgn = this.getPgnForMoves(moves);
       // set the custom repertoire field
-      this.customRepertoireField.children[0].children[0].innerHTML =
-        this.getPgnForMoves(moves);
+      this.customRepertoireField.children[0].children[0].innerHTML = pgn;
+      // get the ECO code
+      this.worker.postMessage(["getEco", pgn, "custom"]);
+
       // hide the repertoire type buttons
       this.hideRepertoireButtons();
     }
@@ -1459,6 +1499,8 @@ class Practice extends MyChessBoard {
     this.board.setPosition(this.game.fen());
     // remove the markers
     this.board.removeMarkers();
+    // remove arrows
+    this.board.removeArrows();
     // set the orientation
     var orient = this.type == "black" ? COLOR.black : COLOR.white;
     if (this.board.getOrientation() != orient) {
@@ -1639,6 +1681,8 @@ class Practice extends MyChessBoard {
     this.board.setPosition(this.game.fen());
     // remove the markers
     this.board.removeMarkers();
+    // remove arrows
+    this.board.removeArrows();
     // disable move input
     this.disableMoveInput();
 
@@ -1694,14 +1738,24 @@ class Practice extends MyChessBoard {
       // the total moves for this line
       var lineMoveTotal = ourMove ? playableCnt : 0;
 
+      // make a copy of the line
+      var copy = lines.slice(i, i + 1)[0];
+
+      var addedIdx = -1;
+
       // if we need to add this line
       if (add && lines[i].moves.length > 0) {
         // if this is a variation
         if (isVariation) {
-          lines[i].variation = true;
+          //lines[i].variation = true;
+          copy.variation = true;
         }
+
+        copy["ourMoveTotal"] = ourMoveTotalSoFar + ourMoveTotal;
+
         // add the practice line
-        this.practice.lines.push(lines[i]);
+        //this.practice.lines.push(lines[i]);
+        addedIdx = this.practice.lines.push(copy) - 1;
       }
 
       // if this line has moves that follow
@@ -1733,8 +1787,9 @@ class Practice extends MyChessBoard {
         }
       }
 
-      lines[i]["ourMoves"] = lineMoveTotal;
-      lines[i]["ourMoveTotal"] = ourMoveTotalSoFar + ourMoveTotal;
+      if (addedIdx > -1) {
+        this.practice.lines[addedIdx]["ourMoves"] = lineMoveTotal;
+      }
 
       ourMoveTotal += lineMoveTotal;
     }
@@ -1766,6 +1821,7 @@ class Practice extends MyChessBoard {
     this.practice.currentFen = "";
     this.practice.isRunning = false;
     this.practice.isInterrupted = false;
+    this.practice.stopAnimating = false;
     this.practice.paused = false;
     this.practice.pausedFen = "";
 
@@ -2060,6 +2116,8 @@ class Practice extends MyChessBoard {
 
     // remove markers
     this.removeMarkers();
+    // remove arrows
+    this.board.removeArrows();
 
     // if we've completed all lines
     if (this.practice.lineIdx >= this.practice.lines.length) {
@@ -2073,14 +2131,11 @@ class Practice extends MyChessBoard {
       // this function is no longer running
       this.practice.isRunning = false;
 
-      console.info(
-        "practice completed..",
-        this.containers.failedCounter.innerHTML,
-        parseInt(this.containers.failedCounter.innerHTML)
-      );
-
       // if no mistakes, show confetti
-      if (parseInt(this.containers.failedCounter.innerHTML) == 0) {
+      if (
+        parseInt(this.containers.correctCounter.innerHTML) > 0 &&
+        parseInt(this.containers.failedCounter.innerHTML) == 0
+      ) {
         this.showConfetti();
       }
 
@@ -2259,16 +2314,20 @@ class Practice extends MyChessBoard {
           // enable board move input
           //this.enableMoveInput();
         } else if (this.practice.lines[this.practice.lineIdx].variation) {
-          // make the 1st move of the variation, that was the point we left off
-          this.game.move(this.practice.lines[this.practice.lineIdx].move);
-          // get the last move
-          var last = this.game.history({ verbose: true }).pop();
+          try {
+            // make the 1st move of the variation, that was the point we left off
+            this.game.move(this.practice.lines[this.practice.lineIdx].move);
+            // get the last move
+            var last = this.game.history({ verbose: true }).pop();
 
-          // animate the move
-          await this.board.movePiece(last.from, last.to, true);
+            // animate the move
+            await this.board.movePiece(last.from, last.to, true);
 
-          // update the board (in case of castling)
-          this.board.setPosition(this.game.fen());
+            // update the board (in case of castling)
+            this.board.setPosition(this.game.fen());
+          } catch (err) {
+            console.warn("Error:", err);
+          }
         }
 
         // update the board status
@@ -2415,7 +2474,7 @@ class Practice extends MyChessBoard {
     if (
       _lineIdx == this.practice.lineIdx &&
       _moveIdx == this.practice.moveIdx &&
-      !this.practice.isInterrupted
+      !(this.practice.stopAnimating || this.practice.isInterrupted)
     ) {
       // wait on the next move
       this.waitOnMove();
@@ -2496,10 +2555,12 @@ class Practice extends MyChessBoard {
               this.game.undo();
 
               // add markers for the move we don't need (so the user can see)
-              this.board.addMarker(MARKER_TYPE.circle, last.from);
-              this.board.addMarker(MARKER_TYPE.circle, last.to);
+              //this.board.addMarker(MARKER_TYPE.circle, last.from);
+              //this.board.addMarker(MARKER_TYPE.circle, last.to);
+              // add an arrow for the move we don't need (so the user can see)
+              this.board.addArrow(CUSTOM_ARROW_TYPE.normal, last.from, last.to);
             } catch (err) {
-              console.log(err);
+              console.warn(err);
             }
           }
         }
@@ -2513,8 +2574,8 @@ class Practice extends MyChessBoard {
         // undo the move
         this.game.undo();
         // mark the move that was played
-        this.board.addMarker(this.markers.squareRed, last.from);
-        this.board.addMarker(this.markers.squareRed, last.to);
+        this.board.addMarker(CUSTOM_MARKER_TYPE.squareRed, last.from);
+        this.board.addMarker(CUSTOM_MARKER_TYPE.squareRed, last.to);
       }
     }
   }
@@ -2627,6 +2688,10 @@ class Practice extends MyChessBoard {
           this.gameUndo();
           // remove markers
           this.board.removeMarkers();
+          // remove arrows
+          this.board.removeArrows();
+          // update the board status
+          this.setStatus(BOARD_STATUS.waitingOnMove);
         });
 
         return;
@@ -2694,6 +2759,8 @@ class Practice extends MyChessBoard {
           this.gameUndo();
           // remove markers
           this.board.removeMarkers();
+          // remove arrows
+          this.board.removeArrows();
           // wait on the next move
           this.waitOnMove();
         }, 1200);
@@ -2818,7 +2885,7 @@ class Practice extends MyChessBoard {
       );
 
       // if we need to stop animating
-      if (this.practice.stopAnimating || this.practice.interruptPractice) {
+      if (this.practice.stopAnimating || this.practice.isInterrupted) {
         break;
       }
 
@@ -2867,8 +2934,10 @@ class Practice extends MyChessBoard {
 
   // reduce the move count
   reduceMoveCount(count = 1) {
-    this.containers.moveCounter.innerHTML =
-      parseInt(this.containers.moveCounter.innerHTML) - count;
+    this.containers.moveCounter.innerHTML = Math.max(
+      0,
+      parseInt(this.containers.moveCounter.innerHTML) - count
+    );
   }
 
   // add to the correct count
@@ -2901,7 +2970,7 @@ class Practice extends MyChessBoard {
     this.needsRefresh = true;
 
     // set the url
-    var url = "api/repertoire/counters";
+    var url = "./api/repertoire/counters";
 
     var data = { moves: moves };
 
@@ -2919,7 +2988,7 @@ class Practice extends MyChessBoard {
         console.log(response);
       })
       .catch((error) => {
-        console.error("Error:", error);
+        console.warn("Error:", error);
         // show the error icon
         Utils.showError();
       });
@@ -3331,6 +3400,8 @@ class Practice extends MyChessBoard {
       this.practice.animateFromBeginning = true;
       // remove all markers
       this.board.removeMarkers();
+      // remove arrows
+      this.board.removeArrows();
       // run the previous practice
       this.runPractice();
     }
@@ -3422,12 +3493,14 @@ class Practice extends MyChessBoard {
         // don't animate to the next position
         this.practice.animateToPosition = false;
       } catch (err) {
-        console.log(err);
+        console.warn(err);
       }
     }
 
     // remove all markers
     this.board.removeMarkers();
+    // remove arrows
+    this.board.removeArrows();
     // run the previous practice
     this.runPractice();
   }

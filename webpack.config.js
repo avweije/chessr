@@ -14,8 +14,18 @@ if (!Encore.isRuntimeEnvironmentConfigured()) {
 Encore
   // directory where compiled assets will be stored
   .setOutputPath("public/build/")
+  //
   // public path used by the web server to access the output path
-  .setPublicPath("/build")
+  //
+  // Symfony local server path
+  //.setPublicPath("/build")
+  //
+  // if (Encore.isProduction()) {
+  // Apache path
+  .setPublicPath("/chessr/build")
+  .setManifestKeyPrefix("build/")
+  // }
+  //
   // only needed for CDN's or subdirectory deploy
   //.setManifestKeyPrefix('build/')
 
@@ -40,6 +50,7 @@ Encore
   .addEntry("admin", "./assets/js/admin.js")
 
   .addStyleEntry("markers", "./assets/markers/markers.css")
+  .addStyleEntry("arrows", "./assets/arrows/arrows.css")
 
   // When enabled, Webpack "splits" your files into smaller pieces for greater optimization.
   .splitEntryChunks()

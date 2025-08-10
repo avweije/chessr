@@ -169,11 +169,17 @@
 			</div>
 		</div>
 	</div>
-</div>{% endblock %}{% block stylesheets %}
-{{ parent() }}
 
-{{ encore_entry_link_tags('chessboard') }}
-{{ encore_entry_link_tags('markers') }}{% endblock %}{% block javascripts %}
-{{ parent() }}
+{% endblock %}
+{% block stylesheets %}
+	{{ parent() }}
 
-{{ encore_entry_script_tags('settings') }}{% endblock %}
+	{{ encore_entry_link_tags('chessboard') }}
+	{{ encore_entry_link_tags('markers') }}
+	{{ encore_entry_link_tags('arrows') }}
+{% endblock %}
+{% block javascripts %}
+	{{ parent() }}
+
+	{{ encore_entry_script_tags('settings') }}
+{% endblock %}

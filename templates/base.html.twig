@@ -7,7 +7,7 @@
 			{% endblock %}
 		</title>
 		<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text></svg>">
-		<link rel="stylesheet" href="/build/app.css">
+		<!--<link rel="stylesheet" href="./build/app.css">-->
 		{% block stylesheets %}
 			{{ encore_entry_link_tags('app') }}
 		{% endblock %}
@@ -112,20 +112,20 @@
 									class="list-style-none me-auto mr-20 flex ps-0 flex-row">
 									<!-- Home -->
 									<li class="mb-0 pe-1 ps-0">
-										<a href="/" class="p-0 px-1 font-normal md:px-3">
+										<a href="./" class="p-0 px-1 font-normal md:px-3">
 											Home
 										</a>
 									</li>
 									<!-- Repertoire -->
 									<li class="mb-0 pe-1 ps-0">
-										<a href="/repertoire" class="p-0 px-1 font-normal md:px-3">
+										<a href="./repertoire" class="p-0 px-1 font-normal md:px-3">
 											Repertoire
 										</a>
 									</li>
 									<!-- Practice -->
 									<li class="mb-0 pe-1 ps-0">
 										{% if template.hasRepertoire() %}
-											<a href="/practice" class="p-0 px-1 font-normal md:px-3">
+											<a href="./practice" class="p-0 px-1 font-normal md:px-3">
 												Practice
 											</a>
 										{% else %}
@@ -137,7 +137,7 @@
 								</ul>
 
 								{% if template.hasRepertoire() %}
-									<a href="/roadmap" class="px-3 py-2 font-semibold" title="Roadmap">
+									<a href="./roadmap" class="px-3 py-2 font-semibold" title="Roadmap">
 										<span class="w-5 h-5 tc-link icon-[mdi--sitemap]"></span>
 									</a>
 								{% else %}
@@ -145,7 +145,7 @@
 										<span class="w-5 h-5 tc-link opacity-50 icon-[mdi--sitemap]"></span>
 									</span>
 								{% endif %}
-								<a href="/settings" class="px-3 py-2 font-semibold" title="Settings">
+								<a href="./settings" class="px-3 py-2 font-semibold" title="Settings">
 									<span class="w-5 h-5 tc-link icon-[mdi--settings-outline]"></span>
 								</a>
 							{% endif %}
@@ -161,11 +161,11 @@
 
 							<div class="flex items-center">
 								{% if app.user %}
-									<a href="/logout" class="rounded-md px-3 py-2 text-sm uppercase">
+									<a href="./logout" class="rounded-md px-3 py-2 text-sm uppercase">
 										Logout
 									</a>
 								{% else %}
-									<a href="/register" class="btn btn-primary uppercase">
+									<a href="./register" class="btn btn-primary uppercase">
 										Sign up for free
 									</a>
 								{% endif %}

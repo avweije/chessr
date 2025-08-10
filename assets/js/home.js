@@ -65,7 +65,7 @@ class Home {
 
   // get the repertoire statistics
   getStatistics() {
-    var url = "/api/statistics";
+    var url = "./api/statistics";
 
     //fetch(url, {..., signal: signal}).then(response => ...);
     fetch(url, {

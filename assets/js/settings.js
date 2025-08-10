@@ -4,11 +4,21 @@ import {
   COLOR,
   INPUT_EVENT_TYPE,
 } from "cm-chessboard/src/view/ChessboardView.js";
+import {
+  MARKER_TYPE,
+  Markers,
+} from "cm-chessboard/src/extensions/markers/Markers.js";
 import { Utils } from "./utils.js";
 import { Modal } from "./modal.js";
 
 import "../styles/chessboard.css";
-import { PIECE_TILESIZE } from "./chessboard.js";
+import { CUSTOM_MARKER_TYPE, PIECE_TILESIZE } from "./chessboard.js";
+import {
+  ARROW_TYPE,
+  Arrows,
+} from "cm-chessboard/src/extensions/arrows/Arrows.js";
+
+import { CUSTOM_ARROW_TYPE, ThickerArrows } from "./ThickerArrows.js";
 
 /**
  * Controller class for the settings page.
@@ -307,7 +317,7 @@ class Settings {
     Utils.showLoading();
 
     // show
-    var url = "/api/settings";
+    var url = "./api/settings";
 
     fetch(url, {
       method: "GET",
@@ -384,7 +394,7 @@ class Settings {
 
   // update the settings
   updateSettings() {
-    var url = "/api/settings";
+    var url = "./api/settings";
 
     // update the range input titles
     this.updateRangeInputTitles();
@@ -443,7 +453,7 @@ class Settings {
       this.board = new Chessboard(this.boardElement, {
         position: FEN.start,
         orientation: COLOR.white,
-        assetsUrl: "/build/", // wherever you copied the assets folder to, could also be in the node_modules folder
+        assetsUrl: "./build/", // wherever you copied the assets folder to, could also be in the node_modules folder
         assetsCache: false,
         style: {
           cssClass: cssClass, // set the css theme of the board, try "green", "blue" or "chess-club"
@@ -455,7 +465,38 @@ class Settings {
           },
           animationDuration: animationDuration, // pieces animation duration in milliseconds. Disable all animations with `0`
         },
+        extensions: [
+          {
+            class: Markers,
+            props: { sprite: "extensions/markers/markers.svg" },
+          },
+          { class: ThickerArrows },
+        ],
       });
+
+      /*
+      this.board.addMarker(MARKER_TYPE.bevel, "a4");
+      this.board.addMarker(MARKER_TYPE.bevel, "b4");
+
+      this.board.addMarker(MARKER_TYPE.circle, "c4");
+      this.board.addMarker(MARKER_TYPE.circle, "d4");
+
+      this.board.addMarker(MARKER_TYPE.dot, "g4");
+      this.board.addMarker(MARKER_TYPE.dot, "h4");
+
+      this.board.addMarker(MARKER_TYPE.frame, "a6");
+      this.board.addMarker(MARKER_TYPE.frame, "b6");
+
+      this.board.addMarker(MARKER_TYPE.square, "h6");
+      this.board.addMarker(MARKER_TYPE.square, "g6");
+
+      this.board.addArrow(ARROW_TYPE.pointy, "d2", "d3");
+      this.board.addArrow(CUSTOM_ARROW_TYPE.normal, "d4", "f5");
+      this.board.addArrow(CUSTOM_ARROW_TYPE.thick, "e4", "g5");
+      this.board.addArrow(CUSTOM_ARROW_TYPE.thicker, "f4", "h5");
+
+      console.info(this.board.getArrows());
+      */
     } catch (err) {
       console.error(err);
     }

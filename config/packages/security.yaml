@@ -43,6 +43,8 @@ security:
     - { path: ^/practice, roles: ROLE_USER }
     - { path: ^/roadmap, roles: ROLE_USER }
     - { path: ^/analyse, roles: ROLE_USER }
+    - { path: ^/opponent, roles: ROLE_USER }
+    - { path: ^/settings, roles: ROLE_USER }
     - { path: ^/admin, roles: ROLE_ADMIN }
 
 when@test:

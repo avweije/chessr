@@ -10,11 +10,35 @@ import {
   Markers,
 } from "cm-chessboard/src/extensions/markers/Markers.js";
 import { PromotionDialog } from "cm-chessboard/src/extensions/promotion-dialog/PromotionDialog.js";
-import { Arrows } from "cm-chessboard/src/extensions/arrows/Arrows.js";
+import {
+  ARROW_TYPE,
+  Arrows,
+} from "cm-chessboard/src/extensions/arrows/Arrows.js";
+
+import { ThickerArrows } from "./ThickerArrows.js";
 
 import "../styles/chessboard.css";
 import "cm-chessboard/assets/extensions/promotion-dialog/promotion-dialog.css";
 import "cm-chessboard/assets/extensions/arrows/arrows.css";
+
+export const CUSTOM_MARKER_TYPE = {
+  checkmark: {
+    class: "marker-checkmark",
+    slice: "markerCheckmark",
+  },
+  cancel: {
+    class: "marker-cancel",
+    slice: "markerCancel",
+  },
+  squareGreen: {
+    class: "marker-square-green",
+    slice: "markerSquare",
+  },
+  squareRed: {
+    class: "marker-square-red",
+    slice: "markerSquare",
+  },
+};
 
 export const BOARD_STATUS = {
   default: "default",
@@ -43,7 +67,6 @@ export const PIECE_TILESIZE = {
   alpha: 2048,
 
   get(str) {
-    console.log("PIECE_TILESIZE:get: " + str);
     // strip the basename
     var base = new String(str).substring(str.lastIndexOf("/") + 1);
     if (base.lastIndexOf(".") != -1)
@@ -181,7 +204,7 @@ export class MyChessBoard {
     var _boardSettings = {
       position: FEN.start,
       orientation: COLOR.white,
-      assetsUrl: "/build/", // wherever you copied the assets folder to, could also be in the node_modules folder
+      assetsUrl: "./build/", // wherever you copied the assets folder to, could also be in the node_modules folder
       style: {
         cssClass: "chess-club", // set the css theme of the board, try "green", "blue" or "chess-club"
         showCoordinates: true, // show ranks and files
@@ -194,23 +217,25 @@ export class MyChessBoard {
       extensions: [
         {
           class: Markers,
-          props: { sprite: "/build/extensions/markers/markers.svg" },
+          props: { sprite: "extensions/markers/markers.svg" },
         },
         {
           class: PromotionDialog,
+          props: { sprite: "extensions/markers/arrows.svg" },
         },
         {
-          class: Arrows,
+          class: ThickerArrows,
         },
       ],
     };
     // merge the custom board settings
     _boardSettings = this.deepMerge(_boardSettings, boardSettings);
 
-    console.log(_boardSettings);
-
     // create the chess board
     this.board = new Chessboard(boardElement, _boardSettings);
+
+    console.info("board");
+    console.info(this.board);
 
     // apply the chessboard settings (for this class, not the board itself)
     this.boardSettings = this.deepMerge(this.boardSettings, settings);
@@ -227,7 +252,7 @@ export class MyChessBoard {
       // update the setting
       temp[parts[parts.length - 1]] = value;
     } catch (err) {
-      console.error(err);
+      console.warn(err);
     }
   }
 
@@ -255,11 +280,11 @@ export class MyChessBoard {
     this.board.removeMarkers(MARKER_TYPE.frameDanger);
     this.board.removeMarkers(MARKER_TYPE.framePrimary);
     this.board.removeMarkers(MARKER_TYPE.square);
-    this.board.removeMarkers(this.markers.checkmark);
-    this.board.removeMarkers(this.markers.cancel);
-    this.board.removeMarkers(this.markers.squareGreen);
+    this.board.removeMarkers(CUSTOM_MARKER_TYPE.checkmark);
+    this.board.removeMarkers(CUSTOM_MARKER_TYPE.cancel);
+    this.board.removeMarkers(CUSTOM_MARKER_TYPE.squareGreen);
     if (!keepPremove) {
-      this.board.removeMarkers(this.markers.squareRed);
+      this.board.removeMarkers(CUSTOM_MARKER_TYPE.squareRed);
     }
   }
 
@@ -272,7 +297,7 @@ export class MyChessBoard {
     try {
       this.board.enableMoveInput(this.moveInputHandler.bind(this));
     } catch (err) {
-      console.log(err);
+      console.warn(err);
     }
   }
 
@@ -281,7 +306,7 @@ export class MyChessBoard {
     try {
       this.board.disableMoveInput();
     } catch (err) {
-      console.log(err);
+      console.warn(err);
     }
   }
 
@@ -325,15 +350,6 @@ export class MyChessBoard {
     var match = initialFen == this.initialFen && !resetMoves;
     var lastMatchingFen = "";
 
-    console.info(
-      "resetToPosition:",
-      initialFen,
-      this.initialFen,
-      history.length,
-      moves.length,
-      match
-    );
-
     // see if the current moves match the new moves
     for (var i = 0; i < moves.length; i++) {
       // if this is a new move
@@ -357,28 +373,30 @@ export class MyChessBoard {
 
     // reset the game & board
     if (!match) {
-      // if we have an initial fen
-      if (initialFen != "") {
-        this.game.load(initialFen);
-      } else {
-        this.game.reset();
-      }
-      // make the moves that matched
-      for (var i = 0; i < movesThatMatch.length; i++) {
-        this.game.move(movesThatMatch[i]);
-      }
-      // update the board
-      if (updateBoard) {
-        // animate the moves if it's a new position
-        await this.board.setPosition(
-          this.game.fen(),
-          movesThatMatch.length > 0
-        );
+      try {
+        // if we have an initial fen
+        if (initialFen != "") {
+          this.game.load(initialFen);
+        } else {
+          this.game.reset();
+        }
+        // make the moves that matched
+        for (var i = 0; i < movesThatMatch.length; i++) {
+          this.game.move(movesThatMatch[i]);
+        }
+        // update the board
+        if (updateBoard) {
+          // animate the moves if it's a new position
+          await this.board.setPosition(
+            this.game.fen(),
+            movesThatMatch.length > 0
+          );
+        }
 
-        console.info("resetToPosition: board updated..");
+        //movesToMake = moves;
+      } catch (err) {
+        console.warn("Error:", err);
       }
-
-      //movesToMake = moves;
     }
 
     // the new moves
@@ -388,8 +406,6 @@ export class MyChessBoard {
       this.game.move(moves[i]);
       newMoves.push(this.game.history({ verbose: true }).pop());
     }
-
-    console.info(newMoves, movesToMake, moves);
 
     return newMoves;
   }
@@ -410,7 +426,7 @@ export class MyChessBoard {
       // call the after move event
       this.afterMove(move);
     } catch (err) {
-      console.log(err);
+      console.warn(err);
     }
   }
 
@@ -441,7 +457,7 @@ export class MyChessBoard {
       // call the after move event
       this.afterMove(moves[index]);
     } catch (err) {
-      console.log(err);
+      console.warn(err);
     }
   }
 
@@ -789,7 +805,7 @@ export class MyChessBoard {
       // update the pgn field
       this.updatePgnField();
     } catch (err) {
-      console.log(err);
+      console.warn(err);
     }
   }
 
@@ -1169,10 +1185,8 @@ export class MyChessBoard {
     // if we need to make a premove
     if (this.status == BOARD_STATUS.waitingOnMove && this.premoves.length > 0) {
       try {
-        console.info("setStatus, has premove, making it now..");
-
         // remove the premove markers
-        this.board.removeMarkers(this.markers.squareRed);
+        this.board.removeMarkers(CUSTOM_MARKER_TYPE.squareRed);
 
         // make the move
         this.makeMove({
@@ -1190,16 +1204,16 @@ export class MyChessBoard {
         // re-add next premove markers
         for (var i = 0; i < this.premoves.length; i++) {
           this.board.addMarker(
-            this.markers.squareRed,
+            CUSTOM_MARKER_TYPE.squareRed,
             this.premoves[i].squareFrom
           );
           this.board.addMarker(
-            this.markers.squareRed,
+            CUSTOM_MARKER_TYPE.squareRed,
             this.premoves[i].squareTo
           );
         }
       } catch (err) {
-        console.log(err);
+        console.warn(err);
         // clear the premoves
         this.premoves = [];
       }
@@ -1254,7 +1268,7 @@ export class MyChessBoard {
     // if this is a premove
     if (this.status !== BOARD_STATUS.waitingOnMove) {
       // add a marker
-      this.board.addMarker(this.markers.squareRed, event.squareFrom);
+      this.board.addMarker(CUSTOM_MARKER_TYPE.squareRed, event.squareFrom);
 
       return true;
     }
@@ -1281,7 +1295,7 @@ export class MyChessBoard {
     }
 
     // show the legal moves
-    this.board.addLegalMovesMarkers(moves);
+    //this.board.addLegalMovesMarkers(moves);
 
     return true;
   }
@@ -1314,8 +1328,14 @@ export class MyChessBoard {
                 // remove any markers before adding the premove markers
                 this.board.removeMarkers(undefined, event.squareFrom);
                 this.board.removeMarkers(undefined, event.squareTo);
-                this.board.addMarker(this.markers.squareRed, event.squareFrom);
-                this.board.addMarker(this.markers.squareRed, event.squareTo);
+                this.board.addMarker(
+                  CUSTOM_MARKER_TYPE.squareRed,
+                  event.squareFrom
+                );
+                this.board.addMarker(
+                  CUSTOM_MARKER_TYPE.squareRed,
+                  event.squareTo
+                );
               } else {
                 //chessboard.setPiece(result.square, result.piece, true);
                 // make the move
@@ -1342,8 +1362,8 @@ export class MyChessBoard {
         // remove any markers before adding the premove markers
         this.board.removeMarkers(undefined, event.squareFrom);
         this.board.removeMarkers(undefined, event.squareTo);
-        this.board.addMarker(this.markers.squareRed, event.squareFrom);
-        this.board.addMarker(this.markers.squareRed, event.squareTo);
+        this.board.addMarker(CUSTOM_MARKER_TYPE.squareRed, event.squareFrom);
+        this.board.addMarker(CUSTOM_MARKER_TYPE.squareRed, event.squareTo);
 
         return false;
       }
@@ -1370,7 +1390,7 @@ export class MyChessBoard {
         return false;
       }
     } catch (err) {
-      console.log(err);
+      console.warn(err);
 
       return false;
     }
@@ -1385,7 +1405,7 @@ export class MyChessBoard {
       this.premoves = [];
     }
     // remove the premove markers
-    this.board.removeMarkers(this.markers.squareRed);
+    this.board.removeMarkers(CUSTOM_MARKER_TYPE.squareRed);
     // remove the legal move markers
     this.board.removeLegalMovesMarkers();
   }
@@ -1404,8 +1424,8 @@ export class MyChessBoard {
         // remove any markers before adding the premove markers
         this.board.removeMarkers(undefined, event.squareFrom);
         this.board.removeMarkers(undefined, event.squareTo);
-        this.board.addMarker(this.markers.squareRed, event.squareFrom);
-        this.board.addMarker(this.markers.squareRed, event.squareTo);
+        this.board.addMarker(CUSTOM_MARKER_TYPE.squareRed, event.squareFrom);
+        this.board.addMarker(CUSTOM_MARKER_TYPE.squareRed, event.squareTo);
 
         return true;
       }
@@ -1422,14 +1442,10 @@ export class MyChessBoard {
 
   // called after a move was made
   afterMakeMove(removeMarkers = true) {
-    console.log("afterMakeMove:");
-
     // remove the legal move markers
     this.board.removeLegalMovesMarkers();
 
     if (removeMarkers) {
-      console.info("-- REMOVE MARKERS (1)");
-
       this.board.removeMarkers();
     }
 
