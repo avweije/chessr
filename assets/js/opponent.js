@@ -1,7 +1,5 @@
-import { Utils } from "./utils.js";
-import { Modal } from "./modal.js";
-
-import "../styles/opponent.css";
+import { Utils } from "utils";
+import { Modal } from "modal";
 
 class Opponent {
   // the elements
@@ -388,7 +386,7 @@ class Opponent {
 
   // get the settings
   getSettings() {
-    var url = "./api/download/settings";
+    var url = "/api/download/settings";
 
     // show the page loader
     Utils.showLoading();
@@ -427,7 +425,7 @@ class Opponent {
 
   // get the opponents
   getOpponents() {
-    var url = "./api/opponent";
+    var url = "/api/opponent";
 
     // show the page loader
     Utils.showLoading();
@@ -463,11 +461,11 @@ class Opponent {
   // switch tabs
   switchTab() {
     if (this.tabButtons.download.checked) {
-      this.tabContainers.download.classList.remove("hidden");
-      this.tabContainers.analysis.classList.add("hidden");
+      this.tabContainers.download.classList.remove("is-hidden");
+      this.tabContainers.analysis.classList.add("is-hidden");
     } else {
-      this.tabContainers.download.classList.add("hidden");
-      this.tabContainers.analysis.classList.remove("hidden");
+      this.tabContainers.download.classList.add("is-hidden");
+      this.tabContainers.analysis.classList.remove("is-hidden");
 
       // make sure we have the opponent moves
       this.getOpponentMoves(this.opponentData.needsRefresh);
@@ -517,7 +515,7 @@ class Opponent {
     this.opponentData.id = sel.id;
     this.opponentData.moves = [];
 
-    var url = "./api/opponent/" + encodeURIComponent(sel.id);
+    var url = "/api/opponent/" + encodeURIComponent(sel.id);
 
     // show the page loader
     Utils.showLoading();
@@ -555,7 +553,7 @@ class Opponent {
     // load the suggestions
     this.loadMoveSuggestions();
     // show the opponent moves container
-    this.opponentMoves.container.classList.remove("hidden");
+    this.opponentMoves.container.classList.remove("is-hidden");
     // reload the table
     this.loadOpponentMoves();
   }
@@ -640,8 +638,8 @@ class Opponent {
     }
 
     // show the spinner
-    this.startButton.children[0].classList.remove("hidden");
     this.startButton.disabled = true;
+    this.startButton.classList.add("is-loading");
 
     // initialise the analyse process
     this.analyseDialog.inProgress = true;
@@ -683,15 +681,15 @@ class Opponent {
     // if we have an error
     if (error) {
       // show the error
-      this.analyseDialog.errorContainer.classList.remove("hidden");
+      this.analyseDialog.errorContainer.classList.remove("is-hidden");
       this.analyseDialog.errorField.innerHTML = error;
       // hide the other fields
-      this.analyseDialog.fieldsContainer.classList.add("hidden");
+      this.analyseDialog.fieldsContainer.classList.add("is-hidden");
     } else {
       // get the types
       var types = this.getSelectedTypes();
       // show the fields
-      this.analyseDialog.fieldsContainer.classList.remove("hidden");
+      this.analyseDialog.fieldsContainer.classList.remove("is-hidden");
 
       console.log("updateFields:");
 
@@ -712,7 +710,7 @@ class Opponent {
             " found";
       this.analyseDialog.periodField.innerHTML = this.analyseDialog.period;
       // hide the error
-      this.analyseDialog.errorContainer.classList.add("hidden");
+      this.analyseDialog.errorContainer.classList.add("is-hidden");
       this.analyseDialog.errorField.innerHTML = "";
     }
   }
@@ -757,8 +755,8 @@ class Opponent {
 
       // update the stop button text
       this.analyseDialog.stopButton.innerHTML = "Close";
-      this.analyseDialog.stopButton.classList.remove("btn-warning");
-      this.analyseDialog.stopButton.classList.add("btn-primary");
+      this.analyseDialog.stopButton.classList.remove("is-warning");
+      this.analyseDialog.stopButton.classList.add("is-primary");
       // end the progress
       this.analyseEndProgress();
 
@@ -768,7 +766,7 @@ class Opponent {
     // update the dialog fields
     this.updateDialogFields();
 
-    var url = "./api/opponent/analyse";
+    var url = "/api/opponent/analyse";
 
     var data = {
       site: this.siteRadio.chesscom.checked ? "Chess.com" : "Lichess",
@@ -866,8 +864,8 @@ class Opponent {
 
     // update the stop button text
     this.analyseDialog.stopButton.innerHTML = "Close";
-    this.analyseDialog.stopButton.classList.remove("btn-warning");
-    this.analyseDialog.stopButton.classList.add("btn-primary");
+    this.analyseDialog.stopButton.classList.remove("is-warning");
+    this.analyseDialog.stopButton.classList.add("is-primary");
 
     // end the progress
     this.analyseEndProgress();
@@ -878,8 +876,8 @@ class Opponent {
     // no longer in progress
     this.analyseDialog.inProgress = false;
     // hide the spinner
-    this.startButton.children[0].classList.add("hidden");
     this.startButton.disabled = false;
+    this.startButton.classList.remove("is-loading");
   }
 
   // get a printable duration for a number of seconds (2h 14m 32s)
@@ -899,7 +897,7 @@ class Opponent {
     this.getOpponentMoves();
 
     // show the remove opponent button
-    this.opponentRemoveButton.classList.remove("hidden");
+    this.opponentRemoveButton.classList.remove("is-hidden");
   }
 
   // switch opponent color
@@ -976,7 +974,7 @@ class Opponent {
       return false;
     }
 
-    var url = "./api/opponent/connect";
+    var url = "/api/opponent/connect";
 
     var data = {
       opponent: selected.id,
@@ -1163,7 +1161,7 @@ class Opponent {
       return false;
     }
 
-    var url = "./api/opponent/disconnect";
+    var url = "/api/opponent/disconnect";
 
     var data = {
       parent: selected.id,
@@ -1307,7 +1305,7 @@ class Opponent {
       return false;
     }
 
-    var url = "./api/opponent/" + encodeURIComponent(id);
+    var url = "/api/opponent/" + encodeURIComponent(id);
 
     fetch(url, {
       method: "DELETE",
@@ -1338,9 +1336,9 @@ class Opponent {
 
     // toggle the choose opponent text
     if (this.opponents.length > 1) {
-      this.chooseOpponentText.classList.remove("hidden");
+      this.chooseOpponentText.classList.remove("is-hidden");
     } else {
-      this.chooseOpponentText.classList.add("hidden");
+      this.chooseOpponentText.classList.add("is-hidden");
     }
 
     // add the parent accounts
@@ -1364,9 +1362,9 @@ class Opponent {
 
     // toggle the choose opponent text
     if (this.opponents.length > 1) {
-      this.chooseOpponentText.classList.remove("hidden");
+      this.chooseOpponentText.classList.remove("is-hidden");
     } else {
-      this.chooseOpponentText.classList.add("hidden");
+      this.chooseOpponentText.classList.add("is-hidden");
     }
 
     // add the opponent box
@@ -1472,11 +1470,11 @@ class Opponent {
       conSpan.className =
         "opponent-connect-link hidden peer-checked:inline-block absolute right-2 bottom-1 w-6 h-6 cursor-pointer text-tacao-500 hover:text-tacao-700 dark:text-slate-400 hover:dark:text-slate-600";
       if (opponent.children.length > 0) {
-        conSpan.className = conSpan.className + " icon-[mdi--link-off]";
+        conSpan.innerHTML = '<i class="fa-solid fa-link-slash"></i>';
 
         conSpan.addEventListener("click", this.onDisconnectOpponent.bind(this));
       } else {
-        conSpan.className = conSpan.className + " icon-[mdi--link]";
+        conSpan.innerHTML = '<i class="fa-solid fa-link"></i>';
 
         conSpan.addEventListener("click", this.onConnectOpponent.bind(this));
       }
@@ -1523,7 +1521,7 @@ class Opponent {
       "absolute top-1 right-1 bottom-1 left-1 rounded-full bg-white";
 
     var ch2 = document.createElement("div");
-    ch2.className = "boxed-checkbox-circle icon-[mdi--checkbox-marked-circle]";
+    ch2.className = "boxed-checkbox-circle";
 
     check.appendChild(ch1);
     check.appendChild(ch2);
@@ -1532,7 +1530,7 @@ class Opponent {
 
     var blank = document.createElement("div");
     blank.className =
-      "boxed-checkbox-circle peer-checked:hidden text-gray-300 dark:text-slate-500 icon-[mdi--checkbox-blank-circle-outline]";
+      "boxed-checkbox-circle";
 
     box.appendChild(blank);
 
@@ -1582,8 +1580,8 @@ class Opponent {
         // remove the opponent radio box
         this.opponentContainer.removeChild(this.opponentContainer.children[i]);
         // hide the moves container & the remove button
-        this.opponentMoves.container.classList.add("hidden");
-        this.opponentRemoveButton.classList.add("hidden");
+        this.opponentMoves.container.classList.add("is-hidden");
+        this.opponentRemoveButton.classList.add("is-hidden");
 
         break;
       }
@@ -1709,8 +1707,9 @@ class Opponent {
 
       var icon = document.createElement("span");
       icon.className =
-        "inline-block text-2xl tc-link-shade icon-[mdi--open-in-new]";
+        "text-2xl tc-link-shade";
       icon.title = "Open in repertoire";
+      icon.innerHTML = '<i class="fa-solid fa-up-right-from-square"></i>';
 
       btn.appendChild(icon);
 
@@ -1802,7 +1801,7 @@ class Opponent {
         // add the checkmark span
         sp = document.createElement("span");
         sp.className = "opponent-move-checkmark";
-        sp.innerHTML = '<span class="w-3 h-3 icon-[mdi--check-circle]"></span>';
+        sp.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
 
         hdr.appendChild(sp);
       }
@@ -1968,30 +1967,20 @@ class Opponent {
 
     // toggle the suggestions container
     if (
-      this.opponentMoves.suggestions.container.classList.contains("hidden") &&
+      this.opponentMoves.suggestions.container.classList.contains("is-hidden") &&
       (show === undefined || show == true)
     ) {
       console.log("show");
 
-      this.opponentMoves.suggestions.container.classList.remove("hidden");
+      this.opponentMoves.suggestions.container.classList.remove("is-hidden");
       // toggle the button icon
-      this.opponentMoves.suggestions.button.children[0].classList.remove(
-        "icon-[mdi--show-outline]"
-      );
-      this.opponentMoves.suggestions.button.children[0].classList.add(
-        "icon-[mdi--hide-outline]"
-      );
+      this.opponentMoves.suggestions.button.children[0].innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
     } else {
       console.log("hide");
 
-      this.opponentMoves.suggestions.container.classList.add("hidden");
+      this.opponentMoves.suggestions.container.classList.add("is-hidden");
       // toggle the button icon
-      this.opponentMoves.suggestions.button.children[0].classList.remove(
-        "icon-[mdi--hide-outline]"
-      );
-      this.opponentMoves.suggestions.button.children[0].classList.add(
-        "icon-[mdi--show-outline]"
-      );
+      this.opponentMoves.suggestions.button.children[0].innerHTML = '<i class="fa-solid fa-eye"></i>';
     }
   }
 
@@ -2085,14 +2074,14 @@ class Opponent {
       this.opponentMoves.repertoire.children[0].innerHTML = current.matches
         ? "This move is in your repertoire."
         : "This move is not in your repertoire.";
-      this.opponentMoves.repertoire.classList.remove("hidden");
+      this.opponentMoves.repertoire.classList.remove("is-hidden");
       // hide the suggestions field & container
-      this.opponentMoves.suggestions.text.classList.add("hidden");
+      this.opponentMoves.suggestions.text.classList.add("is-hidden");
       this.onToggleSuggestions(false);
     } else {
       // hide the in repertoire field
       this.opponentMoves.repertoire.children[0].innerHTML = "";
-      this.opponentMoves.repertoire.classList.add("hidden");
+      this.opponentMoves.repertoire.classList.add("is-hidden");
       // show the suggestions if we have any
       var suggestions = this.opponentColorRadio.white.checked
         ? this.opponentData.moves.white.suggestions
@@ -2109,9 +2098,9 @@ class Opponent {
           " for your " +
           (this.opponentColorRadio.white.checked ? "black" : "white") +
           " repertoire.";
-        this.opponentMoves.suggestions.text.classList.remove("hidden");
+        this.opponentMoves.suggestions.text.classList.remove("is-hidden");
       } else {
-        this.opponentMoves.suggestions.text.classList.add("hidden");
+        this.opponentMoves.suggestions.text.classList.add("is-hidden");
         this.onToggleSuggestions(false);
       }
     }
@@ -2127,7 +2116,7 @@ class Opponent {
     // show the page loader
     Utils.showLoading();
 
-    var url = "./api/opponent/moves";
+    var url = "/api/opponent/moves";
 
     var data = {
       id: this.getSelectedOpponent().id,

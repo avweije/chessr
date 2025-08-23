@@ -1,0 +1,37 @@
+.boxed-card-grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 1rem;
+}
+
+.boxed-card-grid .boxed-card {
+    width: 26rem;
+    height: 13rem;
+}
+
+/* Mobile (up to 768px) */
+@media (max-width: 768px) {}
+
+/* Tablet (769px to 1023px) */
+@media (min-width: 769px) and (max-width: 1023px) {}
+
+/* Desktop (1024px to 1215px) */
+@media (min-width: 1024px) and (max-width: 1215px) {
+    .boxed-card-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Widescreen (1216px to 1408) */
+@media (min-width: 1216px) and (max-width: 1407px) {
+    .boxed-card-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }    
+}
+
+/* Full HD (1408px and up) */
+@media (min-width: 1408px) {
+    .boxed-card-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}

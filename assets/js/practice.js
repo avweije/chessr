@@ -4,22 +4,22 @@ import {
   BOARD_STATUS,
   BOARD_SETTINGS,
   PIECE_TILESIZE,
-} from "./chessboard.js";
-import { CUSTOM_ARROW_TYPE } from "./ThickerArrows.js";
-import { MyChess } from "./chess.js";
-import { COLOR } from "cm-chessboard/src/view/ChessboardView.js";
+} from "chessboard";
+import { CUSTOM_ARROW_TYPE } from "ThickerArrows";
+import { MyChess } from "chess";
+import { COLOR } from "../cm-chessboard/src/view/ChessboardView.js";
 import {
   MARKER_TYPE,
   Markers,
-} from "cm-chessboard/src/extensions/markers/Markers.js";
-import { ARROW_TYPE } from "cm-chessboard/src/extensions/arrows/Arrows.js";
-import { Utils } from "./utils.js";
-import { Modal } from "./modal.js";
+} from "../cm-chessboard/src/extensions/markers/Markers.js";
+import { ARROW_TYPE } from "../cm-chessboard/src/extensions/arrows/Arrows.js";
+import { Utils } from "utils";
+import { Modal } from "modal";
 
 import "../styles/chessboard.css";
 
 //const confetti = require("canvas-confetti");
-import confetti from "canvas-confetti";
+//import confetti from "canvas-confetti";
 
 /**
  * The controller class for the practice page.
@@ -145,9 +145,11 @@ class Practice extends MyChessBoard {
     // show the page loader
     Utils.showLoading();
 
+    console.log("window.workerUrl:", workerUrl);
+    
     // create the worker
     this.worker = new Worker(
-      new URL("./workers/practice01.js", import.meta.url)
+      new URL(workerUrl, import.meta.url)
     );
 
     this.worker.onerror = function (e) {
@@ -327,7 +329,7 @@ class Practice extends MyChessBoard {
     // show the page loader
     Utils.showLoading();
 
-    var url = "./api/settings";
+    var url = "/api/settings";
 
     fetch(url, {
       method: "GET",
@@ -671,7 +673,7 @@ class Practice extends MyChessBoard {
    * @memberof Practice
    */
   showPgnContainer() {
-    this.pgnContainer.classList.remove("hidden");
+    this.pgnContainer.classList.remove("is-hidden");
   }
 
   /**
@@ -680,7 +682,7 @@ class Practice extends MyChessBoard {
    * @memberof Practice
    */
   hidePgnContainer() {
-    this.pgnContainer.classList.add("hidden");
+    this.pgnContainer.classList.add("is-hidden");
   }
 
   /**
@@ -729,11 +731,11 @@ class Practice extends MyChessBoard {
    */
 
   showSuggestionContainer() {
-    this.suggestionContainer.classList.remove("hidden");
+    this.suggestionContainer.classList.remove("is-hidden");
   }
 
   hideSuggestionContainer() {
-    this.suggestionContainer.classList.add("hidden");
+    this.suggestionContainer.classList.add("is-hidden");
   }
 
   updateSuggestionField(color, fen, suggestion) {
@@ -782,6 +784,9 @@ class Practice extends MyChessBoard {
    */
 
   togglePracticeInfo(eventObject) {
+
+    console.info("togglePracticeInfo", eventObject);
+    
     if (
       !this.buttons.showPracticeInfo.disabled &&
       this.buttons.showPracticeInfo.checked
@@ -807,14 +812,14 @@ class Practice extends MyChessBoard {
         localStorage.setItem("show-practice-info", true);
       }
 
-      this.practiceInfoContainer.classList.remove("hidden");
+      this.practiceInfoContainer.classList.remove("is-hidden");
     } else {
       // update toggle setting
       if (eventObject !== false) {
         localStorage.setItem("show-practice-info", false);
       }
 
-      this.practiceInfoContainer.classList.add("hidden");
+      this.practiceInfoContainer.classList.add("is-hidden");
     }
   }
 
@@ -832,8 +837,8 @@ class Practice extends MyChessBoard {
 
   showAnalysis() {
     // show the analysis container
-    this.analysis.buttons.classList.remove("hidden");
-    this.analysis.container.classList.remove("hidden");
+    this.analysis.buttons.classList.remove("is-hidden");
+    this.analysis.container.classList.remove("is-hidden");
     // enable the buttons
     this.analysis.saveButton.disabled = false;
     this.analysis.ignoreButton.disabled = false;
@@ -842,8 +847,8 @@ class Practice extends MyChessBoard {
 
   hideAnalysis() {
     // hide the analysis container
-    this.analysis.buttons.classList.add("hidden");
-    this.analysis.container.classList.add("hidden");
+    this.analysis.buttons.classList.add("is-hidden");
+    this.analysis.container.classList.add("is-hidden");
     // disable the buttons
     this.analysis.saveButton.disabled = true;
     this.analysis.ignoreButton.disabled = true;
@@ -855,15 +860,15 @@ class Practice extends MyChessBoard {
     // configure the save dialog
     switch (this.practice.lines[this.practice.lineIdx].moves.length) {
       case 1:
-        this.analysis.saveDialog.textOneMove.classList.remove("hidden");
-        this.analysis.saveDialog.textMultipleMoves.classList.add("hidden");
-        this.analysis.saveDialog.movesList.classList.add("hidden");
+        this.analysis.saveDialog.textOneMove.classList.remove("is-hidden");
+        this.analysis.saveDialog.textMultipleMoves.classList.add("is-hidden");
+        this.analysis.saveDialog.movesList.classList.add("is-hidden");
         this.analysis.saveDialog.movesList.classList.add("sm:hidden");
         break;
       case 2:
-        this.analysis.saveDialog.textOneMove.classList.add("hidden");
-        this.analysis.saveDialog.textMultipleMoves.classList.remove("hidden");
-        this.analysis.saveDialog.movesList.classList.remove("hidden");
+        this.analysis.saveDialog.textOneMove.classList.add("is-hidden");
+        this.analysis.saveDialog.textMultipleMoves.classList.remove("is-hidden");
+        this.analysis.saveDialog.movesList.classList.remove("is-hidden");
         this.analysis.saveDialog.movesList.classList.remove("sm:hidden");
         this.analysis.saveDialog.radioTop2.parentNode.parentNode.classList.remove(
           "hidden"
@@ -873,9 +878,9 @@ class Practice extends MyChessBoard {
         );
         break;
       case 3:
-        this.analysis.saveDialog.textOneMove.classList.add("hidden");
-        this.analysis.saveDialog.textMultipleMoves.classList.remove("hidden");
-        this.analysis.saveDialog.movesList.classList.remove("hidden");
+        this.analysis.saveDialog.textOneMove.classList.add("is-hidden");
+        this.analysis.saveDialog.textMultipleMoves.classList.remove("is-hidden");
+        this.analysis.saveDialog.movesList.classList.remove("is-hidden");
         this.analysis.saveDialog.movesList.classList.remove("sm:hidden");
         this.analysis.saveDialog.radioTop2.parentNode.parentNode.classList.remove(
           "hidden"
@@ -948,7 +953,7 @@ class Practice extends MyChessBoard {
     this.needsRefresh = true;
 
     // set the API url
-    var url = "./api/analysis/save";
+    var url = "/api/analysis/save";
 
     // set the data object
     var data = {
@@ -1019,7 +1024,7 @@ class Practice extends MyChessBoard {
   // fired when the ignore dialog is confirmed
   onAnalysisIgnoreConfirmed() {
     // set the API url
-    var url = "./api/analysis/ignore";
+    var url = "/api/analysis/ignore";
     // set the data
     var data = {
       fen: this.practice.lines[this.practice.lineIdx].fen,
@@ -1058,7 +1063,7 @@ class Practice extends MyChessBoard {
     if (removeFromDb) {
       //if (false) {
       // set the API url
-      var url = "./api/analysis";
+      var url = "/api/analysis";
       // set the data
       var data = {
         fen: this.practice.lines[this.practice.lineIdx].fen,
@@ -1185,16 +1190,16 @@ class Practice extends MyChessBoard {
       this.practice.lines[this.practice.lineIdx].initialFen != ""
     ) {
       // show the initial fen fields
-      this.analysis.fields.children[4].classList.remove("hidden");
-      this.analysis.fields.children[5].classList.remove("hidden");
+      this.analysis.fields.children[4].classList.remove("is-hidden");
+      this.analysis.fields.children[5].classList.remove("is-hidden");
 
       // set the initial fen
       this.analysis.fields.children[5].innerHTML =
         this.practice.lines[this.practice.lineIdx].initialFen;
     } else {
       // hide the initial fen fields
-      this.analysis.fields.children[4].classList.add("hidden");
-      this.analysis.fields.children[5].classList.add("hidden");
+      this.analysis.fields.children[4].classList.add("is-hidden");
+      this.analysis.fields.children[5].classList.add("is-hidden");
     }
       */
   }
@@ -1293,7 +1298,7 @@ class Practice extends MyChessBoard {
     // toggle the pgn navigation buttons
     this.togglePgnNavigationButtons();
     // show the pgn navigation buttons
-    this.pgnNavigationContainer.classList.remove("hidden");
+    this.pgnNavigationContainer.classList.remove("is-hidden");
 
     // allow navigation by arrow left/right
     this.setOption(BOARD_SETTINGS.navigation, true);
@@ -1309,7 +1314,7 @@ class Practice extends MyChessBoard {
       // disable the pgn links
       this.setPgnWithLinks(false);
       // hide the pgn navigation buttons
-      this.pgnNavigationContainer.classList.add("hidden");
+      this.pgnNavigationContainer.classList.add("is-hidden");
 
       // disallow navigation by arrow left/right
       this.setOption(BOARD_SETTINGS.navigation, false);
@@ -1379,7 +1384,7 @@ class Practice extends MyChessBoard {
     this.needsRefresh = false;
     // if we need to refresh
     if (refresh) {
-      var url = "./api/practice";
+      var url = "/api/practice";
 
       // show the page loader
       Utils.showLoading();
@@ -1421,6 +1426,7 @@ class Practice extends MyChessBoard {
     this.buttons.startPractice.disabled = false;
 
     // pass the ECO data to the worker
+    console.info("-- ECO data set in worker", this.repertoire.eco);
     this.worker.postMessage(["setData", this.repertoire.eco]);
 
     // get the number of moves (ours) for the different repertoires
@@ -1463,6 +1469,7 @@ class Practice extends MyChessBoard {
       // set the custom repertoire field
       this.customRepertoireField.children[0].children[0].innerHTML = pgn;
       // get the ECO code
+      console.info("-- get ECO data for custom repertoire");
       this.worker.postMessage(["getEco", pgn, "custom"]);
 
       // hide the repertoire type buttons
@@ -1557,9 +1564,9 @@ class Practice extends MyChessBoard {
   // hide the repertoire buttons
   hideRepertoireButtons() {
     // hide  the repertoire type buttons
-    this.buttons.repertoireType.classList.add("hidden");
+    this.buttons.repertoireType.classList.add("is-hidden");
     // show the custom repertoire field
-    this.customRepertoireField.classList.remove("hidden");
+    this.customRepertoireField.classList.remove("is-hidden");
 
     // hide the groups
     this.hideGroups();
@@ -1575,16 +1582,16 @@ class Practice extends MyChessBoard {
     this.buttons.repertoireType.children[2].children[0].disabled =
       this.repertoire.new.length == 0;
     if (this.repertoire.new.length == 0) {
-      this.buttons.repertoireType.children[2].classList.add("hidden");
+      this.buttons.repertoireType.children[2].classList.add("is-hidden");
     } else {
-      this.buttons.repertoireType.children[2].classList.remove("hidden");
+      this.buttons.repertoireType.children[2].classList.remove("is-hidden");
     }
     this.buttons.repertoireType.children[3].children[0].disabled =
       this.repertoire.recommended.length == 0;
     if (this.repertoire.recommended.length == 0) {
-      this.buttons.repertoireType.children[3].classList.add("hidden");
+      this.buttons.repertoireType.children[3].classList.add("is-hidden");
     } else {
-      this.buttons.repertoireType.children[3].classList.remove("hidden");
+      this.buttons.repertoireType.children[3].classList.remove("is-hidden");
     }
     this.buttons.repertoireType.children[4].children[0].disabled =
       this.repertoire.white.length == 0 && this.repertoire.black.length == 0;
@@ -1666,11 +1673,11 @@ class Practice extends MyChessBoard {
   }
 
   showGroups() {
-    this.containers.group.classList.remove("hidden");
+    this.containers.group.classList.remove("is-hidden");
   }
 
   hideGroups() {
-    this.containers.group.classList.add("hidden");
+    this.containers.group.classList.add("is-hidden");
   }
 
   onGroupSelectChange(event) {
@@ -1806,6 +1813,9 @@ class Practice extends MyChessBoard {
 
   // start the practice
   async onStartPractice() {
+
+    console.log("-- START PRACTICE", this.practice.lines);
+
     // reset vars
     this.practice.moveNr = 1;
     this.practice.lineIdx = 0;
@@ -1831,19 +1841,19 @@ class Practice extends MyChessBoard {
 
     // toggle the buttons
     this.buttons.startPractice.disabled = true;
-    this.buttons.startPractice.classList.add("hidden");
+    this.buttons.startPractice.classList.add("is-hidden");
     this.buttons.giveHint.disabled = false;
-    this.buttons.giveHint.classList.remove("hidden");
+    this.buttons.giveHint.classList.remove("is-hidden");
     this.buttons.prevMove.disabled = true;
-    this.buttons.prevMove.classList.remove("hidden");
+    this.buttons.prevMove.classList.remove("is-hidden");
     this.buttons.skipMove.disabled = false;
-    this.buttons.skipMove.classList.remove("hidden");
+    this.buttons.skipMove.classList.remove("is-hidden");
 
     if (this.type == "analysis") {
       this.buttons.showPracticeInfo.disabled = true;
-      this.buttons.showPracticeInfo.nextElementSibling.classList.add("hidden");
+      this.buttons.showPracticeInfo.nextElementSibling.classList.add("is-hidden");
 
-      this.practiceInfoContainer.classList.add("hidden");
+      this.practiceInfoContainer.classList.add("is-hidden");
     } else {
       this.buttons.showPracticeInfo.disabled = false;
       this.buttons.showPracticeInfo.nextElementSibling.classList.remove(
@@ -1888,15 +1898,15 @@ class Practice extends MyChessBoard {
     // toggle the buttons
     this.buttons.startPractice.disabled = false;
     this.buttons.startPractice.innerHTML = "Start your practice";
-    this.buttons.startPractice.classList.remove("hidden");
+    this.buttons.startPractice.classList.remove("is-hidden");
     this.buttons.giveHint.disabled = true;
-    this.buttons.giveHint.classList.add("hidden");
+    this.buttons.giveHint.classList.add("is-hidden");
     this.buttons.prevMove.disabled = true;
-    this.buttons.prevMove.classList.add("hidden");
+    this.buttons.prevMove.classList.add("is-hidden");
     this.buttons.skipMove.disabled = true;
-    this.buttons.skipMove.classList.add("hidden");
+    this.buttons.skipMove.classList.add("is-hidden");
     this.buttons.showPracticeInfo.disabled = true;
-    this.buttons.showPracticeInfo.nextElementSibling.classList.add("hidden");
+    this.buttons.showPracticeInfo.nextElementSibling.classList.add("is-hidden");
 
     this.togglePracticeInfo(false);
 
@@ -1963,6 +1973,7 @@ class Practice extends MyChessBoard {
     // if we have moves
     if (pgn != "") {
       // update the ECO field
+      console.log("-- GET ECO FOR", pgn);
       this.worker.postMessage(["getEco", pgn]);
     }
   }
@@ -2003,10 +2014,10 @@ class Practice extends MyChessBoard {
         : 100 - Math.round((practiceFailed / practiceCount) * 100);
 
     var colors = [
-      "text-white bg-red-500",
-      "text-white bg-orange-400",
-      "text-white bg-yellow-500",
-      "text-white bg-secondary-500",
+      "is-danger",
+      "is-warning",
+      "is-warning",
+      "is-success",
     ];
 
     // get the accuracy index for the colors
@@ -2015,7 +2026,7 @@ class Practice extends MyChessBoard {
     var accuracyInARowIdx = Math.floor(Math.min(7, practiceInARow) / 2);
 
     var stats =
-      '<span class="inline-block px-2 py-1 text-xs rounded-md ' +
+      '<span class="tag ' +
       colors[accuracyIdx] +
       '">';
     stats +=
@@ -2032,7 +2043,7 @@ class Practice extends MyChessBoard {
     if (practiceCount > 10 && accuracyInARowIdx > accuracyIdx) {
       // show the accuracy in a row
       stats +=
-        ' <span class="inline-block ml-px px-2 py-1 text-xs rounded-md ' +
+        ' <span class="tag ' +
         colors[accuracyInARowIdx] +
         '">';
       stats += practiceInARow + " in a row</span>";
@@ -2136,7 +2147,7 @@ class Practice extends MyChessBoard {
         parseInt(this.containers.correctCounter.innerHTML) > 0 &&
         parseInt(this.containers.failedCounter.innerHTML) == 0
       ) {
-        this.showConfetti();
+        //this.showConfetti();
       }
 
       return;
@@ -2182,7 +2193,7 @@ class Practice extends MyChessBoard {
     // disable the pgn links
     this.setPgnWithLinks(false);
     // hide the pgn navigation buttons
-    this.pgnNavigationContainer.classList.add("hidden");
+    this.pgnNavigationContainer.classList.add("is-hidden");
 
     // disallow navigation by arrow left/right
     this.setOption(BOARD_SETTINGS.navigation, false);
@@ -2914,7 +2925,7 @@ class Practice extends MyChessBoard {
 
   // show the counters
   showCounters(moveCount) {
-    this.containers.counters.classList.remove("hidden");
+    this.containers.counters.classList.remove("is-hidden");
 
     this.containers.moveCounter.innerHTML = moveCount;
     this.containers.correctCounter.innerHTML = 0;
@@ -2923,7 +2934,7 @@ class Practice extends MyChessBoard {
 
   // hide the counters
   hideCounters() {
-    this.containers.counters.classList.add("hidden");
+    this.containers.counters.classList.add("is-hidden");
   }
 
   // increase the move count
@@ -2970,7 +2981,7 @@ class Practice extends MyChessBoard {
     this.needsRefresh = true;
 
     // set the url
-    var url = "./api/repertoire/counters";
+    var url = "/api/repertoire/counters";
 
     var data = { moves: moves };
 
@@ -3005,37 +3016,37 @@ class Practice extends MyChessBoard {
 
   // show an info message
   showInfo(status = "") {
-    this.containers.confirm.classList.add("hidden");
-    this.containers.warning.classList.add("hidden");
-    this.containers.info.classList.remove("hidden");
+    this.containers.confirm.classList.add("is-hidden");
+    this.containers.warning.classList.add("is-hidden");
+    this.containers.info.classList.remove("is-hidden");
     this.containers.info.getElementsByTagName("span")[1].innerHTML = status;
   }
 
   // show a confirmation message
   showConfirm(status = "") {
-    this.containers.info.classList.add("hidden");
-    this.containers.warning.classList.add("hidden");
-    this.containers.confirm.classList.remove("hidden");
+    this.containers.info.classList.add("is-hidden");
+    this.containers.warning.classList.add("is-hidden");
+    this.containers.confirm.classList.remove("is-hidden");
     this.containers.confirm.getElementsByTagName("span")[1].innerHTML = status;
   }
 
   // show a warning message
   showWarning(status = "") {
-    this.containers.info.classList.add("hidden");
-    this.containers.confirm.classList.add("hidden");
-    this.containers.warning.classList.remove("hidden");
+    this.containers.info.classList.add("is-hidden");
+    this.containers.confirm.classList.add("is-hidden");
+    this.containers.warning.classList.remove("is-hidden");
     this.containers.warning.getElementsByTagName("span")[1].innerHTML = status;
   }
 
   // show a hint message
   showHint(hint = "") {
-    this.containers.hint.classList.remove("hidden");
+    this.containers.hint.classList.remove("is-hidden");
     this.containers.hint.getElementsByTagName("span")[1].innerHTML = hint;
   }
 
   // hide the hint messages
   hideHint() {
-    this.containers.hint.classList.add("hidden");
+    this.containers.hint.classList.add("is-hidden");
   }
 
   /**
@@ -3564,12 +3575,12 @@ class Practice extends MyChessBoard {
       count > 1 ? "Moves" : "Move";
 
     // show the moves list
-    this.playedMovesContainer.classList.remove("hidden");
+    this.playedMovesContainer.classList.remove("is-hidden");
   }
 
   // hide the played moves container
   hidePlayedMoves() {
-    this.playedMovesContainer.classList.add("hidden");
+    this.playedMovesContainer.classList.add("is-hidden");
   }
 
   // add a move to the played moves container

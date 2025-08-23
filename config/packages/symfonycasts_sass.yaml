@@ -1,0 +1,13 @@
+symfonycasts_sass:
+    # Path to your SCSS source folder
+    root_sass: 
+        - 'assets/styles/app.scss'
+        - 'assets/styles/home.scss'
+    
+    # Optional: Sass executable (if not in PATH)
+    binary: 'C:\dart-sass\sass.bat'
+    
+    # Sass options
+    sass_options:
+        style: expanded
+        source_map: true

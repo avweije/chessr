@@ -1,4 +1,4 @@
-import { Chess } from "chess.js/dist/esm/chess.js";
+import { Chess } from "../chess.js/dist/esm/chess.js";
 
 /*
 MyChess Class - Adds historyWithCorrectFen to Chess.js.

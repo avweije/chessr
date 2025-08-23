@@ -1,25 +1,25 @@
 //import { Chess } from "chess.js/dist/esm/chess.js";
-import { MyChess } from "./chess.js";
-import { Chessboard, FEN } from "cm-chessboard/src/Chessboard.js";
+import { MyChess } from "chess";
+import { Chessboard, FEN } from "../cm-chessboard/src/Chessboard.js";
 import {
   COLOR,
   INPUT_EVENT_TYPE,
-} from "cm-chessboard/src/view/ChessboardView.js";
+} from "../cm-chessboard/src/view/ChessboardView.js";
 import {
   MARKER_TYPE,
   Markers,
-} from "cm-chessboard/src/extensions/markers/Markers.js";
-import { PromotionDialog } from "cm-chessboard/src/extensions/promotion-dialog/PromotionDialog.js";
+} from "../cm-chessboard/src/extensions/markers/Markers.js";
+import { PromotionDialog } from "../cm-chessboard/src/extensions/promotion-dialog/PromotionDialog.js";
 import {
   ARROW_TYPE,
   Arrows,
-} from "cm-chessboard/src/extensions/arrows/Arrows.js";
+} from "../cm-chessboard/src/extensions/arrows/Arrows.js";
 
 import { ThickerArrows } from "./ThickerArrows.js";
 
 import "../styles/chessboard.css";
-import "cm-chessboard/assets/extensions/promotion-dialog/promotion-dialog.css";
-import "cm-chessboard/assets/extensions/arrows/arrows.css";
+import "../cm-chessboard/assets/extensions/promotion-dialog/promotion-dialog.css";
+import "../cm-chessboard/assets/extensions/arrows/arrows.css";
 
 export const CUSTOM_MARKER_TYPE = {
   checkmark: {
@@ -204,7 +204,7 @@ export class MyChessBoard {
     var _boardSettings = {
       position: FEN.start,
       orientation: COLOR.white,
-      assetsUrl: "./build/", // wherever you copied the assets folder to, could also be in the node_modules folder
+      assetsUrl: "/assets/", // wherever you copied the assets folder to, could also be in the node_modules folder
       style: {
         cssClass: "chess-club", // set the css theme of the board, try "green", "blue" or "chess-club"
         showCoordinates: true, // show ranks and files

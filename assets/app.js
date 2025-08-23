@@ -1,21 +1,22 @@
 /*
  * Welcome to your app's main JavaScript file!
  *
- * We recommend including the built version of this JavaScript file
- * (and its CSS file) in your base layout (base.html.twig).
+ * This file will be included onto the page via the importmap() Twig function,
+ * which should already be in your base.html.twig.
  */
-
-// any CSS you import will output into a single css file (app.css in this case)
-import "./styles/app.css";
 
 if (
   localStorage.getItem("dark-mode") === "true" ||
   (!("dark-mode" in localStorage) &&
     window.matchMedia("(prefers-color-scheme: dark)").matches)
 ) {
+  // add dark class to html if dark mode is enabled (for our own css, change to theme-dark?)
   document.querySelector("html").classList.add("dark");
+  // bulma uses data-theme attribute
+  document.documentElement.setAttribute("data-theme", "dark");
 } else {
   document.querySelector("html").classList.remove("dark");
+  document.documentElement.setAttribute("data-theme", "light");
 }
 
 document.addEventListener("DOMContentLoaded", (event) => {
@@ -37,9 +38,11 @@ document.addEventListener("DOMContentLoaded", (event) => {
 
         if (lightSwitch.checked) {
           document.documentElement.classList.add("dark");
+          document.documentElement.setAttribute("data-theme", "dark");
           localStorage.setItem("dark-mode", true);
         } else {
           document.documentElement.classList.remove("dark");
+          document.documentElement.setAttribute("data-theme", "light");
           localStorage.setItem("dark-mode", false);
         }
       });

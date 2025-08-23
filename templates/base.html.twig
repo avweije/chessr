@@ -7,31 +7,28 @@
 			{% endblock %}
 		</title>
 		<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text></svg>">
-		<!--<link rel="stylesheet" href="./build/app.css">-->
 		{% block stylesheets %}
-			{{ encore_entry_link_tags('app') }}
+			<!-- leave tailwind css in there while developing, so you dont have to rebuild everytime -->
+			<!-- <script src="https://cdn.tailwindcss.com"></script> -->
+			<link rel="stylesheet" href="{{ asset('styles/app.scss') }}">
+			<link rel="stylesheet" href="{{ asset('styles/components.css') }}">
+			<!-- font awesome solid icons -->
+			<link rel="stylesheet" href="{{ asset('fontawesome/css/all.min.css') }}">
 		{% endblock %}
 		{% block javascripts %}
-			{{ encore_entry_script_tags('app') }}
+            {% block importmap %}
+			{{ importmap('app') }}
+			{% endblock %}
 		{% endblock %}
-
 		<!-- need to check out what this script is for, copied from youtube tutorial -->
 		<script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.3.5/dist/alpine.min.js" defer></script>
-
-		<!-- leave tailwind css in there while developing, so you dont have to rebuild everytime -->
-		<!-- <script src="https://cdn.tailwindcss.com"></script> -->
-
 	</head>
-	<body class="bg-tacao-50/50 dark:bg-slate-800 h-screen antialiased leading-none font-sans page-width min-w-min min-h-screen overflow-y-scroll">
+	<body style="--bg-image: url('{{ asset('images/pexels-seraphim-tsounis-283679744-14409978.jpg') }}');">
+	<div class="body-background"></div>
 		{% block header %}
-			<header class="fixed z-20 top-0 start-0 w-full">
-
-				<nav class="relative page-width py-1 md:py-2 bg-tacao-100 dark:bg-slate-900 rounded-sm border border-tacao-200 dark:border-slate-700 flex rounded flex-wrap items-center justify-between shadow-dark-mild">
-					<div id="pageHeaderBackground" class="absolute w-full h-full" style="opacity: .1; background-image: url('{{ asset('build/images/smokey-chess-background.webp') }}');"></div>
-
-					<div class="relative flex w-full flex-wrap items-center justify-between px-1 md:px-2">
-
-						<div>
+			<header class="page-header">
+				<nav class="nav-bar">
+						<div class="is-flex is-align-items-center">
 							<svg height="32px" viewbox="0 0 370 74.26240760467273" class="looka-1j8o68f">
 								<defs id="SvgjsDefs1631">
 									<radialGradient id="SvgjsRadialGradient1638">
@@ -91,45 +88,37 @@
 							</svg>
 						</div>
 
-
 						<div>
-							<a class="hidden mr-2 flex items-center" href="#">
-								<img class="me-2" src="{{ asset('build/images/chess-board.png') }}" style="height: 32px" alt="Chess Repertoire" loading="lazy"/>
+							<a class="is-hidden mr-2 is-flex is-align-items-center" href="#">
+								<img class="me-2" src="{{ asset('images/chess-board.png') }}" style="height: 32px" alt="Chess Repertoire" loading="lazy"/>
 							</a>
 						</div>
 
-						<!-- Collapsible navbar container -->
-						<div class="!visible hidden flex-grow items-center md:!flex md:basis-auto" id="navbarSupportedContent4">
-							<h2 class="hidden text-1xl font-semibold tc-sharp">Chess Repertoire</h2>
-						</div>
-
 						<!-- Right elements -->
-						<div class="relative flex items-center">
-
+						<div class="is-relative is-flex is-align-items-center">
 							{% if app.user %}
 								<!-- Left links -->
-								<ul
-									class="list-style-none me-auto mr-20 flex ps-0 flex-row">
+								<ul class="list-style-none me-auto mr-20 is-flex ps-0 is-flex-direction-row">
 									<!-- Home -->
 									<li class="mb-0 pe-1 ps-0">
-										<a href="./" class="p-0 px-1 font-normal md:px-3">
+										<a href="./" class="p-0 px-2">
 											Home
 										</a>
 									</li>
 									<!-- Repertoire -->
 									<li class="mb-0 pe-1 ps-0">
-										<a href="./repertoire" class="p-0 px-1 font-normal md:px-3">
+										<a href="./repertoire" class="p-0 px-2">
 											Repertoire
 										</a>
 									</li>
 									<!-- Practice -->
 									<li class="mb-0 pe-1 ps-0">
 										{% if template.hasRepertoire() %}
-											<a href="./practice" class="p-0 px-1 font-normal md:px-3">
+											<a href="./practice" class="p-0 px-2">
 												Practice
 											</a>
 										{% else %}
-											<span class="p-0 px-1 md:px-3">
+											<span class="p-0 px-2">
 												Practice
 											</span>
 										{% endif %}
@@ -137,74 +126,82 @@
 								</ul>
 
 								{% if template.hasRepertoire() %}
-									<a href="./roadmap" class="px-3 py-2 font-semibold" title="Roadmap">
-										<span class="w-5 h-5 tc-link icon-[mdi--sitemap]"></span>
+									<a href="./roadmap" class="px-3 py-2 has-text-weight-semibold" title="Roadmap">
+										<i class="fa-solid fa-folder-tree"></i>
 									</a>
 								{% else %}
-									<span class="px-3 py-2 font-semibold text-primary-500" title="Roadmap">
-										<span class="w-5 h-5 tc-link opacity-50 icon-[mdi--sitemap]"></span>
+									<span class="px-3 py-2 has-text-weight-semibold text-primary-500" title="Roadmap">
+										<i class="fa-solid fa-folder-tree"></i>
 									</span>
 								{% endif %}
-								<a href="./settings" class="px-3 py-2 font-semibold" title="Settings">
-									<span class="w-5 h-5 tc-link icon-[mdi--settings-outline]"></span>
+								<a href="./settings" class="px-3 py-2 has-text-weight-semibold" title="Settings">
+									<i class="fa-solid fa-gear"></i>
 								</a>
 							{% endif %}
 
-							<div class="flex flex-col justify-center">
-								<input type="checkbox" id="lightSwitchCheckbox" class="light-switch sr-only"/>
-								<label class="relative cursor-pointer px-3 py-2" for="lightSwitchCheckbox">
-									<span title="Switch to light mode" class="hidden w-5 h-5 dark:inline-block tc-link icon-[mdi--white-balance-sunny]"></span>
-									<span title="Switch to dark mode" class="inline-block w-5 h-5 dark:hidden tc-link icon-[mdi--moon-and-stars]"></span>
-									<span class="sr-only">Switch to light / dark mode</span>
+							<div class="checkbox-switch">
+								<input type="checkbox" id="lightSwitchCheckbox" class="light-switch"/>
+								<label class="px-3 py-2" for="lightSwitchCheckbox">
+									<span title="Switch to light mode" class="checkbox-switch-on a-link">
+										<i class="fa-solid fa-sun"></i>
+									</span>
+									<span title="Switch to dark mode" class="checkbox-switch-off a-link">
+										<i class="fa-solid fa-moon"></i>
+									</span>
 								</label>
 							</div>
 
-							<div class="flex items-center">
+							<div class="is-flex is-align-items-center">
 								{% if app.user %}
-									<a href="./logout" class="rounded-md px-3 py-2 text-sm uppercase">
+									<a href="./logout" class="px-3 py-2 is-size-6 is-uppercase">
 										Logout
 									</a>
 								{% else %}
-									<a href="./register" class="btn btn-primary uppercase">
+									<a href="./register" class="button is-primary is-uppercase">
 										Sign up for free
 									</a>
 								{% endif %}
 							</div>
 						</div>
-					</div>
 				</nav>
 				{% block header_bottom %}{% endblock %}
 			</header>
 		{% endblock %}
 
-		<div id="topCenterDiv" class="sticky left-0 pt-14" style="width: calc(100vw - 10px);"> {% block body_header %}{% endblock %}
+		<!-- sticky top center container, not used right now.. ? -->
+		<div id="topCenterDiv" class="sticky left-0 pt-14" style="width: calc(100vw - 10px);">
+			{% block body_header %}
+			{% endblock %}
+		</div>
+
+		<!-- main content div with default padding -->
+		<div class="main-content">
+			{% block body %}
+			{% endblock %}
+		</div>
+
+		<!-- loader -->
+		<div id="pageLoadingOverlay" class="is-hidden w-full h-full fixed top-0 left-0 backdrop-grayscale-[.5] z-50">
+			<div class="is-flex w-full h-full justify-center is-align-items-center">
+				<span class="inline-block icon-[svg-spinners--90-ring-with-bg] w-12 h-12"></span>
 			</div>
+		</div>
 
-			<div class="px-5 pb-5"> {% block body %}{% endblock %}
-				</div>
+		{% block footer %}
+			<footer class="is-hidden fixed bottom-0 w-full rounded bg-white dark:bg-slate-900 border-t border-zinc-300 dark:border-slate-700 shadow-dark-mild dark:text-white/70">
+				<div id="pageFooterBackground" class="is-absolute w-full h-full" style="opacity: .1; background-image: url('{{ asset('images/smokey-chess-background.webp') }}');"></div>
+				<p class="m-0 text-center text-base text-xs py-1 md:py-2">
+					Copyright 2024 AvWeije. All Rights Reserved.
+				</p>
+			</footer>
+		{% endblock %}
 
-				<!-- loader -->
-				<div id="pageLoadingOverlay" class="hidden w-full h-full fixed top-0 left-0 backdrop-grayscale-[.5] z-50">
-					<div class="flex w-full h-full justify-center items-center">
-						<span class="inline-block icon-[svg-spinners--90-ring-with-bg] w-12 h-12"></span>
-					</div>
-				</div>
-
-				{% block footer %}
-					<footer class="hidden fixed bottom-0 w-full rounded bg-white dark:bg-slate-900 border-t border-zinc-300 dark:border-slate-700 shadow-dark-mild dark:text-white/70">
-						<div id="pageFooterBackground" class="absolute w-full h-full" style="opacity: .1; background-image: url('{{ asset('build/images/smokey-chess-background.webp') }}');"></div>
-
-						<p class="m-0 text-center text-base text-xs py-1 md:py-2">
-							Copyright 2024 AvWeije. All Rights Reserved.
-						</p>
-					</footer>
-				{% endblock %}
-
-				<div id="errorIconElement" class="fade-element fade fixed bottom-3 left-3">
-					<div class="flex bg-white rounded-full border border-gray-400 dark:border-slate-500">
-						<span class="text-red-500 w-7 h-7 shrink-0 icon-[mdi--error]"></span>
-					</div>
-				</div>
-
-			</body>
-		</html>
+		<div id="errorIconElement" class="fade-element fade fixed bottom-3 left-3">
+			<div class="is-flex bg-white is-rounded border border-gray-400 dark:border-slate-500">
+				<span class="is-danger">
+					<i class="fa-solid fa-triangle-exclamation"></i>
+				</span>
+			</div>
+		</div>
+	</body>
+</html>

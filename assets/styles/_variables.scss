@@ -1,0 +1,55 @@
+// Import sass map module for merging maps
+@use "sass:map";
+
+// Bulma defaults (from bulma/utilities/initial-variables)
+$white: hsl(221, 14%, 100%);
+$black: hsl(221, 14%, 4%);
+
+$light: hsl(221, 14%, 96%);
+$dark: hsl(221, 14%, 21%);
+
+// Bulma color overrides and extensions
+$primary: #4a90e2;
+$link: #f6ad55;
+$info: #00bcd4;
+$success: #4caf50;
+$warning: #ff9800;
+$danger: #f44336;
+
+// Link variants
+$link-border: #fbd38d;
+
+// Text colors
+$text-default: #b45309;
+$text-title: #c05621;
+$text-faded: #f6ad55;
+$text-on-background: #d1d5db;
+
+// Surfaces
+$background: #735751;
+$surface-main: #fef6e4;
+$surface-alt: #fde68a;
+$on-surface: #2c2c2c;
+
+// Bulma colors
+$primary-dark: #4a90e2;
+$link-dark: #f6ad55;
+$info-dark: #00bcd4;
+$success-dark: #4caf50;
+$warning-dark: #ff9800;
+$danger-dark: #f44336;
+
+// Link variants
+$link-border-dark: #fbd38d;
+
+// Text colors
+$text-default-dark: #b45309;
+$text-title-dark: #c05621;
+$text-faded-dark: #f6ad55;
+$text-on-background-dark: #d1d5db;
+
+// Surfaces
+$background-dark: #0D1321;
+$surface-main-dark: #3E5C76;
+$surface-alt-dark: #2C3E50;
+$on-surface-dark: #fef6e4;

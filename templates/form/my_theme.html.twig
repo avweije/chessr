@@ -24,7 +24,7 @@
 
 
 {% block form_widget_simple -%}
-	{% if type is not defined or type not in ['file', 'hidden'] %}
+	{% if type is not defined or type not in ['file', 'is-hidden'] %}
 		{%- set attr = attr|merge({class: (attr.class|default('') ~ ' input-text')|trim}) -%}
 	{% endif %}
 	{{- parent() -}}

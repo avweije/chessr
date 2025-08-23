@@ -1,0 +1,5 @@
+# .symfony.local.yaml
+workers:
+    # ...
+    sass:
+        cmd: ['symfony', 'console', 'sass:build', '--watch']

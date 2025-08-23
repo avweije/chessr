@@ -1,0 +1,414 @@
+// Include custom functions, variables, and theme settings
+@use "functions" as fn;
+@use "variables";
+@use "theme";
+
+// Import bulma so we an merge variables
+//@use "../vendor/bulma-1.0.4/sass" as bulma;
+
+// Import sass map module for merging maps
+@use "sass:map";
+
+// Bulma's default $colors variable
+$bulma-colors: (
+    "white": (
+      variables.$white,
+      variables.$black,
+    ),
+    "black": (
+      variables.$black,
+      variables.$white,
+    ),
+    "light": (
+      variables.$light,
+      variables.$dark,
+    ),
+    "dark": (
+      variables.$dark,
+      variables.$light,
+    ),
+    "text": variables.$text-default,
+    "primary": variables.$primary,
+    "link": variables.$link,
+    "info": variables.$info,
+    "success": variables.$success,
+    "warning": variables.$warning,
+    "danger": variables.$danger,
+);
+
+// Extend bulma colors with custom variables
+$custom-colors: map.merge($bulma-colors, (
+    "link-border": variables.$link-border,
+    "surface-alt": variables.$surface-alt,
+    "default": variables.$text-default,
+    "title": variables.$text-title,
+    "faded": variables.$text-faded,
+    "on-background": variables.$text-on-background
+  )
+);
+
+// Bulma with overridden variables
+@use "../vendor/bulma-1.0.4/sass" with (
+  // Defaults, regardless of theme
+  $family-primary: '"Nunito", sans-serif',
+  //$grey-dark: $brown,
+  //$grey-light: $beige-light,
+  $control-border-width: 2px,
+
+  $primary: variables.$primary,
+  $link: variables.$link,
+  $info: variables.$info,
+  $success: variables.$success,
+  $warning: variables.$warning,
+  $danger: variables.$danger,
+
+  $text: variables.$text-default,
+  $title-color: variables.$text-title,
+
+  $colors: $custom-colors,
+
+  $background: variables.$background,
+  $scheme-main: variables.$surface-main,
+  $scheme-invert: variables.$text-on-background
+);
+
+  /* $scheme-main-bis: variables.$surface-bis, */
+  /* $scheme-main-ter: variables.$surface-ter, */
+
+// Your custom styles can now use:
+// fn.contrast-text($bg), fn.shade($color, 20%), variables.$link-border, etc.
+
+
+/* from current - light theme */
+
+$light-orange: #f6ad55; // link ? input shadow, radio, checkbox
+$light-orange-border: #fbd38d;
+
+$light-blue: #0369a1; // primary ? button, radio circle, checkmark
+
+$light-bg: #fef6e4; // input bg ? radio, checkbox bg unchecked
+$light-nav-bg: #fde68a; // nav bg ?
+
+$light-nav-link: #b45309; // nav link
+$light-nav-link-hover: #fbbf24;
+
+/* fonts: normal text color, title text color, faded text color, bg text color */
+
+$light-text: #b45309; // light mode font color - same as nav link ?
+$light-bg-text: #d1d5db; // light mode font color
+$light-title-text: #c05621 ; // light mode title color
+$light-faded-text: #f6ad55; // light mode faded text color #7c4700
+
+
+/* light/dark theme toggle */
+
+html, html.theme-light {
+  color-scheme: light;
+}
+
+html.dark, html.theme-dark {
+  color-scheme: dark;
+}
+
+body {
+  min-height: 100vh;
+  min-width: min-content;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-y: scroll;
+}
+
+.dark body {
+  /* background-color: #18181b; */ /* dark:bg-slate-800 */
+  /* color: #d1d5db; */ /* dark:text-slate-300 */
+}
+
+.body-background {
+  position: fixed;
+  z-index: -1;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-image) no-repeat center center fixed;
+  background-size: cover;
+  filter: brightness(0.5);
+}
+
+.dark .body-background {
+  filter: brightness(0.25);
+}
+
+/* fixed page header, contains navbar */
+.page-header {
+  /* fixed z-20 top-0 start-0 w-full */
+  position: fixed;
+  z-index: 20;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
+nav.nav-bar {
+  /* relative page-width py-1 md:py-2 bg-tacao-100 dark:bg-slate-900 rounded-sm border border-tacao-200 dark:border-slate-700 flex rounded flex-wrap items-center justify-between shadow-dark-mild */
+  position: relative;
+  width: 100%;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  background-color: #fef6e4; /* bg-tacao-100 */
+  border-radius: 0.125rem;  /* rounded-sm */
+  border: 1px solid #fde68a; /* border-tacao-200 */
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+  /* If you want dark mode, use a JS class toggle or prefers-color-scheme media query */
+  /* background-color: #18181b;  dark:bg-slate-900 */
+}
+
+.dark nav.nav-bar {
+  background-color: #18181b; /* dark:bg-slate-900 */
+  border-color: #27272a; /* dark:border-slate-700 */
+}
+
+/* main content div, default padding */
+.main-content {
+  padding: 1.25rem;
+  padding-top: calc(50px + 1.25rem); /* account for fixed header */
+  min-width: 100%;
+  min-height: 100vh;
+}
+
+/* Helper classes, bulma style */
+.is-hidden {
+  display: none !important;
+}
+
+.is-relative {
+  position: relative !important;
+}
+
+.is-absolute {
+  position: absolute !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* Single-line ellipsis */
+.is-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Multi-line ellipsis (needs -webkit- prefixes for browser support) */
+.is-ellipsis-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;   /* number of lines */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.is-ellipsis-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;   /* number of lines */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mt-lg {
+  margin-top: 5rem;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.h-full {
+  height: 100%;
+}
+
+/* full width minus (fixed) vertical scrollbar */
+.page-width {
+  width: calc(100vw - 10px);
+}
+
+
+/* accuracy colors */
+.accuracy-red,
+.accuracy-red-hover {
+  color: #f87171;
+}
+.accuracy-red-hover:hover {
+  color: #fca5a5;
+}
+.accuracy-orange,
+.accuracy-orange-hover {
+  color: #f97316;
+}
+.accuracy-orange-hover:hover {
+  color: #fdba74;
+}
+.accuracy-yellow,
+.accuracy-yellow-hover {
+  color: #ca8a04;
+}
+.accuracy-yellow-hover:hover {
+  color: #fde047;
+}
+.accuracy-green,
+.accuracy-green-hover {
+  color: #059669;
+}
+.accuracy-green-hover:hover {
+  color: #34d399;
+}
+
+
+/* inputs */
+
+input[type="search"] {
+  -webkit-appearance: searchfield;
+}
+input[type="search"]::-webkit-calendar-picker-indicator {
+  -webkit-appearance: none;
+  cursor: pointer;
+  color: #fbbf24;
+  font-size: 1.25rem;
+}
+input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  cursor: pointer;
+  color: #fbbf24;
+  font-size: 1.25rem;
+}
+
+
+/* links */
+
+a,
+.a-link {
+  font-weight: 600;
+  color: #b45309;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+a:hover,
+.a-link:hover {
+  color: #fbbf24;
+}
+
+
+/* pulse skeleton loading effect */
+.pulse-skeleton {
+  position: relative;
+  color: transparent !important;
+  background-color: transparent !important;
+}
+
+.pulse-skeleton::before {
+  content: '';
+  display: block;
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 0;
+  right: 0;
+  border-radius: 9999px;
+  background-color: #fbd38d;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+
+
+.input-text,
+.input-text-faded,
+.input-text-small {
+  display: inline-block;
+  width: 100%;
+  border-radius: 0.375rem;
+  border: none;
+  font-size: 0.875rem;
+  color: #111827;
+  background-color: #fff;
+  box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+  outline: none;
+  box-shadow: 0 0 0 1px #f6ad55;
+  padding: 0.75rem;
+}
+
+.input-text-small {
+  padding: 0.5rem;
+}
+.input-text:focus,
+.input-text-faded:focus,
+.input-text-small:focus {
+  box-shadow: 0 0 0 2px #b45309;
+}
+.input-text:disabled,
+.input-text-faded:disabled,
+.input-text-small:disabled {
+  color: #6b7280;
+  background-color: #fef6e4;
+}
+.input-text-faded {
+  background-color: #fef6e4;
+}
+.input-text-faded:focus {
+  background-color: #fff;
+}
+
+/* button with icon that changes on hover */
+
+.button-icon-hover > span.icon {
+  transition: all 0.5s;
+}
+
+.button-icon-hover > span.icon:first-child,
+.button-icon-hover:hover > span.icon:last-child {
+  opacity: 1;
+  display: inline-block;
+}
+
+.button-icon-hover > span.icon:last-child,
+.button-icon-hover:hover > span.icon:first-child {
+  opacity: 0;
+  display: none;
+}
+
+/* fade in/out effect */
+.fade-element {
+  opacity: 1;
+  transition: opacity 0.5s ease-in;
+}
+.fade-element.fade {
+  opacity: 0;
+}
+
+
+/* custom scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background-color: #fef6e4;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #f6ad55;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: #fbbf24;
+}

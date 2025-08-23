@@ -2,16 +2,16 @@
 
 {% block body %}
 
-	<div class="m-auto text-center p-4">
+	<div class="m-auto has-text-centered p-4">
 		{% block board_header %}{% endblock %}
 	</div>
 
-	<div class="flex justify-around">
+	<div class="is-flex is-justify-content-space-around">
 		<div>
 
 			{% block board_top %}{% endblock %}
 
-			<div class="flex">
+			<div class="is-flex">
 				<div class="mr-2" style="width: 45vw; max-width: 74vh;">
 					{% block board_left %}{% endblock %}
 				</div>
@@ -29,7 +29,7 @@
 {% block stylesheets %}
 	{{ parent() }}
 
-	{{ encore_entry_link_tags('chessboard') }}
-	{{ encore_entry_link_tags('markers') }}
-	{{ encore_entry_link_tags('arrows') }}
+	<link rel="stylesheet" href="{{ asset('styles/chessboard.css') }}">
+	<link rel="stylesheet" href="{{ asset('markers/markers.css') }}">
+	<link rel="stylesheet" href="{{ asset('arrows/arrows.css') }}">
 {% endblock %}

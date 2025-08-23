@@ -443,7 +443,7 @@ class AnalyseController extends AbstractController
      * @param  mixed $siteUsername
      * @return array
      */
-    private function getGameEvaluations($data, string $siteUsername): array
+    private function getGameEvaluations($data, string $siteUsername): ?array
     {
         if (!isset($data["pgn"])) {
             return null;

@@ -1,13 +1,13 @@
-import { MyChess } from "./chess.js";
-import { BOARD_STATUS, MyChessBoard, PIECE_TILESIZE } from "./chessboard.js";
+import { MyChess } from "chess";
+import { BOARD_STATUS, MyChessBoard, PIECE_TILESIZE } from "chessboard";
 import {
   MARKER_TYPE,
   Markers,
-} from "cm-chessboard/src/extensions/markers/Markers.js";
-import { COLOR } from "cm-chessboard/src/view/ChessboardView.js";
-import { Utils } from "./utils.js";
-import { Modal } from "./modal.js";
-import { UCI } from "./uci.js";
+} from "../cm-chessboard/src/extensions/markers/Markers.js";
+import { COLOR } from "../cm-chessboard/src/view/ChessboardView.js";
+import { Utils } from "utils";
+import { Modal } from "modal";
+import { UCI } from "uci";
 
 import "../styles/chessboard.css";
 
@@ -277,7 +277,7 @@ class Repertoire extends MyChessBoard {
     // show the page loader
     Utils.showLoading();
 
-    var url = "./api/settings";
+    var url = "/api/settings";
 
     fetch(url, {
       method: "GET",
@@ -434,8 +434,8 @@ class Repertoire extends MyChessBoard {
     this.resetToCurrent(this.initialFen);
 
     // hide elements
-    this.pgnStartPositionContainer.classList.add("hidden");
-    this.closePgnButton.classList.add("hidden");
+    this.pgnStartPositionContainer.classList.add("is-hidden");
+    this.closePgnButton.classList.add("is-hidden");
 
     // turn off pgn mode
     this.pgnLoaded = false;
@@ -621,11 +621,11 @@ class Repertoire extends MyChessBoard {
         this.pgnLoaded = true;
 
         // show the close pgn button
-        this.closePgnButton.classList.remove("hidden");
+        this.closePgnButton.classList.remove("is-hidden");
 
         // show the start position (if any)
         if (fen != "") {
-          this.pgnStartPositionContainer.classList.remove("hidden");
+          this.pgnStartPositionContainer.classList.remove("is-hidden");
           this.pgnStartPositionContainer.children[1].innerHTML = fen;
         }
 
@@ -660,7 +660,7 @@ class Repertoire extends MyChessBoard {
     // close the modal
     Modal.close(this.confirmDialog.modal);
 
-    var url = "./api/repertoire";
+    var url = "/api/repertoire";
 
     var last = this.game.history({ verbose: true }).pop();
 
@@ -703,7 +703,7 @@ class Repertoire extends MyChessBoard {
 
   // fetch the repertoire groups
   getGroups() {
-    var url = "./api/repertoire/groups";
+    var url = "/api/repertoire/groups";
 
     fetch(url, {
       method: "GET",
@@ -800,7 +800,7 @@ class Repertoire extends MyChessBoard {
     // show the page loader
     Utils.showLoading();
 
-    var url = "./api/repertoire/moves";
+    var url = "/api/repertoire/moves";
 
     var data = {
       color: this.color,
@@ -922,15 +922,15 @@ class Repertoire extends MyChessBoard {
       // clear the table
       this.engineTableReset();
       // show the container & the start engine text
-      this.engineContainer.classList.remove("hidden");
-      this.engineTable.parentNode.firstElementChild.classList.remove("hidden");
+      this.engineContainer.classList.remove("is-hidden");
+      this.engineTable.parentNode.firstElementChild.classList.remove("is-hidden");
       // clear the depth
       this.engineDepth.innerHTML = "";
       // disable the toggle if the game has ended
       this.engineCheckbox.disabled = this.game.isGameOver();
     } else {
       // hide the container
-      this.engineContainer.classList.add("hidden");
+      this.engineContainer.classList.add("is-hidden");
 
       // make sure the engine is stopped
       this.onEngineToggle();
@@ -952,13 +952,13 @@ class Repertoire extends MyChessBoard {
       this.engineStart();
 
       // hide the start engine text
-      this.engineTable.parentNode.firstElementChild.classList.add("hidden");
+      this.engineTable.parentNode.firstElementChild.classList.add("is-hidden");
     } else {
       // stop the engine
       this.engineStop();
 
       // show the start engine text
-      //this.engineTable.parentNode.firstElementChild.classList.remove("hidden");
+      //this.engineTable.parentNode.firstElementChild.classList.remove("is-hidden");
     }
   }
 
@@ -1217,8 +1217,8 @@ class Repertoire extends MyChessBoard {
 
     var btn = document.createElement("button");
     btn.className =
-      "flex items-center text-base text-secondary-700 hover:text-secondary-500";
-    btn.innerHTML = '<span class="icon-[mdi--delete]"></span>';
+      "button is-small";
+    btn.innerHTML = '<span class="icon"><i class="fa-solid fa-trash"></i></span>';
     btn.addEventListener("click", this.onRepertoireGroupRemove.bind(this));
 
     el.appendChild(btn);
@@ -1254,7 +1254,7 @@ class Repertoire extends MyChessBoard {
     };
 
     // send the API request
-    var url = "./api/repertoire/autoplay";
+    var url = "/api/repertoire/autoplay";
     fetch(url, {
       method: "POST",
       body: JSON.stringify(data),
@@ -1285,7 +1285,7 @@ class Repertoire extends MyChessBoard {
     };
 
     // send the API request
-    var url = "./api/repertoire/exclude";
+    var url = "/api/repertoire/exclude";
     fetch(url, {
       method: "POST",
       body: JSON.stringify(data),
@@ -1378,7 +1378,7 @@ class Repertoire extends MyChessBoard {
     };
 
     // send the API request
-    var url = "./api/repertoire/group";
+    var url = "/api/repertoire/group";
     fetch(url, {
       method: "POST",
       body: JSON.stringify(data),
@@ -1409,7 +1409,7 @@ class Repertoire extends MyChessBoard {
     };
 
     // send the API request
-    var url = "./api/repertoire/group";
+    var url = "/api/repertoire/group";
     fetch(url, {
       method: "DELETE",
       body: JSON.stringify(data),
@@ -1479,7 +1479,7 @@ class Repertoire extends MyChessBoard {
     };
 
     // send the API request
-    var url = "./api/repertoire";
+    var url = "/api/repertoire";
     fetch(url, {
       method: "POST", // or 'PUT'
       body: JSON.stringify(data), // data can be `string` or {object}!
@@ -1505,12 +1505,12 @@ class Repertoire extends MyChessBoard {
 
   // show the repertoire details
   showRepertoireDetails() {
-    this.repertoireContainer.classList.remove("hidden");
+    this.repertoireContainer.classList.remove("is-hidden");
   }
 
   // hide the repertoire details
   hideRepertoireDetails() {
-    this.repertoireContainer.classList.add("hidden");
+    this.repertoireContainer.classList.add("is-hidden");
   }
 
   /**
@@ -1562,9 +1562,9 @@ class Repertoire extends MyChessBoard {
 
     // toggle no moves found text
     if (this.movesTable.tBodies[0].rows.length > 0) {
-      this.movesTable.parentNode.firstElementChild.classList.add("hidden");
+      this.movesTable.parentNode.firstElementChild.classList.add("is-hidden");
     } else {
-      this.movesTable.parentNode.firstElementChild.classList.remove("hidden");
+      this.movesTable.parentNode.firstElementChild.classList.remove("is-hidden");
     }
   }
 
@@ -1572,20 +1572,20 @@ class Repertoire extends MyChessBoard {
   movesAddRow(data) {
     var row = this.movesTable.tBodies[0].insertRow(-1);
     row.className =
-      "overflow-hidden hover:cursor-pointer hover:bg-tacao-100 hover:dark:bg-slate-600 tc-base";
+      "moves-row";
     row.setAttribute("data-move", data.move);
 
     var cell = row.insertCell(-1);
     cell.className =
-      "w-12 pl-3 pr-2 py-2 font-semibold whitespace-nowrap rounded-l-md";
+      "move-cell";
     cell.innerHTML = data.move;
 
     cell = row.insertCell(-1);
-    cell.className = "w-full px-2 py-2";
+    cell.className = "eco-cell";
     cell.innerHTML = data.name;
 
     cell = row.insertCell(-1);
-    cell.className = "w-full px-2 py-2 text-xs text-center tc-faded";
+    cell.className = "eval-cell";
 
     // set the CP eval
     cell.innerHTML =
@@ -1597,12 +1597,12 @@ class Repertoire extends MyChessBoard {
 
     // show percentage played
     cell = row.insertCell(-1);
-    cell.className = "w-10 px-2 py-2 text-xs text-center";
+    cell.className = "pct-played-cell";
     cell.innerHTML = data.percentage > 0 ? data.percentage + "%" : "";
 
     // show win/draw/lose %
     cell = row.insertCell(-1);
-    cell.className = "px-2 py-1";
+    cell.className = "results-cell";
     if (data.total > 0) {
       // get the percentages
       var wpct = Math.round((data.wins / data.total) * 100);
@@ -1610,31 +1610,21 @@ class Repertoire extends MyChessBoard {
       var dpct = Math.max(0, 100 - wpct - lpct);
 
       var flex = document.createElement("div");
-      flex.className =
-        "flex min-w-16 w-28 max-w-36 rounded border border-slate-300 dark:border-slate-800 overflow-hidden";
+      flex.className = "win-draw-loss-bar";
       flex.title = this.getNumberOfGames(data.total);
 
       var div1 = document.createElement("div");
-      div1.className =
-        "bg-slate-100 dark:bg-slate-200 text-[9px] leading-relaxed py-px px-2 text-slate-500 dark:text-slate-600 text-center w-[" +
-        wpct +
-        "%] min-w-min";
+      div1.className = "win-bar";
       div1.innerHTML = wpct + "%";
       div1.style = "width: " + wpct + "%;";
 
       var div2 = document.createElement("div");
-      div2.className =
-        "bg-slate-300 dark:bg-slate-400 text-[9px] leading-relaxed py-px px-2 text-slate-900 text-center w-[" +
-        dpct +
-        "%] min-w-min";
+      div2.className = "draw-bar";
       //div2.innerHTML = dpct + "%";
       div2.style = "width: " + dpct + "%;";
 
       var div3 = document.createElement("div");
-      div3.className =
-        "bg-slate-600 text-[9px] leading-relaxed py-px px-2 text-slate-300 text-center w-[" +
-        lpct +
-        "%] min-w-min";
+      div3.className = "loss-bar";
       div3.innerHTML = lpct + "%";
       div3.style = "width: " + lpct + "%;";
 
@@ -1647,10 +1637,10 @@ class Repertoire extends MyChessBoard {
 
     // show a dot if in repertoire
     cell = row.insertCell(-1);
-    cell.className = "w-8 px-2 py-2 text-center align-middle rounded-r-md";
+    cell.className = "in-repertoire-cell";
     if (data.repertoire) {
       cell.innerHTML =
-        '<div class="inline-block w-3 h-3 bg-marigold-600 dark:bg-marigold-500 rounded-full"></div>';
+        '<div class="in-repertoire-dot"></div>';
     }
 
     // add event listeners
@@ -1760,11 +1750,11 @@ class Repertoire extends MyChessBoard {
    */
 
   showInitialFens() {
-    this.initialFenContainer.classList.remove("hidden");
+    this.initialFenContainer.classList.remove("is-hidden");
   }
 
   hideInitialFens() {
-    this.initialFenContainer.classList.add("hidden");
+    this.initialFenContainer.classList.add("is-hidden");
   }
 
   loadInitialFens(data) {
@@ -1835,6 +1825,8 @@ class Repertoire extends MyChessBoard {
     if (this.game.turn() === "b") {
       moveColor = "Black";
     }
+
+    console.log(this.game);
 
     // checkmate?
     if (this.game.isCheckmate()) {

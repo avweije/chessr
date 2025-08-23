@@ -1,10 +1,10 @@
 import {
   ARROW_TYPE,
   Arrows,
-} from "cm-chessboard/src/extensions/arrows/Arrows.js";
+} from "../cm-chessboard/src/extensions/arrows/Arrows.js";
 
 //import {Extension, EXTENSION_POINT} from "../../model/Extension.js"
-import { Svg } from "cm-chessboard/src/lib/Svg.js";
+import { Svg } from "../cm-chessboard/src/lib/Svg.js";
 //import {Utils} from "../../lib/Utils.js"
 
 export const CUSTOM_ARROW_TYPE = {

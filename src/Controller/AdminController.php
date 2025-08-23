@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Service\MyPgnParser\MyPgnParser;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Onspli\Chess\FEN;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -12,17 +13,52 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
+/**
+ * AdminController - Summary
+ *
+ * This controller provides admin endpoints and utilities for managing large chess data files, importing chess engine evaluations, updating evaluation records, and processing PGN files. It interacts directly with the `evaluations` and `moves` tables, and handles batch operations for efficiency.
+ *
+ * Key Functions:
+ * 1. index() - Renders admin dashboard, contains test code for splitting files, updating FENs, and updating evals.
+ * 2. updateEvaluationFen() - POST /admin/evaluations/update: Batch-updates FENs in evaluations.evaluation for a range of IDs.
+ * 3. importEvaluations() - POST /admin/evaluations/import: Imports chess engine evaluations from JSONL files into the database.
+ * 4. updateSingleEvals() - Scans records for single PVs, used for reporting.
+ * 5. updateEvals($fen) - Updates evaluation lines for a FEN.
+ * 6. split_file() - Splits large JSONL files into chunks.
+ * 7. parseEvals($maxLines, $batchSize) - Reads and inserts lines from split JSONL files.
+ * 8. parseEvalsJson($filePath, $maxLines) - Generator for incremental import from JSONL files.
+ * 9. findEvaluation($fen) - Searches split JSONL files for a FEN.
+ * 10. import() - /admin/import: Imports PGN files and updates move statistics.
+ * 11. splitPgnFile($path, $parts) - Splits large PGN files.
+ * 12. importPgnFiles() - Processes PGN files and updates move statistics.
+ * 13. processGame($game, &$totals, &$moveCount) - Processes a single chess game.
+ * 14. processMoves($moves) - Inserts/updates move statistics in the moves table.
+ * 15. getDuration($ms) - Converts duration to human-readable string.
+ *
+ * Usage:
+ * - Batch update FENs: POST to /admin/evaluations/update with startId and batchSize.
+ * - Import evaluations: POST to /admin/evaluations/import with maxLines and batchSize.
+ * - Import PGN files: Access /admin/import.
+ * - Split large files: Call split_file() or splitPgnFile() internally.
+ * - Process moves/games: Use importPgnFiles() and helpers.
+ */
+
 class AdminController extends AbstractController
 {
     private $em;
     private $conn;
     private $myPgnParser;
 
-    public function __construct(Connection $conn, EntityManagerInterface $em, MyPgnParser $myPgnParser)
+    private $evalsConn;
+    private $evalsEntityManager;
+
+    public function __construct(Connection $conn, EntityManagerInterface $em, MyPgnParser $myPgnParser, ManagerRegistry $doctrine)
     {
         $this->em = $em;
         $this->myPgnParser = $myPgnParser;
         $this->conn = $conn;
+        $this->evalsConn = $doctrine->getConnection('evaluations');
+        $this->evalsEntityManager = $doctrine->getManager('evaluations');
     }
 
     #[Route('/admin', name: 'app_admin')]
@@ -362,7 +398,7 @@ class AdminController extends AbstractController
         //$code = $this->em->getRepository(ECO::class)->findCodeByPgn($pgn);
 
         //$file = './build/uploads/lichess_db_eval.jsonl';
-        $file = './lichess_db_eval.jsonl';
+        $file = './lichess_db_eval-1.jsonl';
         $evals = [];
 
         $processed = 0;
@@ -386,8 +422,8 @@ class AdminController extends AbstractController
         */
 
         // auto-commit off
-        $this->conn->setAutoCommit(false);
-        $this->conn->beginTransaction();
+        $this->evalsConn->setAutoCommit(false);
+        $this->evalsConn->beginTransaction();
 
         // 
         // 
@@ -395,7 +431,7 @@ class AdminController extends AbstractController
         // prepare the insert statement
         $sql = 'INSERT INTO evaluations.evaluation ( fen, evals, bytes, fidx ) VALUES ( :fen, :evals, :bytes, :fidx )';
         //$sql = 'INSERT INTO evaluations.evaluation_1 ( fen, evals, bytes, fidx ) VALUES ( :fen, :evals, :bytes, :fidx )';
-        $stmtInsert = $this->conn->prepare($sql);
+        $stmtInsert = $this->evalsConn->prepare($sql);
 
         foreach ($this->parseEvalsJson($file, $maxLines) as [$fidx, $line, $bytes, $fsize]) {
             // add to time limit
@@ -497,7 +533,7 @@ class AdminController extends AbstractController
 
             // perform commit
             if ($processed % $batchSize == 0) {
-                $this->conn->commit();
+                $this->evalsConn->commit();
                 //$this->conn->beginTransaction();
             }
 
@@ -510,7 +546,7 @@ class AdminController extends AbstractController
         }
 
         // perform final commit
-        $this->conn->commit();
+        $this->evalsConn->commit();
 
         return [$processed, $lastBytes, $lastFidx, $lastPct];
     }
@@ -522,7 +558,7 @@ class AdminController extends AbstractController
         $fidx = 1;
 
         $sql = 'SELECT bytes, fidx FROM evaluations.evaluation ORDER BY id DESC LIMIT 1';
-        $stmtFind = $this->conn->prepare($sql);
+        $stmtFind = $this->evalsConn->prepare($sql);
 
         $result = $stmtFind->executeQuery();
 
@@ -658,7 +694,7 @@ class AdminController extends AbstractController
 
         if (false) {
 
-            $this->splitPgnFile("./lichess_elite_2023-04.pgn");
+            $this->splitPgnFile("./lichess_elite_2023-05.pgn");
 
             exit;
         }
@@ -743,6 +779,10 @@ class AdminController extends AbstractController
 
     public function importPgnFiles()
     {
+        
+        // increase the memory limit
+        ini_set('memory_limit', '8G');
+
         // set the upload folder
         $folder = './';
 
@@ -753,7 +793,7 @@ class AdminController extends AbstractController
 
         // todo
 
-        //$files = ['./lichess_elite_2023-05-1.pgn'];
+        $files = ['./lichess_elite_2023-05-1.pgn'];
         //$files = ['./lichess_elite_2023-05-1.pgn', './lichess_elite_2023-05-2.pgn'];
 
         exit;
@@ -775,8 +815,8 @@ class AdminController extends AbstractController
         $processCount = 0;
         $queryCount = 0;
 
-        //$batchSize = 50000;
-        $batchSize = 25000;
+        $batchSize = 10;
+        //$batchSize = 25000;
 
         // loop through the files
         foreach ($files as $file) {
@@ -797,13 +837,19 @@ class AdminController extends AbstractController
                     // process the moves
                     $cnt = $this->processMoves($totals);
 
-                    $queryCount = $queryCount + $cnt;
+                    //$queryCount = $queryCount + $cnt;
 
                     $processCount++;
 
                     // free the memory
                     $totals = [];
+                    gc_collect_cycles();
+
+                    break 2;
                 }
+
+                unset($game);
+                gc_collect_cycles();
             }
         }
 
@@ -1050,6 +1096,7 @@ class AdminController extends AbstractController
         $this->conn->commit();
 
         // free memory
+        unset($moves);
         gc_collect_cycles();
 
         return $queryCount;

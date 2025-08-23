@@ -2,64 +2,78 @@
 
 {% block body %}
 	{% if app.user %}
-		<div class="p-10">
-			<div id="boxedCardContainer" class="flex flex-wrap gap-2">
-				<div class="boxed-card relative" style="width: 26rem; height: 13rem;">
-					<h2 class="text-xl font-semibold tc-sharp">Your repertoire</h2>
-					<p class="p-1 mt-3 text-base tc-faded">Work on your opening repertoire.</p>
-					<div class="flex flex-col grow justify-center items-start p-2">
-						<p id="statsWhiteField" class="text-base tc-base py-0.5 pulse-skeleton">White:
-							<span class="font-semibold">99 moves</span>
+		<div id="boxedCardContainer" class="mt-lg w-full is-flex is-flex-wrap-wrap is-justify-content-center is-gap-2">
+			<div class="boxed-card-grid is-gap-2">
+				{# if template.hasGames() #}
+				<div class="box boxed-card">
+					<h2 class="title is-5 mb-0 p-1">Your repertoire</h2>
+					<p class="p-1 mt-3">Work on your opening repertoire.</p>
+					<div class="is-flex is-flex-direction-column is-flex-grow-1 is-justify-content-center is-align-items-flex-start p-2">
+						<p id="statsWhiteField" class="has-text-faded py-0.5 pulse-skeleton">White:
+							<span class="has-text-weight-semibold">99 moves</span>
 						</p>
-						<p id="statsBlackField" class="text-base tc-base py-0.5 pulse-skeleton">Black:
-							<span class="font-semibold">99 moves</span>
-						</p>
-					</div>
-					<span class="boxed-card-arrow"></span>
-				</div>
-				<div class="boxed-card relative" style="width: 26rem; height: 13rem;">
-					<h2 class="text-xl font-semibold tc-sharp">Practice</h2>
-					<p class="p-1 mt-3 text-base tc-faded">Practice your moves to keep improving.</p>
-					<div class="flex flex-col grow justify-center items-start p-2">
-						<p id="statsNewField" class="text-base tc-base py-0.5 pulse-skeleton">New:
-							<span class="font-semibold">99 moves</span>
-						</p>
-						<p id="statsRecommendedField" class="text-base tc-base py-0.5 pulse-skeleton">Recommended:
-							<span class="font-semibold">99 moves</span>
+						<p id="statsBlackField" class="has-text-faded py-0.5 pulse-skeleton">Black:
+							<span class="has-text-weight-semibold">99 moves</span>
 						</p>
 					</div>
-					<span class="boxed-card-arrow"></span>
+						<span class="boxed-card-arrow">
+							<i class="fa-solid fa-arrow-right-to-bracket"></i>
+						</span>
 				</div>
-				<div class="boxed-card relative" style="width: 26rem; height: 13rem;">
-					<h2 class="text-xl font-semibold tc-sharp">Analysis</h2>
-					<p class="p-1 mt-3 text-base tc-faded">Analyse your games from
-						<span class="font-semibold tc-base">chess.com</span>
+				<div class="box boxed-card">
+					<h2 class="title is-5 mb-0 p-1">Practice</h2>
+					<p class="p-1 mt-3">Practice your moves to keep improving.</p>
+					<div class="is-flex is-flex-direction-column is-flex-grow-1 is-justify-content-center is-align-items-flex-start p-2">
+						<p id="statsNewField" class="has-text-faded py-0.5 pulse-skeleton">New:
+							<span class="has-text-weight-semibold">99 moves</span>
+						</p>
+						<p id="statsRecommendedField" class="has-text-faded py-0.5 pulse-skeleton">Recommended:
+							<span class="has-text-weight-semibold">99 moves</span>
+						</p>
+					</div>
+						<span class="boxed-card-arrow">
+							<i class="fa-solid fa-arrow-right-to-bracket"></i>
+						</span>
+				</div>
+				<div class="box boxed-card">
+					<h2 class="title is-5 mb-0 p-1">Analysis</h2>
+					<p class="p-1 mt-3">Analyse your games from
+						<span class="has-text-weight-semibold has-text-faded">chess.com</span>
 						and
-						<span class="font-semibold tc-base">Lichess</span>
-						for opening mistakes. You can then practice these moves and add them to your repertoire if you want.</p>
-					<div class="flex flex-col grow justify-center items-start p-2">
-						<p id="statsAnalysisField" class="text-base tc-base py-0.5 pulse-skeleton">Analysis:
-							<span class="font-semibold">99 lines</span>
+						<span class="has-text-weight-semibold has-text-faded">Lichess</span>
+						for opening mistakes. You can then practice these moves and add them to your repertoire if you want.
+					</p>
+					<div class="is-flex is-flex-direction-column is-flex-grow-1 is-justify-content-center is-align-items-flex-start p-2">
+						<p id="statsAnalysisField" class="has-text-faded py-0.5 pulse-skeleton">Analysis:
+							<span class="has-text-weight-semibold">99 lines</span>
 						</p>
 					</div>
-					<span class="boxed-card-arrow"></span>
+						<span class="boxed-card-arrow">
+							<i class="fa-solid fa-arrow-right-to-bracket"></i>
+						</span>
 				</div>
-				{% if template.hasRepertoire() %}
-					<div class="boxed-card relative" style="width: 26rem; height: 13rem;">
-						<h2 class="text-xl font-semibold tc-sharp">The Roadmap</h2>
-						<p class="p-1 mt-3 text-base tc-faded">Use the roadmap to get an overview of your opening repertoire and see your accuracy for each line and variation.</p>
-						<span class="boxed-card-arrow"></span>
+				{# if template.hasRepertoire() #}
+					<div class="box boxed-card">
+						<h2 class="title is-5 mb-0 p-1">The Roadmap</h2>
+						<p class="p-1 mt-3">Use the roadmap to get an overview of your opening repertoire and see your accuracy for each line and variation.</p>
+						<span class="boxed-card-arrow">
+							<i class="fa-solid fa-arrow-right-to-bracket"></i>
+						</span>
 					</div>
-				{% endif %}
-				<div class="boxed-card relative" style="width: 26rem; height: 13rem;">
-					<h2 class="text-xl font-semibold tc-sharp">Opponents</h2>
-					<p class="p-1 mt-3 text-base tc-faded">Download your opponent's games and analyse them against your opening repertoire. Find their most played moves and see their win percentages for different moves.</p>
-					<span class="boxed-card-arrow"></span>
+				{# endif #}
+				<div class="box boxed-card">
+					<h2 class="title is-5 mb-0 p-1">Opponents</h2>
+					<p class="p-1 mt-3">Download your opponent's games and analyse them against your opening repertoire. Find their most played moves and see their win percentages for different moves.</p>
+						<span class="boxed-card-arrow">
+							<i class="fa-solid fa-arrow-right-to-bracket"></i>
+						</span>
 				</div>
-				<div class="boxed-card relative" style="width: 26rem; height: 13rem;">
-					<h2 class="text-xl font-semibold tc-sharp">Settings</h2>
-					<p class="p-1 mt-3 text-base tc-faded">Change the settings for the chess board, the piece animations and for analysing your games.</p>
-					<span class="boxed-card-arrow"></span>
+				<div class="box boxed-card">
+					<h2 class="title is-5 mb-0 p-1">Settings</h2>
+					<p class="p-1 mt-3">Change the settings for the chess board, the piece animations and for analysing your games.</p>
+						<span class="boxed-card-arrow">
+							<i class="fa-solid fa-arrow-right-to-bracket"></i>
+						</span>
 				</div>
 			</div>
 		</div>
@@ -69,12 +83,13 @@
 {% block stylesheets %}
 	{{ parent() }}
 
-	{{ encore_entry_link_tags('chessboard') }}
-	{{ encore_entry_link_tags('markers') }}
+	<link rel="stylesheet" href="{{ asset('styles/chessboard.css') }}">
+	<link rel="stylesheet" href="{{ asset('markers/markers.css') }}">
+	<link rel="stylesheet" href="{{ asset('styles/home.scss') }}">
 {% endblock %}
 
 {% block javascripts %}
 	{{ parent() }}
 
-	{{ encore_entry_script_tags('home') }}
+	<script type="module" src="{{ asset('js/home.js') }}">
 {% endblock %}

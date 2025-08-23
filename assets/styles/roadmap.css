@@ -1,7 +1,6 @@
-@tailwind utilities;
-
-@layer utilities {
-  .grid-row-hover:hover > div {
-    @apply bg-tacao-100/50 dark:bg-slate-700/50;
-  }
+/* ...existing code... */
+.grid-row-hover:hover > div {
+  background-color: #fef6e4;
+  /* If you want dark mode, use a JS class toggle or prefers-color-scheme media query */
 }
+/* ...end of converted code... */

@@ -1,5 +1,5 @@
-import { Utils } from "./utils.js";
-import { Modal } from "./modal.js";
+import { Utils } from "utils";
+import { Modal } from "modal";
 
 /**
  * Controller class for the homepage.
@@ -27,34 +27,38 @@ class Home {
     // get the elements
     this.boxedCardContainer = document.getElementById("boxedCardContainer");
 
+    if (!this.boxedCardContainer) { return; }
+
     this.fields.white = document.getElementById("statsWhiteField");
     this.fields.black = document.getElementById("statsBlackField");
     this.fields.new = document.getElementById("statsNewField");
     this.fields.recommended = document.getElementById("statsRecommendedField");
     this.fields.analysis = document.getElementById("statsAnalysisField");
 
+    // Get the boxed cards
+    const boxedCards = this.boxedCardContainer.getElementsByClassName("boxed-card");
     // add event listeners
-    this.boxedCardContainer.children[0].addEventListener("click", () => {
+    boxedCards[0].addEventListener("click", () => {
       this.abortController.abort();
       window.location.href = "./repertoire";
     });
-    this.boxedCardContainer.children[1].addEventListener("click", () => {
+    boxedCards[1].addEventListener("click", () => {
       this.abortController.abort();
       window.location.href = "./practice";
     });
-    this.boxedCardContainer.children[2].addEventListener("click", () => {
+    boxedCards[2].addEventListener("click", () => {
       this.abortController.abort();
       window.location.href = "./analyse";
     });
-    this.boxedCardContainer.children[3].addEventListener("click", () => {
+    boxedCards[3].addEventListener("click", () => {
       this.abortController.abort();
       window.location.href = "./roadmap";
     });
-    this.boxedCardContainer.children[4].addEventListener("click", () => {
+    boxedCards[4].addEventListener("click", () => {
       this.abortController.abort();
       window.location.href = "./opponent";
     });
-    this.boxedCardContainer.children[5].addEventListener("click", () => {
+    boxedCards[5].addEventListener("click", () => {
       this.abortController.abort();
       window.location.href = "./settings";
     });
@@ -65,7 +69,7 @@ class Home {
 
   // get the repertoire statistics
   getStatistics() {
-    var url = "./api/statistics";
+    var url = "/api/statistics";
 
     //fetch(url, {..., signal: signal}).then(response => ...);
     fetch(url, {

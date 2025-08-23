@@ -1,22 +1,22 @@
-<dialog id="connectModal" class="relative p-6 bg-tacao-50 dark:bg-slate-700 rounded-lg shadow-lg">
+<dialog id="connectModal" class="is-relative p-6 bg-tacao-50 dark:bg-slate-700 is-large-rounded shadow-lg">
 	<button id="connectModalCloseButton" class="close-button outline-none">
 		<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-gray-700 hover:text-gray-900 dark:text-gray-500 dark:hover:text-gray-300" fill="none" viewbox="0 0 24 24" stroke="currentColor">
 			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
 		</svg>
 	</button>
-	<h2 class="mb-6 mr-32 text-lg font-semibold tc-sharp">Connect to main account</h2>
+	<h2 class="mb-6 mr-32 text-lg has-text-weight-semibold tc-sharp">Connect to main account</h2>
 
 	<p class="w-full tc-base">If your opponent has multiple accounts, you can connect them to combine their games.</p>
 	<p class="w-full tc-base my-6">Select the main account for
-		<span id="connectModalOpponentUsername" class="font-semibold">Opponent</span>:</p>
+		<span id="connectModalOpponentUsername" class="has-text-weight-semibold">Opponent</span>:</p>
 
 	<div id="connectModalParentAccountContainer" class="boxed-radio-group m-2"></div>
 
-	<div class="flex justify-end space-x-2 mt-8">
-		<button id="connectModalCancelButton" class="btn btn-outline">
+	<div class="is-flex is-justify-content-flex-end space-x-2 mt-8">
+		<button id="connectModalCancelButton" class="button">
 			Cancel
 		</button>
-		<button id="connectModalConfirmButton" class="btn btn-warning">
+		<button id="connectModalConfirmButton" class="button is-warning">
 			Confirm
 		</button>
 	</div>

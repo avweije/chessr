@@ -2,104 +2,97 @@
 
 {% block body %}
 
-	<div class="w-full md:w-4/5 lg:w-3/5 m-auto text-center p-4">
-		<p class="text-base font-medium text-gray-600 dark:text-gray-300 mt-10 mb-6">From which website do you want to download your games?</p>
+	<div class="is-flex is-flex-direction-column is-align-items-center p-4">
+		<p class="has-text-weight-medium has-text-on-background mt-6 mb-4">From which website do you want to download your games?</p>
 
 		<div id="analyseWebsiteButtons" class="boxed-radio-group m-2">
 			<div class="boxed-radio">
-				<input class="peer hidden" type="radio" name="website" value="Chess.com" id="siteChessDotComRadio" checked/>
+				<input class="is-hidden" type="radio" name="website" value="Chess.com" id="siteChessDotComRadio" checked/>
 				<label class="boxed-radio-label" for="siteChessDotComRadio"></label>
 				<div class="boxed-radio-circle"></div>
 				<span class="boxed-radio-text">Chess.com</span>
 			</div>
 			<div class="boxed-radio">
-				<input class="peer hidden" type="radio" name="website" value="Lichess" id="siteLichessRadio"/>
+				<input class="is-hidden" type="radio" name="website" value="Lichess" id="siteLichessRadio"/>
 				<label class="boxed-radio-label" for="siteLichessRadio"></label>
 				<div class="boxed-radio-circle"></div>
 				<span class="boxed-radio-text">Lichess</span>
 			</div>
 		</div>
 
-		<p class="text-base font-medium text-gray-600 dark:text-gray-300 mt-10 mb-4">What is your username there?</p>
+		<p class="has-text-weight-medium has-text-on-background mt-6 mb-4">What is your username there?</p>
 
 		<div>
 			<input id="siteUsername" type="text" name="username" value="" placeholder="Enter your account name.." class="input-text-faded"/>
 		</div>
 
-		<p class="text-base font-medium text-gray-600 dark:text-gray-300 mt-10 mb-6">What time period do you want to analyse?</p>
+		<p class="has-text-weight-medium has-text-on-background mt-6 mb-4">What time period do you want to analyse?</p>
 
 		<div class="boxed-checkbox-group m-2">
 			<div class="boxed-checkbox">
-				<input class="peer hidden" type="checkbox" name="period_recent" id="periodRecentRadio" checked/>
+				<input class="is-hidden" type="checkbox" name="period_recent" id="periodRecentRadio" checked/>
 				<label class="boxed-checkbox-label" for="periodRecentRadio"></label>
-				<div class="relative hidden peer-checked:flex">
-					<div class="absolute top-1 right-1 bottom-1 left-1 rounded-full bg-white"></div>
-					<div class="boxed-checkbox-circle icon-[mdi--checkbox-marked-circle]"></div>
+				<div class="boxed-checkbox-checkmark">
+					<i class="fa-solid fa-circle-check"></i>
 				</div>
-				<div class="boxed-checkbox-circle peer-checked:hidden text-amber-300 dark:text-slate-500 icon-[mdi--checkbox-blank-circle-outline]"></div>
-				<span class="boxed-checkbox-text peer-checked:dark:text-gray-700">The past year</span>
+				<div class="boxed-checkbox-circle"></div>
+				<span class="boxed-checkbox-text">The past year</span>
 			</div>
 			<div class="boxed-checkbox">
-				<input class="peer hidden" type="checkbox" name="period_older" id="periodOlderRadio"/>
+				<input class="is-hidden" type="checkbox" name="period_older" id="periodOlderRadio"/>
 				<label class="boxed-checkbox-label" for="periodOlderRadio"></label>
-				<div class="relative hidden peer-checked:flex">
-					<div class="absolute top-1 right-1 bottom-1 left-1 rounded-full bg-white"></div>
-					<div class="boxed-checkbox-circle icon-[mdi--checkbox-marked-circle]"></div>
+				<div class="boxed-checkbox-checkmark">
+					<i class="fa-solid fa-circle-check"></i>
 				</div>
-				<div class="boxed-checkbox-circle peer-checked:hidden text-amber-300 dark:text-slate-500 icon-[mdi--checkbox-blank-circle-outline]"></div>
-				<span class="boxed-checkbox-text peer-checked:dark:text-gray-700">Older</span>
+				<div class="boxed-checkbox-circle"></div>
+				<span class="boxed-checkbox-text">Older</span>
 			</div>
 		</div>
 
-		<p class="text-base font-medium text-gray-600 dark:text-gray-300 mt-10 mb-6">Which time controls do you want to include?</p>
+		<p class="has-text-weight-medium has-text-on-background mt-6 mb-4">Which time controls do you want to include?</p>
 
 		<div class="boxed-checkbox-group m-2">
 			<div class="boxed-checkbox">
-				<input class="peer hidden" type="checkbox" name="type_daily" value="daily" id="typeDailyCheckbox" checked/>
+				<input class="is-hidden" type="checkbox" name="type_daily" value="daily" id="typeDailyCheckbox" checked/>
 				<label class="boxed-checkbox-label" for="typeDailyCheckbox"></label>
-				<div class="relative hidden peer-checked:flex">
-					<div class="absolute top-1 right-1 bottom-1 left-1 rounded-full bg-white"></div>
-					<div class="boxed-checkbox-circle icon-[mdi--checkbox-marked-circle]"></div>
+				<div class="boxed-checkbox-checkmark">
+					<i class="fa-solid fa-circle-check"></i>
 				</div>
-				<div class="boxed-checkbox-circle peer-checked:hidden text-amber-300 dark:text-slate-500 icon-[mdi--checkbox-blank-circle-outline]"></div>
-				<span class="boxed-checkbox-text peer-checked:dark:text-gray-700">Daily</span>
+				<div class="boxed-checkbox-circle"></div>
+				<span class="boxed-checkbox-text">Daily</span>
 			</div>
 			<div class="boxed-checkbox">
-				<input class="peer hidden" type="checkbox" name="type_rapid" value="rapid" id="typeRapidCheckbox" checked/>
+				<input class="is-hidden" type="checkbox" name="type_rapid" value="rapid" id="typeRapidCheckbox" checked/>
 				<label class="boxed-checkbox-label" for="typeRapidCheckbox"></label>
-				<div class="relative hidden peer-checked:flex">
-					<div class="absolute top-1 right-1 bottom-1 left-1 rounded-full bg-white"></div>
-					<div class="boxed-checkbox-circle icon-[mdi--checkbox-marked-circle]"></div>
+				<div class="boxed-checkbox-checkmark">
+					<i class="fa-solid fa-circle-check"></i>
 				</div>
-				<div class="boxed-checkbox-circle peer-checked:hidden text-amber-300 dark:text-slate-500 icon-[mdi--checkbox-blank-circle-outline]"></div>
-				<span class="boxed-checkbox-text peer-checked:dark:text-gray-700">Rapid</span>
+				<div class="boxed-checkbox-circle"></div>
+				<span class="boxed-checkbox-text">Rapid</span>
 			</div>
 			<div class="boxed-checkbox">
-				<input class="peer hidden" type="checkbox" name="type_blitz" value="blitz" id="typeBlitzCheckbox" checked/>
+				<input class="is-hidden" type="checkbox" name="type_blitz" value="blitz" id="typeBlitzCheckbox" checked/>
 				<label class="boxed-checkbox-label" for="typeBlitzCheckbox"></label>
-				<div class="relative hidden peer-checked:flex">
-					<div class="absolute top-1 right-1 bottom-1 left-1 rounded-full bg-white"></div>
-					<div class="boxed-checkbox-circle icon-[mdi--checkbox-marked-circle]"></div>
+				<div class="boxed-checkbox-checkmark">
+					<i class="fa-solid fa-circle-check"></i>
 				</div>
-				<div class="boxed-checkbox-circle peer-checked:hidden text-amber-300 dark:text-slate-500 icon-[mdi--checkbox-blank-circle-outline]"></div>
-				<span class="boxed-checkbox-text peer-checked:dark:text-gray-700">Blitz</span>
+				<div class="boxed-checkbox-circle"></div>
+				<span class="boxed-checkbox-text">Blitz</span>
 			</div>
 			<div class="boxed-checkbox">
-				<input class="peer hidden" type="checkbox" name="type_bullet" value="bullet" id="typeBulletCheckbox"/>
+				<input class="is-hidden" type="checkbox" name="type_bullet" value="bullet" id="typeBulletCheckbox"/>
 				<label class="boxed-checkbox-label" for="typeBulletCheckbox"></label>
-				<div class="relative hidden peer-checked:flex">
-					<div class="absolute top-1 right-1 bottom-1 left-1 rounded-full bg-white"></div>
-					<div class="boxed-checkbox-circle icon-[mdi--checkbox-marked-circle]"></div>
+				<div class="boxed-checkbox-checkmark">
+					<i class="fa-solid fa-circle-check"></i>
 				</div>
-				<div class="boxed-checkbox-circle peer-checked:hidden text-amber-300 dark:text-slate-500 icon-[mdi--checkbox-blank-circle-outline]"></div>
-				<span class="boxed-checkbox-text peer-checked:dark:text-gray-700">Bullet</span>
+				<div class="boxed-checkbox-circle"></div>
+				<span class="boxed-checkbox-text">Bullet</span>
 			</div>
 		</div>
 
-		<div class="mt-10 mb-6">
-			<button type="button" id="startButton" disabled class="btn btn-primary">
+		<div class="mt-6 mb-4">
+			<button type="button" id="startButton" disabled class="button is-primary">
 				Start analysing
-				<span class="hidden inline-block icon-[svg-spinners--90-ring-with-bg] ml-3 w-5 h-5"></span>
 			</button>
 		</div>
 	</div>
@@ -109,10 +102,10 @@
 {% block stylesheets %}
 	{{ parent() }}
 
-	{{ encore_entry_link_tags('modal') }}
+	<link rel="stylesheet" href="{{ asset('styles/modal.css') }}">
 {% endblock %}
 {% block javascripts %}
 	{{ parent() }}
 
-	{{ encore_entry_script_tags('analyse') }}
+	<script type="module" src="{{ asset('js/analyse.js') }}">
 {% endblock %}

@@ -1,7 +1,5 @@
-import { Utils } from "./utils.js";
-import { Modal } from "./modal.js";
-
-import "../styles/roadmap.css";
+import { Utils } from "utils";
+import { Modal } from "modal";
 
 /**
  * Controller class for the practice page.
@@ -121,11 +119,11 @@ class Roadmap {
   // toggle white/black
   showRoadmapType(type) {
     if (type == "white") {
-      this.roadmapContainerWhite.classList.remove("hidden");
-      this.roadmapContainerBlack.classList.add("hidden");
+      this.roadmapContainerWhite.classList.remove("is-hidden");
+      this.roadmapContainerBlack.classList.add("is-hidden");
     } else {
-      this.roadmapContainerWhite.classList.add("hidden");
-      this.roadmapContainerBlack.classList.remove("hidden");
+      this.roadmapContainerWhite.classList.add("is-hidden");
+      this.roadmapContainerBlack.classList.remove("is-hidden");
     }
     // show the roadmap intro
     this.showRoadmapIntro();
@@ -136,8 +134,8 @@ class Roadmap {
 
   // show the roadmap intro text
   showRoadmapIntro() {
-    this.roadmapIntro.classList.remove("hidden");
-    this.roadmapDetails.classList.add("hidden");
+    this.roadmapIntro.classList.remove("is-hidden");
+    this.roadmapDetails.classList.add("is-hidden");
   }
 
   // show the roadmap details
@@ -173,8 +171,8 @@ class Roadmap {
     }
 
     // show the details
-    this.roadmapIntro.classList.add("hidden");
-    this.roadmapDetails.classList.remove("hidden");
+    this.roadmapIntro.classList.add("is-hidden");
+    this.roadmapDetails.classList.remove("is-hidden");
   }
 
   // get the roadmap
@@ -182,7 +180,7 @@ class Roadmap {
     // show the page loader
     Utils.showLoading();
 
-    var url = "./api/roadmap";
+    var url = "/api/roadmap";
 
     fetch(url, {
       method: "GET",
@@ -241,7 +239,7 @@ class Roadmap {
     }
 
     // hide the missing moves
-    this.roadmapTreeMissingMoves.classList.add("hidden");
+    this.roadmapTreeMissingMoves.classList.add("is-hidden");
 
     // load the tree current (ECO, PGN)
     this.loadTreeCurrent();
@@ -292,17 +290,17 @@ class Roadmap {
     // if we have no tree
     if (this.tree.length == 0) {
       // hide the tree current
-      this.roadmapTreeCurrent.classList.add("hidden");
+      this.roadmapTreeCurrent.classList.add("is-hidden");
       // show the intro text
-      this.roadmapIntroText.classList.remove("hidden");
+      this.roadmapIntroText.classList.remove("is-hidden");
 
       return true;
     }
 
     // hide the intro text
-    this.roadmapIntroText.classList.add("hidden");
+    this.roadmapIntroText.classList.add("is-hidden");
     // show the tree current
-    this.roadmapTreeCurrent.classList.remove("hidden");
+    this.roadmapTreeCurrent.classList.remove("is-hidden");
 
     // get the color
     var color = this.getCurrentColor();
@@ -334,14 +332,14 @@ class Roadmap {
 
     // add the buttons
     var sp = document.createElement("span");
-    sp.className = "w-5 h-5 icon-[mdi--checkerboard]";
+    sp.innerHTML = '<i class="fa-solid fa-chess-board"></i>';
 
     sp.addEventListener("click", this.onOpenInRepertoire.bind(this, data));
 
     this.roadmapTreeCurrentButtons.appendChild(sp);
 
     sp = document.createElement("span");
-    sp.className = "w-5 h-5 icon-[mdi--controller]";
+    sp.innerHTML = '<i class="fa-solid fa-gamepad"></i>';
 
     sp.addEventListener("click", this.onOpenInPractice.bind(this, data));
 
@@ -366,11 +364,12 @@ class Roadmap {
     // add the header row
     var div = document.createElement("div");
     div.className =
-      "flex justify-center items-center rounded bg-tacao-100 dark:bg-slate-700 text-sm font-medium text-center tc-sharp p-2";
+      "is-flex is-justify-content-center is-align-items-center is-rounded is-size-7 has-text-centered p-2";
     //div.innerHTML = "%";
 
     var sp = document.createElement("span");
-    sp.className = "tc-sharp w-5 h-5 icon-[mdi--feature-highlight]";
+    sp.className = "tc-sharp";
+    sp.innerHTML = '<i class="fa-solid fa-medal"></i>';
 
     div.appendChild(sp);
 
@@ -477,7 +476,7 @@ class Roadmap {
     }
 
     // show the missing moves
-    this.roadmapTreeMissingMoves.classList.remove("hidden");
+    this.roadmapTreeMissingMoves.classList.remove("is-hidden");
   }
 
   //
@@ -503,7 +502,7 @@ class Roadmap {
     var variation = document.createElement("div");
     variation.id = "roadmapTreeItem_" + (data !== null ? data.id : "root");
     variation.className =
-      "relative flex flex-col shrink-0 grow-0 justify-center gap-y-px rounded-lg overflow-hidden border border-tacao-200 dark:border-slate-600 shadow";
+      "relative is-flex is-flex-direction-column shrink-0 grow-0 is-justify-content-center gap-y-px rounded-lg overflow-hidden border border-tacao-200 dark:border-slate-600 shadow";
     if (data !== null) {
       variation.setAttribute("data-id", data.id);
       variation.setAttribute("data-level", index);
@@ -511,7 +510,7 @@ class Roadmap {
     //
     var clickable = document.createElement("label");
     clickable.className =
-      "flex justify-between items-center grow cursor-pointer tc-sharp hover:text-marigold-600 dark:hover:text-marigold-500 bg-tacao-50/50 dark:bg-slate-800 hover:bg-tacao-100 dark:hover:bg-slate-700";
+      "is-flex justify-between items-center grow cursor-pointer tc-sharp hover:text-marigold-600 dark:hover:text-marigold-500 bg-tacao-50/50 dark:bg-slate-800 hover:bg-tacao-100 dark:hover:bg-slate-700";
     //
     if (data !== null) {
       //
@@ -531,11 +530,11 @@ class Roadmap {
       //
       var accuracy = document.createElement("span");
       accuracy.className =
-        "flex items-center font-medium text-sm px-2 py-2 " +
+        "is-flex items-center font-medium text-sm px-2 py-2 " +
         colors[accuracyIdx][0];
       //
       var icon = document.createElement("span");
-      icon.className = "w-4 h-4 icon-[mdi--bullseye-arrow]";
+      icon.innerHTML = '<i class="fa-solid fa-crosshairs"></i>';
       //
       var percentage = document.createElement("span");
       percentage.className = "";
@@ -551,7 +550,7 @@ class Roadmap {
       clickable.className = clickable.className + " px-3";
       //
       var icon = document.createElement("span");
-      icon.className = "w-5 h-5 icon-[mdi--home]";
+      icon.innerHTML = '<i class="fa-solid fa-house-chimney"></i>';
       //
       clickable.appendChild(icon);
     }
@@ -601,19 +600,19 @@ class Roadmap {
     //
     var row = document.createElement("div");
     row.id = "roadmapTreeRow_" + groupId;
-    row.className = "flex flex-wrap justify-center gap-2";
+    row.className = "is-flex flex-wrap is-justify-content-center gap-2";
     row.setAttribute("data-type", "tree-row");
     row.setAttribute("data-level", level);
 
     //
     for (var i = 0; i < data.length; i++) {
-      console.info(data[i]);
+      console.info(i, data[i]);
 
       //
       var variation = document.createElement("div");
       variation.id = "roadmapTreeItem_" + data[i].id;
       variation.className =
-        "relative flex flex-col shrink-0 grow-0 justify-center w-56 rounded-lg overflow-hidden border border-tacao-200 dark:border-slate-600 shadow";
+        "relative flex is-flex-direction-column shrink-0 grow-0 is-justify-content-center w-56 rounded-lg overflow-hidden border border-tacao-200 dark:border-slate-600 shadow";
       variation.setAttribute("data-id", data[i].id);
       variation.setAttribute("data-level", level);
       //
@@ -637,11 +636,11 @@ class Roadmap {
       var clickable = document.createElement("label");
       clickable.htmlFor = "roadmapTreeRadio_" + data[i].id;
       clickable.className =
-        "flex flex-col grow bg-tacao-50/50 dark:bg-slate-800 tc-sharp hover:bg-tacao-100 dark:hover:bg-slate-700 hover:text-marigold-600 dark:hover:text-marigold-500" +
+        "is-flex is-flex-direction-column grow bg-tacao-50/50 dark:bg-slate-800 tc-sharp hover:bg-tacao-100 dark:hover:bg-slate-700 hover:text-marigold-600 dark:hover:text-marigold-500" +
         (data[i].lines.length > 0 ? " cursor-pointer" : "");
       //
       var header = document.createElement("div");
-      header.className = "flex justify-between items-center";
+      header.className = "is-flex justify-between items-center";
       //
       var move =
         Math.ceil(data[i].line.length / 2) +
@@ -661,11 +660,11 @@ class Roadmap {
       //
       var accuracy = document.createElement("span");
       accuracy.className =
-        "flex items-center self-start font-medium text-sm px-2 pt-2 " +
+        "is-flex items-center self-start font-medium text-sm px-2 pt-2 " +
         colors[accuracyIdx][0];
       //
       var icon = document.createElement("span");
-      icon.className = "w-4 h-4 icon-[mdi--bullseye-arrow]";
+      icon.innerHTML = '<i class="fa-solid fa-crosshairs"></i>';
       //
       var percentage = document.createElement("span");
       percentage.className = "";
@@ -678,7 +677,7 @@ class Roadmap {
       header.appendChild(accuracy);
       //
       var main = document.createElement("div");
-      main.className = "flex flex-col justify-between grow px-3 pb-3 pt-1";
+      main.className = "is-flex is-flex-direction-column justify-between grow px-3 pb-3 pt-1";
 
       var eco = document.createElement("div");
       eco.className = "text-sm tc-base";
@@ -686,7 +685,7 @@ class Roadmap {
         data[i].eco && data[i].eco.name ? data[i].eco.name : data[i].pgn;
 
       var cntrs = document.createElement("div");
-      cntrs.className = "flex justify-between text-xs tc-faded pt-2";
+      cntrs.className = "is-flex justify-between text-xs tc-faded pt-2";
 
       // show number of moves in this line
       var sp = document.createElement("span");
@@ -720,7 +719,7 @@ class Roadmap {
       //
       var footer = document.createElement("div");
       footer.className =
-        "flex justify-end items-center bg-tacao-100 dark:bg-slate-700 px-1 border-t border-tacao-200 dark:border-slate-600";
+        "is-flex justify-end items-center bg-tacao-100 dark:bg-slate-700 px-1 border-t border-tacao-200 dark:border-slate-600";
 
       // if there are any variations
       if (data[i].vcount > 0) {
@@ -753,7 +752,7 @@ class Roadmap {
           //
 
           sp = document.createElement("span");
-          sp.className = "w-5 h-5 icon-[mdi--trending-down]";
+          sp.innerHTML = '<i class="fa-solid fa-arrow-trend-down"></i>';
 
           lowest.appendChild(sp);
 
@@ -781,7 +780,7 @@ class Roadmap {
         last.className = "px-2 py-1 text-tacao-300 dark:text-slate-500";
 
         sp = document.createElement("span");
-        sp.className = "w-5 h-5 icon-[mdi--lastpass]";
+        sp.innerHTML = '<i class="fa-solid fa-arrow-turn-down"></i>';
         // lastpass
         // ray-end
 
@@ -805,7 +804,7 @@ class Roadmap {
           "cursor-pointer flex items-center px-2 py-1 text-sky-600 hover:text-sky-400 dark:text-sky-600 dark:hover:text-sky-400";
 
         sp = document.createElement("span");
-        sp.className = "w-5 h-5 icon-[mdi--feature-highlight]";
+        sp.innerHTML = '<i class="fa-solid fa-medal"></i>';
 
         missing.appendChild(sp);
 
@@ -830,7 +829,7 @@ class Roadmap {
         "cursor-pointer flex items-center px-2 py-1 tc-link-shade";
 
       sp = document.createElement("span");
-      sp.className = "w-5 h-5 icon-[mdi--checkerboard]";
+      sp.innerHTML = '<i class="fa-solid fa-chess-board"></i>';
 
       repertoire.appendChild(sp);
 
@@ -846,7 +845,7 @@ class Roadmap {
         "cursor-pointer flex items-center px-2 py-1 tc-link-shade";
 
       sp = document.createElement("span");
-      sp.className = "w-5 h-5 icon-[mdi--controller]";
+      sp.innerHTML = '<i class="fa-solid fa-gamepad"></i>';
 
       practice.appendChild(sp);
 
@@ -1010,7 +1009,7 @@ class Roadmap {
     this.loadTreeCurrent();
 
     // hide the missing moves
-    this.roadmapTreeMissingMoves.classList.add("hidden");
+    this.roadmapTreeMissingMoves.classList.add("is-hidden");
 
     // get the color
     var color = this.getCurrentColor();
@@ -1049,7 +1048,7 @@ class Roadmap {
 
     //
     var div = document.createElement("div");
-    div.className = "flex items-start justify-center";
+    div.className = "is-flex items-start is-justify-content-center";
     // do we need to hide it?
     if (depth >= 3 && hidden == false && roadmap.length > 2) {
       div.className += " hidden";
@@ -1062,21 +1061,21 @@ class Roadmap {
       //
       var sp = document.createElement("div");
       sp.className =
-        "flex flex-col items-stretch" +
+        "is-flex is-flex-direction-column is-align-items-stretch" +
         (depth > 0 && roadmap.length > 1 && i > 0 && i < roadmap.length - 1
           ? " border-t border-gray-700 dark:border-gray-100"
           : "");
 
       //
       var moveCon = document.createElement("div");
-      moveCon.className = "flex flex-col justify-stretch items-start";
+      moveCon.className = "is-flex is-flex-direction-column is-justify-content-stretch is-align-items-flex-start";
 
       //
       if (depth > 0 && roadmap.length > 1 && i == 0) {
         //
         var topLine = document.createElement("div");
         topLine.className =
-          "self-end rounded-tl border-l border-t border-gray-700 dark:border-gray-100";
+          "is-align-self-flex-end rounded-tl border-l border-t border-gray-700 dark:border-gray-100";
         topLine.style = "width: 50%; height: 16px;";
         //
         moveCon.appendChild(topLine);
@@ -1103,7 +1102,7 @@ class Roadmap {
       //
       var hdr = document.createElement("span");
       hdr.className =
-        "self-center cursor-pointer text-sm py-1 px-2 mx-1 whitespace-nowrap rounded border border-gray-700 dark:border-gray-100 " +
+        "is-align-self-center cursor-pointer text-sm py-1 px-2 mx-1 whitespace-nowrap rounded border border-gray-700 dark:border-gray-100 " +
         colors[accuracyIdx];
       hdr.title =
         (roadmap[i].eco && roadmap[i].eco.name ? roadmap[i].eco.name : "") +
@@ -1146,15 +1145,15 @@ class Roadmap {
           var invisible =
             depth >= 2 && hidden == false && roadmap[i].lines.length > 2;
           var icon = invisible
-            ? "icon-[mdi--show-outline]"
-            : "icon-[mdi--hide-outline]";
+            ? '<i class="fa-solid fa-eye"></i>'
+            : '<i class="fa-solid fa-eye-slash"></i>';
           //
           var toggle = document.createElement("span");
           toggle.className =
-            "text-gray-600 dark:text-gray-200 cursor-pointer text-base self-center w-5 h-5 " +
-            icon;
+            "text-gray-600 dark:text-gray-200 cursor-pointer text-base self-center w-5 h-5 ";
           toggle.style = "margin-top: -4px; margin-bottom: -4px;";
           toggle.title = invisible ? "Show this line" : "Hide this line";
+          toggle.innerHTML = icon;
           toggle.setAttribute("data-visible", invisible ? "no" : "yes");
 
           toggle.addEventListener(
@@ -1164,19 +1163,17 @@ class Roadmap {
                 // toggle the container for the child moves
                 if (toggle.getAttribute("data-visible") == "yes") {
                   toggle.setAttribute("data-visible", "no");
-                  toggle.classList.remove("icon-[mdi--hide-outline]");
-                  toggle.classList.add("icon-[mdi--show-outline]");
+                  toggle.innerHTML = '<i class="fa-solid fa-eye"></i>'
                   toggle.title = "Show this line";
-                  toggle.nextElementSibling.classList.add("hidden");
-                  toggle.parentNode.nextElementSibling.classList.add("hidden");
+                  toggle.nextElementSibling.classList.add("is-hidden");
+                  toggle.parentNode.nextElementSibling.classList.add("is-hidden");
                 } else {
                   toggle.setAttribute("data-visible", "yes");
-                  toggle.classList.remove("icon-[mdi--show-outline]");
-                  toggle.classList.add("icon-[mdi--hide-outline]");
+                  toggle.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
                   toggle.title = "Hide this line";
-                  toggle.nextElementSibling.classList.remove("hidden");
+                  toggle.nextElementSibling.classList.remove("is-hidden");
                   toggle.parentNode.nextElementSibling.classList.remove(
-                    "hidden"
+                    "is-hidden"
                   );
                   // scroll into view
                   toggle.parentNode.nextElementSibling.scrollIntoView();

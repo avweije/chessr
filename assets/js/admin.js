@@ -1,5 +1,5 @@
-import { Utils } from "./utils.js";
-import { Modal } from "./modal.js";
+import { Utils } from "utils";
+import { Modal } from "modal";
 
 class Admin {
   // the elements
@@ -63,7 +63,7 @@ class Admin {
   startImport() {
     // show the spinner
     this.importEvaluationsButton.children[0].innerHTML = "Stop import";
-    this.importEvaluationsButton.children[1].classList.remove("hidden");
+    this.importEvaluationsButton.children[1].classList.remove("is-hidden");
 
     this.linesImportedField.innerHTML = "0";
 
@@ -171,7 +171,7 @@ class Admin {
     if (this.interruptImport || data == null) {
       // hide the spinner, toggle button
       this.importEvaluationsButton.children[0].innerHTML = "Import eveluations";
-      this.importEvaluationsButton.children[1].classList.add("hidden");
+      this.importEvaluationsButton.children[1].classList.add("is-hidden");
       this.importEvaluationsButton.disabled = false;
 
       this.importStarted = false;

@@ -12,8 +12,8 @@ use Symfony\Component\Serializer\Annotation\SerializedName;
 class ECO
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[ORM\GeneratedValue(strategy: 'IDENTITY')]
+    #[ORM\Column(type: 'integer')]
     #[Ignore]
     private ?int $id = null;
 

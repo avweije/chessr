@@ -3,24 +3,24 @@
 {% block board_header %}
 	<div id="repertoireColorButtons" class="boxed-radio-menu">
 		<div class="boxed-radio">
-			<input class="peer hidden" type="radio" name="repertoire_color" value="white" id="whiteRepertoireRadio" {{ repertoireColor == 'black' ? '' : 'checked' }}/>
+			<input class="is-hidden" type="radio" name="repertoire_color" value="white" id="whiteRepertoireRadio" {{ repertoireColor == 'black' ? '' : 'checked' }}/>
 			<label class="boxed-radio-label" for="whiteRepertoireRadio"></label>
-			<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500">White</span>
+			<span class="boxed-radio-text">White</span>
 		</div>
 		<div class="boxed-radio">
-			<input class="peer hidden" type="radio" name="repertoire_color" value="black" id="blackRepertoireRadio" {{ repertoireColor == 'black' ? 'checked' : '' }}/>
+			<input class="is-hidden" type="radio" name="repertoire_color" value="black" id="blackRepertoireRadio" {{ repertoireColor == 'black' ? 'checked' : '' }}/>
 			<label class="boxed-radio-label" for="blackRepertoireRadio"></label>
-			<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500">Black</span>
+			<span class="boxed-radio-text">Black</span>
 		</div>
 	</div>
 {% endblock %}
 
 {% block board_top %}
-	<div class="flex justify-end mt-0 mb-2">
-		<button type="button" id="loadPgnButton" disabled class="btn btn-primary mr-1">
+	<div class="is-flex is-justify-content-flex-end mt-0 mb-2">
+		<button type="button" id="loadPgnButton" disabled class="button is-primary mr-1">
 			Load PGN
 		</button>
-		<button type="button" id="saveRepertoireButton" disabled class="btn btn-primary">
+		<button type="button" id="saveRepertoireButton" disabled class="button is-primary">
 			Save to your repertoire
 		</button>
 	</div>
@@ -33,46 +33,48 @@
 
 {% block board_right %}
 
-	<div class="border rounded text-sm bg-tacao-100/50 dark:bg-slate-700 border-tacao-300/60 dark:border-slate-900">
-		<div class="flex justify-between items-center m-0 p-3 border-b border-tacao-300/60 dark:border-slate-900">
-			<p class="block text-sm font-bold tc-sharp">Game</p>
-			<p id="statusField" class="block text-sm text-right tc-base tc-faded pl-5"></p>
+	<div class="box p-0">
+		<div class="box-header">
+			<p class="has-text-primary"><strong>Game</strong></p>
+			<p id="statusField" class="is-size-7 has-text-right has-text-primary-20 pl-5"></p>
 		</div>
-		<div class="flex items-center">
-			<button id="gotoFirstButton" disabled class="shrink-0 w-7 h-7 my-2 ml-2 mr-1 tc-link-shade icon-[mdi--page-first]"></button>
-			<div id="pgnField" class="py-3 pr-3 text-sm"></div>
+		<div class="is-flex is-align-items-center">
+			<button id="gotoFirstButton" disabled class="goto-first-btn">
+				<i class="fa-solid fa-backward-step"></i>
+			</button>
+			<div id="pgnField" class="py-3 pr-3 is-size-7"></div>
 		</div>
-		<div id="pgnStartPositionContainer" class="hidden p-2 border-t border-tacao-300/60 dark:border-slate-900">
-			<label class="p-2 block text-sm font-semibold tc-base whitespace-nowrap">Starting position:</label>
+		<div id="pgnStartPositionContainer" class="is-hidden p-2 border-t border-tacao-300/60 dark:border-slate-900">
+			<label class="p-2 block text-sm has-text-weight-semibold tc-base whitespace-nowrap">Starting position:</label>
 			<p class="p-2 pt-0 block text-sm w-full truncate tc-base"></p>
 		</div>
-		<div class="flex justify-end">
-			<button type="button" id="closePgnButton" class="hidden m-3 mt-2 btn btn-outline">
+		<div class="is-flex is-justify-content-flex-end">
+			<button type="button" id="closePgnButton" class="button is-hidden m-3 mt-2">
 				Close PGN
 			</button>
 		</div>
 	</div>
 
-	<div class="my-0.5 border rounded text-sm bg-tacao-100/50 dark:bg-slate-700 border-tacao-300/60 dark:border-slate-900">
-		<div class="flex justify-between items-center m-0 p-3 border-b border-tacao-300/60 dark:border-slate-900">
-			<p class="block text-sm font-bold tc-sharp">Moves</p>
-			<p id="ecoField" class="block text-sm text-right font-semibold tc-base tc-faded pl-5"></p>
+	<div class="box p-0">
+		<div class="box-header">
+			<p class="has-text-primary"><strong>Moves</strong></p>
+			<p id="ecoField" class="is-size-7 has-text-right has-text-primary-20 pl-5"></p>
 		</div>
 
-		<div style="overflow-y: auto; overflow-x: hidden; max-height: 56vh;">
+		<div style="overflow-y: auto; overflow-x: is-hidden; max-height: 56vh;">
 			<div class="p-1">
-				<p class="block text-base tc-base p-3 hidden">No repertoire moves or book moves found.</p>
+				<p class="block text-base tc-base p-3 is-hidden">No repertoire moves or book moves found.</p>
 
-				<table id="movesTable" class="table-fixed min-w-full m-0">
+				<table id="movesTable" class="moves-table">
 					<tbody></tbody>
 				</table>
 			</div>
 		</div>
 	</div>
 
-	<div id="engineContainer" class="hidden my-0.5 border rounded text-sm bg-tacao-100/50 dark:bg-slate-700 border-tacao-300/60 dark:border-slate-900">
-		<div class="flex justify-between items-center m-0 p-3 border-b border-tacao-300/60 dark:border-slate-900">
-			<p class="block text-sm font-bold tc-sharp">Engine</p>
+	<div id="engineContainer" class="is-hidden box p-0">
+		<div class="box-header">
+			<p class="has-text-primary"><strong>Engine</strong></p>
 			<p id="engineDepth" class="block text-xs font-medium tc-faded">depth</p>
 			<label class="input-toggle" style="margin-inline-end: 0;">
 				<input id="engineCheckbox" type="checkbox" class="sr-only peer">
@@ -81,7 +83,7 @@
 		</div>
 
 		<div class="p-1">
-			<p class="block text-base tc-base p-3 hidden">Start the engine to find the best moves.</p>
+			<p class="block text-base tc-base p-3 is-hidden">Start the engine to find the best moves.</p>
 
 			<table id="engineTable" class="table-fixed min-w-full m-0">
 				<tbody></tbody>
@@ -89,9 +91,9 @@
 		</div>
 	</div>
 
-	<div id="repertoireContainer" class="hidden my-0.5 border rounded text-sm bg-tacao-100/50 dark:bg-slate-700 border-tacao-300/60 dark:border-slate-900">
-		<div class="flex justify-between items-center m-0 p-0 border-b border-tacao-300/60 dark:border-slate-900">
-			<p class="block text-sm font-bold p-3 tc-sharp">Repertoire</p>
+	<div id="repertoireContainer" class="is-hidden box p-0">
+		<div class="box-header">
+			<p class="has-text-primary"><strong>Repertoire</strong></p>
 			<div class="pr-2"></div>
 		</div>
 
@@ -121,23 +123,25 @@
 				<input id="repertoireGroupInput" type="search" list="repertoireGroupDataList" name="repertoire_group" placeholder="Type and press Enter to add or select from list..." class="input-text-faded">
 				<datalist id="repertoireGroupDataList"></datalist>
 			</div>
-			<div id="repertoireGroupTagsContainer" class="flex flex-wrap"></div>
+			<div id="repertoireGroupTagsContainer" class="is-flex flex-wrap"></div>
 		</div>
 
-		<div class="flex justify-end p-3 pt-0">
-			<button type="button" id="removeRepertoireButton" class="btn btn-outline">
+		<div class="is-flex is-justify-content-flex-end p-3 pt-0">
+			<button type="button" id="removeRepertoireButton" class="button">
 				Remove from your repertoire
 			</button>
 		</div>
 	</div>
 
-	<div id="initialFenContainer" class="hidden border my-0.5 rounded text-sm bg-tacao-100/50 dark:bg-slate-700 border-tacao-300/60 dark:border-slate-900">
-		<p class="block text-sm font-bold p-3 border-b tc-sharp border-tacao-300/60 dark:border-slate-900">Starting position</p>
+	<div id="initialFenContainer" class="is-hidden box p-0">
+		<div class="box-header">
+			<p class="has-text-primary"><strong>Starting position</strong></p>
+		</div>
 
 		<div class="p-3">
-			<div class="relative inline-block">
-				<select id="initialFenSelect" class="appearance-none inline-block w-full rounded-md border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"></select>
-				<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+			<div class="is-relative inline-block">
+				<select id="initialFenSelect" class="appearance-none inline-block w-full is-medium-rounded border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"></select>
+				<div class="pointer-events-none is-absolute inset-y-0 right-0 flex is-align-items-center px-2 text-gray-700">
 					<svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
 				</div>
 			</div>
@@ -145,8 +149,8 @@
 
 	</div>
 
-	<div class="flex justify-end mt-2">
-		<button type="button" id="analyseGameButton" disabled class="btn btn-primary">
+	<div class="is-flex is-justify-content-flex-end mt-2">
+		<button type="button" id="analyseGameButton" disabled class="button is-link">
 			Analyse on Lichess
 		</button>
 	</div>
@@ -159,11 +163,12 @@
 {% block stylesheets %}
 	{{ parent() }}
 
-	{{ encore_entry_link_tags('modal') }}
+	<link rel="stylesheet" href="{{ asset('styles/repertoire.css') }}">
+	<link rel="stylesheet" href="{{ asset('styles/modal.css') }}">
 {% endblock %}
 
 {% block javascripts %}
 	{{ parent() }}
 
-	{{ encore_entry_script_tags('repertoire') }}
+	<script type="module" src="{{ asset('js/repertoire.js') }}">
 {% endblock %}

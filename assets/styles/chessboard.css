@@ -1,4 +1,4 @@
-@import "cm-chessboard/assets/chessboard.css";
+@import url("../cm-chessboard/assets/chessboard.css");
 /* @import "cm-chessboard/assets/extensions/markers/markers.css"; */
 
 svg.cm-chessboard {

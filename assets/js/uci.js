@@ -32,8 +32,8 @@ export class UCI {
 
     this.stockfish = new Worker(
       this.wasmSupported
-        ? "/build/stockfish/stockfish.wasm.js"
-        : "/build/stockfish/stockfish.js"
+        ? "/stockfish/stockfish.wasm.js"
+        : "/stockfish/stockfish.js"
     );
 
     // add the event listeners

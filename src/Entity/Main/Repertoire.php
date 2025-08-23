@@ -13,8 +13,8 @@ use Doctrine\ORM\Mapping as ORM;
 class Repertoire
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
+    #[ORM\GeneratedValue(strategy: 'IDENTITY')]
+    #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'repertoires')]
@@ -24,10 +24,10 @@ class Repertoire
     #[ORM\Column(length: 10)]
     private ?string $Color = null;
 
-    #[ORM\Column(length: 255, options: ['collation' => 'utf8mb4_bin'])]
+    #[ORM\Column(length: 255)]
     private ?string $FenBefore = null;
 
-    #[ORM\Column(length: 255, options: ['collation' => 'utf8mb4_bin'])]
+    #[ORM\Column(length: 255)]
     private ?string $FenAfter = null;
 
     #[ORM\Column(length: 1024)]

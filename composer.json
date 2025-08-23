@@ -19,6 +19,7 @@
         "sensio/framework-extra-bundle": "*",
         "symfony/apache-pack": "^1.0",
         "symfony/asset": "6.4.*",
+        "symfony/asset-mapper": "6.4.*",
         "symfony/console": "6.4.*",
         "symfony/dotenv": "6.4.*",
         "symfony/flex": "^2",
@@ -31,8 +32,9 @@
         "symfony/serializer": "6.4.*",
         "symfony/twig-bundle": "6.4.*",
         "symfony/validator": "6.4.*",
-        "symfony/webpack-encore-bundle": "^2.1",
         "symfony/yaml": "6.4.*",
+        "symfonycasts/sass-bundle": "^0.8.2",
+        "symfonycasts/tailwind-bundle": "^0.11.1",
         "twig/extra-bundle": "^2.12|^3.0",
         "twig/twig": "^2.12|^3.0"
     },
@@ -66,13 +68,18 @@
     "scripts": {
         "auto-scripts": {
             "cache:clear": "symfony-cmd",
-            "assets:install %PUBLIC_DIR%": "symfony-cmd"
+            "assets:install %PUBLIC_DIR%": "symfony-cmd",
+            "importmap:install": "symfony-cmd"
         },
         "post-install-cmd": [
             "@auto-scripts"
         ],
         "post-update-cmd": [
             "@auto-scripts"
+        ],
+        "assets:compile": [
+            "php bin/console sass:build",
+            "php bin/console asset-map:compile"
         ]
     },
     "conflict": {

@@ -1,0 +1,35 @@
+// -------------------------------
+// Contrast / text helpers
+// -------------------------------
+
+// Simple readable text
+@function readable-text($bg) {
+  @if (red($bg) * 0.299 + green($bg) * 0.587 + blue($bg) * 0.114) > 186 {
+    @return #000;
+  } @else {
+    @return #fff;
+  }
+}
+
+// Soft contrast text (mix)
+@function contrast-text($bg, $strength: 80%) {
+  @if (red($bg) * 0.299 + green($bg) * 0.587 + blue($bg) * 0.114) > 186 {
+    @return mix(#000, $bg, $strength);
+  } @else {
+    @return mix(#fff, $bg, $strength);
+  }
+}
+
+// Shading / variant helpers
+@function shade($color, $percent) {
+  @if $percent > 0 {
+    @return lighten($color, $percent);
+  } @else {
+    @return darken($color, abs($percent));
+  }
+}
+
+// Tinting helper
+@function tint($color, $percent) {
+  @return mix(#fff, $color, $percent);
+}

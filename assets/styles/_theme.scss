@@ -1,0 +1,50 @@
+@use "variables";
+
+// ---------------------------
+// Light theme CSS variables
+// ---------------------------
+:root {
+  // Primary colors
+  --color-primary: #{variables.$primary};
+  --color-link: #{variables.$link};
+  --color-link-border: #{variables.$link-border};
+  --color-info: #{variables.$info};
+  --color-success: #{variables.$success};
+  --color-warning: #{variables.$warning};
+  --color-danger: #{variables.$danger};
+
+  // Text colors
+  --color-text-default: #{variables.$text-default};
+  --color-text-title: #{variables.$text-title};
+  --color-text-faded: #{variables.$text-faded};
+  --color-text-on-background: #{variables.$text-on-background};
+
+  // Surfaces
+  --color-background: #{variables.$background};
+  --color-surface-main: #{variables.$surface-main};
+  --color-surface-alt: #{variables.$surface-alt};
+  --color-on-surface: #{variables.$on-surface};
+}
+
+// ---------------------------
+// Dark theme overrides
+// ---------------------------
+[data-theme="dark"] {
+  --color-primary: #{variables.$primary-dark};
+  --color-link: #{variables.$link-dark};
+  --color-link-border: #{variables.$link-border-dark};
+  --color-info: #{variables.$info-dark};
+  --color-success: #{variables.$success-dark};
+  --color-warning: #{variables.$warning-dark};
+  --color-danger: #{variables.$danger-dark};
+
+  --color-text-default: #{variables.$text-default-dark};
+  --color-text-title: #{variables.$text-title-dark};
+  --color-text-faded: #{variables.$text-faded-dark};
+  --color-text-on-background: #{variables.$text-on-background-dark};
+
+  --color-background: #{variables.$background-dark};
+  --color-surface-main: #{variables.$surface-main-dark};
+  --color-surface-alt: #{variables.$surface-alt-dark};
+  --color-on-surface: #{variables.$on-surface-dark};
+}

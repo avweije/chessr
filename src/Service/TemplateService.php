@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\Entity\Main\Analysis;
 use App\Entity\Main\Repertoire;
+use App\Entity\Main\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -15,7 +16,12 @@ class TemplateService
     public function hasRepertoire(): bool
     {
         // if the user is logged in & has a repertoire
-        return $this->security->getUser() && $this->security->getUser()->getRepertoires()->isEmpty() == false;
+        $user = $this->security->getUser();
+        // Check if $user is your User entity
+        if ($user instanceof User) {
+            return !$user->getRepertoires()->isEmpty();
+        }
+        return false;
     }
 
     public function hasAnalysis(): bool

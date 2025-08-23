@@ -1,40 +1,40 @@
 {% extends 'base.html.twig' %}
 
 {% block body %}
-	<div class="flex justify-around p-4">
+	<div class="is-flex is-justify-content-space-around p-4">
 		<div id="opponentTabButtons" class="boxed-radio-menu">
 			<div class="boxed-radio">
-				<input class="peer hidden" type="radio" name="opponent_page" value="download" id="opponentDownloadRadio" checked/>
+				<input class="peer is-hidden" type="radio" name="opponent_page" value="download" id="opponentDownloadRadio" checked/>
 				<label class="boxed-radio-label" for="opponentDownloadRadio"></label>
 				<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500">Download</span>
 			</div>
 			<div class="boxed-radio">
-				<input class="peer hidden" type="radio" name="opponent_page" value="analysis" id="opponentAnalysisRadio"/>
+				<input class="peer is-hidden" type="radio" name="opponent_page" value="analysis" id="opponentAnalysisRadio"/>
 				<label class="boxed-radio-label" for="opponentAnalysisRadio"></label>
 				<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500">Analysis</span>
 			</div>
 		</div>
 	</div>
 
-	<div id="opponentDownloadTab" class="w-full md:w-4/5 lg:w-3/5 m-auto text-center">
-		<p class="text-base font-medium tc-base mt-10 mb-6">On which website does your opponent play?</p>
+	<div id="opponentDownloadTab" class="is-flex is-flex-direction-column is-align-items-center p-4">
+		<p class="has-text-weight-medium has-text-on-background mt-6 mb-4">On which website does your opponent play?</p>
 
 		<div id="analyseWebsiteButtons" class="boxed-radio-group m-2">
 			<div class="boxed-radio">
-				<input class="peer hidden" type="radio" name="website" value="Chess.com" id="siteChessDotComRadio" checked/>
+				<input class="peer is-hidden" type="radio" name="website" value="Chess.com" id="siteChessDotComRadio" checked/>
 				<label class="boxed-radio-label" for="siteChessDotComRadio"></label>
 				<div class="boxed-radio-circle"></div>
 				<span class="boxed-radio-text">Chess.com</span>
 			</div>
 			<div class="boxed-radio">
-				<input class="peer hidden" type="radio" name="website" value="Lichess" id="siteLichessRadio"/>
+				<input class="peer is-hidden" type="radio" name="website" value="Lichess" id="siteLichessRadio"/>
 				<label class="boxed-radio-label" for="siteLichessRadio"></label>
 				<div class="boxed-radio-circle"></div>
 				<span class="boxed-radio-text">Lichess</span>
 			</div>
 		</div>
 
-		<p class="text-base font-medium tc-base mt-10 mb-4">What is their username there?</p>
+		<p class="has-text-weight-medium has-text-on-background mt-6 mb-4">What is their username there?</p>
 
 		<div>
 			<input id="siteUsername" type="search" name="username" value="" list="siteUsernameDataListChessCom" placeholder="Enter your opponent's account name.." class="input-text-faded"/>
@@ -54,90 +54,89 @@
 			</datalist>
 		</div>
 
-		<p class="text-base font-medium tc-base mt-10 mb-6">Which time controls do you want to include?</p>
+		<p class="has-text-weight-medium has-text-on-background mt-6 mb-4">Which time controls do you want to include?</p>
 
 		<div class="boxed-checkbox-group m-2">
 			<div class="boxed-checkbox">
-				<input class="peer hidden" type="checkbox" name="type_daily" value="daily" id="typeDailyCheckbox" checked/>
+				<input class="is-hidden" type="checkbox" name="type_daily" value="daily" id="typeDailyCheckbox" checked/>
 				<label class="boxed-checkbox-label" for="typeDailyCheckbox"></label>
-				<div class="relative hidden peer-checked:flex">
-					<div class="absolute top-1 right-1 bottom-1 left-1 rounded-full bg-white"></div>
-					<div class="boxed-checkbox-circle icon-[mdi--checkbox-marked-circle]"></div>
+				<div class="boxed-checkbox-checkmark">
+					<i class="fa-solid fa-circle-check"></i>
 				</div>
-				<div class="boxed-checkbox-circle peer-checked:hidden text-gray-300 dark:text-slate-500 icon-[mdi--checkbox-blank-circle-outline]"></div>
+				<div class="boxed-checkbox-circle"></div>
 				<span class="boxed-checkbox-text">Daily</span>
 			</div>
 			<div class="boxed-checkbox">
-				<input class="peer hidden" type="checkbox" name="type_rapid" value="rapid" id="typeRapidCheckbox" checked/>
+				<input class="is-hidden" type="checkbox" name="type_rapid" value="rapid" id="typeRapidCheckbox" checked/>
 				<label class="boxed-checkbox-label" for="typeRapidCheckbox"></label>
-				<div class="relative hidden peer-checked:flex">
-					<div class="absolute top-1 right-1 bottom-1 left-1 rounded-full bg-white"></div>
-					<div class="boxed-checkbox-circle icon-[mdi--checkbox-marked-circle]"></div>
+				<div class="boxed-checkbox-checkmark">
+					<i class="fa-solid fa-circle-check"></i>
 				</div>
-				<div class="boxed-checkbox-circle peer-checked:hidden text-gray-300 dark:text-slate-500 icon-[mdi--checkbox-blank-circle-outline]"></div>
+				<div class="boxed-checkbox-circle"></div>
 				<span class="boxed-checkbox-text">Rapid</span>
 			</div>
 			<div class="boxed-checkbox">
-				<input class="peer hidden" type="checkbox" name="type_blitz" value="blitz" id="typeBlitzCheckbox" checked/>
+				<input class="is-hidden" type="checkbox" name="type_blitz" value="blitz" id="typeBlitzCheckbox" checked/>
 				<label class="boxed-checkbox-label" for="typeBlitzCheckbox"></label>
-				<div class="relative hidden peer-checked:flex">
-					<div class="absolute top-1 right-1 bottom-1 left-1 rounded-full bg-white"></div>
-					<div class="boxed-checkbox-circle icon-[mdi--checkbox-marked-circle]"></div>
+				<div class="boxed-checkbox-checkmark">
+					<i class="fa-solid fa-circle-check"></i>
 				</div>
-				<div class="boxed-checkbox-circle peer-checked:hidden text-gray-300 dark:text-slate-500 icon-[mdi--checkbox-blank-circle-outline]"></div>
+				<div class="boxed-checkbox-circle"></div>
 				<span class="boxed-checkbox-text">Blitz</span>
 			</div>
 			<div class="boxed-checkbox">
-				<input class="peer hidden" type="checkbox" name="type_bullet" value="bullet" id="typeBulletCheckbox"/>
+				<input class="is-hidden" type="checkbox" name="type_bullet" value="bullet" id="typeBulletCheckbox"/>
 				<label class="boxed-checkbox-label" for="typeBulletCheckbox"></label>
-				<div class="relative hidden peer-checked:flex">
-					<div class="absolute top-1 right-1 bottom-1 left-1 rounded-full bg-white"></div>
-					<div class="boxed-checkbox-circle icon-[mdi--checkbox-marked-circle]"></div>
+				<div class="boxed-checkbox-checkmark">
+					<i class="fa-solid fa-circle-check"></i>
 				</div>
-				<div class="boxed-checkbox-circle peer-checked:hidden text-gray-300 dark:text-slate-500 icon-[mdi--checkbox-blank-circle-outline]"></div>
+				<div class="boxed-checkbox-circle"></div>
 				<span class="boxed-checkbox-text">Bullet</span>
 			</div>
 		</div>
 
-		<div class="mt-10 mb-6">
-			<button type="button" id="startButton" disabled class="btn btn-primary">
+		<div class="mt-6 mb-4">
+			<button type="button" id="startButton" disabled class="button is-primary">
 				Start analysing
-				<span class="hidden inline-block icon-[svg-spinners--90-ring-with-bg] ml-3 w-5 h-5"></span>
 			</button>
 		</div>
 	</div>
 
-	<div id="opponentAnalysisTab" class="hidden flex justify-around text-center">
+	<div id="opponentAnalysisTab" class="is-hidden is-flex is-flex-direction-column is-align-items-center is-justify-content-space-around">
 		<div>
 			<div id="opponentTextAndContainer" class="p-6">
 				<p id="chooseOpponentText" class="text-base font-medium tc-base">Choose your opponent:</p>
 				<div id="opponentContainer" class="boxed-radio-group m-2 mt-6"></div>
 			</div>
 
-			<p class="text-base font-medium tc-base mt-4 mb-6">Which side of your opponent do you want to see?</p>
+			<p class="has-text-weight-medium has-text-on-background mt-6 mb-4">Which side of your opponent do you want to see?</p>
 
 			<div id="opponentColorButtons" class="boxed-radio-group m-2">
 				<div class="boxed-radio">
-					<input class="peer hidden" type="radio" name="opponent_color" value="white" id="opponentColorWhiteRadio" checked/>
+					<input class="peer is-hidden" type="radio" name="opponent_color" value="white" id="opponentColorWhiteRadio" checked/>
 					<label class="boxed-radio-label" for="opponentColorWhiteRadio"></label>
 					<div class="boxed-radio-circle"></div>
 					<span class="boxed-radio-text">White</span>
 				</div>
 				<div class="boxed-radio">
-					<input class="peer hidden" type="radio" name="opponent_color" value="black" id="opponentColorBlackRadio"/>
+					<input class="peer is-hidden" type="radio" name="opponent_color" value="black" id="opponentColorBlackRadio"/>
 					<label class="boxed-radio-label" for="opponentColorBlackRadio"></label>
 					<div class="boxed-radio-circle"></div>
 					<span class="boxed-radio-text">Black</span>
 				</div>
 			</div>
 
-			<div id="opponentMovesContainer" class="hidden flex flex-col items-center mt-10">
-				<div id="opponentMovesHeader" class="flex flex-col mb-6 min-w-72 rounded bg-tacao-100/50 dark:bg-slate-700 border border-tacao-300/60 dark:border-slate-900">
-					<div id="opponentMovesEco" class="flex justify-between items-center gap-x-5 px-4 py-3 tc-base border-b border-tacao-300/60 dark:border-slate-900"></div>
-					<div class="flex gap-x-5 justify-between items-center">
-						<div class="flex items-center px-2 py-3">
-							<button id="opponentMovesFirstButton" disabled class="shrink-0 w-7 h-7 mr-2 tc-link-shade icon-[mdi--page-first]"></button>
-							<div id="opponentMovesPgn" class="flex flex-wrap items-center text-left tc-base"></div>
+			<div id="opponentMovesContainer" class="is-hidden flex is-flex-direction-column is-align-items-center mt-10">
+				<div id="opponentMovesHeader" class="is-flex is-flex-direction-column mb-6 min-w-72 rounded bg-tacao-100/50 dark:bg-slate-700 border border-tacao-300/60 dark:border-slate-900">
+					<div id="opponentMovesEco" class="is-flex is-justify-content-space-between is-align-items-center gap-x-5 px-4 py-3 tc-base border-b border-tacao-300/60 dark:border-slate-900"></div>
+					<div class="is-flex gap-x-5 is-justify-content-space-between is-align-items-center">
+						<div class="is-flex is-align-items-center px-2 py-3">
+							<button id="opponentMovesFirstButton" disabled class="shrink-0 w-7 h-7 mr-2 tc-link-shade">
+								<span class="icon">
+									<i class="fa-solid fa-backward-step"></i>
+								</span>
+							</button>
+							<div id="opponentMovesPgn" class="is-flex flex-wrap is-align-items-center text-left tc-base"></div>
 						</div>
 						<div id="opponentMovesInfo" class="shrink-0 px-3 py-2 text-right">
 							<p class="text-xs mb-px tc-faded">Wins:
@@ -148,33 +147,41 @@
 							</p>
 						</div>
 					</div>
-					<div id="opponentMovesRepertoire" class="hidden flex justify-between items-center gap-x-5 p-2 border-t border-tacao-300/60 dark:border-slate-900">
+					<div id="opponentMovesRepertoire" class="is-hidden flex is-justify-content-space-between is-align-items-center gap-x-5 p-2 border-t border-tacao-300/60 dark:border-slate-900">
 						<div class="text-sm pl-0.5 tc-faded"></div>
-						<button id="opponentMoveSubmitButton" type="button" class="flex appearance-none">
-							<span class="inline-block text-2xl px-1 tc-link-shade icon-[mdi--open-in-new]"></span>
+						<button id="opponentMoveSubmitButton" type="button" class="is-flex appearance-none">
+							<span class="px-1 tc-link-shade">
+								<i class="fa-solid fa-up-right-from-square"></i>
+							</span>
 						</button>
 					</div>
 					<form id="opponentMoveForm" method="post" action="./repertoire" target="_blank"></form>
-					<div id="opponentMoveSuggestions" class="hidden flex justify-between items-center gap-x-5 p-2 max-h-96 overflow-y-auto border-t border-tacao-300/60 dark:border-slate-900">
+					<div id="opponentMoveSuggestions" class="is-hidden flex is-justify-content-space-between is-align-items-center gap-x-5 p-2 max-h-96 overflow-y-auto border-t border-tacao-300/60 dark:border-slate-900">
 						<div class="text-sm pl-0.5 tc-faded"></div>
-						<button id="opponentMoveSuggestionsButton" type="button" class="flex appearance-none">
-							<span class="inline-block text-2xl px-1 tc-link-shade icon-[mdi--show-outline]"></span>
+						<button id="opponentMoveSuggestionsButton" type="button" class="is-flex appearance-none">
+							<span class="px-1 tc-link-shade">
+								<i class="fa-solid fa-eye"></i>
+							</span>
 						</button>
 					</div>
 				</div>
 
-				<div id="opponentMoveSuggestionsContainer" class="hidden flex flex-col mb-6 min-w-72 rounded bg-tacao-100/50 dark:bg-slate-700 border border-tacao-300/60 dark:border-slate-900">
-					<div class="flex items-center px-4 py-3 tc-sharp border-b border-tacao-300/60 dark:border-slate-900">
+				<div id="opponentMoveSuggestionsContainer" class="is-hidden flex is-flex-direction-column mb-6 min-w-72 rounded bg-tacao-100/50 dark:bg-slate-700 border border-tacao-300/60 dark:border-slate-900">
+					<div class="is-flex is-align-items-center px-4 py-3 tc-sharp border-b border-tacao-300/60 dark:border-slate-900">
 						Suggestions
 					</div>
-					<div class="flex flex-col bg-tacao-100/50 dark:bg-slate-700"></div>
+					<div class="is-flex is-flex-direction-column bg-tacao-100/50 dark:bg-slate-700"></div>
 				</div>
 
-				<div id="opponentMovesTable" class="flex flex-wrap gap-2 justify-center mx-6 mb-2"></div>
+				<div id="opponentMovesTable" class="is-flex flex-wrap gap-2 justify-center mx-6 mb-2"></div>
 			</div>
 
 			<div class="fixed right-2 bottom-2 dialog-open-hide">
-				<button id="opponentRemoveButton" type="button" title="Remove this opponent" class="hidden w-7 h-7 text-red-500 dark:text-red-400 hover:text-red-300 dark:hover:text-red-200 icon-[mdi--delete]"></button>
+				<button id="opponentRemoveButton" type="button" title="Remove this opponent" class="is-hidden is-danger">
+					<span class="icon">
+						<i class="fa-solid fa-trash"></i>
+					</span>
+				</button>	
 			</div>
 		</div>
 	</div>
@@ -187,11 +194,11 @@
 {% block stylesheets %}
 	{{ parent() }}
 
-	{{ encore_entry_link_tags('opponent') }}
-	{{ encore_entry_link_tags('modal') }}
+	<link rel="stylesheet" href="{{ asset('styles/opponent.css') }}">
+	<link rel="stylesheet" href="{{ asset('styles/modal.css') }}">
 {% endblock %}
 {% block javascripts %}
 	{{ parent() }}
 
-	{{ encore_entry_script_tags('opponent') }}
+	<script type="module" src="{{ asset('js/opponent.js') }}">
 {% endblock %}

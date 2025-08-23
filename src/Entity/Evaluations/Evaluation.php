@@ -17,7 +17,7 @@ class Evaluation
     private ?int $id = null;
 
     //#[ORM\Column(type: 'varbinary', length: 255)]
-    #[ORM\Column(length: 255, options: ['collation' => 'utf8mb4_bin'])]
+    #[ORM\Column(length: 255)]
     private ?string $Fen = null;
 
     #[ORM\Column(length: 8192)]

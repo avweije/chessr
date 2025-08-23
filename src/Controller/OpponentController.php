@@ -1192,11 +1192,11 @@ class OpponentController extends AbstractController
      * @param  mixed $lines
      * @return array
      */
-    private function analyseOpponentGame($data, $opponent, $lines): array
+    private function analyseOpponentGame($data, $opponent, $lines): ?array
     {
         // make sure we have a PGN
         if (!isset($data["pgn"])) {
-            return false;
+            return null;
         }
 
         // parse the game

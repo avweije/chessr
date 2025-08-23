@@ -1,6 +1,6 @@
-import { Utils } from "./utils.js";
-import { Modal } from "./modal.js";
-import { UCI } from "./uci.js";
+import { Utils } from "utils";
+import { Modal } from "modal";
+import { UCI } from "uci";
 
 class Analyse {
   // the elements
@@ -170,7 +170,7 @@ class Analyse {
   getSettings() {
     console.log("getSettings:");
 
-    var url = "./api/download/settings";
+    var url = "/api/download/settings";
 
     // show the page loader
     Utils.showLoading();
@@ -300,8 +300,8 @@ class Analyse {
     }
 
     // show the spinner
-    this.startButton.children[0].classList.remove("hidden");
     this.startButton.disabled = true;
+    this.startButton.classList.add("is-loading");
 
     // initialise the analyse process
     this.analyseDialog.inProgress = true;
@@ -344,13 +344,13 @@ class Analyse {
     // if we have an error
     if (error) {
       // show the error
-      this.analyseDialog.errorContainer.classList.remove("hidden");
+      this.analyseDialog.errorContainer.classList.remove("is-hidden");
       this.analyseDialog.errorField.innerHTML = error;
       // hide the other fields
-      this.analyseDialog.fieldsContainer.classList.add("hidden");
+      this.analyseDialog.fieldsContainer.classList.add("is-hidden");
     } else {
       // show the fields
-      this.analyseDialog.fieldsContainer.classList.remove("hidden");
+      this.analyseDialog.fieldsContainer.classList.remove("is-hidden");
 
       // set the mistakes text
       var mistakes =
@@ -404,7 +404,7 @@ class Analyse {
       this.analyseDialog.mistakesField.innerHTML = mistakes;
       this.analyseDialog.periodField.innerHTML = this.analyseDialog.period;
       // hide the error
-      this.analyseDialog.errorContainer.classList.add("hidden");
+      this.analyseDialog.errorContainer.classList.add("is-hidden");
       this.analyseDialog.errorField.innerHTML = "";
     }
   }
@@ -449,8 +449,8 @@ class Analyse {
 
       // update the stop button text
       this.analyseDialog.stopButton.innerHTML = "Close";
-      this.analyseDialog.stopButton.classList.remove("btn-warning");
-      this.analyseDialog.stopButton.classList.add("btn-primary");
+      this.analyseDialog.stopButton.classList.remove("is-warning");
+      this.analyseDialog.stopButton.classList.add("is-primary");
       // end the progress
       this.analyseEndProgress();
 
@@ -469,7 +469,7 @@ class Analyse {
       "</span>";
     this.analyseDialog.gameField.innerHTML = "";
 
-    var url = "./api/analyse/download";
+    var url = "/api/analyse/download";
 
     var data = {
       site: this.siteRadio.chesscom.checked ? "Chess.com" : "Lichess",
@@ -534,8 +534,8 @@ class Analyse {
 
     // update the stop button text
     this.analyseDialog.stopButton.innerHTML = "Close";
-    this.analyseDialog.stopButton.classList.remove("btn-warning");
-    this.analyseDialog.stopButton.classList.add("btn-primary");
+    this.analyseDialog.stopButton.classList.remove("is-warning");
+    this.analyseDialog.stopButton.classList.add("is-primary");
 
     // end the progress
     this.analyseEndProgress();
@@ -546,8 +546,8 @@ class Analyse {
     // no longer in progress
     this.analyseDialog.inProgress = false;
     // hide the spinner
-    this.startButton.children[0].classList.add("hidden");
     this.startButton.disabled = false;
+    this.startButton.classList.remove("is-loading");
   }
 
   // get the engine moves
@@ -694,7 +694,7 @@ class Analyse {
   }
 
   evaluateGame(game) {
-    var url = "./api/analyse/evaluate";
+    var url = "/api/analyse/evaluate";
 
     var data = {
       game: game,

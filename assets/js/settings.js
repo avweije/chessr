@@ -1,24 +1,24 @@
-import { MyChess } from "./chess.js";
-import { Chessboard, FEN } from "cm-chessboard/src/Chessboard.js";
+import { MyChess } from "chess";
+import { Chessboard, FEN } from "../cm-chessboard/src/Chessboard.js";
 import {
   COLOR,
   INPUT_EVENT_TYPE,
-} from "cm-chessboard/src/view/ChessboardView.js";
+} from "../cm-chessboard/src/view/ChessboardView.js";
 import {
   MARKER_TYPE,
   Markers,
-} from "cm-chessboard/src/extensions/markers/Markers.js";
-import { Utils } from "./utils.js";
-import { Modal } from "./modal.js";
+} from "../cm-chessboard/src/extensions/markers/Markers.js";
+import { Utils } from "utils";
+import { Modal } from "modal";
 
 import "../styles/chessboard.css";
-import { CUSTOM_MARKER_TYPE, PIECE_TILESIZE } from "./chessboard.js";
+import { CUSTOM_MARKER_TYPE, PIECE_TILESIZE } from "chessboard";
 import {
   ARROW_TYPE,
   Arrows,
-} from "cm-chessboard/src/extensions/arrows/Arrows.js";
+} from "../cm-chessboard/src/extensions/arrows/Arrows.js";
 
-import { CUSTOM_ARROW_TYPE, ThickerArrows } from "./ThickerArrows.js";
+import { CUSTOM_ARROW_TYPE, ThickerArrows } from "ThickerArrows";
 
 /**
  * Controller class for the settings page.
@@ -128,7 +128,7 @@ class Settings {
     // unlock email address input
     this.unlockEmailAddressButton.addEventListener("click", () => {
       this.accountEmailAddress.disabled = false;
-      this.unlockEmailAddressButton.classList.add("hidden");
+      this.unlockEmailAddressButton.classList.add("is-hidden");
     });
     // send verification email
     this.sendVerificationEmailButton.addEventListener(
@@ -175,22 +175,22 @@ class Settings {
 
   // switch tabs
   onSwitchTab() {
-    this.tabs.account.classList.add("hidden");
-    this.tabs.board.classList.add("hidden");
-    this.tabs.engine.classList.add("hidden");
-    this.tabs.practice.classList.add("hidden");
+    this.tabs.account.classList.add("is-hidden");
+    this.tabs.board.classList.add("is-hidden");
+    this.tabs.engine.classList.add("is-hidden");
+    this.tabs.practice.classList.add("is-hidden");
 
     if (this.tabs.buttons.children[0].children[0].checked) {
-      this.tabs.account.classList.remove("hidden");
+      this.tabs.account.classList.remove("is-hidden");
     }
     if (this.tabs.buttons.children[1].children[0].checked) {
-      this.tabs.board.classList.remove("hidden");
+      this.tabs.board.classList.remove("is-hidden");
     }
     if (this.tabs.buttons.children[2].children[0].checked) {
-      this.tabs.engine.classList.remove("hidden");
+      this.tabs.engine.classList.remove("is-hidden");
     }
     if (this.tabs.buttons.children[3].children[0].checked) {
-      this.tabs.practice.classList.remove("hidden");
+      this.tabs.practice.classList.remove("is-hidden");
     }
   }
 
@@ -317,7 +317,7 @@ class Settings {
     Utils.showLoading();
 
     // show
-    var url = "./api/settings";
+    var url = "/api/settings";
 
     fetch(url, {
       method: "GET",
@@ -394,7 +394,7 @@ class Settings {
 
   // update the settings
   updateSettings() {
-    var url = "./api/settings";
+    var url = "/api/settings";
 
     // update the range input titles
     this.updateRangeInputTitles();
@@ -453,7 +453,7 @@ class Settings {
       this.board = new Chessboard(this.boardElement, {
         position: FEN.start,
         orientation: COLOR.white,
-        assetsUrl: "./build/", // wherever you copied the assets folder to, could also be in the node_modules folder
+        assetsUrl: "/assets/", // wherever you copied the assets folder to, could also be in the node_modules folder
         assetsCache: false,
         style: {
           cssClass: cssClass, // set the css theme of the board, try "green", "blue" or "chess-club"
