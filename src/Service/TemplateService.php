@@ -2,9 +2,9 @@
 
 namespace App\Service;
 
-use App\Entity\Main\Analysis;
-use App\Entity\Main\Repertoire;
-use App\Entity\Main\User;
+use App\Entity\Analysis;
+use App\Entity\Repertoire;
+use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Security\Core\User\UserInterface;

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Entity\Evaluations;
+namespace App\Entity;
 
 use App\Repository\EvaluationRepository;
 use Doctrine\DBAL\Types\Types;
@@ -22,6 +22,12 @@ class Evaluation
 
     #[ORM\Column(length: 8192)]
     private ?string $Evals = null;
+
+    #[ORM\Column(type: 'bigint', nullable: true)]
+    private int $bytes;
+
+    #[ORM\Column(type: 'smallint', nullable: true)]
+    private int $fidx;
 
     public function getId(): ?int
     {
@@ -49,6 +55,28 @@ class Evaluation
     {
         $this->Evals = $Evals;
 
+        return $this;
+    }
+
+    public function getBytes(): int
+    {
+        return $this->bytes;
+    }
+
+    public function setBytes(int $bytes): self
+    {
+        $this->bytes = $bytes;
+        return $this;
+    }
+
+    public function getFidx(): int
+    {
+        return $this->fidx;
+    }
+
+    public function setFidx(int $fidx): self
+    {
+        $this->fidx = $fidx;
         return $this;
     }
 }

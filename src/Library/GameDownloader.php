@@ -3,10 +3,10 @@
 namespace App\Library;
 
 use App\Config\DownloadSite;
-use App\Entity\Main\Archives;
-use App\Entity\Main\Downloads;
-use App\Entity\Main\Opponent;
-use App\Entity\Main\User;
+use App\Entity\Archives;
+use App\Entity\Downloads;
+use App\Entity\Opponent;
+use App\Entity\User;
 use App\Library\GameDownloader\ChessDotComInterface;
 use App\Library\GameDownloader\LichessInterface;
 use Doctrine\ORM\EntityManagerInterface;

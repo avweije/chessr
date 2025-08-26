@@ -2,10 +2,10 @@
 
 namespace App\Controller;
 
-use App\Entity\Main\Analysis;
-use App\Entity\Main\ECO;
-use App\Entity\Main\IgnoreList;
-use App\Entity\Main\Repertoire;
+use App\Entity\Analysis;
+use App\Entity\ECO;
+use App\Entity\IgnoreList;
+use App\Entity\Repertoire;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
@@ -326,7 +326,7 @@ class PracticeController extends AbstractController
         $qb = $this->em->createQueryBuilder();
 
         // delete the analysis for this user, fen & move
-        $query = $qb->delete('App\Entity\Main\Analysis', 'a')
+        $query = $qb->delete('App\Entity\Analysis', 'a')
             ->where('a.User = :user AND a.Fen = :fen AND a.Move = :move')
             ->setParameter('user', $this->getUser())
             ->setParameter('fen', $data["fen"])

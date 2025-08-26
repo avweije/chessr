@@ -778,7 +778,7 @@ class Opponent {
       type: this.getSelectedTypes(),
     };
 
-    console.log("before fetch:");
+    console.log("before fetch:", url);
     console.log(data);
 
     fetch(url, {
@@ -789,7 +789,7 @@ class Opponent {
       },
     })
       .then((res) => {
-        console.log(res);
+        console.log('Response from POST:', res);
         // if not a 200
         if (res.status !== 200) {
           throw new Error({

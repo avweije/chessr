@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Entity\Main;
+namespace App\Entity;
 
-use App\Repository\Main\OpponentGameRepository;
+use App\Repository\OpponentGameRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: OpponentGameRepository::class)]

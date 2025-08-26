@@ -140,10 +140,12 @@ class ChessDotComInterface implements ChessSiteInterface
         // pad the month
         $month = str_pad($month, 2, '0', STR_PAD_LEFT);
         // set the url
-        $url = "https://api.chess.com/pub/player/" . $this->username . "/games/" . $year . "/" . $month;
+        $url = "https://api.chess.com/pub/player/" . urlencode(strtolower($this->username)) . "/games/" . $year . "/" . $month;
 
         // get the games
         $response = $this->request('GET', $url);
+
+        //dd($year, $month, $url, $response);
 
         //$statusCode = $response->getStatusCode();
         //$contentType = $response->getHeaders()['content-type'][0];
@@ -151,8 +153,14 @@ class ChessDotComInterface implements ChessSiteInterface
 
         // if response ok
         if ($response !== null && $response->getStatusCode() == 200) {
+
+
+           // dd($type, $response->toArray());
+
             $games = $response->toArray()['games'];
             $gamesOfType = [];
+
+            //dd($games);
 
             // only get the games newer than the last id
             $lastIdFound = $lastId == "";
@@ -161,6 +169,9 @@ class ChessDotComInterface implements ChessSiteInterface
             foreach ($games as $game) {
                 // if this is the correct time format
                 if ($game["time_class"] == $type) {
+
+                    //print "Found game of type " . $type . " (" . $game["uuid"] . ")\n";
+
                     // if we haven't found the last id yet
                     if (!$lastIdFound) {
                         $lastIdFound = $game["uuid"] == $lastId;
@@ -187,6 +198,8 @@ class ChessDotComInterface implements ChessSiteInterface
                     }
                 }
             }
+
+            //dd(count($games), $type, count($gamesOfType));
 
             return $gamesOfType;
         }

@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Entity\Main;
+namespace App\Entity;
 
 use App\Config\DownloadSite;
-use App\Repository\Main\OpponentRepository;
+use App\Repository\OpponentRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;

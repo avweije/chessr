@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Entity\Main;
+namespace App\Entity;
 
 use App\Repository\RepertoireRepository;
 use DateTimeInterface;
@@ -50,6 +50,9 @@ class Repertoire
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?DateTimeInterface $LastUsed = null;
+
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $deltas = null;
 
     /**
      * @var Collection<int, RepertoireGroup>
@@ -205,6 +208,32 @@ class Repertoire
     {
         $this->LastUsed = $LastUsed;
 
+        return $this;
+    }
+
+    public function getDeltas(): ?array
+    {
+        return $this->deltas;
+    }
+
+    public function setDeltas(?array $deltas): self
+    {
+        $this->deltas = $deltas;
+        return $this;
+    }
+
+    // --- New helper to add a delta ---
+    public function addDelta(int $delta, int $max = 10): self
+    {
+        $current = $this->deltas ?? [];
+        $current[] = $delta;
+
+        // Keep only the last $max deltas
+        if (count($current) > $max) {
+            $current = array_slice($current, -$max);
+        }
+
+        $this->deltas = $current;
         return $this;
     }
 

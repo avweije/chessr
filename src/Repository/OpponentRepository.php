@@ -2,17 +2,17 @@
 
 namespace App\Repository;
 
-use App\Entity\Downloads;
+use App\Entity\Opponent;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<Downloads>
+ * @extends ServiceEntityRepository<Opponent>
  */
-class DownloadsRepository extends ServiceEntityRepository
+class OpponentRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
-        parent::__construct($registry, Downloads::class);
+        parent::__construct($registry, Opponent::class);
     }
 }

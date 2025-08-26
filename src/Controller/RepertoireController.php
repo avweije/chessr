@@ -2,11 +2,11 @@
 
 namespace App\Controller;
 
-use App\Entity\Evaluations\Evaluation;
-use App\Entity\Main\ECO;
-use App\Entity\Main\Group;
-use App\Entity\Main\Repertoire;
-use App\Entity\Main\RepertoireGroup;
+use App\Entity\Evaluation;
+use App\Entity\ECO;
+use App\Entity\Group;
+use App\Entity\Repertoire;
+use App\Entity\RepertoireGroup;
 use App\Library\ChessJs;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
@@ -20,11 +20,8 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class RepertoireController extends AbstractController
 {
-    private $em2;
-
     public function __construct(private Connection $conn, private EntityManagerInterface $em, private ManagerRegistry $doctrine)
     {
-        $this->em2 = $doctrine->getManager("evaluations");
     }
 
     #[Route(['/repertoire', '/repertoire/{color}'], methods: ['GET', 'POST'], name: 'app_repertoire')]
@@ -215,7 +212,7 @@ class RepertoireController extends AbstractController
 
             $qb = $this->em->createQueryBuilder();
 
-            $query = $qb->delete('App\Entity\Main\RepertoireGroup', 'rg')
+            $query = $qb->delete('App\Entity\RepertoireGroup', 'rg')
                 ->where('rg.Repertoire = :rep AND rg.Grp = :grp')
                 ->setParameter('rep', $data["repertoire"])
                 ->setParameter('grp', $grp->getId())
@@ -228,7 +225,7 @@ class RepertoireController extends AbstractController
             if (count($res) == 0) {
                 $qb = $this->em->createQueryBuilder();
 
-                $query = $qb->delete('App\Entity\Main\Group', 'g')
+                $query = $qb->delete('App\Entity\Group', 'g')
                     ->where('g.id = :id')
                     ->setParameter('id', $grp->getId())
                     ->getQuery();
@@ -316,6 +313,13 @@ class RepertoireController extends AbstractController
                     $rec->setPracticeFailed($rec->getPracticeFailed() + 1);
                 }
 
+                // get the days since last practice
+                $daysSinceLastPractice = $rec->getLastUsed() ? (new DateTime('now'))->diff($rec->getLastUsed())->days : -1;
+                // add to the deltas
+                if ($daysSinceLastPractice >= 0) {
+                    $rec->addDelta($daysSinceLastPractice);
+                }
+
                 // update the last used date
                 $rec->setLastUsed(new DateTime('now'));
 
@@ -360,7 +364,7 @@ class RepertoireController extends AbstractController
         $timers["evals"] = hrtime(true);
 
         // get the evaluations for this position
-        $rec = $this->em2->getRepository(Evaluation::class)->findOneBy(["Fen" => $fenWithout]);
+        $rec = $this->em->getRepository(Evaluation::class)->findOneBy(["Fen" => $fenWithout]);
         //$rec = null;
 
         $timers["evals"] = (hrtime(true) - $timers["evals"]) / 1e+6;
@@ -463,7 +467,7 @@ class RepertoireController extends AbstractController
         // get the most played moves for this position
         $qb = $this->em->createQueryBuilder();
         $qb->select('m')
-            ->from('App\Entity\Main\Moves', 'm')
+            ->from('App\Entity\Moves', 'm')
             ->where('m.Fen = :fen')
             ->orderBy('m.Wins + m.Draws + m.Losses', 'DESC')
             ->setParameter('fen', $data['fen']);
@@ -621,7 +625,7 @@ class RepertoireController extends AbstractController
             // find the initial starting positions for this color
             $qb = $this->em->createQueryBuilder();
             $qb->select('r')
-                ->from('App\Entity\Main\Repertoire', 'r')
+                ->from('App\Entity\Repertoire', 'r')
                 ->where('r.User = :user AND r.Color = :color AND r.HalfMove = 1 AND r.InitialFen != \'\'')
                 ->orderBy('r.InitialFen', 'ASC')
                 ->setParameter('user', $this->getUser())

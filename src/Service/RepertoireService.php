@@ -1,31 +1,26 @@
 <?php
 
-namespace App\Repository;
+namespace App\Service;
 
 use App\Entity\Moves;
 use App\Entity\User;
-use App\Entity\Repertoire;
-use DateTime;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use App\Repository\RepertoireRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\SecurityBundle\Security;
 
-/**
- * @extends ServiceEntityRepository<Repertoire>
- */
-class RepertoireRepository extends ServiceEntityRepository
+class RepertoireService
 {
     private $user = null;
     private $settings = null;
+    private $repo;
 
-    public function __construct(ManagerRegistry $registry, private Security $security)
+    public function __construct(ManagerRegistry $registry, private Security $security, RepertoireRepository $repository)
     {
-        parent::__construct($registry, Repertoire::class);
-
         $this->user = $security->getUser();
         if ($this->user instanceof User) {
             $this->settings = $this->user->getSettings();
         }
+        $this->repo = $repository;
     }
 
     public function fenCompare($fenSource, $fenTarget): string
@@ -37,148 +32,6 @@ class RepertoireRepository extends ServiceEntityRepository
         $fenTargetDash = implode(" ", array_slice($parts, 0, 3)) . " - " . $parts[4];
 
         return $fenSource == $fenTarget || $fenSource == $fenTargetDash || $fenSourceDash == $fenTarget || $fenSourceDash == $fenTargetDash;
-    }
-
-    public function findOneBy(array $criteria, array|null $orderBy = null): object|null
-    {
-        // if the FenBefore is set
-        if (isset($criteria['FenBefore'])) {
-            // get the FenBefore with a dash instead of ep
-            $parts = explode(" ", $criteria['FenBefore']);
-            $fenBeforeDash = implode(" ", array_slice($parts, 0, 3)) . " - " . $parts[4];
-            // if the FenBefore with a dash differs, search for both
-            if ($fenBeforeDash != $criteria['FenBefore']) {
-                $criteria['FenBefore'] = [$criteria['FenBefore'], $fenBeforeDash];
-            }
-        }
-        // if the FenAfter is set
-        if (isset($criteria['FenAfter'])) {
-            // get the FenAfter with a dash instead of ep
-            $parts = explode(" ", $criteria['FenAfter']);
-            $fenAfterDash = implode(" ", array_slice($parts, 0, 3)) . " - " . $parts[4];
-            // if the FenBefore with a dash differs, search for both
-            if ($fenAfterDash != $criteria['FenAfter']) {
-                $criteria['FenAfter'] = [$criteria['FenAfter'], $fenAfterDash];
-            }
-        }
-
-        return parent::findOneBy($criteria, $orderBy);
-    }
-
-    public function findBy(array $criteria, array|null $orderBy = null, int|null $limit = null, int|null $offset = null): array
-    {
-        // if the FenBefore is set
-        if (isset($criteria['FenBefore'])) {
-            // get the FenBefore with a dash instead of ep
-            $parts = explode(" ", $criteria['FenBefore']);
-            $fenBeforeDash = implode(" ", array_slice($parts, 0, 3)) . " - " . $parts[4];
-            // if the FenBefore with a dash differs, search for both
-            if ($fenBeforeDash != $criteria['FenBefore']) {
-                $criteria['FenBefore'] = [$criteria['FenBefore'], $fenBeforeDash];
-            }
-        }
-        // if the FenAfter is set
-        if (isset($criteria['FenAfter'])) {
-            // get the FenAfter with a dash instead of ep
-            $parts = explode(" ", $criteria['FenAfter']);
-            $fenAfterDash = implode(" ", array_slice($parts, 0, 3)) . " - " . $parts[4];
-            // if the FenBefore with a dash differs, search for both
-            if ($fenAfterDash != $criteria['FenAfter']) {
-                $criteria['FenAfter'] = [$criteria['FenAfter'], $fenAfterDash];
-            }
-        }
-
-        return parent::findBy($criteria, $orderBy, $limit, $offset);
-    }
-
-    // is the current position included or are all parent moves at some point excluded
-    public function isIncluded(string $fenBefore): bool
-    {
-        $included = false;
-
-        $res = $this->findBy([
-            "User" => $this->security->getUser(),
-            "FenAfter" => $fenBefore
-        ]);
-        foreach ($res as $rec) {
-            // if this move is included
-            if (!$rec->isExclude()) {
-                // if this is not the root position
-                if ($rec->getFenBefore() !== $rec->getFenAfter()) {
-                    // check if one of the parent moves is included
-                    $included = $this->isIncluded($rec->getFenBefore());
-                    if ($included) {
-                        break;
-                    }
-                } else {
-                    $included = true;
-                    break;
-                }
-            }
-        }
-
-        return count($res) == 0 ? true : $included;
-    }
-
-    private function isRecommended(Repertoire $rep): bool
-    {
-        // if new, don't recommend
-        if ($rep->getPracticeCount() == 0) {
-            return false;
-        }
-
-        // get the fail percentage
-        $failPercentage = $rep->getPracticeCount() == 0 ? 0 : max($rep->getPracticeFailed() / $rep->getPracticeCount(), 0);
-
-        // get the days since last practice
-        $daysSince = 999;
-        if ($rep->getLastUsed() !== null) {
-            $now = new DateTime();
-            $daysSince = $now->diff($rep->getLastUsed())->format("%a");
-        }
-
-        // get the recommend interval (0-3, add 1 to get 1-4, 1 = less, 4 = more)
-        $recommendInterval = $this->settings->getRecommendInterval() + 1;
-        $intervalReverse = 5 - $recommendInterval;
-
-        // if still new (< 10 practices) recommended after 3-12 days
-        if ($rep->getPracticeCount() < 9 && $daysSince >= $intervalReverse * 3) {
-            return true;
-        }
-
-        //
-        // - what other method did we have ??
-        //
-        // Acc.  Less  Avg.  More  Most
-        // 100%  16wk   8wk   4wk   2wk    2wk * .50 (of 7)
-        //  75%  12wk   6wk   3wk 1.5wk    1wk
-        //  50%   8wk   4wk   2wk   1wk   .5wk 
-        //  25%   4wk   2wk   1wk  .5wk  .25wk * .25 (of 7)
-        //
-        // 1.75 * intervalReverse = .25 (*1) / .50 (*2) / 1 (*4) / 2 (*8)
-        //
-        // Interval of 4 (reverseInterval = 1) needs to become .25
-        // Interval of 1 (reverseInterval = 4) needs to become .50
-        // make it 0 and 3, times that by .25/3
-
-
-        //
-        // less = 1, 100% score = every month?
-        // more = 4, 100% score = every week?
-        //
-
-        // need at least 3 correct guesses in a row for low fail %, up to 5 in a row for high fail %
-        $inARowNeeded = $recommendInterval + 1;
-        //$inARowNeeded = max(3, 3 + round($failPercentage * 2));
-
-        // recommend periodically, based on fail %: every 1-4 weeks
-        $multiplier = (.25 + ($intervalReverse - 1) * (.25 / 3)) * 7;
-        //$multiplier = (.5 + ($intervalReverse - 1) * (.5 / 3)) * 7;
-        //$multiplier = 1.75;
-        $daysNeeded = $multiplier * $intervalReverse * max(4 - (3 * $failPercentage), 1);
-
-        // if practice in a row less than required (3-5) or based on last used and fail percentage
-        return $rep->getPracticeInARow() < $inARowNeeded || $daysSince >= $daysNeeded;
     }
 
     // get the roadmap (split by eco/moves??)
@@ -237,47 +90,113 @@ class RepertoireRepository extends ServiceEntityRepository
 
 
 
-/**
- * Recursively collect contiguous blocks of "new" moves in a tree.
- *
- * @param array $lines       Current level of moves
- * @param array $lineSoFar   Array of moves leading to current position
- * @param array &$seen       Keeps track of seen positions to prevent duplicates
- * @return array             Array of moves with full info and preceding line
- */
-private function collectNewMovesLineUntil(array $lines, array $lineSoFar = [], array &$seen = []): array
-{
-    $result = [];
+    /**
+     * Recursively collect contiguous blocks of "new" moves in a tree.
+     *
+     * @param array $lines       Current level of moves
+     * @param array $lineSoFar   Array of moves leading to current position
+     * @param array &$seen       Keeps track of seen positions to prevent duplicates
+     * @return array             Array of moves with full info and preceding line
+     */
+    private function collectNewMovesLineUntil(array $lines, array $lineSoFar = [], array &$seen = []): array
+    {
+        $result = [];
 
-    foreach ($lines as $move) {
-        // Determine if this move is "our move"
-        $ourMove = isset($move['before']) && isset($move['color']) ? $this->isOurMove($move['before'], $move['color']) : false;
+        foreach ($lines as $move) {
+            // Determine if this move is "our move"
+            $ourMove = isset($move['before']) && isset($move['color']) ? $this->isOurMove($move['before'], $move['color']) : false;
 
-        // Only consider moves that are "new" and our move
-        $isNew = $ourMove && (!empty($move['new']) && $move['new'] == 1);
+            // Only consider moves that are "new" and our move
+            $isNew = $ourMove && (!empty($move['new']) && $move['new'] == 1);
 
-        // Build the line leading to this move
-        $currentLine = $lineSoFar;
+            // Build the line leading to this move
+            $currentLine = $lineSoFar;
 
-        // Track unique positions to prevent duplicates
-        $uniqueKey = $move['after'] ?? null;
+            // Track unique positions to prevent duplicates
+            $uniqueKey = $move['after'] ?? null;
 
-        // Start a new practice line if this move is new
-        if ($isNew && isset($move['move']) && $uniqueKey && !isset($seen[$uniqueKey])) {
-            $seen[$uniqueKey] = true;
+            // Start a new practice line if this move is new
+            if ($isNew && isset($move['move']) && $uniqueKey && !isset($seen[$uniqueKey])) {
+                $seen[$uniqueKey] = true;
 
-            // Recursively collect moves in this contiguous block
-            [$subMoves,] = $this->collectLineUntil($move['moves'], $seen);
+                // Recursively collect moves in this contiguous block
+                [$subMoves,] = $this->collectLineUntil($move['moves'], $seen);
 
-            $result[] = [
-                'move' => $move['move'],
-                'line' => $currentLine,
+                $result[] = [
+                    'move' => $move['move'],
+                    'line' => $currentLine,
+                    'before' => $move['before'] ?? '',
+                    'after' => $move['after'] ?? '',
+                    'color' => $move['color'] ?? '',
+                    'new' => $move['new'] ?? 0,
+                    'recommended' => $move['recommended'] ?? 0,
+                    'autoplay' => $move['autoplay'] ?? false,
+                    'moves' => $subMoves,
+                    'id' => $move['id'] ?? 0,
+                    'initialFen' => $move['initialFen'] ?? '',
+                    'multiple' => $move['multiple'] ?? false,
+                    'practiceCount' => $move['practiceCount'] ?? 0,
+                    'practiceFailed' => $move['practiceFailed'] ?? 0,
+                    'practiceInARow' => $move['practiceInARow'] ?? 0,
+                ];
+            }
+
+            // Always recurse further to find later matching blocks
+            if (!empty($move['moves'])) {
+                $childLineSoFar = $currentLine;
+                if (!empty($move['move'] ?? null)) {
+                    $childLineSoFar[] = $move['move'];
+                }
+                $result = array_merge(
+                    $result,
+                    $this->collectNewMovesLineUntil($move['moves'], $childLineSoFar, $seen)
+                );
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Helper to recursively collect moves **until the filter stops matching**
+     * Includes opponent moves, stops at first non-matching "our move"
+     *
+     * @param array $moves
+     * @param array &$seen
+     * @return array [subMoves, ourMoveCount]
+     */
+    private function collectLineUntil(array $moves, array &$seen): array
+    {
+        $line = [];
+        $ourMoveCount = 0;
+
+        foreach ($moves as $move) {
+            $ourMove = isset($move['before']) && isset($move['color']) ? $this->isOurMove($move['before'], $move['color']) : false;
+            $isNew = $ourMove && (!empty($move['new']) && $move['new'] == 1);
+            $autoplay = $move['autoplay'] ?? false;
+
+            // Stop the block if it's our move and not new
+            if ($ourMove && !$isNew) {
+                continue;
+            }
+
+            $uniqueKey = $move['after'] ?? null;
+            if ($isNew && $uniqueKey && !isset($seen[$uniqueKey])) {
+                $seen[$uniqueKey] = true;
+            }
+
+            // Recursively include child moves
+            [$subMoves, $subCount] = $this->collectLineUntil($move['moves'] ?? [], $seen);
+            $ourMoveCount += $ourMove && !$autoplay ? 1 + $subCount : $subCount;
+
+            $line[] = [
+                'move' => $move['move'] ?? '',
                 'before' => $move['before'] ?? '',
                 'after' => $move['after'] ?? '',
                 'color' => $move['color'] ?? '',
                 'new' => $move['new'] ?? 0,
                 'recommended' => $move['recommended'] ?? 0,
-                'autoplay' => $move['autoplay'] ?? false,
+                'autoplay' => $autoplay,
                 'moves' => $subMoves,
                 'id' => $move['id'] ?? 0,
                 'initialFen' => $move['initialFen'] ?? '',
@@ -285,78 +204,12 @@ private function collectNewMovesLineUntil(array $lines, array $lineSoFar = [], a
                 'practiceCount' => $move['practiceCount'] ?? 0,
                 'practiceFailed' => $move['practiceFailed'] ?? 0,
                 'practiceInARow' => $move['practiceInARow'] ?? 0,
+                'ourMove' => $ourMove,
             ];
         }
 
-        // Always recurse further to find later matching blocks
-        if (!empty($move['moves'])) {
-            $childLineSoFar = $currentLine;
-            if (!empty($move['move'] ?? null)) {
-                $childLineSoFar[] = $move['move'];
-            }
-            $result = array_merge(
-                $result,
-                $this->collectNewMovesLineUntil($move['moves'], $childLineSoFar, $seen)
-            );
-        }
+        return [$line, $ourMoveCount];
     }
-
-    return $result;
-}
-
-/**
- * Helper to recursively collect moves **until the filter stops matching**
- * Includes opponent moves, stops at first non-matching "our move"
- *
- * @param array $moves
- * @param array &$seen
- * @return array [subMoves, ourMoveCount]
- */
-private function collectLineUntil(array $moves, array &$seen): array
-{
-    $line = [];
-    $ourMoveCount = 0;
-
-    foreach ($moves as $move) {
-        $ourMove = isset($move['before']) && isset($move['color']) ? $this->isOurMove($move['before'], $move['color']) : false;
-        $isNew = $ourMove && (!empty($move['new']) && $move['new'] == 1);
-        $autoplay = $move['autoplay'] ?? false;
-
-        // Stop the block if it's our move and not new
-        if ($ourMove && !$isNew) {
-            continue;
-        }
-
-        $uniqueKey = $move['after'] ?? null;
-        if ($isNew && $uniqueKey && !isset($seen[$uniqueKey])) {
-            $seen[$uniqueKey] = true;
-        }
-
-        // Recursively include child moves
-        [$subMoves, $subCount] = $this->collectLineUntil($move['moves'] ?? [], $seen);
-        $ourMoveCount += $ourMove && !$autoplay ? 1 + $subCount : $subCount;
-
-        $line[] = [
-            'move' => $move['move'] ?? '',
-            'before' => $move['before'] ?? '',
-            'after' => $move['after'] ?? '',
-            'color' => $move['color'] ?? '',
-            'new' => $move['new'] ?? 0,
-            'recommended' => $move['recommended'] ?? 0,
-            'autoplay' => $autoplay,
-            'moves' => $subMoves,
-            'id' => $move['id'] ?? 0,
-            'initialFen' => $move['initialFen'] ?? '',
-            'multiple' => $move['multiple'] ?? false,
-            'practiceCount' => $move['practiceCount'] ?? 0,
-            'practiceFailed' => $move['practiceFailed'] ?? 0,
-            'practiceInARow' => $move['practiceInARow'] ?? 0,
-            'ourMove' => $ourMove,
-        ];
-    }
-
-    return [$line, $ourMoveCount];
-}
 
 
 
@@ -369,7 +222,7 @@ private function collectLineUntil(array $moves, array &$seen): array
             $criteria["Exclude"] = false;
         }
 
-        $res = $this->findBy($criteria, ['HalfMove' => 'ASC']);
+        $res = $this->repo->findBy($criteria, ['HalfMove' => 'ASC']);
 
         $lines = [];
 
@@ -432,7 +285,7 @@ private function collectLineUntil(array $moves, array &$seen): array
                     'failPercentage' => $failPercentage,
                     'inARowNeeded' => $inARowNeeded,
                     'daysNeeded' => $daysNeeded,
-                    'recommended' => $rep->isAutoPlay() ? 0 : ($this->isRecommended($rep) ? 1 : 0),
+                    'recommended' => $rep->isAutoPlay() ? 0 : ($this->repo->isRecommended($rep) ? 1 : 0),
                     'practiceCount' => $rep->getPracticeCount(),
                     'practiceFailed' => $rep->getPracticeFailed(),
                     'practiceInARow' => $rep->getPracticeInARow(),
@@ -461,7 +314,7 @@ private function collectLineUntil(array $moves, array &$seen): array
                     'after' => $rep->getFenAfter(),
                     'new' => $rep->getPracticeCount() == 0 ? 1 : 0,
                     'failPercentage' => $rep->getPracticeCount() < 5 ? 1 : $rep->getPracticeFailed() / $rep->getPracticeCount(),
-                    'recommended' => $this->isRecommended($rep) ? 1 : 0,
+                    'recommended' => $this->repo->isRecommended($rep) ? 1 : 0,
                     'practiceCount' => $rep->getPracticeCount(),
                     'practiceFailed' => $rep->getPracticeFailed(),
                     'practiceInARow' => $rep->getPracticeInARow(),
@@ -510,7 +363,7 @@ private function collectLineUntil(array $moves, array &$seen): array
                     'after' => $rep->getFenAfter(),
                     'new' => $rep->getPracticeCount() == 0 ? 1 : 0,
                     'failPercentage' => $rep->getPracticeCount() < 5 ? 1 : $rep->getPracticeFailed() / $rep->getPracticeCount(),
-                    'recommended' => $this->isRecommended($rep) ? 1 : 0,
+                    'recommended' => $this->repo->isRecommended($rep) ? 1 : 0,
                     'practiceCount' => $rep->getPracticeCount(),
                     'practiceFailed' => $rep->getPracticeFailed(),
                     'practiceInARow' => $rep->getPracticeInARow(),
@@ -610,7 +463,7 @@ private function collectLineUntil(array $moves, array &$seen): array
         INNER JOIN repertoire_group rg ON rg.repertoire_id = r.id 
         INNER JOIN `group` g ON g.id = rg.grp_id 
         WHERE r.user_id = :user ORDER BY g.id';
-        $stmtFind = $this->getEntityManager()->getConnection()->prepare($sql);
+        $stmtFind = $this->repo->getEntityManager()->getConnection()->prepare($sql);
 
         if ($this->user instanceof User) {
             $stmtFind->bindValue('user', $this->user->getId());
@@ -745,7 +598,7 @@ private function collectLineUntil(array $moves, array &$seen): array
                         'failPercentage' => $failPercentage,
                         'inARowNeeded' => $inARowNeeded,
                         'daysNeeded' => $daysNeeded,
-                        'recommended' => $rep->isAutoPlay() ? 0 : ($this->isRecommended($rep) ? 1 : 0),
+                        'recommended' => $rep->isAutoPlay() ? 0 : ($this->repo->isRecommended($rep) ? 1 : 0),
                         'practiceCount' => $rep->getPracticeCount(),
                         'practiceFailed' => $rep->getPracticeFailed(),
                         'practiceInARow' => $rep->getPracticeInARow(),
@@ -868,10 +721,11 @@ private function collectLineUntil(array $moves, array &$seen): array
     }
 
     //
-    private function isWhiteMove(string $fen): bool {
+    private function isWhiteMove(string $fen): bool
+    {
         // Split FEN into its fields
         $parts = explode(' ', trim($fen));
-    
+
         // FEN should always have at least 2 fields
         if (count($parts) < 2) {
             return false;
@@ -897,7 +751,7 @@ private function collectLineUntil(array $moves, array &$seen): array
             //$ourMove = ($line["color"] == "white" && $level % 2 == 1) || ($line["color"] == "black" && $level % 2 == 0);
             //$ourMove = ($line["color"] == "white" && $level % 2 == 0) || ($line["color"] == "black" && $level % 2 == 1);
             //$ourMove = isset($line['halfmove']) ? (($line['color'] == "white" && $line['halfmove'] % 2 == 1) || ($line['color'] == "black" && $line['halfmove'] % 2 == 0)) : $line['color'] == "white";
-            
+
             // Use the FEN to determine whose move it is
             //$isWhiteToMove = $this->isWhiteMove($line['after']);
             // Get the halfmove number from the FEN
@@ -991,7 +845,7 @@ private function collectLineUntil(array $moves, array &$seen): array
                 $temp = $this->splitLine($line, $color, $isNew, $isRecommended, $preventDoubles, $usedIds);
 
                 //if ($isNew) {
-                    //dd($temp, $line);
+                //dd($temp, $line);
                 //}
 
                 $parts[] = $line;
@@ -1003,7 +857,7 @@ private function collectLineUntil(array $moves, array &$seen): array
             $linesUntil = [];
 
             //if ($isNew) {
-              //  dd($parts);
+            //  dd($parts);
             //}
 
             // only prevent doubles from here on.. needs more testing
@@ -1017,7 +871,7 @@ private function collectLineUntil(array $moves, array &$seen): array
                 [$parts[$i]['moves'], $lineMoveCount] = $this->getLineUntil($parts[$i]['moves'], $color, $isNew, $isRecommended, $preventDoubles, $usedIds);
 
                 //if ($isNew && $i == 1) {
-                  //  dd($i, $parts[$i], $lineMoveCount, isset($parts[$i]["move"]), count($parts[$i]['moves']));
+                //  dd($i, $parts[$i], $lineMoveCount, isset($parts[$i]["move"]), count($parts[$i]['moves']));
                 //}
 
                 if (isset($parts[$i]["move"]) || count($parts[$i]['moves']) > 0) {
@@ -1064,7 +918,7 @@ private function collectLineUntil(array $moves, array &$seen): array
         //$ourMove = $this->isOurMove($line['after'], $line['color']);
 
         $ourMove = ($line["before"] == $line["after"]) ? false : $this->isOurMove($line['before'], $line['color']);
-        
+
         //$ourMove = $this->isOurMove($line['before'], $line['color']);
 
         //dd($ourMove, $line);
@@ -1157,7 +1011,7 @@ private function collectLineUntil(array $moves, array &$seen): array
             // is this our move
             //$ourMove = ($move['color'] == "white" && $level % 2 == 1) || ($move['color'] == "black" && $level % 2 == 0);
             //$ourMove = isset($move['halfmove']) ? (($move['color'] == "white" && $move['halfmove'] % 2 == 1) || ($move['color'] == "black" && $move['halfmove'] % 2 == 0)) : $move['color'] == $color;
-            
+
             //$ourMove = $move["before"] == $move["after"] ? false : (explode(" ", $move["before"])[1] == substr($move['color'], 0, 1));
 
             // Use the FEN to determine whose move it is
@@ -1340,7 +1194,7 @@ private function collectLineUntil(array $moves, array &$seen): array
 
             // get ECO code
             if ($movePgn != "" && $hasMore) {
-                $qb = $this->getEntityManager()->createQueryBuilder('ECO');
+                $qb = $this->repo->getEntityManager()->createQueryBuilder('ECO');
                 $query = $qb->select('e')
                     ->from('App\Entity\ECO', 'e')
                     ->where($qb->expr()->like(':pgn', 'CONCAT(e.PGN, \'%\')'))
@@ -1355,7 +1209,7 @@ private function collectLineUntil(array $moves, array &$seen): array
                     $moveEco = ["code" => $res[0]["Code"], "name" => $res[0]["Name"]];
                 }
 
-                $qb = $this->getEntityManager()->createQueryBuilder('ECO');
+                $qb = $this->repo->getEntityManager()->createQueryBuilder('ECO');
                 $query = $qb->select('e')
                     ->from('App\Entity\ECO', 'e')
                     ->where($qb->expr()->like('e.PGN', ':pgn'))
@@ -1469,7 +1323,7 @@ private function collectLineUntil(array $moves, array &$seen): array
         $roadmap = [];
         $i = 0;
 
-        $mrepo = $this->getEntityManager()->getRepository(Moves::class);
+        $mrepo = $this->repo->getEntityManager()->getRepository(Moves::class);
 
         foreach ($lines as $line) {
 
@@ -1514,7 +1368,7 @@ private function collectLineUntil(array $moves, array &$seen): array
                             // check the opponent moves after this move and check for missing top level moves
                             //
                             // get the most played moves for this position
-                            $qb = $this->getEntityManager()->createQueryBuilder();
+                            $qb = $this->repo->getEntityManager()->createQueryBuilder();
                             $qb->select('m')
                                 ->from('App\Entity\Moves', 'm')
                                 ->where('m.Fen = :fen')
@@ -1604,29 +1458,4 @@ private function collectLineUntil(array $moves, array &$seen): array
 
         return $roadmap;
     }
-
-    //    /**
-    //     * @return Repertoire[] Returns an array of Repertoire objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('r')
-    //            ->andWhere('r.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('r.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
-
-    //    public function findOneBySomeField($value): ?Repertoire
-    //    {
-    //        return $this->createQueryBuilder('r')
-    //            ->andWhere('r.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
 }

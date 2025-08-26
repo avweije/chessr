@@ -2,9 +2,9 @@
 
 namespace App\Controller;
 
-use App\Entity\Main\Repertoire;
-use App\Entity\Main\Settings;
-use App\Entity\Main\User;
+use App\Entity\Repertoire;
+use App\Entity\Settings;
+use App\Entity\User;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;

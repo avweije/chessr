@@ -5,13 +5,13 @@ namespace App\Controller;
 use App\Config\DownloadSite;
 use App\Config\DownloadStatus;
 use App\Config\DownloadType;
-use App\Entity\Evaluations\Evaluation;
-use App\Entity\Main\Analysis;
-use App\Entity\Main\Downloads;
-use App\Entity\Main\IgnoreList;
-use App\Entity\Main\Opponent;
-use App\Entity\Main\Settings;
-use App\Entity\Main\User;
+use App\Entity\Evaluation;
+use App\Entity\Analysis;
+use App\Entity\Downloads;
+use App\Entity\IgnoreList;
+use App\Entity\Opponent;
+use App\Entity\Settings;
+use App\Entity\User;
 use App\Library\ChessJs;
 use App\Library\GameDownloader;
 use App\Service\MyPgnParser\MyPgnParser;
@@ -28,12 +28,8 @@ use Symfony\Component\Security\Core\User\UserInterface;
 
 class AnalyseController extends AbstractController
 {
-    private $em2;
-
     public function __construct(private Connection $conn, private EntityManagerInterface $em, private ManagerRegistry $doctrine, private MyPgnParser $myPgnParser)
-    {
-        $this->em2 = $doctrine->getManager("evaluations");
-    }
+    {}
 
     #[Route('/analyse', name: 'app_analyse')]
     public function index(): Response
@@ -932,7 +928,7 @@ class AnalyseController extends AbstractController
         // the 2nd with the en-passant square as -
         $fenWithout2 = implode(" ", array_slice($parts, 0, 3)) . " -";
 
-        $repo = $this->em2->getRepository(Evaluation::class);
+        $repo = $this->em->getRepository(Evaluation::class);
 
         // find the evaluation
         $rec = $repo->findOneBy(['Fen' => $fenWithout]);

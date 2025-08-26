@@ -5,12 +5,12 @@ namespace App\Controller;
 use App\Config\DownloadSite;
 use App\Config\DownloadStatus;
 use App\Config\DownloadType;
-use App\Entity\Main\Downloads;
-use App\Entity\Main\ECO;
-use App\Entity\Main\Opponent;
-use App\Entity\Main\OpponentGame;
-use App\Entity\Main\OpponentMove;
-use App\Entity\Main\Repertoire;
+use App\Entity\Downloads;
+use App\Entity\ECO;
+use App\Entity\Opponent;
+use App\Entity\OpponentGame;
+use App\Entity\OpponentMove;
+use App\Entity\Repertoire;
 use App\Library\GameDownloader;
 use App\Service\MyPgnParser\MyPgnParser;
 use DateTime;
@@ -22,6 +22,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Core\User\UserInterface;
+
+const DEFAULT_POSITION = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
 class OpponentController extends AbstractController
 {
@@ -157,7 +159,7 @@ class OpponentController extends AbstractController
             // remove the downloads first
             $qb = $this->em->createQueryBuilder();
 
-            $q1 = $qb->delete('App\Entity\Main\Downloads', 'd')
+            $q1 = $qb->delete('App\Entity\Downloads', 'd')
                 ->where('d.Opponent = :opponent')
                 ->setParameter('opponent', $opp)
                 ->getQuery();
@@ -481,7 +483,8 @@ class OpponentController extends AbstractController
             $mins = floor($secs / 60);
 
             // if 5 minutes ago or more
-            if ($mins > 4) {
+            //if ($mins > 4) {
+            if (true) {
                 //if (true) {
                 // update status for record
                 $rec->setStatus(DownloadStatus::Partial);
@@ -581,7 +584,7 @@ class OpponentController extends AbstractController
                     $games = $downloader->downloadGames($year, $month, $type, $lastUUID, $maxDownload);
                     $cnt = count($games);
 
-                    //dd($games);
+                    //dd($cnt, $site, $year, $month, $dtype->value, $games);
 
                     // loop through the games
                     for ($i = 0; $i < $cnt; $i++) {
@@ -594,8 +597,12 @@ class OpponentController extends AbstractController
 
                     */
 
-                        // don't analyse games with an initial position - [Chess.com]
-                        if (isset($games[$i]["initial_setup"]) && $games[$i]["initial_setup"] !== "") {
+                        // don't analyse games with a different initial position - [Chess.com]
+                        if (
+                            isset($games[$i]["initial_setup"])
+                            && $games[$i]["initial_setup"] !== ""
+                            && $games[$i]["initial_setup"] !== DEFAULT_POSITION
+                        ) {
                             continue;
                         }
 
@@ -632,6 +639,9 @@ class OpponentController extends AbstractController
                         $oppg->setPgn($oppGame["pgn"]);
 
                         $this->em->persist($oppg);
+
+                        // DEBUG
+                        //dd("New opponent game:", $oppGame);
 
                         //dd($oppGame);
 
@@ -785,7 +795,7 @@ class OpponentController extends AbstractController
         // get the opponent moves
         $qb = $this->em->createQueryBuilder('OpponentMove');
         $query = $qb->select('om')
-            ->from('App\Entity\Main\OpponentMove', 'om')
+            ->from('App\Entity\OpponentMove', 'om')
             ->where('om.Opponent IN (:opp)')
             ->setParameter('opp', $ids);
 
@@ -1149,7 +1159,7 @@ class OpponentController extends AbstractController
 
         $qb = $this->em->createQueryBuilder();
         $query = $qb->select('og')
-            ->from('App\Entity\Main\OpponentGame', 'og')
+            ->from('App\Entity\OpponentGame', 'og')
             //->where('og.Opponent IN (:opp)')
             ->where('og.Opponent = :opp')
             ->andWhere('og.Color = :color')
@@ -1228,6 +1238,8 @@ class OpponentController extends AbstractController
             "match" => $oppMoves["match"],
             "moves" => $oppMoves["moves"]
         ];
+
+        //dd($color, $oppGame);
 
         return $oppGame;
     }

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Entity\Main;
+namespace App\Entity;
 
 use App\Repository\RepertoireGroupRepository;
 use Doctrine\ORM\Mapping as ORM;

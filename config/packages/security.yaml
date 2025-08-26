@@ -7,7 +7,7 @@ security:
     # used to reload user from session & other features (e.g. switch_user)
     app_user_provider:
       entity:
-        class: App\Entity\Main\User
+        class: App\Entity\User
         property: email
   firewalls:
     dev:
@@ -21,6 +21,7 @@ security:
         check_path: app_login
         default_target_path: app_main
         enable_csrf: true
+        success_handler: App\Security\Authentication\AuthenticationSuccessHandler
       logout:
         path: app_logout
         # where to redirect after logout
@@ -28,6 +29,7 @@ security:
       remember_me:
         secret: "%kernel.secret%"
         lifetime: 604800 # 1 week in seconds
+        path: /
 
       # activate different ways to authenticate
       # https://symfony.com/doc/current/security.html#the-firewall

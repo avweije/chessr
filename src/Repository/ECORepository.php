@@ -2,7 +2,7 @@
 
 namespace App\Repository;
 
-use App\Entity\Main\ECO;
+use App\Entity\ECO;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -20,7 +20,7 @@ class ECORepository extends ServiceEntityRepository
     {
         $qb = $this->getEntityManager()->createQueryBuilder('ECO');
         $query = $qb->select('e')
-            ->from('App\Entity\Main\ECO', 'e')
+            ->from('App\Entity\ECO', 'e')
             ->where($qb->expr()->like(':pgn', 'CONCAT(e.PGN, \'%\')'))
             ->setParameter('pgn', $pgn)
             ->orderBy('e.PGN', 'DESC')
@@ -36,7 +36,7 @@ class ECORepository extends ServiceEntityRepository
     {
         $qb = $this->getEntityManager()->createQueryBuilder('ECO');
         $query = $qb->select('e')
-            ->from('App\Entity\Main\ECO', 'e')
+            ->from('App\Entity\ECO', 'e')
             ->where($qb->expr()->like('e.PGN', ':pgn'))
             ->setParameter('pgn', $pgn . ' %')
             ->orderBy('e.PGN', 'ASC')
@@ -128,29 +128,4 @@ class ECORepository extends ServiceEntityRepository
 
         return count($res) > 0 ? $res[0] : null;
     }
-
-    //    /**
-    //     * @return ECO[] Returns an array of ECO objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('e')
-    //            ->andWhere('e.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('e.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
-
-    //    public function findOneBySomeField($value): ?ECO
-    //    {
-    //        return $this->createQueryBuilder('e')
-    //            ->andWhere('e.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
 }

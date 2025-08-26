@@ -2,7 +2,7 @@
 
 namespace App\Form;
 
-use App\Entity\Main\User;
+use App\Entity\User;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
@@ -18,10 +18,10 @@ class LoginFormType extends AbstractType
     {
         $builder
             ->add('email')
-            ->add('rememberMe', CheckboxType::class, [
-                'required' => false,
-                'mapped' => false,
-            ])
+            //->add('_remember_me', CheckboxType::class, [
+                //'required' => false,
+                //'mapped' => false,
+            //])
             ->add('password', PasswordType::class, [
                 // instead of being set onto the object directly,
                 // this is read and encoded in the controller

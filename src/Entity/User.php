@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Entity\Main;
+namespace App\Entity;
 
 use App\Repository\UserRepository;
+use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -36,6 +38,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?string $password = null;
 
+    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
+    private ?DateTimeInterface $LastLogin = null;
+
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $deltas = null;
+
     /**
      * @var Collection<int, Repertoire>
      */
@@ -64,6 +72,44 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $this->email = $email;
 
+        return $this;
+    }
+
+    public function getLastLogin(): ?\DateTimeInterface
+    {
+        return $this->LastLogin;
+    }
+
+    public function setLastLogin(\DateTimeInterface $LastLogin): static
+    {
+        $this->LastLogin = $LastLogin;
+
+        return $this;
+    }
+
+    public function getDeltas(): ?array
+    {
+        return $this->deltas;
+    }
+
+    public function setDeltas(?array $deltas): self
+    {
+        $this->deltas = $deltas;
+        return $this;
+    }
+
+    // --- New helper to add a delta ---
+    public function addDelta(int $delta, int $max = 10): self
+    {
+        $current = $this->deltas ?? [];
+        $current[] = $delta;
+
+        // Keep only the last $max deltas
+        if (count($current) > $max) {
+            $current = array_slice($current, -$max);
+        }
+
+        $this->deltas = $current;
         return $this;
     }
 

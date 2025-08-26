@@ -49,16 +49,11 @@ class AdminController extends AbstractController
     private $conn;
     private $myPgnParser;
 
-    private $evalsConn;
-    private $evalsEntityManager;
-
     public function __construct(Connection $conn, EntityManagerInterface $em, MyPgnParser $myPgnParser, ManagerRegistry $doctrine)
     {
         $this->em = $em;
         $this->myPgnParser = $myPgnParser;
         $this->conn = $conn;
-        $this->evalsConn = $doctrine->getConnection('evaluations');
-        $this->evalsEntityManager = $doctrine->getManager('evaluations');
     }
 
     #[Route('/admin', name: 'app_admin')]
@@ -422,8 +417,8 @@ class AdminController extends AbstractController
         */
 
         // auto-commit off
-        $this->evalsConn->setAutoCommit(false);
-        $this->evalsConn->beginTransaction();
+        $this->conn->setAutoCommit(false);
+        $this->conn->beginTransaction();
 
         // 
         // 
@@ -431,7 +426,7 @@ class AdminController extends AbstractController
         // prepare the insert statement
         $sql = 'INSERT INTO evaluations.evaluation ( fen, evals, bytes, fidx ) VALUES ( :fen, :evals, :bytes, :fidx )';
         //$sql = 'INSERT INTO evaluations.evaluation_1 ( fen, evals, bytes, fidx ) VALUES ( :fen, :evals, :bytes, :fidx )';
-        $stmtInsert = $this->evalsConn->prepare($sql);
+        $stmtInsert = $this->conn->prepare($sql);
 
         foreach ($this->parseEvalsJson($file, $maxLines) as [$fidx, $line, $bytes, $fsize]) {
             // add to time limit
@@ -533,7 +528,7 @@ class AdminController extends AbstractController
 
             // perform commit
             if ($processed % $batchSize == 0) {
-                $this->evalsConn->commit();
+                $this->conn->commit();
                 //$this->conn->beginTransaction();
             }
 
@@ -546,7 +541,7 @@ class AdminController extends AbstractController
         }
 
         // perform final commit
-        $this->evalsConn->commit();
+        $this->conn->commit();
 
         return [$processed, $lastBytes, $lastFidx, $lastPct];
     }
@@ -558,7 +553,7 @@ class AdminController extends AbstractController
         $fidx = 1;
 
         $sql = 'SELECT bytes, fidx FROM evaluations.evaluation ORDER BY id DESC LIMIT 1';
-        $stmtFind = $this->evalsConn->prepare($sql);
+        $stmtFind = $this->conn->prepare($sql);
 
         $result = $stmtFind->executeQuery();
 
