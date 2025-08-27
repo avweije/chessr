@@ -8,6 +8,8 @@ use App\Entity\Group;
 use App\Entity\Repertoire;
 use App\Entity\RepertoireGroup;
 use App\Library\ChessJs;
+use App\Controller\ChessrAbstractController;
+use App\Service\RepertoireService;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\DBAL\Connection;
@@ -18,9 +20,14 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
-class RepertoireController extends AbstractController
+class RepertoireController extends ChessrAbstractController
 {
-    public function __construct(private Connection $conn, private EntityManagerInterface $em, private ManagerRegistry $doctrine)
+    public function __construct(
+        private Connection $conn, 
+        private EntityManagerInterface $em, 
+        private ManagerRegistry $doctrine,
+        private RepertoireService $repertoireService
+        )
     {
     }
 
@@ -325,6 +332,12 @@ class RepertoireController extends AbstractController
 
                 // save the record
                 $this->em->persist($rec);
+
+                // if this was a recommended move and we got it right
+                if (isset($move["correct"]) && $move["correct"] == 1 && isset($data["type"]) && $data["type"] == "recommended") {
+                    // update the session too
+                    $this->repertoireService->updateSessionRecommended($rec->getId());
+                }
             }
         }
 

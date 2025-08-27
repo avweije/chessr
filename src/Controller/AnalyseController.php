@@ -15,6 +15,7 @@ use App\Entity\User;
 use App\Library\ChessJs;
 use App\Library\GameDownloader;
 use App\Service\MyPgnParser\MyPgnParser;
+use App\Controller\ChessrAbstractController;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
@@ -26,7 +27,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Core\User\UserInterface;
 
-class AnalyseController extends AbstractController
+class AnalyseController extends ChessrAbstractController
 {
     public function __construct(private Connection $conn, private EntityManagerInterface $em, private ManagerRegistry $doctrine, private MyPgnParser $myPgnParser)
     {}

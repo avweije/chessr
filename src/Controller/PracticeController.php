@@ -6,6 +6,8 @@ use App\Entity\Analysis;
 use App\Entity\ECO;
 use App\Entity\IgnoreList;
 use App\Entity\Repertoire;
+use App\Controller\ChessrAbstractController;
+use App\Service\RepertoireService;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
@@ -18,9 +20,15 @@ use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
 
-class PracticeController extends AbstractController
+class PracticeController extends ChessrAbstractController
 {
-    public function __construct(private Connection $conn, private EntityManagerInterface $em, private ManagerRegistry $doctrine, private RepertoireController $repertoire) {}
+    public function __construct(
+        private Connection $conn, 
+        private EntityManagerInterface $em, 
+        private ManagerRegistry $doctrine, 
+        private RepertoireController $repertoire,
+        private RepertoireService $repertoireService
+        ) {}
 
     #[Route('/practice', methods: ['GET', 'POST'], name: 'app_practice')]
     /**
@@ -84,7 +92,7 @@ class PracticeController extends AbstractController
         // if we need a specific repertoire line
         if ($repertoireId != null) {
             // get the lines
-            $repertoireItem = $repoRep->getLines($repertoireId);
+            $repertoireItem = $this->repertoireService->getLines($repertoireId);
 
             return new JsonResponse([
                 "custom" => $repertoireItem,
@@ -93,7 +101,7 @@ class PracticeController extends AbstractController
         }
 
         // get the repertoire lines and the group lines
-        [$lines, $groups] = $repoRep->getLines(null, $isRoadmap, $statisticsOnly);
+        [$lines, $groups] = $this->repertoireService->getLines(null, $isRoadmap, $statisticsOnly);
 
         //return new JsonResponse(["test" => true]);
 
@@ -111,9 +119,9 @@ class PracticeController extends AbstractController
         // if we have a repertoire
         if (count($lines) > 0) {
             // get the white lines
-            $resp['white'] = $repoRep->getWhiteLines($lines);
+            $resp['white'] = $this->repertoireService->getWhiteLines($lines);
             // get the black lines
-            $resp['black'] = $repoRep->getBlackLines($lines);
+            $resp['black'] = $this->repertoireService->getBlackLines($lines);
 
             //dd($resp["black"][2]);
             //dd("lines:", $lines[1]["moves"][2]);
@@ -121,9 +129,9 @@ class PracticeController extends AbstractController
             // not needed for the roadmap
             if (!$isRoadmap) {
                 // find the new lines
-                $resp['new'] = $repoRep->getNewLines($lines);
+                $resp['new'] = $this->repertoireService->getNewLines($lines);
                 // find the recommended lines
-                $resp['recommended'] = $repoRep->getRecommendedLines($lines);
+                $resp['recommended'] = $this->repertoireService->getRecommendedLines($lines);
             }
         }
 
@@ -139,15 +147,15 @@ class PracticeController extends AbstractController
         // only for the roadmap
         if ($isRoadmap) {
             // add the roadmap values (ECO & fail totals)
-            $repoRep->addRoadmap($resp['white']);
-            $repoRep->addRoadmap($resp['black']);
+            $this->repertoireService->addRoadmap($resp['white']);
+            $this->repertoireService->addRoadmap($resp['black']);
 
             //dd($resp['black']);
 
             // get the roadmap
             $roadmap = [
-                'white' => $repoRep->getRoadmapFor("white", $resp['white'], true),
-                'black' => $repoRep->getRoadmapFor("black", $resp['black'], true)
+                'white' => $this->repertoireService->getRoadmapFor("white", $resp['white'], true),
+                'black' => $this->repertoireService->getRoadmapFor("black", $resp['black'], true)
             ];
 
             return new JsonResponse($roadmap);
@@ -269,7 +277,7 @@ class PracticeController extends AbstractController
             ];
 
             // check to see if this position is in our repertoire
-            $move = $repoRep->findPosition($rec->getFen(), $resp[$rec->getColor()]);
+            $move = $this->repertoireService->findPosition($rec->getFen(), $resp[$rec->getColor()]);
             if ($move !== false) {
                 $analysis["repertoire"] = $move["multiple"];
             }

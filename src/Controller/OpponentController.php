@@ -13,6 +13,8 @@ use App\Entity\OpponentMove;
 use App\Entity\Repertoire;
 use App\Library\GameDownloader;
 use App\Service\MyPgnParser\MyPgnParser;
+use App\Controller\ChessrAbstractController;
+use App\Service\RepertoireService;
 use DateTime;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
@@ -25,9 +27,14 @@ use Symfony\Component\Security\Core\User\UserInterface;
 
 const DEFAULT_POSITION = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
-class OpponentController extends AbstractController
+class OpponentController extends ChessrAbstractController
 {
-    public function __construct(private Connection $conn, private EntityManagerInterface $em, private MyPgnParser $myPgnParser) {}
+    public function __construct(
+        private Connection $conn, 
+        private EntityManagerInterface $em, 
+        private MyPgnParser $myPgnParser,
+        private RepertoireService $repertoireService
+        ) {}
 
     #[Route('/opponent', name: 'app_opponent')]
     /**
@@ -891,7 +898,7 @@ class OpponentController extends AbstractController
                     // if we haven't fetched the lines yet
                     if (!$linesFetched) {
                         // get the repertoire lines
-                        [$lines, $groups] = $repoRep->getAllLines();
+                        [$lines, $groups] = $this->repertoireService->getAllLines();
 
                         $linesFetched = true;
                     }

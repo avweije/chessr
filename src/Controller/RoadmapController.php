@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Controller\ChessrAbstractController;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
@@ -11,7 +12,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
-class RoadmapController extends AbstractController
+class RoadmapController extends ChessrAbstractController
 {
     public function __construct(private Connection $conn, private EntityManagerInterface $em, private ManagerRegistry $doctrine, private PracticeController $practice) {}
 

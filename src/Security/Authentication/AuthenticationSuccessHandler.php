@@ -24,7 +24,7 @@ class AuthenticationSuccessHandler extends DefaultAuthenticationSuccessHandler
     {
         $user = $token->getUser();
 
-        dd($user);
+        //dd($user);
 
         if ($user instanceof User) {
 
@@ -32,12 +32,13 @@ class AuthenticationSuccessHandler extends DefaultAuthenticationSuccessHandler
 
             // get the days since last login
             $daysSinceLastLogin = $user->getLastLogin() ? $today->diff($user->getLastLogin())->days : -1;
-            // add to the deltas
-            if ($daysSinceLastLogin >= 0) {
-                $user->addDelta($daysSinceLastLogin);
-            }
 
             if (!$user->getLastLogin() || $user->getLastLogin() < $today) {
+                // add to the deltas
+                if ($daysSinceLastLogin > 0) {
+                    $user->addDelta($daysSinceLastLogin);
+                }
+                // update last login date
                 $user->setLastLogin($today);
                 $this->em->flush();
             }

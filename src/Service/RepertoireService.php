@@ -14,6 +14,13 @@ class RepertoireService
     private $settings = null;
     private $repo;
 
+    private array $candidates = [
+        'must'   => [],
+        'high'   => [],
+        'medium' => [],
+        'low'    => [],
+    ];
+
     public function __construct(ManagerRegistry $registry, private Security $security, RepertoireRepository $repository)
     {
         $this->user = $security->getUser();
@@ -73,14 +80,264 @@ class RepertoireService
     }
 
     // gets the recommended lines in the lines returned from getLines()
-    public function getRecommendedLines($lines)
+    public function getRecommendedLines(array $lines): array
     {
-        $usedIds = [];
-        // get the white lines
-        $recommended = $this->findLines($lines, '', false, true, true, $usedIds);
+        // see if we have recommended lines in our session
+        if (isset($_SESSION['recommendedLines']) && count($_SESSION['recommendedLines']) > 0) {
+            return $_SESSION['recommendedLines'];
+        }
+
+        // compute global stats
+        $globalStats = $this->computeGlobalStats($lines);
+
+        // reset candidates
+        $this->candidates = [
+            'must'   => [],
+            'high'   => [],
+            'medium' => [],
+            'low'    => [],
+        ];
+
+        // recursively assign recommendation
+        $lines = $this->assignRecommendation($lines, $globalStats);
+        //$this->assignRecommendation($lines, $globalStats);
+
+        //dd($this->candidates);
+
+        $targetSize = $this->determineTargetSize($globalStats);
+        $totalMoves = 0;
+
+        $result = [];
+        $usedMoves = []; // to mark moves that have been included
+
+        foreach (['must', 'high', 'medium', 'low'] as $level) {
+            if ($totalMoves >= $targetSize) break;
+
+            $candidates = $this->candidates[$level] ?? [];
+
+            // sort candidates by factor descending
+            usort($candidates, fn($a, $b) => $b['recommendation']['factor'] <=> $a['recommendation']['factor']);
+
+            foreach ($candidates as $candidate) {
+                if ($totalMoves >= $targetSize) break;
+
+                $moveKey = $candidate['id'];
+                if (isset($usedMoves[$moveKey])) continue;
+
+                // get the composite score
+                $baseScore = $this->isOurMove($candidate['before'] ?? '', $candidate['color'] ?? '') ? $this->getCompositeScore($candidate) : -1;
+
+                // test a bit with the threshold
+                $threshold = 1;
+                // collect line until recommendation drops
+                $lineUntil = $this->collectRecommendedUntil(['moves' => [$candidate]], $usedMoves, $baseScore, $threshold);
+
+                $moveCount = $this->countMoves($lineUntil);
+                $totalMoves = $totalMoves + $moveCount;
+                if ($moveCount > 0) {
+                    foreach ($lineUntil as $move) {
+                        $result[] = $move;
+                        $usedMoves[$move['id']] = true;
+                    }
+                }
+            }
+        }
+
+        // does group by position cause this?
+
         // group by position and return
-        return $this->groupByPosition($recommended, $lines);
+        $recommended = $this->groupByPosition($result, $lines);
+        //$recommended = $result;
+
+        // store in session
+        $_SESSION['recommendedLines'] = $recommended;
+
+        return $recommended;
     }
+
+    private function countMoves(array $lines): int
+    {
+        $count = 0;
+        foreach ($lines as $line) {
+            // count only our moves
+            if ($this->isOurMove($line['before'] ?? '', $line['color'] ?? '')) {
+                $count++;
+            }
+            if (!empty($line['moves'])) {
+                $count += $this->countMoves($line['moves']);
+            }
+        }
+        return $count;
+    }
+
+
+    public function updateSessionRecommended(int $id): void
+    {
+        if (!isset($_SESSION['recommendedLines'])) {
+            return;
+        }
+
+        $_SESSION['recommendedLines'] = $this->updateSessionRecommendedMove($id, $_SESSION['recommendedLines']);
+    }
+
+    /**
+     * Recursively update a move in recommended lines and remove lines if all our moves are done
+     *
+     * @param int $id The move ID that was played
+     * @param array $lines The current set of lines
+     * @return array Updated lines
+     */
+    private function updateSessionRecommendedMove(int $id, array $lines): array
+    {
+        $updatedLines = [];
+
+        foreach ($lines as $line) {
+            $line = $this->markMovePlayed($line, $id);
+
+            // Check if all "our moves" are played (assuming opponent moves don't have 'id')
+            $allOurMovesPlayed = $this->allOurMovesPlayed($line);
+
+            // Keep the line only if not all moves are played
+            if (!$allOurMovesPlayed) {
+                $updatedLines[] = $line;
+            }
+        }
+
+        return $updatedLines;
+    }
+
+    /**
+     * Recursively mark the move with $id as played
+     */
+    private function markMovePlayed(array $line, int $id): array
+    {
+        if (isset($line['id']) && $line['id'] === $id) {
+            $line['played'] = true;
+        }
+
+        if (!empty($line['moves'])) {
+            foreach ($line['moves'] as $i => $child) {
+                $line['moves'][$i] = $this->markMovePlayed($child, $id);
+            }
+        }
+
+        return $line;
+    }
+
+    /**
+     * Recursively check if all "our moves" in a line are played
+     */
+    private function allOurMovesPlayed(array $line): bool
+    {
+        // If this is our move
+        if ($this->isOurMove($line['before'] ?? '', $line['color'] ?? '')) {
+            if (empty($line['played']) || !$line['played']) {
+                return false;
+            }
+        }
+
+        if (!empty($line['moves'])) {
+            foreach ($line['moves'] as $child) {
+                if (!$this->allOurMovesPlayed($child)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private function getCompositeScore($move)
+    {
+        if (!isset($move['recommendation'])) {
+            return -3;
+        }
+        $levelMap = ['low' => 1, 'medium' => 2, 'high' => 3, 'must' => 4];
+        $levelValue = $levelMap[$move['recommendation']['level']] ?? 0;
+        $factor = $move['recommendation']['factor'] ?? 0;
+        return $levelValue + $factor;
+    }
+
+    /**
+     * Recursively collect moves following $move until recommendation drops below threshold
+     */
+    private function collectRecommendedUntil(array $line, array &$usedMoves, float $baseScore, float $minThreshold = 1): array
+    {
+        $result = [];
+
+        foreach ($line['moves'] as $move) {
+            $moveId = $move['id'] ?? null;
+            if ($moveId === null || isset($usedMoves[$moveId])) {
+                continue;
+            }
+
+            $thisBase = $baseScore;
+
+            $isOurMove = $this->isOurMove($move['before'] ?? '', $move['color'] ?? '');
+
+            $move['baseScore'] = $baseScore;
+            $move['baseIsOurMove'] = $isOurMove;
+
+            // If we don't have the base score yet (top level not our move)
+            if ($baseScore == -1) {
+                $thisBase = $isOurMove ? $this->getCompositeScore($move) : -1;
+            } else if ($isOurMove) {
+
+                // if under a certain threshold, never include
+                if ($this->isUnderRecommendationThreshold($move)) {
+                    break;
+                }
+
+                // get the composite score
+                $compositeScore = $this->getCompositeScore($move);
+                $drop = $baseScore - $compositeScore;
+
+                $move['baseDrop'] = $drop;
+                $move['baseThreshold'] = $minThreshold;
+                $move['compositeScore'] = $compositeScore;
+
+                // stop if the drop exceeds the threshold
+                if ($drop > $minThreshold) {
+                    break;
+                }
+            }
+
+            $move['thisBase'] = $thisBase;
+
+            $usedMoves[$moveId] = true;
+
+            if (!empty($move['moves'])) {
+                $move['moves'] = $this->collectRecommendedUntil($move, $usedMoves, $thisBase, $minThreshold);
+            }
+
+            if ($isOurMove || count($move['moves']) > 0) {
+                $result[] = $move;
+            }
+        }
+
+        return $result;
+    }
+
+    private function isUnderRecommendationThreshold($move): bool
+    {
+        return (isset($move['recommendation']) && $move['recommendation']['level'] == 'low' && $move['recommendation']['factor'] <= 0.2);
+    }
+
+    /**
+     * Simple priority for levels
+     */
+    private function levelPriority(string $level): int
+    {
+        return match ($level) {
+            'must' => 4,
+            'high' => 3,
+            'medium' => 2,
+            'low' => 1,
+            default => 0,
+        };
+    }
+
+
 
     // get all lines, including the excluded ones
     public function getAllLines(): array
@@ -212,6 +469,176 @@ class RepertoireService
     }
 
 
+    private function collectGlobalStats(array $lines): array
+    {
+        $totalAttempts = 0;
+        $totalSuccess  = 0;
+        $allDeltas     = [];
+
+        foreach ($lines as $line) {
+            // if this is a move
+            if (isset($line['move'])) {
+
+                $count  = $line['practiceCount'] ?? 0;
+                $failed = $line['practiceFailed'] ?? 0;
+
+                $totalAttempts += $count;
+                $totalSuccess  += ($count - $failed);
+
+                if (!empty($line['deltas'])) {
+                    $allDeltas = array_merge($allDeltas, $line['deltas']);
+                }
+            }
+
+            if (!empty($line['moves'])) {
+                $childStats = $this->collectGlobalStats($line['moves']);
+                $totalAttempts += $childStats['attempts'];
+                $totalSuccess  += $childStats['success'];
+                $allDeltas     = array_merge($allDeltas, $childStats['deltas']);
+            }
+        }
+
+        return [
+            'attempts' => $totalAttempts,
+            'success'  => $totalSuccess,
+            'deltas'   => $allDeltas,
+        ];
+    }
+
+    private function computeGlobalStats(array $lines): array
+    {
+        $stats = $this->collectGlobalStats($lines);
+
+        $globalSuccessRate = $stats['attempts'] > 0 ? $stats['success'] / $stats['attempts'] : 0;
+        $globalFrequency   = !empty($stats['deltas'])
+            ? array_sum($stats['deltas']) / count($stats['deltas'])
+            : null;
+
+        return [
+            'successRate' => $globalSuccessRate,
+            'frequency'   => $globalFrequency,
+        ];
+    }
+
+    private function determineTargetSize(array $globalStats): int
+    {
+        $min = 20;
+        $max = 60;
+
+        if ($globalStats['frequency'] !== null && $globalStats['frequency'] > 10) {
+            // user practices rarely → give them more
+            $min = 30;
+            $max = 90;
+        }
+
+        $highCount = count($this->candidates['high']);
+        $mediumCount = count($this->candidates['medium']);
+        $lowCount = count($this->candidates['low']);
+
+        // weight high = 3, medium = 2, low = 1
+        $score = $highCount * 3 + $mediumCount * 2 + $lowCount;
+        $maxScore = ($highCount + $mediumCount + $lowCount) * 3;
+
+        // scale linearly between min and max
+        $targetSize = $min + ($max - $min) * ($score / max(1, $maxScore));
+
+        return $targetSize;
+
+        //return rand($min, $max);
+    }
+
+    // recursively assign recommendation to all lines
+    private function assignRecommendation_xx(array &$lines, array $globalStats): void
+    {
+        foreach ($lines as &$line) {
+            // if this is a move
+            if (isset($line['move']) && $this->isOurMove($line['before'] ?? '', $line['color'] ?? '')) {
+                // compute and assign recommendation
+                $line['recommendation'] = $this->computeRecommendationForLine($line, $globalStats);
+                // store candidates by level for potential further processing
+                $this->candidates[$line['recommendation']['level']][] = &$line;
+                //$this->candidates[$line['recommendation']['level']][] = $line;
+            }
+            // recurse into children
+            if (!empty($line['moves'])) {
+                $this->assignRecommendation($line['moves'], $globalStats);
+            }
+        }
+    }
+
+    private function assignRecommendation(array $lines, array $globalStats): array
+    {
+        $result = [];
+
+        foreach ($lines as $line) {
+            // if this is a move and its not an autoplay move
+            if (isset($line['move']) && $this->isOurMove($line['before'] ?? '', $line['color'] ?? '')) {
+                //  && !$line['autoplay']
+                // compute and assign recommendation
+                $line['recommendation'] = $this->computeRecommendationForLine($line, $globalStats);
+
+                // skip if very low recommendation
+                //if ($line['recommendation']['level'] !== 'low' || $line['recommendation']['factor'] > 0.2) {
+                if (!$this->isUnderRecommendationThreshold($line)) {
+                    // store candidates by level for potential further processing
+                    // note: no reference here, store a copy instead
+                    $this->candidates[$line['recommendation']['level']][] = $line;
+                }
+            }
+
+            // recurse into children
+            if (!empty($line['moves'])) {
+                $line['moves'] = $this->assignRecommendation($line['moves'], $globalStats);
+            }
+
+            $result[] = $line;
+        }
+
+        return $result;
+    }
+
+
+    // compute recommendation for a single line
+    private function computeRecommendationForLine($line, $globalStats)
+    {
+        $count  = $line['practiceCount'] ?? 0;
+        $failed = $line['practiceFailed'] ?? 0;
+
+        $successRate = $count > 0 ? ($count - $failed) / $count : 0;
+        $streak      = $line['practiceInARow'] ?? 0;
+        $frequency   = !empty($line['deltas'])
+            ? array_sum($line['deltas']) / count($line['deltas'])
+            : null;
+
+        $score = 0;
+
+        // success factor
+        if ($successRate < 0.5) $score += 0.6;
+        elseif ($successRate < 0.8) $score += 0.3;
+
+        // streak factor
+        if ($streak < 3) $score += 0.3;
+
+        // frequency factor
+        if ($frequency !== null && $frequency > 7) $score += 0.4;
+
+        // adjust with global stats
+        if ($globalStats['successRate'] > 0.85) $score *= 0.9;
+        elseif ($globalStats['successRate'] < 0.6) $score *= 1.2;
+
+        if ($globalStats['frequency'] !== null && $globalStats['frequency'] > 10) {
+            $score *= 1.2;
+        }
+
+        // classify level
+        return [
+            'level'  => $score > 1 ? 'high' : ($score > 0.4 ? 'medium' : 'low'),
+            'factor' => min(1, $score),
+        ];
+    }
+
+
+
 
     // get the repertoire lines
     public function getLines(int $repertoireId = null, bool $isRoadmap = false, bool $statisticsOnly = false, $includeAll = false): array
@@ -265,10 +692,6 @@ class RepertoireService
                     ];
                 }
 
-                $failPercentage = $rep->getPracticeCount() == 0 ? 0 : max($rep->getPracticeFailed() / $rep->getPracticeCount(), 0);
-                $inARowNeeded = max(3, 3 + round($failPercentage / .5));
-                $daysNeeded = 7 * max(4 - (4 * $failPercentage), 1);
-
                 // add the move
                 //$lines[($rep->getColor() == 'white' ? 0 : 1)]['moves'][] = [
                 $lines[$idx]['moves'][] = [
@@ -282,13 +705,11 @@ class RepertoireService
                     'before' => $rep->getFenBefore(),
                     'after' => $rep->getFenAfter(),
                     'new' => $rep->getPracticeCount() == 0 ? 1 : 0,
-                    'failPercentage' => $failPercentage,
-                    'inARowNeeded' => $inARowNeeded,
-                    'daysNeeded' => $daysNeeded,
-                    'recommended' => $rep->isAutoPlay() ? 0 : ($this->repo->isRecommended($rep) ? 1 : 0),
                     'practiceCount' => $rep->getPracticeCount(),
                     'practiceFailed' => $rep->getPracticeFailed(),
                     'practiceInARow' => $rep->getPracticeInARow(),
+                    'lastUsed' => $rep->getLastUsed(),
+                    'deltas' => $rep->getDeltas(),
                     'line' => [],
                     'moves' => []
                 ];
@@ -314,10 +735,11 @@ class RepertoireService
                     'after' => $rep->getFenAfter(),
                     'new' => $rep->getPracticeCount() == 0 ? 1 : 0,
                     'failPercentage' => $rep->getPracticeCount() < 5 ? 1 : $rep->getPracticeFailed() / $rep->getPracticeCount(),
-                    'recommended' => $this->repo->isRecommended($rep) ? 1 : 0,
                     'practiceCount' => $rep->getPracticeCount(),
                     'practiceFailed' => $rep->getPracticeFailed(),
                     'practiceInARow' => $rep->getPracticeInARow(),
+                    'lastUsed' => $rep->getLastUsed(),
+                    'deltas' => $rep->getDeltas(),
                     'line' => $this->getLineBefore($rep->getHalfMove(), $rep->getFenBefore(), $res),
                     'moves' => []
                 ];
@@ -362,11 +784,11 @@ class RepertoireService
                     'before' => $rep->getFenBefore(),
                     'after' => $rep->getFenAfter(),
                     'new' => $rep->getPracticeCount() == 0 ? 1 : 0,
-                    'failPercentage' => $rep->getPracticeCount() < 5 ? 1 : $rep->getPracticeFailed() / $rep->getPracticeCount(),
-                    'recommended' => $this->repo->isRecommended($rep) ? 1 : 0,
                     'practiceCount' => $rep->getPracticeCount(),
                     'practiceFailed' => $rep->getPracticeFailed(),
                     'practiceInARow' => $rep->getPracticeInARow(),
+                    'lastUsed' => $rep->getLastUsed(),
+                    'deltas' => $rep->getDeltas(),
                     'line' => $this->getLineBefore($rep->getHalfMove(), $rep->getFenBefore(), $res),
                     'moves' => []
                 ];
@@ -595,13 +1017,11 @@ class RepertoireService
                         'before' => $rep->getFenBefore(),
                         'after' => $rep->getFenAfter(),
                         'new' => $rep->getPracticeCount() == 0 ? 1 : 0,
-                        'failPercentage' => $failPercentage,
-                        'inARowNeeded' => $inARowNeeded,
-                        'daysNeeded' => $daysNeeded,
-                        'recommended' => $rep->isAutoPlay() ? 0 : ($this->repo->isRecommended($rep) ? 1 : 0),
                         'practiceCount' => $rep->getPracticeCount(),
                         'practiceFailed' => $rep->getPracticeFailed(),
                         'practiceInARow' => $rep->getPracticeInARow(),
+                        'lastUsed' => $rep->getLastUsed(),
+                        'deltas' => $rep->getDeltas(),
                         'line' => $lineMoves,
                         'moves' => $childMoves,
                         'multiple' => $multiple
@@ -609,33 +1029,6 @@ class RepertoireService
                 }
             }
         }
-
-        /*
-        // if we have any moves
-        if (count($moves) > 0) {
-            // get the complete lines
-            for ($i = 0; $i < count($moves); $i++) {
-
-                //$temp = array_key_exists('move', $moves[$i]) ? array_merge($lineMoves, [$moves[$i]['move']]) : $lineMoves;
-                $temp = array_merge($lineMoves, [$moves[$i]['move']]);
-
-                $moves[$i]['moves'] = $this->getLinesFor($color, $moves[$i]['after'], $repBefore, $temp, $step + 1);
-
-                // if we have multiple moves here, add them to an array
-                if (count($moves[$i]['moves']) > 1) {
-                    foreach ($moves[$i]['moves'] as $move) {
-                        //$moves[$i]['multiple'][] = $move['move'];
-                        $moves[$i]['multiple'][] = [
-                            "move" => $move['move'],
-                            "cp" => isset($move['cp']) ? $move['cp'] : null,
-                            "mate" => isset($move['mate']) ? $move['mate'] : null,
-                            "line" => isset($move['line']) ? $move['line'] : null
-                        ];
-                    }
-                }
-            }
-        }
-            */
 
         return $moves;
     }
@@ -992,7 +1385,12 @@ class RepertoireService
 
     private function isOurMove($fen, $color): bool
     {
+        if ($fen === '' || $color === '') {
+            return false;
+        }
+
         $isWhiteToMove = $this->isWhiteMove($fen);
+
         return ($color == "white" && $isWhiteToMove) || ($color == "black" && !$isWhiteToMove);
     }
 
@@ -1126,7 +1524,7 @@ class RepertoireService
                 if (!$found) {
                     $temp[$idx]['moves'][] = $line;
                     $temp[$idx]['multiple_old'][] = $line['move'];
-                    $temp[$idx]['ourMoveCount'] = $temp[$idx]['ourMoveCount'] + $line['ourMoveCount'];
+                    $temp[$idx]['ourMoveCount'] = $temp[$idx]['ourMoveCount'] ?? 0 + $line['ourMoveCount'] ?? 0;
                 }
                 //$temp[$idx]['multiple'] = $line['multiple'];
                 //$temp[$idx]['multiplex'] = $line['multiple'];

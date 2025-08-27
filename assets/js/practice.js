@@ -2983,7 +2983,10 @@ class Practice extends MyChessBoard {
     // set the url
     var url = "/api/repertoire/counters";
 
-    var data = { moves: moves };
+    var data = { 
+      type: this.type,
+      moves: moves
+    };
 
     // update the move counters
     fetch(url, {
