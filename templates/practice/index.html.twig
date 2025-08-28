@@ -3,36 +3,36 @@
 {% block board_header %}
 	<div id="practiceRepertoireButtons" class="boxed-radio-menu">
 		<div class="boxed-radio">
-			<input class="peer is-hidden" type="radio" name="repertoire_type" value="white" id="repertoireWhite"/>
+			<input class="is-hidden" type="radio" name="repertoire_type" value="white" id="repertoireWhite"/>
 			<label class="boxed-radio-label" for="repertoireWhite"></label>
 			<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500">White</span>
 		</div>
 		<div class="boxed-radio">
-			<input class="peer is-hidden" type="radio" name="repertoire_type" value="black" id="repertoireBlack"/>
+			<input class="is-hidden" type="radio" name="repertoire_type" value="black" id="repertoireBlack"/>
 			<label class="boxed-radio-label" for="repertoireBlack"></label>
 			<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500">Black</span>
 		</div>
-		<div class="boxed-radio">
-			<input class="peer is-hidden" type="radio" name="repertoire_type" value="new" id="repertoireNew"/>
+		<div class="boxed-radio is-hidden">
+			<input class="is-hidden" type="radio" name="repertoire_type" value="new" id="repertoireNew"/>
 			<label class="boxed-radio-label" for="repertoireNew"></label>
 			<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500">New
 				<sup class="font-normal pl-px"></sup>
 			</span>
 		</div>
-		<div class="boxed-radio">
-			<input class="peer is-hidden" type="radio" name="repertoire_type" value="recommended" id="repertoireRecommended"/>
+		<div class="boxed-radio is-hidden">
+			<input class="is-hidden" type="radio" name="repertoire_type" value="recommended" id="repertoireRecommended"/>
 			<label class="boxed-radio-label" for="repertoireRecommended"></label>
 			<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500">Recommended
 				<sup class="font-normal pl-px"></sup>
 			</span>
 		</div>
 		<div class="boxed-radio">
-			<input class="peer is-hidden" type="radio" name="repertoire_type" value="all" id="repertoireAll" checked/>
+			<input class="is-hidden" type="radio" name="repertoire_type" value="all" id="repertoireAll" checked/>
 			<label class="boxed-radio-label" for="repertoireAll"></label>
 			<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500">All</span>
 		</div>
 		<div class="boxed-radio">
-			<input class="peer is-hidden" type="radio" name="repertoire_type" value="analysis" id="repertoireAnalysis"/>
+			<input class="is-hidden" type="radio" name="repertoire_type" value="analysis" id="repertoireAnalysis"/>
 			<label class="boxed-radio-label" for="repertoireAnalysis"></label>
 			<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500">Analysis
 				<sup class="font-normal pl-px"></sup>
@@ -89,31 +89,31 @@
 	<div id="infoContainer" class="message is-info mb-1">
 		<div class="message-body" role="alert">
 			<span></span>
-			<span class="text-base font-medium px-3 block sm:inline">To start your practice, click the button below.</span>
+			<span class="has-text-weight-medium px-3 block">To start your practice, click the button below.</span>
 		</div>
 	</div>
-	<div id="confirmContainer" class="is-hidden message is-success mb-0">
+	<div id="confirmContainer" class="is-hidden message is-success mb-1">
 		<div class="message-body" role="alert">
 			<span class="text-secondary-500 ">
 				<i class="fa-solid fa-circle-check"></i>
 			</span>
-			<span class="text-base font-medium px-3 block sm:inline"></span>
+			<span class="has-text-weight-medium px-3"></span>
 		</div>
 	</div>
 	<div id="warningContainer" class="is-hidden message is-danger mb-0">
 		<div class="message-body" role="alert">
-			<span class="is-danger shrink-0">
+			<span class="is-danger is-flex-shrink-0">
 				<i class="fa-solid fa-triangle-exclamation"></i>
 			</span>
-			<span class="text-base font-medium px-3 block sm:inline"></span>
+			<span class="has-text-weight-medium px-3"></span>
 		</div>
 	</div>
 	<div id="hintContainer" class="is-hidden message is-warning mb-0">
 		<div class="message-body" role="alert">
-			<span class="is-primary shrink-0">
+			<span class="is-primary is-flex-shrink-0">
 				<i class="fa-solid fa-circle-info"></i>
 			</span>
-			<span class="text-base font-medium px-3 block sm:inline"></span>
+			<span class="has-text-weight-medium px-3"></span>
 		</div>
 	</div>
 
@@ -133,7 +133,7 @@
 			<i class="fa-solid fa-forward-step"></i>
 		</button>
 		<div class="flex">
-			<input type="checkbox" id="showPracticeInfoButton" value="1" class="peer is-hidden">
+			<input type="checkbox" id="showPracticeInfoButton" value="1" class="is-hidden">
 			<label for="showPracticeInfoButton" title="Toggle info" class="is-hidden select-none button is-primary mr-1 peer-checked:btn-checked">
 				<i class="fa-solid fa-circle-info"></i>
 			</label>
@@ -154,14 +154,14 @@
 	<div id="playedMovesContainer" class="is-hidden box p-0">
 		<p class="box-header">Moves</p>
 		<div id="playedMovesList" class="p-2">
-			<div class="text-base border-b border-tacao-200 dark:border-slate-900 p-2">1. _</div>
-			<div class="text-base p-2">1. _</div>
+			<div class="border-b border-tacao-200 dark:border-slate-900 p-2">1. _</div>
+			<div class="p-2">1. _</div>
 		</div>
 	</div>
 
 	<div id="pgnContainer" class="is-hidden box p-0">
 		<div class="box-header">
-			<p class="block has-text-weight-bold">PGN</p>
+			<p class="has-text-weight-bold">PGN</p>
 			<div id="pgnNavigationContainer" class="is-flex is-align-items-center px-3">
 				<button class="w-6 h-6 tc-link-shade">
 					<span class="icon">
@@ -191,7 +191,7 @@
 	<div id="suggestionContainer" class="is-hidden box p-0">
 		<p class="box-header">Suggestion</p>
 		<div class="is-flex is-align-items-center p-2">
-			<div id="suggestionField" class="p-2 inline-block text-base tc-base"></div>
+			<div id="suggestionField" class="p-2 inline-block tc-base"></div>
 			<button id="suggestionSubmitButton" type="button" class="button is-primary is-light is-small tc-link-shade">
 				<span class="icon">
 					<i class="fa-solid fa-up-right-from-square"></i>
@@ -206,20 +206,20 @@
 			<p class="box-header">Game</p>
 			<div id="analysisGameFields" class="grid grid-cols-[_auto_1fr] is-align-items-center p-2">
 				<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">Opponent:</label>
-				<p class="p-2 text-sm w-full truncate tc-base"></p>
+				<p class="p-2 is-size-6 w-full truncate tc-base"></p>
 				<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">Move:</label>
-				<p class="p-2 text-sm w-full truncate tc-base"></p>
+				<p class="p-2 is-size-6 w-full truncate tc-base"></p>
 				<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">FEN:</label>
-				<p class="p-2 text-sm w-full truncate tc-base"></p>
+				<p class="p-2 is-size-6 w-full truncate tc-base"></p>
 				<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">Link:</label>
-				<a href="#" target="_blank" class="p-2 text-sm w-full truncate"></a>
+				<a href="#" target="_blank" class="p-2 is-size-6 w-full truncate"></a>
 			</div>
 	</div>
 
 	<div id="practiceInfoContainer" class="is-hidden">
 		<div class="box p-0">
 			<div class="box-header">
-				<p class="title m-0 is-size-6">Info</p>
+				<p class="title m-0 is-size-6 ">Info</p>
 					<button type="button" title="Open in repertoire" class="button is-primary is-light is-small" id="practiceInfoOpenInRepertoireButton">
 						<span class="icon">
 							<i class="fa-solid fa-up-right-from-square"></i>

@@ -232,6 +232,7 @@ class Opponent {
       this.onToggleSuggestions.bind(this)
     );
 
+    /*
     // get the modal elements
     this.analyseDialog.modal = document.getElementById("analyseModal");
     this.analyseDialog.fieldsContainer =
@@ -376,6 +377,9 @@ class Opponent {
         handler: this.onDisconnectOpponentConfirmed.bind(this),
       },
     ]);
+    */
+
+    this.initModals();
 
     // get settings
     this.getSettings();
@@ -383,6 +387,146 @@ class Opponent {
     // get the opponents
     this.getOpponents();
   }
+
+  initModals() {
+  // --- ANALYSE MODAL ---
+  const analyseModal = document.getElementById("analyseModal");
+  const analyseModalBkgd = analyseModal.getElementsByClassName("modal-background")[0];
+  const analyseFieldsContainer = document.getElementById("analyseModalFields");
+  const analyseFields = analyseFieldsContainer.getElementsByTagName("p");
+  const analyseErrorContainer = document.getElementById("analyseModalError");
+  const analyseError = analyseErrorContainer.getElementsByTagName("p");
+  const analyseStop = document.getElementById("analyseModalStopButton");
+  const analyseClose = document.getElementById("analyseModalCloseButton");
+
+  const showAnalyseModal = () => analyseModal.classList.add("is-active");
+  const closeAnalyseModal = () => {
+    analyseModal.classList.remove("is-active");
+    this.onCloseDialog();
+  };
+
+  analyseModalBkgd.addEventListener("click", closeAnalyseModal);
+  analyseClose.addEventListener("click", closeAnalyseModal);
+  analyseStop.addEventListener("click", closeAnalyseModal);
+
+   
+  this.analyseDialog.modal = analyseModal;
+  this.analyseDialog.fieldsContainer = analyseFieldsContainer;
+  this.analyseDialog.typeField = analyseFields[0];
+  this.analyseDialog.statusField = analyseFields[1];
+  this.analyseDialog.matchesField = analyseFields[2];
+  this.analyseDialog.periodField = analyseFields[3];
+  this.analyseDialog.elapsedTimeField = analyseFields[4];
+  this.analyseDialog.errorContainer = analyseErrorContainer;
+  this.analyseDialog.errorField = analyseError[0];
+  this.analyseDialog.stopButton = analyseStop;
+  this.analyseDialog.closeButton = analyseClose;
+  this.analyseDialog.showModal = showAnalyseModal;
+  this.analyseDialog.closeModal = closeAnalyseModal;
+
+  this.showAnalyseModal = showAnalyseModal;
+  this.closeAnalyseModal = closeAnalyseModal
+
+  // --- CONFIRM MODAL ---
+  const confirmModal = document.getElementById("confirmModal");
+  const confirmModalBkgd = confirmModal.getElementsByClassName("modal-background")[0];
+  const confirmClose = document.getElementById("confirmModalCloseButton");
+  const confirmCancel = document.getElementById("confirmModalCancelButton");
+  const confirmButton = document.getElementById("confirmModalConfirmButton");
+
+  const showConfirmModal = () => confirmModal.classList.add("is-active");
+  const closeConfirmModal = () => confirmModal.classList.remove("is-active");
+
+  confirmModalBkgd.addEventListener("click", closeConfirmModal);
+  confirmClose.addEventListener("click", closeConfirmModal);
+  confirmCancel.addEventListener("click", closeConfirmModal);
+  confirmButton.addEventListener("click", () => {
+    this.onRemoveOpponentConfirmed();
+    closeConfirmModal();
+  });
+
+  this.confirmDialog = {
+    modal: confirmModal,
+    closeButton: confirmClose,
+    cancelButton: confirmCancel,
+    confirmButton: confirmButton,
+    showModal: showConfirmModal,
+    closeModal: closeConfirmModal,
+  };
+
+  this.showConfirmModal = showConfirmModal;
+  this.closeConfirmModal = closeConfirmModal
+
+  // --- CONNECT MODAL ---
+  const connectModal = document.getElementById("connectModal");
+  const connectModalBkgd = connectModal.getElementsByClassName("modal-background")[0];
+  const connectClose = document.getElementById("connectModalCloseButton");
+  const connectCancel = document.getElementById("connectModalCancelButton");
+  const connectConfirm = document.getElementById("connectModalConfirmButton");
+  const connectOpponent = document.getElementById("connectModalOpponentUsername");
+  const connectParentContainer = document.getElementById("connectModalParentAccountContainer");
+
+  const showConnectModal = () => connectModal.classList.add("is-active");
+  const closeConnectModal = () => connectModal.classList.remove("is-active");
+
+  connectModalBkgd.addEventListener("click", closeConnectModal);
+  connectClose.addEventListener("click", closeConnectModal);
+  connectCancel.addEventListener("click", closeConnectModal);
+  connectConfirm.addEventListener("click", () => {
+    this.onConnectOpponentConfirmed();
+    closeConnectModal();
+  });
+
+  this.connectDialog = {
+    modal: connectModal,
+    closeButton: connectClose,
+    cancelButton: connectCancel,
+    confirmButton: connectConfirm,
+    opponentUsername: connectOpponent,
+    parentAccountContainer: connectParentContainer,
+    showModal: showConnectModal,
+    closeModal: closeConnectModal,
+  };
+
+  this.showConnectModal = showConnectModal;
+  this.closeConnectModal = closeConnectModal
+
+  // --- DISCONNECT MODAL ---
+  const disconnectModal = document.getElementById("disconnectModal");
+  const disconnectModalBkgd = disconnectModal.getElementsByClassName("modal-background")[0];
+  const disconnectClose = document.getElementById("disconnectModalCloseButton");
+  const disconnectCancel = document.getElementById("disconnectModalCancelButton");
+  const disconnectConfirm = document.getElementById("disconnectModalConfirmButton");
+  const disconnectOpponent = document.getElementById("disconnectModalOpponentUsername");
+  const disconnectChildContainer = document.getElementById("disconnectModalChildAccountContainer");
+
+  const showDisconnectModal = () => disconnectModal.classList.add("is-active");
+  const closeDisconnectModal = () => disconnectModal.classList.remove("is-active");
+
+  disconnectModalBkgd.addEventListener("click", closeDisconnectModal);
+  disconnectClose.addEventListener("click", closeDisconnectModal);
+  disconnectCancel.addEventListener("click", closeDisconnectModal);
+  disconnectConfirm.addEventListener("click", () => {
+    this.onDisconnectOpponentConfirmed();
+    closeDisconnectModal();
+  });
+
+  this.disconnectDialog = {
+    modal: disconnectModal,
+    closeButton: disconnectClose,
+    cancelButton: disconnectCancel,
+    confirmButton: disconnectConfirm,
+    opponentUsername: disconnectOpponent,
+    childAccountContainer: disconnectChildContainer,
+    showModal: showDisconnectModal,
+    closeModal: closeDisconnectModal,
+  };
+
+  this.showDisconnectModal = showDisconnectModal;
+  this.closeDisconnectModal = closeDisconnectModal
+}
+
+
 
   // get the settings
   getSettings() {
@@ -659,7 +803,8 @@ class Opponent {
     this.analyseDialog.stopButton.innerHTML = "Stop analysing";
 
     // open the dialog
-    Modal.open(this.analyseDialog.modal);
+    //Modal.open(this.analyseDialog.modal);
+    this.showAnalyseModal();
 
     // get the start time
     this.analyseDialog.startTime = new Date().getTime();
@@ -937,7 +1082,8 @@ class Opponent {
     this.loadConnectDialogParentAccounts(selected);
 
     // open the dialog
-    Modal.open(this.connectDialog.modal);
+    //Modal.open(this.connectDialog.modal);
+    this.showConnectModal();
   }
 
   // fired when the connect  opponent modal has been confirmed
@@ -962,7 +1108,8 @@ class Opponent {
     }
 
     // close the modal
-    Modal.close(this.connectDialog.modal);
+    //Modal.close(this.connectDialog.modal);
+    this.closeConnectModal();
 
     // get the current opponent
     var selected = this.getSelectedOpponent();
@@ -1122,7 +1269,8 @@ class Opponent {
     this.loadDisconnectDialogChildAccounts(selected);
 
     // open the dialog
-    Modal.open(this.disconnectDialog.modal);
+    //Modal.open(this.disconnectDialog.modal);
+    this.showDisconnectModal();
   }
 
   // fired when the disconnect opponent modal has been confirmed
@@ -1149,7 +1297,8 @@ class Opponent {
     }
 
     // close the modal
-    Modal.close(this.disconnectDialog.modal);
+    //Modal.close(this.disconnectDialog.modal);
+    this.closeDisconnectModal();
 
     // get the current opponent
     var selected = this.getSelectedOpponent();
@@ -1289,13 +1438,15 @@ class Opponent {
     console.info("onRemoveOpponent");
 
     // open the dialog
-    Modal.open(this.confirmDialog.modal);
+    //Modal.open(this.confirmDialog.modal);
+    this.showConfirmModal();
   }
 
   // fired when the remove opponent modal has been confirmed
   onRemoveOpponentConfirmed(event) {
     // close the modal
-    Modal.close(this.confirmDialog.modal);
+    //Modal.close(this.confirmDialog.modal);
+    this.closeConfirmModal();
 
     // get the current opponent id
     var id = this.getSelectedOpponent().id;
@@ -1385,7 +1536,7 @@ class Opponent {
     inp.name = "opponent_box" + (forModal ? "_modal" : "");
     inp.value = opponent.username;
     inp.checked = isChecked;
-    inp.className = "peer hidden";
+    inp.className = "is-hidden";
 
     // store the opponent id & site
     inp.setAttribute("data-id", opponent.id);
@@ -1427,7 +1578,7 @@ class Opponent {
     sp.appendChild(p1);
 
     var p2 = document.createElement("p");
-    p2.className = "text-left text-sm pr-4 opacity-70";
+    p2.className = "text-left is-size-6 pr-4 opacity-70";
     p2.innerHTML = opponent.site;
 
     sp.appendChild(p2);
@@ -1468,7 +1619,7 @@ class Opponent {
     if (!forModal) {
       var conSpan = document.createElement("span");
       conSpan.className =
-        "opponent-connect-link hidden peer-checked:inline-block absolute right-2 bottom-1 w-6 h-6 cursor-pointer text-tacao-500 hover:text-tacao-700 dark:text-slate-400 hover:dark:text-slate-600";
+        "opponent-connect-link is-hidden peer-checked:inline-block absolute right-2 bottom-1 w-6 h-6 cursor-pointer text-tacao-500 hover:text-tacao-700 dark:text-slate-400 hover:dark:text-slate-600";
       if (opponent.children.length > 0) {
         conSpan.innerHTML = '<i class="fa-solid fa-link-slash"></i>';
 
@@ -1495,7 +1646,7 @@ class Opponent {
     inp.name = "opponent_child_checkbox";
     inp.value = opponent.username;
     inp.checked = true;
-    inp.className = "peer hidden";
+    inp.className = "is-hidden";
 
     // store the opponent id & site
     inp.setAttribute("data-id", opponent.id);
@@ -1514,7 +1665,7 @@ class Opponent {
     box.appendChild(lbl);
 
     var check = document.createElement("div");
-    check.className = "relative hidden peer-checked:flex";
+    check.className = "is-relative is-hidden peer-checked:flex";
 
     var ch1 = document.createElement("div");
     ch1.className =
@@ -1660,7 +1811,7 @@ class Opponent {
     for (var i = 0; i < sugg.length; i++) {
       var row = document.createElement("div");
       row.className =
-        "flex justify-between items-center py-2 px-3" +
+        "flex is-justify-content-space-between  is-align-items-center py-2 px-3" +
         (i > 0 ? " border-t border-tacao-300/60 dark:border-slate-900" : "");
 
       var col1 = document.createElement("div");
@@ -1668,11 +1819,11 @@ class Opponent {
 
       // if we have an ECO code
       var pEco = document.createElement("p");
-      pEco.className = "text-xs mb-0.5 tc-faded";
+      pEco.className = "text-xs mb-0.5 has-text-faded";
       pEco.innerHTML = sugg[i].eco ? sugg[i].eco.name : "";
 
       var pPgn = document.createElement("p");
-      pPgn.className = "text-sm p-0.5 cursor-pointer font-semibold tc-link";
+      pPgn.className = "is-size-6 p-0.5 cursor-pointer font-semibold tc-link";
       pPgn.title = "Jump to this line";
       pPgn.innerHTML = sugg[i].pgn;
       pPgn.addEventListener(

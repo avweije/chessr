@@ -14,7 +14,6 @@ import {
 } from "../cm-chessboard/src/extensions/markers/Markers.js";
 import { ARROW_TYPE } from "../cm-chessboard/src/extensions/arrows/Arrows.js";
 import { Utils } from "utils";
-import { Modal } from "modal";
 
 import "../styles/chessboard.css";
 
@@ -314,7 +313,7 @@ class Practice extends MyChessBoard {
     this.initAnalysis();
 
     // initialise the dialogs
-    this.initDialogs();
+    this.initModals();
 
     // hide the page loader
     Utils.hideLoading();
@@ -423,87 +422,69 @@ class Practice extends MyChessBoard {
     );
   }
 
-  /**
-   * Initialise all the dialogs used in the practice page.
-   *
-   * @memberof Practice
-   */
-  initDialogs() {
-    // get the save modal elements
-    this.analysis.saveDialog.modal = document.getElementById("saveModal");
-    this.analysis.saveDialog.closeButton = document.getElementById(
-      "saveModalCloseButton"
-    );
-    this.analysis.saveDialog.cancelButton = document.getElementById(
-      "saveModalCancelButton"
-    );
-    this.analysis.saveDialog.confirmButton = document.getElementById(
-      "saveModalConfirmButton"
-    );
+  initModals() {
+  // --- SAVE MODAL ---
+  const saveModal = document.getElementById("saveModal");
+  const saveModalBkgd = saveModal.getElementsByClassName("modal-background")[0];
+  const saveClose = document.getElementById("saveModalCloseButton");
+  const saveCancel = document.getElementById("saveModalCancelButton");
+  const saveConfirm = document.getElementById("saveModalConfirmButton");
 
-    this.analysis.saveDialog.textOneMove = document.getElementById(
-      "saveModalTextOneMove"
-    );
-    this.analysis.saveDialog.textMultipleMoves = document.getElementById(
-      "saveModalTextMultipleMoves"
-    );
-    this.analysis.saveDialog.movesList =
-      document.getElementById("saveModalMovesList");
+  const saveTextOneMove = document.getElementById("saveModalTextOneMove");
+  const saveTextMultiple = document.getElementById("saveModalTextMultipleMoves");
+  const saveMovesList = document.getElementById("saveModalMovesList");
+  const saveRadioTopMove = document.getElementById("saveModalRadioTopMove");
+  const saveRadioTop2 = document.getElementById("saveModalRadioTop2");
+  const saveRadioTop3 = document.getElementById("saveModalRadioTop3");
 
-    this.analysis.saveDialog.radioTopMove = document.getElementById(
-      "saveModalRadioTopMove"
-    );
-    this.analysis.saveDialog.radioTop2 =
-      document.getElementById("saveModalRadioTop2");
-    this.analysis.saveDialog.radioTop3 =
-      document.getElementById("saveModalRadioTop3");
+  // Helper to show/hide modal
+  const showSaveModal = () => saveModal.classList.add("is-active");
+  const closeSaveModal = () => saveModal.classList.remove("is-active");
 
-    // register the modal
-    Modal.register(this.analysis.saveDialog.modal, [
-      {
-        element: this.analysis.saveDialog.closeButton,
-        action: "close",
-      },
-      {
-        element: this.analysis.saveDialog.cancelButton,
-        action: "close",
-      },
-      {
-        element: this.analysis.saveDialog.confirmButton,
-        action: "handler",
-        handler: this.onAnalysisSaveConfirmed.bind(this),
-      },
-    ]);
+  // Attach handlers
+  saveModalBkgd.addEventListener("click", closeSaveModal);
+  saveClose.addEventListener("click", closeSaveModal);
+  saveCancel.addEventListener("click", closeSaveModal);
+  saveConfirm.addEventListener("click", () => {
+    this.onAnalysisSaveConfirmed();
+    closeSaveModal();
+  });
 
-    // get the ignore modal elements
-    this.analysis.ignoreDialog.modal = document.getElementById("ignoreModal");
-    this.analysis.ignoreDialog.closeButton = document.getElementById(
-      "ignoreModalCloseButton"
-    );
-    this.analysis.ignoreDialog.cancelButton = document.getElementById(
-      "ignoreModalCancelButton"
-    );
-    this.analysis.ignoreDialog.confirmButton = document.getElementById(
-      "ignoreModalConfirmButton"
-    );
+  this.analysis.saveDialog = {
+    textOneMove: saveTextOneMove,
+    textMultipleMoves: saveTextMultiple,
+    movesList: saveMovesList,
+    radioTopMove: saveRadioTopMove,
+    radioTop2: saveRadioTop2,
+    radioTop3: saveRadioTop3
+  };
 
-    // register the modal
-    Modal.register(this.analysis.ignoreDialog.modal, [
-      {
-        element: this.analysis.ignoreDialog.closeButton,
-        action: "close",
-      },
-      {
-        element: this.analysis.ignoreDialog.cancelButton,
-        action: "close",
-      },
-      {
-        element: this.analysis.ignoreDialog.confirmButton,
-        action: "handler",
-        handler: this.onAnalysisIgnoreConfirmed.bind(this),
-      },
-    ]);
-  }
+
+  // --- IGNORE MODAL ---
+  const ignoreModal = document.getElementById("ignoreModal");
+  const ignoreModalBkgd = ignoreModal.getElementsByClassName("modal-background")[0];
+  const ignoreClose = document.getElementById("ignoreModalCloseButton");
+  const ignoreCancel = document.getElementById("ignoreModalCancelButton");
+  const ignoreConfirm = document.getElementById("ignoreModalConfirmButton");
+
+  const showIgnoreModal = () => ignoreModal.classList.add("is-active");
+  const closeIgnoreModal = () => ignoreModal.classList.remove("is-active");
+
+  ignoreModalBkgd.addEventListener("click", closeIgnoreModal);
+  ignoreClose.addEventListener("click", closeIgnoreModal);
+  ignoreCancel.addEventListener("click", closeIgnoreModal);
+  ignoreConfirm.addEventListener("click", () => {
+    this.onAnalysisIgnoreConfirmed();
+    closeIgnoreModal();
+  });
+
+  // You can expose show functions if needed elsewhere
+  this.showSaveModal = showSaveModal;
+  this.closeSaveModal = closeSaveModal;
+  this.showIgnoreModal = showIgnoreModal;
+  this.closeIgnoreModal = closeIgnoreModal;
+}
+
 
   /**
    * Handle the message from the worker.
@@ -863,30 +844,27 @@ class Practice extends MyChessBoard {
         this.analysis.saveDialog.textOneMove.classList.remove("is-hidden");
         this.analysis.saveDialog.textMultipleMoves.classList.add("is-hidden");
         this.analysis.saveDialog.movesList.classList.add("is-hidden");
-        this.analysis.saveDialog.movesList.classList.add("sm:hidden");
         break;
       case 2:
         this.analysis.saveDialog.textOneMove.classList.add("is-hidden");
         this.analysis.saveDialog.textMultipleMoves.classList.remove("is-hidden");
         this.analysis.saveDialog.movesList.classList.remove("is-hidden");
-        this.analysis.saveDialog.movesList.classList.remove("sm:hidden");
         this.analysis.saveDialog.radioTop2.parentNode.parentNode.classList.remove(
-          "hidden"
+          "is-hidden"
         );
         this.analysis.saveDialog.radioTop3.parentNode.parentNode.classList.add(
-          "hidden"
+          "is-hidden"
         );
         break;
       case 3:
         this.analysis.saveDialog.textOneMove.classList.add("is-hidden");
         this.analysis.saveDialog.textMultipleMoves.classList.remove("is-hidden");
         this.analysis.saveDialog.movesList.classList.remove("is-hidden");
-        this.analysis.saveDialog.movesList.classList.remove("sm:hidden");
         this.analysis.saveDialog.radioTop2.parentNode.parentNode.classList.remove(
-          "hidden"
+          "is-hidden"
         );
         this.analysis.saveDialog.radioTop3.parentNode.parentNode.classList.remove(
-          "hidden"
+          "is-hidden"
         );
         break;
     }
@@ -894,7 +872,8 @@ class Practice extends MyChessBoard {
     this.analysis.saveDialog.radioTopMove.checked = true;
 
     // show the modal
-    Modal.open(this.analysis.saveDialog.modal);
+    //Modal.open(this.analysis.saveDialog.modal);
+    this.showSaveModal();
   }
 
   // fired when the save dialog is confirmed
@@ -984,7 +963,8 @@ class Practice extends MyChessBoard {
     this.onAnalysisDiscard(null, false);
 
     // close the modal
-    Modal.close(this.analysis.saveDialog.modal);
+    //Modal.close(this.analysis.saveDialog.modal);
+    this.closeSaveModal();
   }
 
   // get the current game with the moves for this line
@@ -1018,7 +998,8 @@ class Practice extends MyChessBoard {
   // fired when the analysis ignore button is clicked
   onAnalysisIgnore(event) {
     // show the modal
-    Modal.open(this.analysis.ignoreDialog.modal);
+    //Modal.open(this.analysis.ignoreDialog.modal);
+    this.showIgnoreModal();
   }
 
   // fired when the ignore dialog is confirmed
@@ -1051,7 +1032,8 @@ class Practice extends MyChessBoard {
     this.onAnalysisDiscard(null, false);
 
     // close the modal
-    Modal.close(this.analysis.ignoreDialog.modal);
+    //Modal.close(this.analysis.ignoreDialog.modal);
+    this.showIgnoreModal();
   }
 
   // fired when the analysis discard button is clicked
@@ -3552,13 +3534,13 @@ class Practice extends MyChessBoard {
     for (var i = 0; i < count; i++) {
       var row = document.createElement("div");
       row.className =
-        "flex justify-between items-center px-2 py-3" +
+        "flex is-justify-content-space-between  is-align-items-center px-2 py-3" +
         (i + 1 == count
           ? ""
           : " border-b border-tacao-300/60 dark:border-slate-800");
 
       var cell = document.createElement("div");
-      cell.className = "text-base tc-sharp";
+      cell.className = "tc-sharp";
       cell.innerHTML = Math.ceil(this.practice.moveNr / 2) + ". _";
 
       row.appendChild(cell);
@@ -3591,12 +3573,12 @@ class Practice extends MyChessBoard {
     // set the CP eval
     var cpEval =
       cp !== null
-        ? '&nbsp;<sup class="text-xs tc-faded">' +
+        ? '&nbsp;<sup class="text-xs has-text-faded">' +
           (cp >= 0 ? "+" : "") +
           Math.round(cp) / 100 +
           "</sup>"
         : mate !== null
-        ? '&nbsp;<sup class="text-xs tc-faded">M' + mate + "</sup>"
+        ? '&nbsp;<sup class="text-xs has-text-faded">M' + mate + "</sup>"
         : "";
     // set the move
     this.playedMovesList.children[index].children[0].innerHTML =

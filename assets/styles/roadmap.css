@@ -4,3 +4,7 @@
   /* If you want dark mode, use a JS class toggle or prefers-color-scheme media query */
 }
 /* ...end of converted code... */
+
+.roadmap-tree-item {
+  width: 16rem;
+}

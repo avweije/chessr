@@ -1,19 +1,24 @@
-<dialog id="ignoreModal" class="is-relative p-6 bg-tacao-50 dark:bg-slate-700 is-large-rounded shadow-lg">
-	<button id="ignoreModalCloseButton" class="close-button outline-none">
-		<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-gray-700 hover:text-gray-900 dark:text-gray-500 dark:hover:text-gray-300" fill="none" viewbox="0 0 24 24" stroke="currentColor">
-			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-		</svg>
-	</button>
-	<h2 class="mb-6 mr-32 text-lg has-text-weight-semibold tc-sharp">Not a mistake</h2>
-
-	<p class="text-base tc-base pr-6">This move will be ignored in future analysis.</p>
-
-	<div class="is-flex is-justify-content-flex-end space-x-2 mt-8">
-		<button id="ignoreModalCancelButton" class="button">
-			Cancel
-		</button>
-		<button id="ignoreModalConfirmButton" class="button is-warning">
-			Confirm
-		</button>
+<div id="ignoreModal" class="modal is-large-rounded">
+	<div class="modal-background"></div>
+	<div class="modal-card">
+		<header class="modal-card-head">
+			<p class="modal-card-title">Not a mistake</p>
+			<button id="ignoreModalCloseButton" class="delete" aria-label="close"></button>
+		</header>
+		<section class="modal-card-body">
+			<p class="tc-base pr-6">
+				This move will be ignored in future analysis.
+			</p>
+		</section>
+		<footer class="modal-card-foot is-justify-content-flex-end">
+			<div class="buttons">
+				<button id="ignoreModalCancelButton" class="button">
+					Cancel
+				</button>
+				<button id="ignoreModalConfirmButton" class="button is-warning">
+					Confirm
+				</button>
+			</div>
+		</footer>
 	</div>
-</dialog>
+</div>

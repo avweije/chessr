@@ -527,7 +527,7 @@ class OpponentController extends ChessrAbstractController
         $repo = $this->em->getRepository(Repertoire::class);
 
         // get the repertoire lines and the group lines
-        [$lines, $groups] = $repo->getAllLines();
+        [$lines, $groups] = $this->repertoireService->getAllLines();
 
         //dd($lines[0]["moves"]);
 

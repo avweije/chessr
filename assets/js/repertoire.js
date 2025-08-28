@@ -6,7 +6,6 @@ import {
 } from "../cm-chessboard/src/extensions/markers/Markers.js";
 import { COLOR } from "../cm-chessboard/src/view/ChessboardView.js";
 import { Utils } from "utils";
-import { Modal } from "modal";
 import { UCI } from "uci";
 
 import "../styles/chessboard.css";
@@ -207,6 +206,7 @@ class Repertoire extends MyChessBoard {
     // enable the load pgn button
     this.loadPgnButton.disabled = false;
 
+    /*
     // get the modal elements
     this.confirmDialog.modal = document.getElementById("confirmModal");
     this.confirmDialog.closeButton = document.getElementById(
@@ -267,10 +267,78 @@ class Repertoire extends MyChessBoard {
         handler: this.onLoadPgnConfirmed.bind(this),
       },
     ]);
+    */
+
+    this.initModals();
 
     // hide the page loader
     Utils.hideLoading();
   }
+
+  initModals() {
+  // --- CONFIRM MODAL ---
+  const confirmModal = document.getElementById("confirmModal");
+  const confirmModalBkgd = confirmModal.getElementsByClassName("modal-background")[0];
+  const confirmClose = document.getElementById("confirmModalCloseButton");
+  const confirmCancel = document.getElementById("confirmModalCancelButton");
+  const confirmButton = document.getElementById("confirmModalConfirmButton");
+
+  const showConfirmModal = () => confirmModal.classList.add("is-active");
+  const closeConfirmModal = () => confirmModal.classList.remove("is-active");
+
+  confirmModalBkgd.addEventListener("click", closeConfirmModal);
+  confirmClose.addEventListener("click", closeConfirmModal);
+  confirmCancel.addEventListener("click", closeConfirmModal);
+  confirmButton.addEventListener("click", () => {
+    this.onRemoveLineConfirmed();
+    closeConfirmModal();
+  });
+
+  this.confirmDialog = {
+    modal: confirmModal,
+    closeButton: confirmClose,
+    cancelButton: confirmCancel,
+    confirmButton: confirmButton,
+    showModal: showConfirmModal,
+    closeModal: closeConfirmModal,
+  };
+
+  // --- LOAD PGN MODAL ---
+  const loadPgnModal = document.getElementById("loadPgnModal");
+  const loadPgnModalBkgd = loadPgnModal.getElementsByClassName("modal-background")[0];
+  const loadPgnClose = document.getElementById("loadPgnModalCloseButton");
+  const loadPgnCancel = document.getElementById("loadPgnModalCancelButton");
+  const loadPgnConfirm = document.getElementById("loadPgnModalConfirmButton");
+  const loadPgnTextarea = document.getElementById("loadPgnModalPgnTextArea");
+
+  const showLoadPgnModal = () => loadPgnModal.classList.add("is-active");
+  const closeLoadPgnModal = () => loadPgnModal.classList.remove("is-active");
+
+  loadPgnModalBkgd.addEventListener("click", closeLoadPgnModal);
+  loadPgnClose.addEventListener("click", closeLoadPgnModal);
+  loadPgnCancel.addEventListener("click", closeLoadPgnModal);
+  loadPgnConfirm.addEventListener("click", () => {
+    this.onLoadPgnConfirmed();
+    closeLoadPgnModal();
+  });
+
+  this.loadPgnDialog = {
+    modal: loadPgnModal,
+    closeButton: loadPgnClose,
+    cancelButton: loadPgnCancel,
+    confirmButton: loadPgnConfirm,
+    pgnTextarea: loadPgnTextarea,
+    showModal: showLoadPgnModal,
+    closeModal: closeLoadPgnModal,
+  };
+
+  this.showConfirmModal = showConfirmModal;
+  this.closeConfirmModal = closeConfirmModal;
+
+  this.showLoadPgnModal = showLoadPgnModal;
+  this.closeLoadPgnModal = closeLoadPgnModal;
+}
+
 
   // get the settings
   getSettings() {
@@ -406,24 +474,26 @@ class Repertoire extends MyChessBoard {
   onLoadPgn(event) {
     console.log("onLoadPgn:");
 
-    console.log(this.loadPgnDialog.loadPgnModalPgnTextArea.value);
+    console.log(this.loadPgnDialog.pgnTextarea.value);
 
     // clear the textarea
-    this.loadPgnDialog.loadPgnModalPgnTextArea.value = "";
+    this.loadPgnDialog.pgnTextarea.value = "";
 
     // show the modal
-    Modal.open(this.loadPgnDialog.modal);
+    //Modal.open(this.loadPgnDialog.modal);
+    this.showLoadPgnModal();
   }
 
   onLoadPgnConfirmed() {
     console.log("onLoadPgnConfirmed:");
-    console.log(this.loadPgnDialog.loadPgnModalPgnTextArea.value);
+    console.log(this.loadPgnDialog.pgnTextarea.value);
 
     // close the modal
-    Modal.close(this.loadPgnDialog.modal);
+    //Modal.close(this.loadPgnDialog.modal);
+    this.closeLoadPgnModal();
 
     // parse the PGN
-    this.parsePgn(this.loadPgnDialog.loadPgnModalPgnTextArea.value);
+    this.parsePgn(this.loadPgnDialog.pgnTextarea.value);
   }
 
   onClosePgn(event) {
@@ -652,13 +722,15 @@ class Repertoire extends MyChessBoard {
   // fired once the remove repertoire button is clicked
   onRemoveRepertoireClick(event) {
     // open the dialog
-    Modal.open(this.confirmDialog.modal);
+    //Modal.open(this.confirmDialog.modal);
+    this.showConfirmModal();
   }
 
   // fired when the remove repertoire modal has been confirmed
   onRemoveLineConfirmed(event) {
     // close the modal
-    Modal.close(this.confirmDialog.modal);
+    //Modal.close(this.confirmDialog.modal);
+    this.closeConfirmModal();
 
     var url = "/api/repertoire";
 
@@ -1205,7 +1277,7 @@ class Repertoire extends MyChessBoard {
     //
     var el = document.createElement("span");
     el.className =
-      "flex items-center mr-1 rounded py-1 px-2 bg-secondary-100 border border-secondary-300";
+      "flex  is-align-items-center mr-1 rounded py-1 px-2 bg-secondary-100 border border-secondary-300";
     el.setAttribute("data-id", group.id);
     el.setAttribute("data-type", "tag");
 

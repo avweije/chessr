@@ -1,22 +1,39 @@
-<dialog id="disconnectModal" class="is-relative p-6 bg-tacao-50 dark:bg-slate-700 is-large-rounded shadow-lg">
-	<button id="disconnectModalCloseButton" class="close-button outline-none">
-		<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-gray-700 hover:text-gray-900 dark:text-gray-500 dark:hover:text-gray-300" fill="none" viewbox="0 0 24 24" stroke="currentColor">
-			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-		</svg>
-	</button>
-	<h2 class="mb-6 mr-32 text-lg has-text-weight-semibold tc-sharp">Disconnect from main account</h2>
+<div id="disconnectModal" class="modal is-large-rounded">
+	<div class="modal-background"></div>
+	<div class="modal-card">
+		<header class="modal-card-head">
+			<p class="modal-card-title">Disconnect from main account</p>
+			<button id="disconnectModalCloseButton" class="delete" aria-label="close"></button>
+		</header>
+		<section class="modal-card-body">
+			<p class="w-full tc-base my-6">
+				Uncheck the account(s) you want to disconnect from
+				<span id="disconnectModalOpponentUsername" class="has-text-weight-semibold">Opponent</span>:
+			</p>
 
-	<p class="w-full tc-base my-6">Uncheck the account(s) you want to disconnect from
-		<span id="disconnectModalOpponentUsername" class="has-text-weight-semibold">Opponent</span>:</p>
-
-	<div id="disconnectModalChildAccountContainer" class="boxed-checkbox-group m-2"></div>
-
-	<div class="is-flex is-justify-content-flex-end space-x-2 mt-8">
-		<button id="disconnectModalCancelButton" class="button">
-			Cancel
-		</button>
-		<button id="disconnectModalConfirmButton" class="button is-warning">
-			Confirm
-		</button>
+			<div id="disconnectModalChildAccountContainer" class="columns is-multiline is-gapless">
+				<!-- Each checkbox item wrapped in a column pair -->
+				<div class="column is-narrow">
+					<label class="checkbox">
+						<input type="checkbox" value="">
+						Account 1
+					</label>
+				</div>
+				<div class="column">
+					<!-- optional description or extra info for this account -->
+				</div>
+				<!-- Repeat for other accounts -->
+			</div>
+		</section>
+		<footer class="modal-card-foot is-justify-content-flex-end">
+			<div class="buttons">
+				<button id="disconnectModalCancelButton" class="button">
+					Cancel
+				</button>
+				<button id="disconnectModalConfirmButton" class="button is-warning">
+					Confirm
+				</button>
+			</div>
+		</footer>
 	</div>
-</dialog>
+</div>

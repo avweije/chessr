@@ -1,15 +1,20 @@
-* Bugs / Todo
+# Bugs / Todo
 
 - when adding to your repertoire from analysis (open in new tab), i go to practice, but dont see them as 'new'
+- opponent analysis - when you expand your repertoire, previously downloaded games are not checked anymore..? either make a fix or provide a reset or something?
+- modals
+- styling
+- clicking on links few times goes wrong, after opening in new window through button? localhost:8000/repertoire/practice ?
 
+- if repertoire updated, new items, do we need to recalculate recommended?? if we already have in session, it wont change until you play them all.. ?
 
-* Ideas for later:
+# Ideas for later:
 
 Batch engine blunder-check for novelties only
 → Instead of analysing every move, just run Stockfish (or another UCI engine) on the first move that’s out of your repertoire. That gives you an immediate “is this dangerous?” signal.
 
 
-* Names for app:
+# Names for app:
 
 Smart & Professional
 

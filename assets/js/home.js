@@ -1,5 +1,4 @@
 import { Utils } from "utils";
-import { Modal } from "modal";
 
 /**
  * Controller class for the homepage.

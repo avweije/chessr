@@ -2,10 +2,8 @@
 
 namespace App\Repository;
 
-use App\Entity\Moves;
 use App\Entity\User;
 use App\Entity\Repertoire;
-use DateTime;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\SecurityBundle\Security;

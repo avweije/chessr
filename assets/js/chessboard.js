@@ -93,14 +93,14 @@ export class MyChessBoard {
     pgn: {
       withLinks: true,
       styling: {
-        main: "inline-block px-0.5 text-base rounded",
+        main: "inline-block px-half rounded",
         mainText: "tc-base border border-transparent",
         mainLink:
           "cursor-pointer border border-transparent tc-base hover:text-sky-800 hover:bg-sky-200 hover:border-sky-400 dark:hover:text-primary-300 dark:hover:bg-slate-500 dark:hover:border-slate-700",
-        variation: "inline-block px-0.5 italic text-sm rounded",
-        variationText: "tc-faded border border-transparent",
+        variation: "inline-block px-half italic is-size-6 rounded",
+        variationText: "has-text-faded border border-transparent",
         variationLink:
-          "cursor-pointer border border-transparent tc-faded hover:text-gray-600 hover:bg-slate-100 hover:border hover:border-slate-300 dark:hover:text-gray-300 dark:hover:bg-slate-500 dark:hover:border-slate-600",
+          "cursor-pointer border border-transparent has-text-faded hover:text-gray-600 hover:bg-slate-100 hover:border hover:border-slate-300 dark:hover:text-gray-300 dark:hover:bg-slate-500 dark:hover:border-slate-600",
         currentMove:
           "border text-sky-800 dark:text-primary-300 bg-sky-200 border-sky-400 dark:bg-slate-500 dark:border-slate-700",
       },

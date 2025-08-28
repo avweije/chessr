@@ -1,0 +1,60 @@
+.modal .modal-card .modal-card-head,
+.modal .modal-card .modal-card-foot {
+    padding: 1.5rem;
+}
+
+.px-half {
+    padding-left: 0.125rem;
+    padding-right: 0.125rem;
+}
+
+/* Helper classes, bulma style */
+.is-hidden {
+  display: none !important;
+}
+
+.is-relative {
+  position: relative !important;
+}
+
+.is-absolute {
+  position: absolute !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* Single-line ellipsis */
+.is-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Multi-line ellipsis (needs -webkit- prefixes for browser support) */
+.is-ellipsis-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;   /* number of lines */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.is-ellipsis-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;   /* number of lines */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mt-lg {
+  margin-top: 5rem;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.h-full {
+  height: 100%;
+}

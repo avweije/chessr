@@ -45,8 +45,8 @@
 			<div id="pgnField" class="py-3 pr-3 is-size-7"></div>
 		</div>
 		<div id="pgnStartPositionContainer" class="is-hidden p-2 border-t border-tacao-300/60 dark:border-slate-900">
-			<label class="p-2 block text-sm has-text-weight-semibold tc-base whitespace-nowrap">Starting position:</label>
-			<p class="p-2 pt-0 block text-sm w-full truncate tc-base"></p>
+			<label class="p-2 block is-size-6 has-text-weight-semibold tc-base whitespace-nowrap">Starting position:</label>
+			<p class="p-2 pt-0 block is-size-6 w-full truncate tc-base"></p>
 		</div>
 		<div class="is-flex is-justify-content-flex-end">
 			<button type="button" id="closePgnButton" class="button is-hidden m-3 mt-2">
@@ -63,7 +63,7 @@
 
 		<div style="overflow-y: auto; overflow-x: is-hidden; max-height: 56vh;">
 			<div class="p-1">
-				<p class="block text-base tc-base p-3 is-hidden">No repertoire moves or book moves found.</p>
+				<p class="tc-base p-3 is-hidden">No repertoire moves or book moves found.</p>
 
 				<table id="movesTable" class="moves-table">
 					<tbody></tbody>
@@ -75,7 +75,7 @@
 	<div id="engineContainer" class="is-hidden box p-0">
 		<div class="box-header">
 			<p class="has-text-primary"><strong>Engine</strong></p>
-			<p id="engineDepth" class="block text-xs font-medium tc-faded">depth</p>
+			<p id="engineDepth" class="text-xs has-text-weight-medium has-text-faded">depth</p>
 			<label class="input-toggle" style="margin-inline-end: 0;">
 				<input id="engineCheckbox" type="checkbox" class="sr-only peer">
 				<div class="input-toggle-switch"></div>
@@ -83,7 +83,7 @@
 		</div>
 
 		<div class="p-1">
-			<p class="block text-base tc-base p-3 is-hidden">Start the engine to find the best moves.</p>
+			<p class="tc-base p-3 is-hidden">Start the engine to find the best moves.</p>
 
 			<table id="engineTable" class="table-fixed min-w-full m-0">
 				<tbody></tbody>
@@ -103,7 +103,7 @@
 					<input id="repertoireAutoPlayCheckbox" type="checkbox" class="sr-only peer">
 					<div class="input-toggle-switch"></div>
 					<div class="ml-2">
-						<p class="text-base font-normal tc-base">Auto-play this move in practice</p>
+						<p class="font-normal tc-base">Auto-play this move in practice</p>
 					</div>
 				</label>
 			</div>
@@ -112,18 +112,18 @@
 					<input id="repertoireExcludeCheckbox" type="checkbox" class="sr-only peer">
 					<div class="input-toggle-switch"></div>
 					<div class="ml-2">
-						<p class="text-base font-normal tc-base">Temporarily exclude this line from practice</p>
+						<p class="font-normal tc-base">Temporarily exclude this line from practice</p>
 					</div>
 				</label>
 			</div>
 			<div class="mb-2">
-				<label class="block text-sm font-medium tc-base">Group:</label>
+				<label class="is-size-6 has-text-weight-medium tc-base">Group:</label>
 			</div>
 			<div class="w-full mb-1">
 				<input id="repertoireGroupInput" type="search" list="repertoireGroupDataList" name="repertoire_group" placeholder="Type and press Enter to add or select from list..." class="input-text-faded">
 				<datalist id="repertoireGroupDataList"></datalist>
 			</div>
-			<div id="repertoireGroupTagsContainer" class="is-flex flex-wrap"></div>
+			<div id="repertoireGroupTagsContainer" class="is-flex is-flex-wrap"></div>
 		</div>
 
 		<div class="is-flex is-justify-content-flex-end p-3 pt-0">
@@ -141,7 +141,7 @@
 		<div class="p-3">
 			<div class="is-relative inline-block">
 				<select id="initialFenSelect" class="appearance-none inline-block w-full is-medium-rounded border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"></select>
-				<div class="pointer-events-none is-absolute inset-y-0 right-0 flex is-align-items-center px-2 text-gray-700">
+				<div class="pointer-events-none is-absolute inset-y-0 right-0 is-flex is-align-items-center px-2 text-gray-700">
 					<svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
 				</div>
 			</div>

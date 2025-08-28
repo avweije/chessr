@@ -99,6 +99,7 @@ $light-bg-text: #d1d5db; // light mode font color
 $light-title-text: #c05621 ; // light mode title color
 $light-faded-text: #f6ad55; // light mode faded text color #7c4700
 
+@use "./bulma-custom.scss" as *;
 
 /* light/dark theme toggle */
 
@@ -151,7 +152,7 @@ body {
 }
 
 nav.nav-bar {
-  /* relative page-width py-1 md:py-2 bg-tacao-100 dark:bg-slate-900 rounded-sm border border-tacao-200 dark:border-slate-700 flex rounded flex-wrap items-center justify-between shadow-dark-mild */
+  /* relative page-width py-1 md:py-2 bg-tacao-100 dark:bg-slate-900 rounded-sm border border-tacao-200 dark:border-slate-700 flex rounded is-flex-wrap-wrapitems-center is-justify-content-space-between shadow-dark-mild */
   position: relative;
   width: 100%;
   padding-top: 0.25rem;
@@ -162,7 +163,7 @@ nav.nav-bar {
   border-radius: 0.125rem;  /* rounded-sm */
   border: 1px solid #fde68a; /* border-tacao-200 */
   display: flex;
-  flex-wrap: wrap;
+  is-flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
@@ -183,56 +184,6 @@ nav.nav-bar {
   min-height: 100vh;
 }
 
-/* Helper classes, bulma style */
-.is-hidden {
-  display: none !important;
-}
-
-.is-relative {
-  position: relative !important;
-}
-
-.is-absolute {
-  position: absolute !important;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-}
-
-/* Single-line ellipsis */
-.is-ellipsis {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Multi-line ellipsis (needs -webkit- prefixes for browser support) */
-.is-ellipsis-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;   /* number of lines */
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.is-ellipsis-3 {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;   /* number of lines */
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.mt-lg {
-  margin-top: 5rem;
-}
-
-.w-full {
-  width: 100%;
-}
-
-.h-full {
-  height: 100%;
-}
 
 /* full width minus (fixed) vertical scrollbar */
 .page-width {

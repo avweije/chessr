@@ -120,6 +120,7 @@ class Analyse {
 
     this.startButton.addEventListener("click", this.analyseGames.bind(this));
 
+    /*
     // get the modal elements
     this.analyseDialog.modal = document.getElementById("analyseModal");
     this.analyseDialog.fieldsContainer =
@@ -161,10 +162,65 @@ class Analyse {
       ],
       this.onCloseDialog.bind(this)
     );
+    */
+
+    this.initAnalyseModal();
 
     // get settings
     this.getSettings();
   }
+
+  initAnalyseModal() {
+    // --- ANALYSE MODAL ---
+    const modal = document.getElementById("analyseModal");
+    const analyseModalBkgd = modal.getElementsByClassName("modal-background")[0];
+    const fieldsContainer = document.getElementById("analyseModalFields");
+    const errorContainer = document.getElementById("analyseModalError");
+
+    const fields = fieldsContainer.getElementsByTagName("p");
+    const statusField = fields[0];
+    const gameField = fields[1];
+    const periodField = fields[2];
+    const mistakesField = fields[3];
+    const elapsedTimeField = fields[4];
+
+    const errorFields = errorContainer.getElementsByTagName("p");
+    const errorField = errorFields[0];
+
+    const stopButton = document.getElementById("analyseModalStopButton");
+    const closeButton = document.getElementById("analyseModalCloseButton");
+
+    // --- Helper functions to show/hide modal ---
+    const showModal = () => modal.classList.add("is-active");
+    const closeModal = () => {
+      modal.classList.remove("is-active");
+      this.onCloseDialog(); // call the same close handler
+    };
+
+    // --- Attach handlers ---
+    analyseModalBkgd.addEventListener("click", closeModal);
+    closeButton.addEventListener("click", closeModal);
+    stopButton.addEventListener("click", closeModal);
+
+    // Save references for later use
+    this.analyseDialog.modal = modal;
+    this.analyseDialog.fieldsContainer = fieldsContainer;
+    this.analyseDialog.errorContainer = errorContainer;
+    this.analyseDialog.statusField = statusField;
+    this.analyseDialog.gameField = gameField;
+    this.analyseDialog.periodField = periodField;
+    this.analyseDialog.mistakesField = mistakesField;
+    this.analyseDialog.elapsedTimeField = elapsedTimeField;
+    this.analyseDialog.errorField = errorField;
+    this.analyseDialog.stopButton = stopButton;
+    this.analyseDialog.closeButton = closeButton;
+    this.analyseDialog.showModal = showModal;
+    this.analyseDialog.closeModal = closeModal;
+
+    this.showModal = showModal;
+    this.closeModal = closeModal;
+  }
+
 
   // get the settings
   getSettings() {
@@ -322,7 +378,8 @@ class Analyse {
     this.analyseDialog.stopButton.innerHTML = "Stop analysing";
 
     // open the dialog
-    Modal.open(this.analyseDialog.modal);
+    //Modal.open(this.analyseDialog.modal);
+    this.showModal();
 
     // get the start time
     this.analyseDialog.startTime = new Date().getTime();
@@ -356,39 +413,39 @@ class Analyse {
       var mistakes =
         this.analyseDialog.totals.inaccuracies > 0
           ? this.analyseDialog.totals.inaccuracies +
-            " " +
-            (this.analyseDialog.totals.inaccuracies == 1
-              ? "inaccuracy"
-              : "inaccuracies")
+          " " +
+          (this.analyseDialog.totals.inaccuracies == 1
+            ? "inaccuracy"
+            : "inaccuracies")
           : "";
 
       mistakes +=
         this.analyseDialog.totals.mistakes > 0
           ? (mistakes != "" ? ", " : "") +
-            this.analyseDialog.totals.mistakes +
-            " " +
-            (this.analyseDialog.totals.mistakes == 1 ? "mistake" : "mistakes")
+          this.analyseDialog.totals.mistakes +
+          " " +
+          (this.analyseDialog.totals.mistakes == 1 ? "mistake" : "mistakes")
           : "";
 
       mistakes +=
         this.analyseDialog.totals.blunders > 0
           ? (mistakes != "" ? ", " : "") +
-            this.analyseDialog.totals.blunders +
-            " " +
-            (this.analyseDialog.totals.blunders == 1 ? "blunder" : "blunders")
+          this.analyseDialog.totals.blunders +
+          " " +
+          (this.analyseDialog.totals.blunders == 1 ? "blunder" : "blunders")
           : "";
 
       if (this.analyseDialog.processed > 0) {
         var games =
           this.analyseDialog.processed > 0
             ? this.analyseDialog.processed +
-              " game" +
-              (this.analyseDialog.processed > 1 ? "s" : "")
+            " game" +
+            (this.analyseDialog.processed > 1 ? "s" : "")
             : "";
 
         mistakes =
           (mistakes !== "" ? mistakes : "No mistakes so far") +
-          ' <span class="text-sm tc-faded">(' +
+          ' <span class="is-size-6 has-text-faded">(' +
           games +
           ")</span>";
       }
@@ -462,7 +519,7 @@ class Analyse {
 
     // update the status fields
     this.analyseDialog.statusField.innerHTML =
-      'Downloading from <span class="font-medium">' +
+      'Downloading from <span class="has-text-weight-medium">' +
       (this.siteRadio.chesscom.checked
         ? this.siteRadio.chesscom.value
         : this.siteRadio.lichess.value) +
@@ -629,7 +686,7 @@ class Analyse {
     var color = game.color.charAt(0).toUpperCase() + game.color.slice(1);
 
     //this.analyseDialog.statusField.innerHTML =
-    //'Evaluating with <span class="font-medium">Stockfish</span> (0%)';
+    //'Evaluating with <span class="has-text-weight-medium">Stockfish</span> (0%)';
     this.analyseDialog.gameField.innerHTML =
       color + " vs " + game.opponent + " (" + game.type + ")";
 
@@ -668,7 +725,7 @@ class Analyse {
 
         //
         this.analyseDialog.statusField.innerHTML =
-          'Evaluating with <span class="font-medium">Stockfish</span> (' +
+          'Evaluating with <span class="has-text-weight-medium">Stockfish</span> (' +
           Math.round((this.engineMoveCount / game.engine) * 100) +
           "%)";
 

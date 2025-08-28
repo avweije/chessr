@@ -47,7 +47,7 @@ table.moves-table tr.moves-row td.eco-cell {
 }
 
 table.moves-table tr.moves-row td.eval-cell {
-    /* w-full px-2 py-2 text-xs text-center tc-faded */
+    /* w-full px-2 py-2 text-xs text-center has-text-faded */
     width: 100%; /* w-full */
     padding-left: 0.5rem; /* 2 * 0.25rem */
     padding-right: 0.5rem; /* 2 * 0.25rem */
@@ -55,7 +55,7 @@ table.moves-table tr.moves-row td.eval-cell {
     padding-bottom: 0.5rem; /* 2 * 0.25rem */
     font-size: 0.75rem; /* text-xs */
     text-align: center; /* text-center */
-    color: #6b7280; /* tc-faded */
+    color: #6b7280; /* has-text-faded */
 }
 
 table.moves-table tr.moves-row td.pct-played-cell {

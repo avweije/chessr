@@ -1,28 +1,70 @@
-<dialog id="analyseModal" class="is-relative p-6 bg-tacao-50 dark:bg-slate-700 is-large-rounded shadow-lg">
-	<button id="analyseModalCloseButton" class="close-button">
-		<svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-gray-700 hover:text-gray-900 dark:text-gray-500 dark:hover:text-gray-300" fill="none" viewbox="0 0 24 24" stroke="currentColor">
-			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-		</svg>
-	</button>
-	<h2 class="mb-8 mr-48 text-lg has-text-weight-semibold tc-sharp">Analysing your opponent's games</h2>
-	<div id="analyseModalFields" class="grid grid-cols-[_auto_1fr] gap-x-4 gap-y-2">
-		<label class="text-base tc-faded whitespace-nowrap">Type:</label>
-		<p class="w-full text-base tc-base"></p>
-		<label class="text-base tc-faded whitespace-nowrap">Status:</label>
-		<p class="w-full text-base tc-base"></p>
-		<label class="text-base tc-faded whitespace-nowrap">Matches:</label>
-		<p class="w-full text-base tc-base"></p>
-		<label class="text-base tc-faded whitespace-nowrap">Period:</label>
-		<p class="w-full text-base tc-base"></p>
-		<label class="text-base tc-faded whitespace-nowrap">Elapsed time:</label>
-		<p class="w-full text-base tc-base"></p>
+<div id="analyseModal" class="modal is-large-rounded">
+	<div class="modal-background"></div>
+	<div class="modal-card">
+		<header class="modal-card-head">
+			<p class="modal-card-title">Analysing your opponent's games</p>
+			<button id="analyseModalCloseButton" class="delete" aria-label="close"></button>
+		</header>
+		<section class="modal-card-body">
+			<div id="analyseModalFields">
+				<table>
+					<tr>
+						<td>
+							<label class="has-text-faded whitespace-nowrap">Type:</label>
+						</td>
+						<td>
+							<p class="w-full tc-base"></p>
+						</td>
+					</tr>
+
+					<tr>
+						<td>
+							<label class="has-text-faded whitespace-nowrap">Status:</label>
+						</td>
+						<td>
+							<p class="w-full tc-base"></p>
+						</td>
+					</tr>
+
+					<tr>
+						<td>
+							<label class="has-text-faded whitespace-nowrap">Matches:</label>
+						</td>
+						<td>
+							<p class="w-full tc-base"></p>
+						</td>
+					</tr>
+
+					<tr>
+						<td>
+							<label class="has-text-faded whitespace-nowrap">Period:</label>
+						</td>
+						<td>
+							<p class="w-full tc-base"></p>
+						</td>
+					</tr>
+
+					<tr>
+						<td>
+							<label class="has-text-faded whitespace-nowrap">Elapsed time:</label>
+						</td>
+						<td>
+							<p class="w-full tc-base"></p>
+						</td>
+					</tr>
+				</table>
+			</div>
+
+			<div id="analyseModalError" class="is-hidden pb-4">
+				<p class="w-full text-lg tc-base"></p>
+			</div>
+		</section>
+		<footer class="modal-card-foot is-justify-content-flex-end">
+			<div class="buttons">
+				<button id="analyseModalStopButton" class="button is-warning">
+					Stop analysing
+				</button>
+			</div>
+		</footer>
 	</div>
-	<div id="analyseModalError" class="is-hidden pb-4">
-		<p class="w-full text-lg tc-base"></p>
-	</div>
-	<div class="is-flex justify-center space-x-2 mt-8">
-		<button id="analyseModalStopButton" class="button is-warning">
-			Stop analysing
-		</button>
-	</div>
-</dialog>
+</div>

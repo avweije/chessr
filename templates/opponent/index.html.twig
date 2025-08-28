@@ -4,12 +4,12 @@
 	<div class="is-flex is-justify-content-space-around p-4">
 		<div id="opponentTabButtons" class="boxed-radio-menu">
 			<div class="boxed-radio">
-				<input class="peer is-hidden" type="radio" name="opponent_page" value="download" id="opponentDownloadRadio" checked/>
+				<input class="is-hidden" type="radio" name="opponent_page" value="download" id="opponentDownloadRadio" checked/>
 				<label class="boxed-radio-label" for="opponentDownloadRadio"></label>
 				<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500">Download</span>
 			</div>
 			<div class="boxed-radio">
-				<input class="peer is-hidden" type="radio" name="opponent_page" value="analysis" id="opponentAnalysisRadio"/>
+				<input class="is-hidden" type="radio" name="opponent_page" value="analysis" id="opponentAnalysisRadio"/>
 				<label class="boxed-radio-label" for="opponentAnalysisRadio"></label>
 				<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500">Analysis</span>
 			</div>
@@ -21,13 +21,13 @@
 
 		<div id="analyseWebsiteButtons" class="boxed-radio-group m-2">
 			<div class="boxed-radio">
-				<input class="peer is-hidden" type="radio" name="website" value="Chess.com" id="siteChessDotComRadio" checked/>
+				<input class="is-hidden" type="radio" name="website" value="Chess.com" id="siteChessDotComRadio" checked/>
 				<label class="boxed-radio-label" for="siteChessDotComRadio"></label>
 				<div class="boxed-radio-circle"></div>
 				<span class="boxed-radio-text">Chess.com</span>
 			</div>
 			<div class="boxed-radio">
-				<input class="peer is-hidden" type="radio" name="website" value="Lichess" id="siteLichessRadio"/>
+				<input class="is-hidden" type="radio" name="website" value="Lichess" id="siteLichessRadio"/>
 				<label class="boxed-radio-label" for="siteLichessRadio"></label>
 				<div class="boxed-radio-circle"></div>
 				<span class="boxed-radio-text">Lichess</span>
@@ -103,9 +103,9 @@
 	</div>
 
 	<div id="opponentAnalysisTab" class="is-hidden is-flex is-flex-direction-column is-align-items-center is-justify-content-space-around">
-		<div>
+		<div class="is-flex is-flex-direction-column is-align-items-center p-4">
 			<div id="opponentTextAndContainer" class="p-6">
-				<p id="chooseOpponentText" class="text-base font-medium tc-base">Choose your opponent:</p>
+				<p id="chooseOpponentText" class="has-text-weight-medium tc-base">Choose your opponent:</p>
 				<div id="opponentContainer" class="boxed-radio-group m-2 mt-6"></div>
 			</div>
 
@@ -113,42 +113,42 @@
 
 			<div id="opponentColorButtons" class="boxed-radio-group m-2">
 				<div class="boxed-radio">
-					<input class="peer is-hidden" type="radio" name="opponent_color" value="white" id="opponentColorWhiteRadio" checked/>
+					<input class="is-hidden" type="radio" name="opponent_color" value="white" id="opponentColorWhiteRadio" checked/>
 					<label class="boxed-radio-label" for="opponentColorWhiteRadio"></label>
 					<div class="boxed-radio-circle"></div>
 					<span class="boxed-radio-text">White</span>
 				</div>
 				<div class="boxed-radio">
-					<input class="peer is-hidden" type="radio" name="opponent_color" value="black" id="opponentColorBlackRadio"/>
+					<input class="is-hidden" type="radio" name="opponent_color" value="black" id="opponentColorBlackRadio"/>
 					<label class="boxed-radio-label" for="opponentColorBlackRadio"></label>
 					<div class="boxed-radio-circle"></div>
 					<span class="boxed-radio-text">Black</span>
 				</div>
 			</div>
 
-			<div id="opponentMovesContainer" class="is-hidden flex is-flex-direction-column is-align-items-center mt-10">
+			<div id="opponentMovesContainer" class="is-hidden is-flex is-flex-direction-column is-align-items-center mt-10">
 				<div id="opponentMovesHeader" class="is-flex is-flex-direction-column mb-6 min-w-72 rounded bg-tacao-100/50 dark:bg-slate-700 border border-tacao-300/60 dark:border-slate-900">
 					<div id="opponentMovesEco" class="is-flex is-justify-content-space-between is-align-items-center gap-x-5 px-4 py-3 tc-base border-b border-tacao-300/60 dark:border-slate-900"></div>
 					<div class="is-flex gap-x-5 is-justify-content-space-between is-align-items-center">
 						<div class="is-flex is-align-items-center px-2 py-3">
-							<button id="opponentMovesFirstButton" disabled class="shrink-0 w-7 h-7 mr-2 tc-link-shade">
+							<button id="opponentMovesFirstButton" disabled class="is-flex-shrink-0 w-7 h-7 mr-2 tc-link-shade">
 								<span class="icon">
 									<i class="fa-solid fa-backward-step"></i>
 								</span>
 							</button>
-							<div id="opponentMovesPgn" class="is-flex flex-wrap is-align-items-center text-left tc-base"></div>
+							<div id="opponentMovesPgn" class="is-flex is-flex-wrap-wrap is-align-items-center text-left tc-base"></div>
 						</div>
-						<div id="opponentMovesInfo" class="shrink-0 px-3 py-2 text-right">
-							<p class="text-xs mb-px tc-faded">Wins:
+						<div id="opponentMovesInfo" class="is-flex-shrink-0 px-3 py-2 text-right">
+							<p class="text-xs mb-px has-text-faded">Wins:
 								<span class="ml-0.5 tc-sharp">0</span>
 							</p>
-							<p class="text-xs tc-faded">Losses:
+							<p class="text-xs has-text-faded">Losses:
 								<span class="ml-0.5 tc-sharp">0</span>
 							</p>
 						</div>
 					</div>
-					<div id="opponentMovesRepertoire" class="is-hidden flex is-justify-content-space-between is-align-items-center gap-x-5 p-2 border-t border-tacao-300/60 dark:border-slate-900">
-						<div class="text-sm pl-0.5 tc-faded"></div>
+					<div id="opponentMovesRepertoire" class="is-hidden is-flex is-justify-content-space-between is-align-items-center gap-x-5 p-2 border-t border-tacao-300/60 dark:border-slate-900">
+						<div class="is-size-6 pl-0.5 has-text-faded"></div>
 						<button id="opponentMoveSubmitButton" type="button" class="is-flex appearance-none">
 							<span class="px-1 tc-link-shade">
 								<i class="fa-solid fa-up-right-from-square"></i>
@@ -156,8 +156,8 @@
 						</button>
 					</div>
 					<form id="opponentMoveForm" method="post" action="./repertoire" target="_blank"></form>
-					<div id="opponentMoveSuggestions" class="is-hidden flex is-justify-content-space-between is-align-items-center gap-x-5 p-2 max-h-96 overflow-y-auto border-t border-tacao-300/60 dark:border-slate-900">
-						<div class="text-sm pl-0.5 tc-faded"></div>
+					<div id="opponentMoveSuggestions" class="is-hidden is-flex is-justify-content-space-between is-align-items-center gap-x-5 p-2 max-h-96 overflow-y-auto border-t border-tacao-300/60 dark:border-slate-900">
+						<div class="is-size-6 pl-0.5 has-text-faded"></div>
 						<button id="opponentMoveSuggestionsButton" type="button" class="is-flex appearance-none">
 							<span class="px-1 tc-link-shade">
 								<i class="fa-solid fa-eye"></i>
@@ -166,14 +166,14 @@
 					</div>
 				</div>
 
-				<div id="opponentMoveSuggestionsContainer" class="is-hidden flex is-flex-direction-column mb-6 min-w-72 rounded bg-tacao-100/50 dark:bg-slate-700 border border-tacao-300/60 dark:border-slate-900">
+				<div id="opponentMoveSuggestionsContainer" class="is-hidden is-flex is-flex-direction-column mb-6 min-w-72 rounded bg-tacao-100/50 dark:bg-slate-700 border border-tacao-300/60 dark:border-slate-900">
 					<div class="is-flex is-align-items-center px-4 py-3 tc-sharp border-b border-tacao-300/60 dark:border-slate-900">
 						Suggestions
 					</div>
 					<div class="is-flex is-flex-direction-column bg-tacao-100/50 dark:bg-slate-700"></div>
 				</div>
 
-				<div id="opponentMovesTable" class="is-flex flex-wrap gap-2 justify-center mx-6 mb-2"></div>
+				<div id="opponentMovesTable" class="is-flex is-flex-wrap-wrap is-gap-1 is-justify-content-center mx-6 mb-2"></div>
 			</div>
 
 			<div class="fixed right-2 bottom-2 dialog-open-hide">

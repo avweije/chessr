@@ -50,7 +50,7 @@
 }
 
 .goto-first-btn {
-    flex-shrink: 0; /* shrink-0 */
+    flex-shrink: 0; /* is-flex-shrink-0 */
     width: 1.75rem; /* 7 * 0.25rem */
     height: 1.75rem; /* 7 * 0.25rem */
     margin-top: 0.5rem; /* 2 * 0.25rem */
@@ -205,7 +205,7 @@ div:not(.boxed-radio-menu) > .boxed-radio {
 .boxed-radio-group,
 .boxed-checkbox-group {
   display: flex;
-  flex-wrap: wrap;
+  is-flex-wrap: wrap;
   gap: 0.25rem;
   justify-content: center;
 }

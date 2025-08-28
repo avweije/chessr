@@ -1,5 +1,4 @@
 import { Utils } from "utils";
-import { Modal } from "modal";
 
 /**
  * Controller class for the practice page.
@@ -14,9 +13,6 @@ class Roadmap {
   roadmapDetailsPgn = null;
   roadmapTreeCurrentButtons = null;
   roadmapDetailsAccuracy = null;
-
-  roadmapContainerWhite = null;
-  roadmapContainerBlack = null;
 
   roadmapForm = {
     form: null,
@@ -68,13 +64,6 @@ class Roadmap {
       "roadmapTreeMissingMoves"
     );
 
-    this.roadmapContainerWhite = document.getElementById(
-      "roadmapContainerWhite"
-    );
-    this.roadmapContainerBlack = document.getElementById(
-      "roadmapContainerBlack"
-    );
-
     this.roadmapForm.form = document.getElementById("roadmapForm");
     this.roadmapForm.id = document.getElementById("roadmapIdInput");
     this.roadmapForm.color = document.getElementById("roadmapColorInput");
@@ -118,17 +107,9 @@ class Roadmap {
 
   // toggle white/black
   showRoadmapType(type) {
-    if (type == "white") {
-      this.roadmapContainerWhite.classList.remove("is-hidden");
-      this.roadmapContainerBlack.classList.add("is-hidden");
-    } else {
-      this.roadmapContainerWhite.classList.add("is-hidden");
-      this.roadmapContainerBlack.classList.remove("is-hidden");
-    }
     // show the roadmap intro
     this.showRoadmapIntro();
-
-    //
+    // load the roadmap tree
     this.loadRoadmapTree();
   }
 
@@ -210,14 +191,6 @@ class Roadmap {
 
     // load the roadmap tree top level
     this.loadRoadmapTree();
-
-    // clear the roadmaps
-    //this.roadmapContainerWhite.innerHTML = "";
-    //this.roadmapContainerBlack.innerHTML = "";
-
-    // load the roadmaps
-    //this.roadmapContainerWhite.appendChild(this.loadRoadmap(roadmap["white"]));
-    //this.roadmapContainerBlack.appendChild(this.loadRoadmap(roadmap["black"]));
   }
 
   //
@@ -316,7 +289,7 @@ class Roadmap {
     // show the current ECO and PGN
     this.roadmapTreeCurrentField.innerHTML = data.eco
       ? data.eco.name +
-        ' (<span class="text-base font-normal">' +
+        ' (<span class="font-normal">' +
         data.pgn +
         "</span>)"
       : data.pgn;
@@ -377,21 +350,21 @@ class Roadmap {
 
     div = document.createElement("div");
     div.className =
-      "rounded bg-tacao-100 dark:bg-slate-700 text-sm font-medium tc-sharp p-2";
+      "rounded bg-tacao-100 dark:bg-slate-700 is-size-6 has-text-weight-medium tc-sharp p-2";
     div.innerHTML = "ECO";
 
     this.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
 
     div = document.createElement("div");
     div.className =
-      "rounded bg-tacao-100 dark:bg-slate-700 text-sm font-medium tc-sharp p-2";
+      "rounded bg-tacao-100 dark:bg-slate-700 is-size-6 has-text-weight-medium tc-sharp p-2";
     div.innerHTML = "PGN";
 
     this.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
 
     div = document.createElement("div");
     div.className =
-      "rounded bg-tacao-100 dark:bg-slate-700 text-sm font-medium text-center tc-sharp p-2";
+      "rounded bg-tacao-100 dark:bg-slate-700 is-size-6 has-text-weight-medium text-center tc-sharp p-2";
     div.innerHTML = "Response";
 
     this.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
@@ -426,7 +399,7 @@ class Roadmap {
 
       // add the percentage played
       div = document.createElement("div");
-      div.className = "rounded text-sm text-center p-2";
+      div.className = "rounded is-size-6 text-center p-2";
       div.innerHTML = moves[i].percentage + "%";
       div.addEventListener(
         "click",
@@ -438,7 +411,7 @@ class Roadmap {
 
       // add the ECO
       div = document.createElement("div");
-      div.className = "rounded text-sm p-2";
+      div.className = "rounded is-size-6 p-2";
       div.innerHTML = moves[i].eco.name;
       div.addEventListener(
         "click",
@@ -450,7 +423,7 @@ class Roadmap {
 
       // add the PGN
       div = document.createElement("div");
-      div.className = "rounded text-sm p-2";
+      div.className = "rounded is-size-6 p-2";
       div.innerHTML = moves[i].pgn;
       div.addEventListener(
         "click",
@@ -462,7 +435,7 @@ class Roadmap {
 
       // add the move
       div = document.createElement("div");
-      div.className = "rounded text-sm text-center p-2";
+      div.className = "rounded is-size-6 text-center p-2";
       div.innerHTML = moves[i].move;
       div.addEventListener(
         "click",
@@ -502,7 +475,7 @@ class Roadmap {
     var variation = document.createElement("div");
     variation.id = "roadmapTreeItem_" + (data !== null ? data.id : "root");
     variation.className =
-      "relative is-flex is-flex-direction-column shrink-0 grow-0 is-justify-content-center gap-y-px rounded-lg overflow-hidden border border-tacao-200 dark:border-slate-600 shadow";
+      "box p-1 m-0 is-relative is-flex is-flex-direction-column is-flex-shrink-0 is-flex-grow-0 is-justify-content-center gap-y-px rounded-lg overflow-hidden border border-tacao-200 dark:border-slate-600 shadow";
     if (data !== null) {
       variation.setAttribute("data-id", data.id);
       variation.setAttribute("data-level", index);
@@ -510,7 +483,7 @@ class Roadmap {
     //
     var clickable = document.createElement("label");
     clickable.className =
-      "is-flex justify-between items-center grow cursor-pointer tc-sharp hover:text-marigold-600 dark:hover:text-marigold-500 bg-tacao-50/50 dark:bg-slate-800 hover:bg-tacao-100 dark:hover:bg-slate-700";
+      "is-flex is-justify-content-space-between  is-align-items-center is-flex-grow-1 cursor-pointer tc-sharp hover:text-marigold-600 dark:hover:text-marigold-500 bg-tacao-50/50 dark:bg-slate-800 hover:bg-tacao-100 dark:hover:bg-slate-700";
     //
     if (data !== null) {
       //
@@ -522,7 +495,7 @@ class Roadmap {
         (data.move !== "" ? data.move : data.line[data.line.length - 1]);
       //
       var pgn = document.createElement("span");
-      pgn.className = "font-medium whitespace-nowrap text-base px-3 py-2";
+      pgn.className = "has-text-weight-medium whitespace-nowrap px-3 py-2";
       pgn.innerHTML = move;
 
       var accuracyIdx = Math.max(0, Math.ceil((1 - data.fail) * 4) - 1);
@@ -530,7 +503,7 @@ class Roadmap {
       //
       var accuracy = document.createElement("span");
       accuracy.className =
-        "is-flex items-center font-medium text-sm px-2 py-2 " +
+        "is-flex is-align-items-center has-text-weight-medium is-size-6 px-2 py-2 " +
         colors[accuracyIdx][0];
       //
       var icon = document.createElement("span");
@@ -600,7 +573,7 @@ class Roadmap {
     //
     var row = document.createElement("div");
     row.id = "roadmapTreeRow_" + groupId;
-    row.className = "is-flex flex-wrap is-justify-content-center gap-2";
+    row.className = "is-flex is-flex-wrap-wrap is-justify-content-center is-gap-1";
     row.setAttribute("data-type", "tree-row");
     row.setAttribute("data-level", level);
 
@@ -612,7 +585,7 @@ class Roadmap {
       var variation = document.createElement("div");
       variation.id = "roadmapTreeItem_" + data[i].id;
       variation.className =
-        "relative flex is-flex-direction-column shrink-0 grow-0 is-justify-content-center w-56 rounded-lg overflow-hidden border border-tacao-200 dark:border-slate-600 shadow";
+        "box roadmap-tree-item p-2 m-0 is-relative is-flex is-flex-direction-column is-flex-shrink-0 is-flex-grow-0 is-justify-content-center w-56 rounded-lg overflow-hidden border border-tacao-200 dark:border-slate-600 shadow";
       variation.setAttribute("data-id", data[i].id);
       variation.setAttribute("data-level", level);
       //
@@ -620,7 +593,7 @@ class Roadmap {
       radio.id = "roadmapTreeRadio_" + data[i].id;
       radio.name = "roadmapTreeRadio_" + groupId;
       radio.type = "radio";
-      radio.className = "hidden peer";
+      radio.className = "is-hidden peer";
       //
       if (data[i].lines.length > 0) {
         console.info("RADIO-CLICK:", data[i].id, i);
@@ -636,11 +609,11 @@ class Roadmap {
       var clickable = document.createElement("label");
       clickable.htmlFor = "roadmapTreeRadio_" + data[i].id;
       clickable.className =
-        "is-flex is-flex-direction-column grow bg-tacao-50/50 dark:bg-slate-800 tc-sharp hover:bg-tacao-100 dark:hover:bg-slate-700 hover:text-marigold-600 dark:hover:text-marigold-500" +
+        "is-flex is-flex-direction-column is-flex-grow-1 bg-tacao-50/50 dark:bg-slate-800 tc-sharp hover:bg-tacao-100 dark:hover:bg-slate-700 hover:text-marigold-600 dark:hover:text-marigold-500" +
         (data[i].lines.length > 0 ? " cursor-pointer" : "");
       //
       var header = document.createElement("div");
-      header.className = "is-flex justify-between items-center";
+      header.className = "is-flex is-justify-content-space-between  is-align-items-center";
       //
       var move =
         Math.ceil(data[i].line.length / 2) +
@@ -652,7 +625,7 @@ class Roadmap {
           : data[i].line[data[i].line.length - 1]);
       //
       var pgn = document.createElement("span");
-      pgn.className = "font-medium text-base px-3 pt-2";
+      pgn.className = "has-text-weight-medium px-3 pt-2";
       pgn.innerHTML = move;
 
       var accuracyIdx = Math.max(0, Math.ceil((1 - data[i].fail) * 4) - 1);
@@ -660,7 +633,7 @@ class Roadmap {
       //
       var accuracy = document.createElement("span");
       accuracy.className =
-        "is-flex items-center self-start font-medium text-sm px-2 pt-2 " +
+        "is-flex  is-align-items-center self-start has-text-weight-medium is-size-6 px-2 pt-2 " +
         colors[accuracyIdx][0];
       //
       var icon = document.createElement("span");
@@ -677,20 +650,20 @@ class Roadmap {
       header.appendChild(accuracy);
       //
       var main = document.createElement("div");
-      main.className = "is-flex is-flex-direction-column justify-between grow px-3 pb-3 pt-1";
+      main.className = "is-flex is-flex-direction-column is-justify-content-space-between is-flex-grow-1 px-3 pb-3 pt-1";
 
       var eco = document.createElement("div");
-      eco.className = "text-sm tc-base";
+      eco.className = "is-size-6 tc-base";
       eco.innerHTML =
         data[i].eco && data[i].eco.name ? data[i].eco.name : data[i].pgn;
 
       var cntrs = document.createElement("div");
-      cntrs.className = "is-flex justify-between text-xs tc-faded pt-2";
+      cntrs.className = "is-flex is-justify-content-space-between text-xs has-text-faded pt-2";
 
       // show number of moves in this line
       var sp = document.createElement("span");
       sp.innerHTML =
-        '<span class="font-medium">' +
+        '<span class="has-text-weight-medium">' +
         data[i].mcount +
         "</span> move" +
         (data[i].mcount == 1 ? "" : "s");
@@ -701,7 +674,7 @@ class Roadmap {
       if (data[i].vcount > 0) {
         sp = document.createElement("span");
         sp.innerHTML =
-          '<span class="font-medium">' +
+          '<span class="has-text-weight-medium">' +
           data[i].vcount +
           "</span> variation" +
           (data[i].vcount == 1 ? "" : "s");
@@ -719,7 +692,7 @@ class Roadmap {
       //
       var footer = document.createElement("div");
       footer.className =
-        "is-flex justify-end items-center bg-tacao-100 dark:bg-slate-700 px-1 border-t border-tacao-200 dark:border-slate-600";
+        "is-flex is-justify-content-end  is-align-items-center bg-tacao-100 dark:bg-slate-700 px-1 border-t border-tacao-200 dark:border-slate-600";
 
       // if there are any variations
       if (data[i].vcount > 0) {
@@ -736,7 +709,7 @@ class Roadmap {
           var lowest = document.createElement("span");
           lowest.title = "Lowest accuracy variation";
           lowest.className =
-            "cursor-pointer flex items-center px-2 py-1 " +
+            "cursor-pointer is-flex  is-align-items-center px-2 py-1 " +
             colors[accuracyIdx][0] +
             " " +
             colors[accuracyIdx][1];
@@ -801,7 +774,7 @@ class Roadmap {
         var missing = document.createElement("span");
         missing.title = "Missing top responses";
         missing.className =
-          "cursor-pointer flex items-center px-2 py-1 text-sky-600 hover:text-sky-400 dark:text-sky-600 dark:hover:text-sky-400";
+          "cursor-pointer is-flex  is-align-items-center px-2 py-1 text-sky-600 hover:text-sky-400 dark:text-sky-600 dark:hover:text-sky-400";
 
         sp = document.createElement("span");
         sp.innerHTML = '<i class="fa-solid fa-medal"></i>';
@@ -826,7 +799,7 @@ class Roadmap {
       var repertoire = document.createElement("span");
       repertoire.title = "Open in repertoire";
       repertoire.className =
-        "cursor-pointer flex items-center px-2 py-1 tc-link-shade";
+        "cursor-pointer is-flex is-align-items-center px-2 py-1 tc-link-shade";
 
       sp = document.createElement("span");
       sp.innerHTML = '<i class="fa-solid fa-chess-board"></i>';
@@ -842,7 +815,7 @@ class Roadmap {
       var practice = document.createElement("span");
       practice.title = "Open in practice";
       practice.className =
-        "cursor-pointer flex items-center px-2 py-1 tc-link-shade";
+        "cursor-pointer flex  is-align-items-center px-2 py-1 tc-link-shade";
 
       sp = document.createElement("span");
       sp.innerHTML = '<i class="fa-solid fa-gamepad"></i>';
@@ -1051,7 +1024,7 @@ class Roadmap {
     div.className = "is-flex items-start is-justify-content-center";
     // do we need to hide it?
     if (depth >= 3 && hidden == false && roadmap.length > 2) {
-      div.className += " hidden";
+      div.className += " is-hidden";
 
       hidden = true;
     }
@@ -1102,7 +1075,7 @@ class Roadmap {
       //
       var hdr = document.createElement("span");
       hdr.className =
-        "is-align-self-center cursor-pointer text-sm py-1 px-2 mx-1 whitespace-nowrap rounded border border-gray-700 dark:border-gray-100 " +
+        "is-align-self-center cursor-pointer is-size-6 py-1 px-2 mx-1 whitespace-nowrap rounded border border-gray-700 dark:border-gray-100 " +
         colors[accuracyIdx];
       hdr.title =
         (roadmap[i].eco && roadmap[i].eco.name ? roadmap[i].eco.name : "") +
@@ -1150,7 +1123,7 @@ class Roadmap {
           //
           var toggle = document.createElement("span");
           toggle.className =
-            "text-gray-600 dark:text-gray-200 cursor-pointer text-base self-center w-5 h-5 ";
+            "text-gray-600 dark:text-gray-200 cursor-pointer self-center w-5 h-5 ";
           toggle.style = "margin-top: -4px; margin-bottom: -4px;";
           toggle.title = invisible ? "Show this line" : "Hide this line";
           toggle.innerHTML = icon;
@@ -1189,7 +1162,7 @@ class Roadmap {
           line.style = "width: 50%; height: 8px;";
           line.className =
             "border-r border-gray-700 dark:border-gray-100" +
-            (invisible ? " hidden" : "");
+            (invisible ? " is-hidden" : "");
 
           moveCon.appendChild(line);
         }

@@ -1,15 +1,15 @@
 {% extends "./base.html.twig" %}
 
-{% block body_header %}
+{% block body %}
 	<div class="is-flex is-justify-content-space-around p-4">
 		<div id="roadmapTypeButtons" class="boxed-radio-menu">
 			<div class="boxed-radio">
-				<input class="peer is-hidden" type="radio" name="roadmap_type" value="white" id="roadmapWhite" checked/>
+				<input class="is-hidden" type="radio" name="roadmap_type" value="white" id="roadmapWhite" checked/>
 				<label class="boxed-radio-label peer-checked:border-blue-300 peer-checked:bg-blue-100" for="roadmapWhite"></label>
 				<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500 peer-checked:text-gray-700">White</span>
 			</div>
 			<div class="boxed-radio">
-				<input class="peer is-hidden" type="radio" name="roadmap_type" value="black" id="roadmapBlack"/>
+				<input class="is-hidden" type="radio" name="roadmap_type" value="black" id="roadmapBlack"/>
 				<label class="boxed-radio-label peer-checked:border-blue-300 peer-checked:bg-blue-100" for="roadmapBlack"></label>
 				<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500 peer-checked:text-gray-700">Black</span>
 			</div>
@@ -19,49 +19,49 @@
 	<div id="roadmapIntro" class="is-flex is-justify-content-space-around p-4 mb-4">
 		<div class="is-flex is-flex-direction-column is-align-items-center">
 			<h2 class="text-2xl has-text-weight-semibold tc-sharp">The Roadmap</h2>
-			<p id="roadmapIntroText" class="text-base text-center mx-1 mt-6 tc-base">
+			<p id="roadmapIntroText" class="text-center mx-1 mt-6 tc-base">
 				Click on a move to browse through your opening repertoire.
 			</p>
 		</div>
 	</div>
 
-	<div id="roadmapTreeCurrent" class="is-hidden flex justify-center mb-8 px-4">
-		<div class="is-flex justify-center sm:w-full md:w-4/5 lg:w-3/5">
-			<div class="is-flex w-full justify-center overflow-is-hidden">
+	<div id="roadmapTreeCurrent" class="is-hidden is-flex is-justify-content-center mb-8 px-4">
+		<div class="is-flex is-justify-content-center sm:w-full md:w-4/5 lg:w-3/5">
+			<div class="is-flex w-full is-justify-content-center overflow-is-hidden">
 				<div class="is-flex is-align-items-center whitespace-nowrap overflow-is-hidden px-3 py-2">
-					<span id="roadmapTreeCurrentField" class="text-lg font-medium tc-base truncate"></span>
+					<span id="roadmapTreeCurrentField" class="text-lg has-text-weight-medium tc-base truncate"></span>
 				</div>
 				<!--<div id="roadmapTreeCurrentButtons" class="is-flex is-align-items-center pr-3"></div>-->
 			</div>
 		</div>
 	</div>
 
-	<div id="roadmapTreePath" class="is-flex flex-wrap gap-1 justify-center"></div>
+	<div id="roadmapTreePath" class="is-flex is-flex-wrap-wrap is-gap-1 is-justify-content-center"></div>
 
-	<div id="roadmapTreeMissingMoves" class="is-hidden flex is-justify-content-space-around mt-8 mb-12">
+	<div id="roadmapTreeMissingMoves" class="is-hidden is-flex is-justify-content-space-around mt-6 mb-6">
 		<div class="grid grid-cols-[1fr_auto_auto_1fr] gap-0.5 rounded"></div>
 	</div>
 
-	<div id="roadmapTreeContainer" class="is-flex is-flex-direction-column gap-y-2 is-align-items-center mt-8 mb-12"></div>
+	<div id="roadmapTreeContainer" class="is-flex is-flex-direction-column gap-y-2 is-align-items-center mt-6 mb-6"></div>
 
-	<div id="roadmapDetails" class="is-hidden flex is-justify-content-space-around p-4 mb-8">
+	<div id="roadmapDetails" class="is-hidden is-flex is-justify-content-space-around p-4 mb-8">
 		<div class="is-flex is-flex-direction-column is-align-items-center">
 			<div class="is-flex text-md p-4 tc-base">
 				<div>
-					<span class="has-text-weight-bold tc-faded">ECO:</span>
+					<span class="has-text-weight-bold has-text-faded">ECO:</span>
 					<span id="roadmapDetailsEco"></span>
 				</div>
 				<div class="mx-5">
-					<span class="has-text-weight-bold tc-faded">PGN:</span>
+					<span class="has-text-weight-bold has-text-faded">PGN:</span>
 					<span id="roadmapDetailsPgn"></span>
 				</div>
 				<div>
-					<span class="has-text-weight-bold tc-faded">Accuracy:</span>
+					<span class="has-text-weight-bold has-text-faded">Accuracy:</span>
 					<span id="roadmapDetailsAccuracy"></span>
 				</div>
 			</div>
 
-			<div class="text-md p-4 tc-faded">
+			<div class="text-md p-4 has-text-faded">
 				<a id="openInRepertoireLink" href="#">Open in your repertoire</a>
 				<span class="mx-1">|</span>
 				<a id="openInPracticeLink" href="#">Use in practice run</a>
@@ -69,31 +69,31 @@
 		</div>
 	</div>
 
-	<div class="fixed bottom-0 left-0 right-0 flex justify-center mx-8 mb-2 text-sm">
+	<div class="fixed bottom-0 left-0 right-0 is-flex is-justify-content-center mx-8 mb-2 text-sm">
 		<div class="is-flex is-justify-content-space-around overflow-is-hidden rounded bg-white dark:bg-slate-700 border border-tacao-300/40 dark:border-slate-700 shadow">
 			<div class="is-flex is-align-items-center whitespace-nowrap overflow-is-hidden px-2 py-2 bg-tacao-50/25 dark:bg-slate-900 border-r border-tacao-300/40 dark:border-slate-700">
-				<span class="tc-faded">
+				<span class="has-text-faded">
 					<i class="fa-solid fa-crosshairs"></i>
 				</span>
-				<span class="text-xs tc-faded ml-2 mr-1 truncate">Accuracy</span>
+				<span class="text-xs has-text-faded ml-2 mr-1 truncate">Accuracy</span>
 			</div>
 			<div class="is-flex is-align-items-center whitespace-nowrap overflow-is-hidden px-2 py-2 bg-tacao-50/25 dark:bg-slate-900 border-r border-tacao-300/40 dark:border-slate-700">
-				<span class="tc-faded">
+				<span class="has-text-faded">
 					<i class="fa-solid fa-arrow-trend-down"></i>
 				</span>
-				<span class="text-xs tc-faded ml-2 mr-1 truncate">Lowest Accuracy Variation</span>
+				<span class="text-xs has-text-faded ml-2 mr-1 truncate">Lowest Accuracy Variation</span>
 			</div>
 			<div class="is-flex is-align-items-center whitespace-nowrap overflow-is-hidden px-2 py-2 bg-tacao-50/25 dark:bg-slate-900 border-r border-tacao-300/40 dark:border-slate-700">
-				<span class="tc-faded">
+				<span class="has-text-faded">
 					<i class="fa-solid fa-medal"></i>
 				</span>
-				<span class="text-xs tc-faded ml-2 mr-1 truncate">Missing Top Responses</span>
+				<span class="text-xs has-text-faded ml-2 mr-1 truncate">Missing Top Responses</span>
 			</div>
 			<div class="is-flex is-align-items-center whitespace-nowrap overflow-is-hidden px-2 py-2 bg-tacao-50/25 dark:bg-slate-900">
-				<span class="tc-faded">
+				<span class="has-text-faded">
 					<i class="fa-solid fa-arrow-turn-down"></i>
 				</span>
-				<span class="text-xs tc-faded ml-2 mr-1 truncate">Last Variation in Line</span>
+				<span class="text-xs has-text-faded ml-2 mr-1 truncate">Last Variation in Line</span>
 			</div>
 		</div>
 	</div>
@@ -104,10 +104,6 @@
 		<input id="roadmapPgnInput" type="hidden" name="pgn" value=""/>
 		<input id="roadmapFenInput" type="hidden" name="fen" value=""/>
 	</form>
-{% endblock %}
-{% block body %}
-	<div id="roadmapContainerWhite" class="is-flex is-justify-content-space-around"></div>
-	<div id="roadmapContainerBlack" class="is-hidden is-flex is-justify-content-space-around"></div>
 {% endblock %}
 {% block stylesheets %}
 	{{ parent() }}
