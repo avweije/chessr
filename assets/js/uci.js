@@ -240,7 +240,7 @@ export class UCI {
     this.postMessage("isready");
   }
 
-  //
+  // start a new game (needed for new positions)
   newGame() {
     this.postMessage("ucinewgame");
   }

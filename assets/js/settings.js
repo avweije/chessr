@@ -121,8 +121,10 @@ class Settings {
         this.accountEmailAddress.value == this.settings.email
       ) {
         this.accountConfirmContainer.classList.remove("opacity-100");
+        this.accountConfirmContainer.classList.add("is-hidden");
       } else {
         this.accountConfirmContainer.classList.add("opacity-100");
+        this.accountConfirmContainer.classList.remove("is-hidden");
       }
     });
     // unlock email address input

@@ -32,7 +32,7 @@ class AnalyseController extends ChessrAbstractController
     public function __construct(private Connection $conn, private EntityManagerInterface $em, private ManagerRegistry $doctrine, private MyPgnParser $myPgnParser)
     {}
 
-    #[Route('/analyse', name: 'app_analyse')]
+    #[Route('/analyse', name: 'analyse')]
     public function index(): Response
     {
         return $this->render('analyse/index.html.twig');

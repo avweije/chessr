@@ -16,7 +16,7 @@ class RoadmapController extends ChessrAbstractController
 {
     public function __construct(private Connection $conn, private EntityManagerInterface $em, private ManagerRegistry $doctrine, private PracticeController $practice) {}
 
-    #[Route('/roadmap', name: 'app_roadmap')]
+    #[Route('/roadmap', name: 'roadmap')]
     public function index(): Response
     {
         return $this->render('roadmap/index.html.twig');

@@ -1,5 +1,4 @@
 import { Utils } from "utils";
-import { Modal } from "modal";
 
 class Opponent {
   // the elements
@@ -231,153 +230,6 @@ class Opponent {
       "click",
       this.onToggleSuggestions.bind(this)
     );
-
-    /*
-    // get the modal elements
-    this.analyseDialog.modal = document.getElementById("analyseModal");
-    this.analyseDialog.fieldsContainer =
-      document.getElementById("analyseModalFields");
-    this.analyseDialog.errorContainer =
-      document.getElementById("analyseModalError");
-
-    var fields = this.analyseDialog.fieldsContainer.getElementsByTagName("p");
-
-    this.analyseDialog.typeField = fields[0];
-    this.analyseDialog.statusField = fields[1];
-    this.analyseDialog.matchesField = fields[2];
-    this.analyseDialog.periodField = fields[3];
-    this.analyseDialog.elapsedTimeField = fields[4];
-
-    fields = this.analyseDialog.errorContainer.getElementsByTagName("p");
-
-    this.analyseDialog.errorField = fields[0];
-
-    this.analyseDialog.stopButton = document.getElementById(
-      "analyseModalStopButton"
-    );
-    this.analyseDialog.closeButton = document.getElementById(
-      "analyseModalCloseButton"
-    );
-
-    // register the modal
-    Modal.register(
-      this.analyseDialog.modal,
-      [
-        {
-          element: this.analyseDialog.closeButton,
-          action: "close",
-        },
-        {
-          element: this.analyseDialog.stopButton,
-          action: "close",
-        },
-      ],
-      this.onCloseDialog.bind(this)
-    );
-
-    // get the modal elements
-    this.confirmDialog.modal = document.getElementById("confirmModal");
-    this.confirmDialog.closeButton = document.getElementById(
-      "confirmModalCloseButton"
-    );
-    this.confirmDialog.cancelButton = document.getElementById(
-      "confirmModalCancelButton"
-    );
-    this.confirmDialog.confirmButton = document.getElementById(
-      "confirmModalConfirmButton"
-    );
-
-    // register the modal
-    Modal.register(this.confirmDialog.modal, [
-      {
-        element: this.confirmDialog.closeButton,
-        action: "close",
-      },
-      {
-        element: this.confirmDialog.cancelButton,
-        action: "close",
-      },
-      {
-        element: this.confirmDialog.confirmButton,
-        action: "handler",
-        handler: this.onRemoveOpponentConfirmed.bind(this),
-      },
-    ]);
-
-    // get the modal elements
-    this.connectDialog.modal = document.getElementById("connectModal");
-    this.connectDialog.closeButton = document.getElementById(
-      "connectModalCloseButton"
-    );
-    this.connectDialog.cancelButton = document.getElementById(
-      "connectModalCancelButton"
-    );
-    this.connectDialog.confirmButton = document.getElementById(
-      "connectModalConfirmButton"
-    );
-    this.connectDialog.opponentUsername = document.getElementById(
-      "connectModalOpponentUsername"
-    );
-    this.connectDialog.parentAccountContainer = document.getElementById(
-      "connectModalParentAccountContainer"
-    );
-
-    console.info(this.connectDialog);
-
-    // register the modal
-    Modal.register(this.connectDialog.modal, [
-      {
-        element: this.connectDialog.closeButton,
-        action: "close",
-      },
-      {
-        element: this.connectDialog.cancelButton,
-        action: "close",
-      },
-      {
-        element: this.connectDialog.confirmButton,
-        action: "handler",
-        handler: this.onConnectOpponentConfirmed.bind(this),
-      },
-    ]);
-
-    // get the modal elements
-    this.disconnectDialog.modal = document.getElementById("disconnectModal");
-    this.disconnectDialog.closeButton = document.getElementById(
-      "disconnectModalCloseButton"
-    );
-    this.disconnectDialog.cancelButton = document.getElementById(
-      "disconnectModalCancelButton"
-    );
-    this.disconnectDialog.confirmButton = document.getElementById(
-      "disconnectModalConfirmButton"
-    );
-    this.disconnectDialog.opponentUsername = document.getElementById(
-      "disconnectModalOpponentUsername"
-    );
-    this.disconnectDialog.childAccountContainer = document.getElementById(
-      "disconnectModalChildAccountContainer"
-    );
-
-    console.info(this.disconnectDialog);
-
-    // register the modal
-    Modal.register(this.disconnectDialog.modal, [
-      {
-        element: this.disconnectDialog.closeButton,
-        action: "close",
-      },
-      {
-        element: this.disconnectDialog.cancelButton,
-        action: "close",
-      },
-      {
-        element: this.disconnectDialog.confirmButton,
-        action: "handler",
-        handler: this.onDisconnectOpponentConfirmed.bind(this),
-      },
-    ]);
-    */
 
     this.initModals();
 
@@ -1572,13 +1424,13 @@ class Opponent {
       "boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500 peer-checked:text-gray-700";
 
     var p1 = document.createElement("p");
-    p1.className = "text-left mb-1 pr-3";
+    p1.className = "has-text-left mb-1 pr-3";
     p1.innerHTML = opponent.username;
 
     sp.appendChild(p1);
 
     var p2 = document.createElement("p");
-    p2.className = "text-left is-size-6 pr-4 opacity-70";
+    p2.className = "has-text-left is-size-6 pr-4 opacity-70";
     p2.innerHTML = opponent.site;
 
     sp.appendChild(p2);
@@ -1608,8 +1460,7 @@ class Opponent {
     // add the child count span
     if (opponent.children.length > 0) {
       var cntSpan = document.createElement("span");
-      cntSpan.className =
-        "opponent-connect-children absolute right-2 top-1 inline-block text-xs p-1 text-tacao-600 dark:text-slate-500";
+      cntSpan.className = "opponent-connect-children";
       cntSpan.innerHTML = "+" + opponent.children.length;
 
       box.appendChild(cntSpan);
@@ -1618,8 +1469,7 @@ class Opponent {
     // add the (dis)connect span
     if (!forModal) {
       var conSpan = document.createElement("span");
-      conSpan.className =
-        "opponent-connect-link is-hidden peer-checked:inline-block absolute right-2 bottom-1 w-6 h-6 cursor-pointer text-tacao-500 hover:text-tacao-700 dark:text-slate-400 hover:dark:text-slate-600";
+      conSpan.className = "opponent-connect-link";
       if (opponent.children.length > 0) {
         conSpan.innerHTML = '<i class="fa-solid fa-link-slash"></i>';
 
@@ -1665,25 +1515,15 @@ class Opponent {
     box.appendChild(lbl);
 
     var check = document.createElement("div");
-    check.className = "is-relative is-hidden peer-checked:flex";
-
-    var ch1 = document.createElement("div");
-    ch1.className =
-      "absolute top-1 right-1 bottom-1 left-1 rounded-full bg-white";
-
-    var ch2 = document.createElement("div");
-    ch2.className = "boxed-checkbox-circle";
-
-    check.appendChild(ch1);
-    check.appendChild(ch2);
+    check.className = "boxed-checkbox-checkmark";
+    check.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
 
     box.appendChild(check);
 
-    var blank = document.createElement("div");
-    blank.className =
-      "boxed-checkbox-circle";
+    var circle = document.createElement("div");
+    circle.className = "boxed-checkbox-circle";
 
-    box.appendChild(blank);
+    box.appendChild(circle);
 
     var sp = document.createElement("span");
     sp.className = "boxed-checkbox-text";
@@ -1815,11 +1655,11 @@ class Opponent {
         (i > 0 ? " border-t border-tacao-300/60 dark:border-slate-900" : "");
 
       var col1 = document.createElement("div");
-      col1.className = "text-left mr-6";
+      col1.className = "has-text-left mr-6";
 
       // if we have an ECO code
       var pEco = document.createElement("p");
-      pEco.className = "text-xs mb-0.5 has-text-faded";
+      pEco.className = "is-size-7 mb-0.5 has-text-faded";
       pEco.innerHTML = sugg[i].eco ? sugg[i].eco.name : "";
 
       var pPgn = document.createElement("p");
@@ -1980,7 +1820,7 @@ class Opponent {
         (rate == "win"
           ? "accuracy-green"
           : rate == "even"
-          ? "accuracy-yellow"
+          ? "accuracy-orange"
           : "accuracy-red") +
         '">W: ' +
         moves[i].wins +
@@ -1988,7 +1828,7 @@ class Opponent {
         (rate == "loss"
           ? "accuracy-red"
           : rate == "even"
-          ? "accuracy-yellow"
+          ? "accuracy-orange"
           : "accuracy-green") +
         '">L: ' +
         moves[i].losses +

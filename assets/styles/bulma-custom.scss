@@ -1,7 +1,92 @@
+// Bulma class overrides
+a {
+  color: var(--bulma-link-color)
+}
+
+a:hover {
+  color: var(--bulma-link-hover-color);
+}
+
+.input,
+.textarea {
+  color: var(--color-input-text);
+  background-color: var(--color-input-background);
+  padding: 1.3rem 0.8rem;
+}
+
+.textarea {
+  padding: 0.8rem;
+}
+
+[disabled].input {
+  color: var(--color-input-text-disabled);
+  background-color: var(--color-input-background-disabled);
+  border-color: rgba(0,0,0,0.05);
+}
+
+// Dark mode class overrides for text
+[data-theme="dark"] {
+  /* components */  
+  [disabled]input {
+    border-color: rgba(255,255,255,0.25) !important;
+  }
+}
+
+
+/* Delete Icon (modals, etc) */
+.delete {
+  border: solid 1px rgba(255,255,255,.2);
+  --bulma-delete-dimensions: 1.75rem;
+}
+
+
+/* Modals */
 .modal .modal-card .modal-card-head,
 .modal .modal-card .modal-card-foot {
     padding: 1.5rem;
 }
+
+.modal .modal-card .modal-card-head {
+  background-color: var(--bulma-modal-card-foot-background-color);
+  box-shadow: none;
+}
+
+/* Box */
+.box {
+    border-color: rgba(0,0,0,0.1);
+    border-radius: 0.25rem;
+    background-color: var(--color-surface-main);
+    box-shadow: none;
+}
+
+// Dark mode override
+[data-theme="dark"] {
+  .box {
+    border-color: rgba(255,255,255,0.1);
+  }
+}
+
+.box-header,
+.box-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0;
+    padding: 0.75rem 1rem;
+}
+
+.box-header {
+    border-bottom: 1px solid rgba(0,0,0,.1);
+}
+
+.box-header {
+    border-top: 1px solid rgba(0,0,0,.1);
+}
+
+.dark .box-header {
+    border-color: rgba(255,255,255,.1);
+}
+
 
 .px-half {
     padding-left: 0.125rem;
@@ -12,17 +97,31 @@
 .is-hidden {
   display: none !important;
 }
-
 .is-relative {
   position: relative !important;
 }
-
+.is-fixed {
+  position: fixed !important;
+}
 .is-absolute {
   position: absolute !important;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+}
+.is-transparent {
+  background-color: transparent;
+}
+
+/* for is-absolute, or others */
+.top-0 {
+    top: 0;
+}
+.left-0 {
+    left: 0;
+}
+.right-0 {
+    right: 0;
+}
+.bottom-0 {
+    bottom: 0;
 }
 
 /* Single-line ellipsis */
@@ -49,6 +148,14 @@
 
 .mt-lg {
   margin-top: 5rem;
+}
+
+.w-medium {
+  width: 60vw;
+}
+
+.w-large {
+  width: 80vw;
 }
 
 .w-full {

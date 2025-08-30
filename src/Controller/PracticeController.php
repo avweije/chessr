@@ -30,7 +30,7 @@ class PracticeController extends ChessrAbstractController
         private RepertoireService $repertoireService
         ) {}
 
-    #[Route('/practice', methods: ['GET', 'POST'], name: 'app_practice')]
+    #[Route('/practice', methods: ['GET', 'POST'], name: 'practice')]
     /**
      * Renders the practice page. Passes along the repertoire type and ID in case a specific repertoire needs to be shown.
      *

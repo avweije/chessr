@@ -1,3 +1,5 @@
+@use "sass:color";
+@use "../vendor/bulma-1.0.4/sass/utilities/functions.scss" as fn;
 @use "variables";
 
 // ---------------------------
@@ -24,6 +26,25 @@
   --color-surface-main: #{variables.$surface-main};
   --color-surface-alt: #{variables.$surface-alt};
   --color-on-surface: #{variables.$on-surface};
+
+  // Custom Extras
+  --color-surface-border: #{variables.$surface-border};
+
+  --color-input-background: #{variables.$input-background};
+  --color-input-text: #{variables.$input-text};
+  --color-input-background-disabled: #{variables.$input-background-disabled};
+  --color-input-text-disabled: #{variables.$input-text-disabled};
+
+  --color-primary-light: #{fn.bulmaFindLightColor(variables.$primary)};
+  --color-link-light: #{fn.bulmaFindLightColor(variables.$link)};
+
+  --color-success-lighter: #{fn.bulmaLighten(variables.$success,20%)};
+  --color-warning-lighter: #{fn.bulmaLighten(variables.$warning,20%)};
+  --color-danger-lighter: #{fn.bulmaLighten(variables.$danger,20%)};
+
+  // Overrides
+  --bulma-link-color: #{variables.$link-text};
+  --bulma-link-hover-color: #{variables.$link-hover};
 }
 
 // ---------------------------
@@ -38,6 +59,7 @@
   --color-warning: #{variables.$warning-dark};
   --color-danger: #{variables.$danger-dark};
 
+  --color-text: #{variables.$text-default-dark};
   --color-text-default: #{variables.$text-default-dark};
   --color-text-title: #{variables.$text-title-dark};
   --color-text-faded: #{variables.$text-faded-dark};
@@ -47,4 +69,215 @@
   --color-surface-main: #{variables.$surface-main-dark};
   --color-surface-alt: #{variables.$surface-alt-dark};
   --color-on-surface: #{variables.$on-surface-dark};
+
+  // Custom Extras
+  --color-surface-border: #{variables.$surface-border-dark};
+
+  --color-input-background: #{variables.$input-background-disabled-dark};
+  --color-input-text: #{variables.$input-text-dark};
+  --color-input-background-disabled: #{variables.$input-background-disabled-dark};
+  --color-input-text-disabled: #{variables.$input-text-disabled-dark};
+
+  --color-primary-light: #{fn.bulmaFindLightColor(variables.$primary-dark)};
+  --color-link-light: #{fn.bulmaFindLightColor(variables.$link-dark)};
+
+  --color-success-lighter: #{fn.bulmaLighten(variables.$success-dark,20%)};
+  --color-warning-lighter: #{fn.bulmaLighten(variables.$warning-dark,20%)};
+  --color-danger-lighter: #{fn.bulmaLighten(variables.$danger-dark,20%)};
+
+  // Overrides
+  --bulma-text: #{variables.$text-default-dark};   // fixes .has-text-default
+  --bulma-link: #{variables.$link-dark};          // if needed for `.has-text-link`
+  --bulma-link-color: #{variables.$link-text-dark};
+  --bulma-link-hover-color: #{variables.$link-hover-dark};
+  --bulma-background: #{variables.$surface-main-dark}; // if you want `.has-background-*` to follow dark mode
 }
+
+
+/* We need to override these to get them to be responsive */
+.button.is-primary {
+  background-color: var(--color-primary) !important;
+  color: #{fn.bulmaDarken(variables.$primary,55%)};
+
+  &:hover,
+  &:focus,
+  &:active {
+    background-color: #{fn.bulmaLighten(variables.$primary,20%)} !important;
+    color: #{fn.bulmaDarken(fn.bulmaLighten(variables.$primary,20%),55%)} !important;
+  }
+}
+.button.is-link {
+  background-color: var(--color-link) !important;
+  color: #{fn.bulmaDarken(variables.$link,55%)};
+
+  &:hover,
+  &:focus,
+  &:active {
+    background-color: #{fn.bulmaLighten(variables.$link,20%)} !important;
+    color: #{fn.bulmaDarken(fn.bulmaLighten(variables.$link,20%),55%)} !important;
+  }
+}
+
+.tag.is-primary {
+  background-color: var(--color-primary) !important;
+  color: #{fn.bulmaDarken(variables.$primary,45%)} !important;
+}
+
+.tag.is-link {
+  background-color: var(--color-link) !important;
+  color: #{fn.bulmaDarken(variables.$link,45%)} !important;
+}
+
+.tag.is-info {
+  background-color: var(--color-info) !important;
+  color: #{fn.bulmaDarken(variables.$info,45%)} !important;
+}
+
+.tag.is-success {
+  background-color: var(--color-success) !important;
+  color: #{fn.bulmaDarken(variables.$success,45%)} !important;
+}
+.tag.is-success.is-light {
+  background-color: #{fn.bulmaLighten(variables.$success,40%)} !important;
+  color: #{fn.bulmaDarken(fn.bulmaLighten(variables.$success,40%),45%)} !important;
+}
+
+.tag.is-warning {
+  background-color: var(--color-warning) !important;
+  color: #{fn.bulmaDarken(variables.$warning,45%)} !important;
+}
+.tag.is-warning.is-light {
+  background-color: #{fn.bulmaLighten(variables.$warning,40%)} !important;
+  color: #{fn.bulmaDarken(fn.bulmaLighten(variables.$warning,40%),45%)} !important;
+}
+
+.tag.is-danger {
+  background-color: var(--color-danger) !important;
+  color: #{fn.bulmaDarken(variables.$danger,45%)} !important;
+}
+.tag.is-danger.is-light {
+  background-color: #{fn.bulmaLighten(variables.$danger,40%)} !important;
+  color: #{fn.bulmaDarken(fn.bulmaLighten(variables.$danger,40%),45%)} !important;
+}
+
+// Dark mode class overrides for text
+[data-theme="dark"] {
+  // Buttons
+  .button.is-primary {
+    color: #{fn.bulmaDarken(variables.$primary-dark,55%)};
+
+    &:hover,
+    &:focus,
+    &:active {
+      background-color: #{fn.bulmaLighten(variables.$primary-dark,20%)} !important;
+      color: #{fn.bulmaDarken(fn.bulmaLighten(variables.$primary-dark,20%),55%)} !important;
+    }
+  }
+  .button.is-link {
+    color: #{fn.bulmaDarken(variables.$link-dark,55%)};
+
+    &:hover,
+    &:focus,
+    &:active {
+      background-color: #{fn.bulmaLighten(variables.$link-dark,20%)} !important;
+      color: #{fn.bulmaDarken(fn.bulmaLighten(variables.$link-dark,20%),55%)} !important;
+    }
+  }
+
+  // Tags
+  .tag.is-primary {
+    color: #{fn.bulmaDarken(variables.$primary-dark,45%)} !important;
+  }
+
+  .tag.is-link {
+    color: #{fn.bulmaDarken(variables.$link-dark,45%)} !important;
+  }
+
+  .tag.is-info {
+    color: #{fn.bulmaDarken(variables.$info-dark,45%)} !important;
+  }
+
+  .tag.is-success {
+    color: #{fn.bulmaDarken(variables.$success-dark,45%)} !important;
+  }
+  .tag.is-success.is-light {
+    background-color: #{fn.bulmaLighten(variables.$success-dark,40%)} !important;
+    color: #{fn.bulmaDarken(fn.bulmaLighten(variables.$success-dark,40%),45%)} !important;
+  }
+
+  .tag.is-warning {
+    color: #{fn.bulmaDarken(variables.$warning-dark,45%)} !important;
+  }
+  .tag.is-warning.is-light {
+    background-color: #{fn.bulmaLighten(variables.$warning-dark,40%)} !important;
+    color: #{fn.bulmaDarken(fn.bulmaLighten(variables.$warning-dark,40%),45%)} !important;
+  }
+
+  .tag.is-danger {
+    color: #{fn.bulmaDarken(variables.$danger-dark,45%)} !important;
+  }
+  .tag.is-danger.is-light {
+    background-color: #{fn.bulmaLighten(variables.$danger-dark,40%)} !important;
+    color: #{fn.bulmaDarken(fn.bulmaLighten(variables.$danger-dark,40%),45%)} !important;
+  }
+
+  // Text classes
+  .has-text-default {
+    color: var(--color-text-default) !important;
+  }
+
+  .title,
+  .has-text-title {
+    color: var(--color-text-title) !important;
+  }
+
+  .has-text-faded {
+    color: var(--color-text-faded) !important;
+  }
+
+  .has-text-on-background {
+    color: var(--color-text-on-background) !important;
+  }
+
+  // Optional: you can also override background helpers if needed
+  .has-background-surface-main {
+    background-color: var(--color-surface-main) !important;
+  }
+
+  .has-background-surface-alt {
+    background-color: var(--color-surface-alt) !important;
+  }
+}
+
+
+/*
+
+Bulma uses these vars for the following elements
+
+box:
+- background-color: --bulma-scheme-main
+- color: --bulma-text
+- border-radius: --bulma-radius-large
+- padding: 1.25rem
+
+title/subtitle:
+- color: generated from $vars
+
+custom colors (has-text-faded):
+- color: generated from $vars
+
+a:
+- color: --bulma-link-text
+
+label:
+- color: --bulma-label-color
+
+
+*********
+
+Our Own Custom Elements:
+
+navbar:
+- background-color: --color-surface-main
+
+*/

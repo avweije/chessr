@@ -6,33 +6,18 @@
 			<button id="disconnectModalCloseButton" class="delete" aria-label="close"></button>
 		</header>
 		<section class="modal-card-body">
-			<p class="w-full tc-base my-6">
+			<p>
 				Uncheck the account(s) you want to disconnect from
 				<span id="disconnectModalOpponentUsername" class="has-text-weight-semibold">Opponent</span>:
 			</p>
 
-			<div id="disconnectModalChildAccountContainer" class="columns is-multiline is-gapless">
-				<!-- Each checkbox item wrapped in a column pair -->
-				<div class="column is-narrow">
-					<label class="checkbox">
-						<input type="checkbox" value="">
-						Account 1
-					</label>
-				</div>
-				<div class="column">
-					<!-- optional description or extra info for this account -->
-				</div>
-				<!-- Repeat for other accounts -->
+			<div id="disconnectModalChildAccountContainer" class="boxed-checkbox-group is-justify-content-flex-start mt-5">
 			</div>
 		</section>
 		<footer class="modal-card-foot is-justify-content-flex-end">
 			<div class="buttons">
-				<button id="disconnectModalCancelButton" class="button">
-					Cancel
-				</button>
-				<button id="disconnectModalConfirmButton" class="button is-warning">
-					Confirm
-				</button>
+				<button id="disconnectModalCancelButton" type="button" class="button">Cancel</button>
+				<button id="disconnectModalConfirmButton" type="button" class="button is-warning">Confirm</button>
 			</div>
 		</footer>
 	</div>

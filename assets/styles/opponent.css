@@ -1,20 +1,4 @@
-/* ...existing code... */
-.opponent-grayed-out-container {
-  border: 1px solid transparent;
-  transition: linear all 100ms;
-}
-.opponent-grayed-out-container > .boxed-radio-group > .boxed-radio > input ~ .boxed-radio-label {
-  color: #f87171;
-}
-.opponent-grayed-out-container > .boxed-radio-group > .boxed-radio > input:checked ~ .boxed-radio-label {
-  cursor: default;
-}
-body.grayed-out .opponent-grayed-out-container {
-  background: #fff;
-  border-radius: 0.5rem;
-  border: 1px solid #f6ad55;
-  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.15);
-}
+/* */
 .opponent-move-holder {
   display: flex;
   flex-direction: column;
@@ -22,29 +6,37 @@ body.grayed-out .opponent-grayed-out-container {
   cursor: pointer;
   border-radius: 0.5rem;
   overflow: hidden;
-  border: 1px solid #f6ad55;
+  background-color: var(--color-surface-main);
+  border: 1px solid var(--color-surface-border);
   box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
 }
+
 .opponent-move-holder:hover {
-  background: #fef6e4;
+  background: var(--color-surface-alt);
 }
+
 .opponent-move-holder .opponent-move-header {
   position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-left: 0.75rem;
-  padding-right: 0.75rem;
-  padding-top: 0.75rem;
+  padding: 1rem 0.75rem 0;
   gap: 0.75rem;
 }
+
 .opponent-move-holder .opponent-move-header > span {
   font-size: 1rem;
-  color: #6b7280;
+  color: var(--color-text-default);
 }
+
+.opponent-move-holder .opponent-move-header > span:last-of-type {
+  padding: 0 0.25rem;
+}
+
 .opponent-move-holder.sporadic-move {
   opacity: 0.7;
 }
+
 .opponent-move-holder .opponent-move-header > span:first-of-type {
   font-weight: 500;
   padding-left: 0.25rem;
@@ -70,38 +62,42 @@ body.grayed-out .opponent-grayed-out-container {
   display: flex;
   align-items: flex-start;
   top: 0.125rem;
-  right: 0.125rem;
-  color: #059669;
+  right: 0.25rem;
+  width: 1rem;
+  height: 1rem;
+  font-size: .9rem;
+  line-height: .9rem;
+  color: var(--color-success);
 }
 .opponent-move-holder .opponent-move-footer {
   display: flex;
-  justify-content: space-around;
+  justify-content: stretch;
   align-items: center;
   font-size: 0.75rem;
   font-weight: 500;
   margin-top: 0.75rem;
-  background: #fef6e4;
-  border-top: 1px solid #f6ad55;
+  background: var(--color-surface-main);
+  border-top: 1px solid var(--color-surface-alt);
 }
 .opponent-move-holder .opponent-move-footer span {
-  padding-left: 0.375rem;
-  padding-right: 0.375rem;
-  padding-top: 0.25rem;
-  padding-bottom: 0.25rem;
+  display: flex;
+  flex-grow: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.5rem;
   white-space: nowrap;
 }
 .opponent-move-holder .opponent-move-footer span:first-of-type {
-  border-right: 1px solid #f6ad55;
+  border-right: 1px solid var(--color-surface-alt);
 }
 .opponent-pgn-text:not(:first-child) {
   padding-left: 0.125rem;
-  padding-right: 0.125rem;
 }
+
+
+/* Pgn Moves with Hover */
 .opponent-pgn-move {
-  padding-left: 0.25rem;
-  padding-right: 0.25rem;
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
+  padding: 0.25rem;
   border: 1px solid transparent;
   margin: -0.125rem;
 }
@@ -110,8 +106,34 @@ body.grayed-out .opponent-grayed-out-container {
 }
 .opponent-pgn-move:not(:last-child):hover {
   border-radius: 0.375rem;
-  color: #0369a1;
-  background: #bae6fd;
-  border: 1px solid #38bdf8;
+  color: var(--color-link);
+  background: var(--color-link-light);
+  border: 1px solid rgba(0,0,0,.1);
 }
-/* ...end of converted code... */
+
+
+/* Opponent Boxed Radio */
+.opponent-connect-children {
+  position: absolute;
+  right: .8rem;
+  top: .5rem;
+  display: inline-block;
+  color: var(--bulma-link-color);
+}
+
+.boxed-radio > .opponent-connect-link {
+  display: none;
+  position: absolute;
+  right: .75rem;
+  bottom: .5rem;
+  cursor: pointer;
+  color: var(--bulma-link-color);
+}
+
+.boxed-radio > .opponent-connect-link:hover {
+  color: var(--bulma-link-hover-color);
+}
+
+.boxed-radio > input[type="radio"]:checked ~ .opponent-connect-link {
+  display: inline-block;
+}

@@ -36,7 +36,7 @@ class OpponentController extends ChessrAbstractController
         private RepertoireService $repertoireService
         ) {}
 
-    #[Route('/opponent', name: 'app_opponent')]
+    #[Route('/opponent', name: 'opponent')]
     /**
      * Renders the opponent page. Passes along opponents array to be used for the datalist input.
      *

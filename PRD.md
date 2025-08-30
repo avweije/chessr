@@ -8,6 +8,8 @@
 
 - if repertoire updated, new items, do we need to recalculate recommended?? if we already have in session, it wont change until you play them all.. ?
 
+- make pgn field (opponents) a component, hover is nice, keys left right up down (optional), click = callback, etc.
+
 # Ideas for later:
 
 Batch engine blunder-check for novelties only

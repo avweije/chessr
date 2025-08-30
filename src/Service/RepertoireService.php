@@ -320,7 +320,12 @@ class RepertoireService
 
     private function isUnderRecommendationThreshold($move): bool
     {
-        return (isset($move['recommendation']) && $move['recommendation']['level'] == 'low' && $move['recommendation']['factor'] <= 0.2);
+        // Get the recommend interval (0-3)
+        $recommendInterval = 4 - ($this->settings->getRecommendInterval() ?? 0);
+        // Set the threshold based on the interval
+        $threshold = 0.2 * $recommendInterval;
+
+        return (isset($move['recommendation']) && $move['recommendation']['level'] == 'low' && $move['recommendation']['factor'] <= $threshold);
     }
 
     /**
@@ -522,6 +527,10 @@ class RepertoireService
 
     private function determineTargetSize(array $globalStats): int
     {
+
+        // Use user settings to determine min/max targetSize (0-3)
+        $recommendInterval = ($this->settings->getRecommendInterval() ?? 0) + 1;
+        
         $min = 20;
         $max = 60;
 
@@ -530,6 +539,10 @@ class RepertoireService
             $min = 30;
             $max = 90;
         }
+
+        // Multiply to account for the interval
+        $min = $min * ($recommendInterval / 2);
+        $max = $min * ($recommendInterval / 2);
 
         $highCount = count($this->candidates['high']);
         $mediumCount = count($this->candidates['medium']);

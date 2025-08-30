@@ -1996,10 +1996,10 @@ class Practice extends MyChessBoard {
         : 100 - Math.round((practiceFailed / practiceCount) * 100);
 
     var colors = [
-      "is-danger",
-      "is-warning",
-      "is-warning",
-      "is-success",
+      "is-danger is-light",
+      "is-danger is-light",
+      "is-warning is-light",
+      "is-success is-light",
     ];
 
     // get the accuracy index for the colors
@@ -3547,7 +3547,7 @@ class Practice extends MyChessBoard {
 
       cell = document.createElement("div");
       cell.className =
-        "hidden cursor-pointer px-2 py-1 text-xs font-semibold tc-sharp hover:bg-tacao-100 hover:dark:bg-slate-600 rounded-full border border-transparent hover:border-tacao-200 hover:dark:border-slate-800";
+        "hidden cursor-pointer px-2 py-1 is-size-7 font-semibold tc-sharp hover:bg-tacao-100 hover:dark:bg-slate-600 rounded-full border border-transparent hover:border-tacao-200 hover:dark:border-slate-800";
       cell.innerHTML = "";
 
       row.appendChild(cell);
@@ -3573,12 +3573,12 @@ class Practice extends MyChessBoard {
     // set the CP eval
     var cpEval =
       cp !== null
-        ? '&nbsp;<sup class="text-xs has-text-faded">' +
+        ? '&nbsp;<sup class="is-size-7 has-text-faded">' +
           (cp >= 0 ? "+" : "") +
           Math.round(cp) / 100 +
           "</sup>"
         : mate !== null
-        ? '&nbsp;<sup class="text-xs has-text-faded">M' + mate + "</sup>"
+        ? '&nbsp;<sup class="is-size-7 has-text-faded">M' + mate + "</sup>"
         : "";
     // set the move
     this.playedMovesList.children[index].children[0].innerHTML =

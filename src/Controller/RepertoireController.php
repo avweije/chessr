@@ -31,7 +31,7 @@ class RepertoireController extends ChessrAbstractController
     {
     }
 
-    #[Route(['/repertoire', '/repertoire/{color}'], methods: ['GET', 'POST'], name: 'app_repertoire')]
+    #[Route(['/repertoire/{color?}'], methods: ['GET', 'POST'], name: 'repertoire')]
     /**
      * Renders the repertoire page. Passes along the repertoire color, FEN and line.
      *

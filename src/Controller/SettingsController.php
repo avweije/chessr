@@ -9,7 +9,9 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class SettingsController extends ChessrAbstractController
 {
-    #[Route('/settings', name: 'app_settings')]
+    public function __construct() {}
+
+    #[Route('/settings', name: 'settings')]
     public function index(): Response
     {
         return $this->render('settings/index.html.twig');

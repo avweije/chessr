@@ -16,7 +16,7 @@ class HomeController extends ChessrAbstractController
 {
     public function __construct(private Connection $conn, private EntityManagerInterface $em, private ManagerRegistry $doctrine, private PracticeController $practice) {}
 
-    #[Route(['/', '/home'], name: 'app_main')]
+    #[Route(['/', '/home'], name: 'home')]
     public function index(): Response
     {
 

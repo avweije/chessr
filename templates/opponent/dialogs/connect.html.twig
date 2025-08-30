@@ -6,34 +6,23 @@
 			<button id="connectModalCloseButton" class="delete" aria-label="close"></button>
 		</header>
 		<section class="modal-card-body">
-			<p class="w-full tc-base">
+			<p class="">
 				If your opponent has multiple accounts, you can connect them to combine their games.
 			</p>
-			<p class="w-full tc-base my-6">
+			<p class="mt-3">
 				Select the main account for
 				<span id="connectModalOpponentUsername" class="has-text-weight-semibold">Opponent</span>:
 			</p>
 
-			<div id="connectModalParentAccountContainer" class="columns is-multiline is-gapless">
-				<!-- Each account radio item should be wrapped in a column pair: -->
-				<div class="column is-narrow">
-					<label class="radio">
-						<input type="radio" name="connect-account" value="">
-						Account 1
-					</label>
-				</div>
-				<div class="column">
-					<!-- optional description or additional info for this account -->
-				</div>
-				<!-- Repeat for other accounts -->
+			<div id="connectModalParentAccountContainer" class="boxed-radio-group is-justify-content-flex-start mt-5">
 			</div>
 		</section>
 		<footer class="modal-card-foot is-justify-content-flex-end">
 			<div class="buttons">
-				<button id="connectModalCancelButton" class="button">
+				<button id="connectModalCancelButton" type="button" class="button">
 					Cancel
 				</button>
-				<button id="connectModalConfirmButton" class="button is-warning">
+				<button id="connectModalConfirmButton" type="button" class="button is-warning">
 					Confirm
 				</button>
 			</div>

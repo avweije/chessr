@@ -1,7 +1,6 @@
 // Include custom functions, variables, and theme settings
 @use "functions" as fn;
 @use "variables";
-@use "theme";
 
 // Import bulma so we an merge variables
 //@use "../vendor/bulma-1.0.4/sass" as bulma;
@@ -65,6 +64,8 @@ $custom-colors: map.merge($bulma-colors, (
   $text: variables.$text-default,
   $title-color: variables.$text-title,
 
+  $input-disabled-color: variables.$text-default-dark,
+
   $colors: $custom-colors,
 
   $background: variables.$background,
@@ -72,34 +73,14 @@ $custom-colors: map.merge($bulma-colors, (
   $scheme-invert: variables.$text-on-background
 );
 
-  /* $scheme-main-bis: variables.$surface-bis, */
-  /* $scheme-main-ter: variables.$surface-ter, */
+// Import theme now, to override bulma --vars
+@use "theme";
 
-// Your custom styles can now use:
-// fn.contrast-text($bg), fn.shade($color, 20%), variables.$link-border, etc.
-
-
-/* from current - light theme */
-
-$light-orange: #f6ad55; // link ? input shadow, radio, checkbox
-$light-orange-border: #fbd38d;
-
-$light-blue: #0369a1; // primary ? button, radio circle, checkmark
-
-$light-bg: #fef6e4; // input bg ? radio, checkbox bg unchecked
-$light-nav-bg: #fde68a; // nav bg ?
-
-$light-nav-link: #b45309; // nav link
-$light-nav-link-hover: #fbbf24;
-
-/* fonts: normal text color, title text color, faded text color, bg text color */
-
-$light-text: #b45309; // light mode font color - same as nav link ?
-$light-bg-text: #d1d5db; // light mode font color
-$light-title-text: #c05621 ; // light mode title color
-$light-faded-text: #f6ad55; // light mode faded text color #7c4700
-
+// Bulma custom and overrides, grid
 @use "./bulma-custom.scss" as *;
+@use "./components.scss" as *;
+@use "./grid.scss" as *;
+
 
 /* light/dark theme toggle */
 
@@ -141,6 +122,12 @@ body {
   filter: brightness(0.25);
 }
 
+/* logo */
+img.logo {
+  height: 32px;
+  width: auto;
+}
+
 /* fixed page header, contains navbar */
 .page-header {
   /* fixed z-20 top-0 start-0 w-full */
@@ -159,11 +146,11 @@ nav.nav-bar {
   padding-bottom: 0.25rem;
   padding-left: 0.5rem;
   padding-right: 0.5rem;
-  background-color: #fef6e4; /* bg-tacao-100 */
+  background-color: var(--color-surface-main);
   border-radius: 0.125rem;  /* rounded-sm */
-  border: 1px solid #fde68a; /* border-tacao-200 */
+  border: 1px solid #fde68a;
   display: flex;
-  is-flex-wrap: wrap;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
@@ -190,35 +177,31 @@ nav.nav-bar {
   width: calc(100vw - 10px);
 }
 
+.cursor-pointer {
+  cursor: pointer;
+}
 
 /* accuracy colors */
 .accuracy-red,
 .accuracy-red-hover {
-  color: #f87171;
+  color: var(--color-danger);
 }
 .accuracy-red-hover:hover {
-  color: #fca5a5;
+  color: var(--color-danger-lighter);
 }
 .accuracy-orange,
 .accuracy-orange-hover {
-  color: #f97316;
+  color: var(--color-warning);
 }
 .accuracy-orange-hover:hover {
-  color: #fdba74;
-}
-.accuracy-yellow,
-.accuracy-yellow-hover {
-  color: #ca8a04;
-}
-.accuracy-yellow-hover:hover {
-  color: #fde047;
+  color: var(--color-warning-lighter);
 }
 .accuracy-green,
 .accuracy-green-hover {
-  color: #059669;
+  color: var(--color-success);
 }
 .accuracy-green-hover:hover {
-  color: #34d399;
+  color: var(--color-success-lighter);
 }
 
 
@@ -246,16 +229,8 @@ input[type="search"]::-webkit-search-cancel-button {
 a,
 .a-link {
   font-weight: 600;
-  color: #b45309;
   cursor: pointer;
-  transition: color 0.2s;
 }
-
-a:hover,
-.a-link:hover {
-  color: #fbbf24;
-}
-
 
 /* pulse skeleton loading effect */
 .pulse-skeleton {
@@ -282,61 +257,14 @@ a:hover,
   50% { opacity: 0.5; }
 }
 
-
-
-.input-text,
-.input-text-faded,
-.input-text-small {
-  display: inline-block;
-  width: 100%;
-  border-radius: 0.375rem;
-  border: none;
-  font-size: 0.875rem;
-  color: #111827;
-  background-color: #fff;
-  box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
-  outline: none;
-  box-shadow: 0 0 0 1px #f6ad55;
-  padding: 0.75rem;
-}
-
 .input-text-small {
   padding: 0.5rem;
-}
-.input-text:focus,
-.input-text-faded:focus,
-.input-text-small:focus {
-  box-shadow: 0 0 0 2px #b45309;
-}
-.input-text:disabled,
-.input-text-faded:disabled,
-.input-text-small:disabled {
-  color: #6b7280;
-  background-color: #fef6e4;
 }
 .input-text-faded {
   background-color: #fef6e4;
 }
 .input-text-faded:focus {
   background-color: #fff;
-}
-
-/* button with icon that changes on hover */
-
-.button-icon-hover > span.icon {
-  transition: all 0.5s;
-}
-
-.button-icon-hover > span.icon:first-child,
-.button-icon-hover:hover > span.icon:last-child {
-  opacity: 1;
-  display: inline-block;
-}
-
-.button-icon-hover > span.icon:last-child,
-.button-icon-hover:hover > span.icon:first-child {
-  opacity: 0;
-  display: none;
 }
 
 /* fade in/out effect */
@@ -355,11 +283,11 @@ a:hover,
   height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background-color: #fef6e4;
+  background-color: var(--color-surface-main);
 }
 ::-webkit-scrollbar-thumb {
-  background-color: #f6ad55;
+  background-color: var(--color-surface-alt);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #fbbf24;
+  background-color: var(--color-background);
 }

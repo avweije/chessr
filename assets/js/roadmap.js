@@ -467,7 +467,6 @@ class Roadmap {
     var colors = [
       ["accuracy-red", "accuracy-red-hover"],
       ["accuracy-orange", "accuracy-orange-hover"],
-      ["accuracy-yellow", "accuracy-yellow-hover"],
       ["accuracy-green", "accuracy-green-hover"],
     ];
 
@@ -498,9 +497,8 @@ class Roadmap {
       pgn.className = "has-text-weight-medium whitespace-nowrap px-3 py-2";
       pgn.innerHTML = move;
 
-      var accuracyIdx = Math.max(0, Math.ceil((1 - data.fail) * 4) - 1);
+      var accuracyIdx = Math.max(0, Math.ceil((1 - data.fail) * 3) - 1);
 
-      //
       var accuracy = document.createElement("span");
       accuracy.className =
         "is-flex is-align-items-center has-text-weight-medium is-size-6 px-2 py-2 " +
@@ -551,7 +549,6 @@ class Roadmap {
     var colors = [
       ["accuracy-red", "accuracy-red-hover"],
       ["accuracy-orange", "accuracy-orange-hover"],
-      ["accuracy-yellow", "accuracy-yellow-hover"],
       ["accuracy-green", "accuracy-green-hover"],
     ];
 
@@ -609,11 +606,11 @@ class Roadmap {
       var clickable = document.createElement("label");
       clickable.htmlFor = "roadmapTreeRadio_" + data[i].id;
       clickable.className =
-        "is-flex is-flex-direction-column is-flex-grow-1 bg-tacao-50/50 dark:bg-slate-800 tc-sharp hover:bg-tacao-100 dark:hover:bg-slate-700 hover:text-marigold-600 dark:hover:text-marigold-500" +
+        "is-flex is-flex-direction-column is-flex-grow-1" +
         (data[i].lines.length > 0 ? " cursor-pointer" : "");
       //
       var header = document.createElement("div");
-      header.className = "is-flex is-justify-content-space-between  is-align-items-center";
+      header.className = "is-flex is-justify-content-space-between is-align-items-center";
       //
       var move =
         Math.ceil(data[i].line.length / 2) +
@@ -628,37 +625,36 @@ class Roadmap {
       pgn.className = "has-text-weight-medium px-3 pt-2";
       pgn.innerHTML = move;
 
-      var accuracyIdx = Math.max(0, Math.ceil((1 - data[i].fail) * 4) - 1);
+      var accuracyIdx = Math.max(0, Math.ceil((1 - data[i].fail) * 3) - 1);
 
-      //
       var accuracy = document.createElement("span");
       accuracy.className =
         "is-flex  is-align-items-center self-start has-text-weight-medium is-size-6 px-2 pt-2 " +
         colors[accuracyIdx][0];
-      //
+
       var icon = document.createElement("span");
       icon.innerHTML = '<i class="fa-solid fa-crosshairs"></i>';
-      //
+
       var percentage = document.createElement("span");
       percentage.className = "";
       percentage.innerHTML = Math.round((1 - data[i].fail) * 100) + "%";
-      //
+
       accuracy.appendChild(icon);
       accuracy.appendChild(percentage);
-      //
+
       header.appendChild(pgn);
       header.appendChild(accuracy);
-      //
+      
       var main = document.createElement("div");
       main.className = "is-flex is-flex-direction-column is-justify-content-space-between is-flex-grow-1 px-3 pb-3 pt-1";
 
       var eco = document.createElement("div");
-      eco.className = "is-size-6 tc-base";
+      eco.className = "is-size-6";
       eco.innerHTML =
         data[i].eco && data[i].eco.name ? data[i].eco.name : data[i].pgn;
 
       var cntrs = document.createElement("div");
-      cntrs.className = "is-flex is-justify-content-space-between text-xs has-text-faded pt-2";
+      cntrs.className = "is-flex is-justify-content-space-between is-size-7 has-text-faded pt-2";
 
       // show number of moves in this line
       var sp = document.createElement("span");
@@ -692,7 +688,7 @@ class Roadmap {
       //
       var footer = document.createElement("div");
       footer.className =
-        "is-flex is-justify-content-end  is-align-items-center bg-tacao-100 dark:bg-slate-700 px-1 border-t border-tacao-200 dark:border-slate-600";
+        "is-flex is-justify-content-end  is-align-items-center";
 
       // if there are any variations
       if (data[i].vcount > 0) {
@@ -704,12 +700,13 @@ class Roadmap {
         // only show it if it's lower than the current
         if (lowestAcc.fail > data[i].fail) {
           //
-          accuracyIdx = Math.max(0, Math.ceil((1 - lowestAcc.fail) * 4) - 1);
+          accuracyIdx = Math.max(0, Math.ceil((1 - lowestAcc.fail) * 3) - 1);
+
           //
           var lowest = document.createElement("span");
           lowest.title = "Lowest accuracy variation";
           lowest.className =
-            "cursor-pointer is-flex  is-align-items-center px-2 py-1 " +
+            "cursor-pointer is-flex is-align-items-center px-2 py-1 " +
             colors[accuracyIdx][0] +
             " " +
             colors[accuracyIdx][1];
@@ -750,31 +747,29 @@ class Roadmap {
         //
         var last = document.createElement("span");
         last.title = "Last variation in line";
-        last.className = "px-2 py-1 text-tacao-300 dark:text-slate-500";
+        last.className = "px-2 py-1";
 
         sp = document.createElement("span");
         sp.innerHTML = '<i class="fa-solid fa-arrow-turn-down"></i>';
-        // lastpass
-        // ray-end
 
         last.appendChild(sp);
 
         footer.appendChild(last);
       }
 
-      //
+
       var missingMoves = this.findMissingTopPlayedMoves(data[i].lines);
       if (missingMoves.length > 0) {
-        //
+
         var total = 0;
         for (var x = 0; x < missingMoves.length; x++) {
           total += missingMoves[x].missing.length;
         }
-        //
+
         var missing = document.createElement("span");
         missing.title = "Missing top responses";
         missing.className =
-          "cursor-pointer is-flex  is-align-items-center px-2 py-1 text-sky-600 hover:text-sky-400 dark:text-sky-600 dark:hover:text-sky-400";
+          "cursor-pointer is-flex  is-align-items-center px-2 py-1";
 
         sp = document.createElement("span");
         sp.innerHTML = '<i class="fa-solid fa-medal"></i>';
@@ -799,7 +794,7 @@ class Roadmap {
       var repertoire = document.createElement("span");
       repertoire.title = "Open in repertoire";
       repertoire.className =
-        "cursor-pointer is-flex is-align-items-center px-2 py-1 tc-link-shade";
+        "cursor-pointer is-flex is-align-items-center px-2 py-1";
 
       sp = document.createElement("span");
       sp.innerHTML = '<i class="fa-solid fa-chess-board"></i>';
@@ -1013,10 +1008,9 @@ class Roadmap {
   //
   loadRoadmap(roadmap, depth = 0, hidden = false) {
     var colors = [
-      "text-white bg-red-500",
-      "text-white bg-orange-400",
-      "text-white bg-yellow-500",
-      "text-white bg-secondary-500",
+      "text-white has-background-danger",
+      "text-white has-background-warning",
+      "text-white has-background-success",
     ];
 
     //
@@ -1070,9 +1064,8 @@ class Roadmap {
       }
 
       // get the accuracy index for the colors
-      var accuracyIdx = Math.max(0, Math.ceil((1 - roadmap[i].fail) * 4) - 1);
+      var accuracyIdx = Math.max(0, Math.ceil((1 - roadmap[i].fail) * 3) - 1);
 
-      //
       var hdr = document.createElement("span");
       hdr.className =
         "is-align-self-center cursor-pointer is-size-6 py-1 px-2 mx-1 whitespace-nowrap rounded border border-gray-700 dark:border-gray-100 " +

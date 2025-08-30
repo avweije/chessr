@@ -26,13 +26,13 @@
 		</div>
 	</div>
 
-	<div class="is-flex is-justify-content-space-around mt-12">
-		<div id="settingsTabAccount" class="box md:w-4/5 lg:w-3/5">
-			<div>
-				<label class="mb-1 is-size-6 has-text-weight-medium tc-sharp">Email address</label>
-				<div class="is-flex is-align-items-center">
-					<input id="accountEmailAddress" disabled type="email" value="" class="input-text-faded">
-					<div class="w-8 ml-2">
+	<div class="w-medium mx-auto is-flex is-justify-content-space-around mt-6">
+		<div id="settingsTabAccount" class="box w-full">
+			<div class="field">
+				<label class="label">Email address</label>
+				<div class="control">
+					<div class="is-flex is-align-items-center is-gap-1">
+						<input id="accountEmailAddress" disabled type="email" value="" class="input">
 						<button id="unlockEmailAddressButton" type="button" class="button-icon-hover">
 							<span class="icon">
 								<i class="fa-solid fa-lock"></i>
@@ -43,124 +43,141 @@
 						</button>
 					</div>
 				</div>
-				<div id="accountConfirmContainer" class="transition-opacity opacity-0">
-					<label class="mt-5 mb-1 is-size-6 has-text-weight-medium tc-sharp">Please confirm</label>
-					<p class="tc-base mb-5 p-1">Your new email address needs to be verified. Click on the link below to send a verification email and follow the instructions to confirm your changes.</p>
-					<button id="sendVerificationEmailButton" type="button" class="button is-primary">Send the verification email</button>
-				</div>
+			</div>
+				
+			<div id="accountConfirmContainer" class="is-hidden mt-5">
+				<article class="message is-info">
+					<div class="message-body">
+						<span class="icon is-small">
+							<i class="fa-solid fa-circle-info"></i>
+						</span>
+						<span class="ml-1">Your new email address needs to be verified. Click on the link below to send a verification email and follow the instructions to confirm your changes.</span>
+					</div>
+				</article>
+				<button id="sendVerificationEmailButton" type="button" class="button is-primary">Send the verification email</button>
 			</div>
 		</div>
 
-		<div id="settingsTabBoard" class="is-hidden box is-flex is-flex-direction-column gap-y-5 md:gap-y-0 md:gap-x-5 md:flex-row items-start md:is-justify-content-space-between md:w-4/5 lg:w-3/5">
-			<div>
-				<div id="boardSettingsContainer" class="is-flex is-align-items-center mb-5">
-					<div class="mr-2">
-						<label class="mb-1 is-size-6 has-text-weight-medium tc-base">Theme</label>
-						<div class="select">
-							<select id="boardThemeSelect">
-								<option value="chess-club">Chess Club</option>
-								<option value="green">Green</option>
-								<option value="blue">Blue</option>
-							</select>
+		<div id="settingsTabBoard" class="is-hidden box is-flex is-flex-direction-column is-gap-3">
+			<div class="is-flex is-flex-direction-row is-align-items-flex-start is-justify-content-space-between is-gap-2">
+				<div class="is-flex is-gap-2">
+					<div class="is-flex is-align-items-center is-gap-1">
+						<div class="field">
+  							<label class="label">Theme</label>
+  							<div class="control">
+								<div class="select">
+									<select id="boardThemeSelect">
+										<option value="chess-club">Chess Club</option>
+										<option value="green">Green</option>
+										<option value="blue">Blue</option>
+									</select>
+								</div>
+							</div>
 						</div>
 					</div>
-					<div class="m2-2">
-						<label class="mb-1 is-size-6 has-text-weight-medium tc-base">Pieces</label>
-						<div class="select">
-							<select id="boardPiecesSelect">
-								<option value="standard.svg">Standard</option>
-								<option value="companion.svg">Companion</option>
-								<option value="gioco.svg">Gioco</option>
-								<!--<option value="horsey.svg">Horsey</option>-->
-								<option value="kiwen-suwi.svg">Kiwen-Suwi</option>
-								<option value="monarchy.svg">Monarchy</option>
-								<option value="staunty.svg">Staunty</option>
-								<option value="tatiana.svg">Tatiana</option>
-							</select>
+					<div class="is-flex is-align-items-center is-gap-1">
+						<div class="field">
+							<label class="label">Pieces</label>
+							<div class="control">
+								<div class="select">
+									<select id="boardPiecesSelect">
+										<option value="standard.svg">Standard</option>
+										<option value="companion.svg">Companion</option>
+										<option value="gioco.svg">Gioco</option>
+										<!--<option value="horsey.svg">Horsey</option>-->
+										<option value="kiwen-suwi.svg">Kiwen-Suwi</option>
+										<option value="monarchy.svg">Monarchy</option>
+										<option value="staunty.svg">Staunty</option>
+										<option value="tatiana.svg">Tatiana</option>
+									</select>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>
 
-				<div id="animationSettingsContainer" class="is-flex is-align-items-center">
-					<div class="mr-2">
-						<label class="mb-2 is-size-6 has-text-weight-medium tc-base">Animation Duration</label>
-						<div class="is-relative pb-5">
-							<div class="is-absolute left-0 right-0 bottom-0 isflex is-justify-content-space-between">
-								<span class="text-xs tc-base">0ms</span>
-								<span class="text-xs tc-base">500ms</span>
+					<div class="">
+						<div class="field">
+							<label class="label mb-1">Animation Duration</label>
+							<div class="control">
+								<div class="is-relative pb-4">
+									<div class="is-absolute left-0 right-0 bottom-0 is-flex is-justify-content-space-between">
+										<span class="is-size-7">0ms</span>
+										<span class="is-size-7">500ms</span>
+									</div>
+									<input id="animationDurationInput" type="range" min="0" max="500" step="50" value="300">
+								</div>
 							</div>
-							<input id="animationDurationInput" type="range" min="0" max="500" step="50" value="300" class="w-48 h-3 bg-gray-300 dark:bg-gray-400 border border-gray-400 dark:border-gray-500 is-large-rounded appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:is-rounded [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-tacao-500 [&::-webkit-slider-thumb]:dark:bg-marigold-600">
 						</div>
 					</div>
-				</div>
 			</div>
 
 			<div class="flex">
-				<div id="board" style="width: 50vh; max-width: 35vw;"></div>
+				<div id="board" style="width: 60vh; max-width: 40vw;"></div>
 			</div>
 		</div>
 
-		<div id="settingsTabEngine" class="is-hidden box md:w-4/5 lg:w-3/5">
+		<div id="settingsTabEngine" class="is-hidden box">
 			<div id="animationSettingsContainer" class="is-flex is-flex-direction-column is-align-items-flex-start">
-				<div class="mb-8">
-					<label class="mb-1 is-size-6 has-text-weight-medium tc-sharp">Maximum Search Time</label>
-					<p class="tc-base p-1 mb-2">The maximum amount of time the engine can search a position when being used in the repertoire.</p>
+				<div class="mb-5">
+					<label class="label">Maximum Search Time</label>
+					<p class="p-1 mb-2">The maximum amount of time the engine can search a position when being used in the repertoire.</p>
 					<span class="is-relative pb-5">
 						<div class="is-absolute left-0 right-0 bottom-0 is-flex is-justify-content-space-between">
-							<span class="text-xs has-text-faded">10s</span>
-							<span class="text-xs has-text-faded">2m</span>
+							<span class="is-size-7">10s</span>
+							<span class="is-size-7">2m</span>
 						</div>
-						<input id="repertoireEngineTimeInput" type="range" min="10" max="120" step="10" value="30" class="w-48 h-3 bg-gray-300 dark:bg-gray-400 border border-gray-400 dark:border-gray-500 is-large-rounded appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:is-rounded [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-tacao-500 [&::-webkit-slider-thumb]:dark:bg-marigold-600">
+						<input id="repertoireEngineTimeInput" type="range" min="10" max="120" step="10" value="30" class="">
 					</span>
 				</div>
-				<div class="mb-8">
-					<label class="mb-1 is-size-6 has-text-weight-medium tc-sharp">Search Time / Move</label>
-					<p class="tc-base p-1 mb-2">The amount of time the engine will use for each move that needs to be evaluated when analysing your games.</p>
+				<div class="mt-4 mb-5">
+					<label class="label">Search Time / Move</label>
+					<p class="p-1 mb-2">The amount of time the engine will use for each move that needs to be evaluated when analysing your games.</p>
 					<span class="is-relative pb-5">
 						<div class="is-absolute left-0 right-0 bottom-0 is-flex is-justify-content-space-between">
-							<span class="text-xs has-text-faded">500ms</span>
-							<span class="text-xs has-text-faded">5s</span>
+							<span class="is-size-7">500ms</span>
+							<span class="is-size-7">5s</span>
 						</div>
-						<input id="analyseEngineTimeInput" type="range" min="500" max="5000" step="500" value="1000" class="w-48 h-3 bg-gray-300 dark:bg-gray-400 border border-gray-400 dark:border-gray-500 is-large-rounded appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:is-rounded [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-tacao-500 [&::-webkit-slider-thumb]:dark:bg-marigold-600">
+						<input id="analyseEngineTimeInput" type="range" min="500" max="5000" step="500" value="1000" class="">
 					</span>
 				</div>
-				<div>
-					<label class="mb-1 is-size-6 has-text-weight-medium tc-sharp">Mistakes</label>
-					<p class="tc-base p-1 mb-2">When analysing your games, you can choose to ignore the inaccuracies. Only mistakes and blunders will be added to your analysis practice run.</p>
+				<div class="mt-4">
+					<label class="label">Mistakes</label>
+					<p class="p-1 mb-2">When analysing your games, you can choose to ignore the inaccuracies. Only mistakes and blunders will be added to your analysis practice run.</p>
 					<label class="input-toggle">
 						<input id="analyseIgnoreInaccuracyCheckbox" type="checkbox" name="animate_complete" value="1" class="sr-only peer">
 						<div class="input-toggle-switch"></div>
 						<div class="ml-3">
 							<p class="is-size-6 font-normal tc-base">Ignore inaccuracies during analysis.</p>
-							<p class="text-xs has-text-faded">Only count mistakes and blunders.</p>
+							<p class="is-size-7">Only count mistakes and blunders.</p>
 						</div>
 					</label>
 				</div>
 			</div>
 		</div>
 
-		<div id="settingsTabPractice" class="is-hidden box md:w-4/5 lg:w-3/5">
+		<div id="settingsTabPractice" class="is-hidden box">
 			<div id="variationSettingsContainer" class="is-flex is-flex-direction-column is-align-items-flex-start">
-				<div class="mb-8">
-					<label class="mb-1 is-size-6 has-text-weight-medium tc-sharp">Recommend Moves</label>
-					<p class="tc-base p-1 mb-2">The amount of moves that will be recommended based on accuracy and the last time you practiced a move.</p>
+				<div class="mb-5">
+					<label class="label">Recommend Moves</label>
+					<p class="p-1 mb-2">The amount of moves that will be recommended based on accuracy and the last time you practiced a move.</p>
 					<span class="is-relative pb-5">
 						<div class="is-absolute left-0 right-0 bottom-0 is-flex is-justify-content-space-between">
-							<span class="text-xs has-text-faded">Less</span>
-							<span class="text-xs has-text-faded">More</span>
+							<span class="is-size-7">Less</span>
+							<span class="is-size-7">More</span>
 						</div>
-						<input id="recommendIntervalInput" type="range" min="0" max="3" step="1" value="0" class="w-48 h-3 bg-gray-300 dark:bg-gray-400 border border-gray-400 dark:border-gray-500 is-large-rounded appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:is-rounded [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:bg-tacao-500 [&::-webkit-slider-thumb]:dark:bg-marigold-600">
+						<input id="recommendIntervalInput" type="range" min="0" max="3" step="1" value="0" class="">
 					</span>
 				</div>
-				<div>
-					<label class="mb-1 is-size-6 has-text-weight-medium tc-sharp">Animate Variations</label>
+				<div class="mt-4">
+					<label class="label">Animate Variations</label>
 					<p class="tc-base p-1 mb-2">Each line is animated from the beginning of that line. Any variations that follow can be animated from the start of the variation or from the beginning of the line.</p>
 					<label class="input-toggle">
 						<input id="animateVariationCheckbox" type="checkbox" value="1" class="sr-only">
 						<div class="input-toggle-switch"></div>
 						<div class="ml-3">
 							<p class="is-size-6 ">Animate from the beginning of the line.</p>
-							<p class="is-size-7 has-text-faded">Instead of from the start of the variation.</p>
+							<p class="is-size-7">Instead of from the start of the variation.</p>
 						</div>
 					</label>
 				</div>
@@ -175,6 +192,7 @@
 	<link rel="stylesheet" href="{{ asset('styles/chessboard.css') }}">
 	<link rel="stylesheet" href="{{ asset('markers/markers.css') }}">
 	<link rel="stylesheet" href="{{ asset('arrows/arrows.css') }}">
+	<link rel="stylesheet" href="{{ asset('styles/settings.css') }}">
 {% endblock %}
 {% block javascripts %}
 	{{ parent() }}

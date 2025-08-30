@@ -140,12 +140,29 @@ class AdminController extends AbstractController
     }
 
     #[Route('/admin/evaluations/import', methods: ["POST"], name: 'app_admin_evaluations_import')]
-    public function importEvaluations(Request $request): JsonResponse
+    public function importInBatches(Request $request): JsonResponse
     {
         $data = $request->getPayload()->all();
 
+        $importType = $data["type"];
+
         $maxLines = intval($data["maxLines"]);
         $batchSize = intval($data["batchSize"]);
+        $processed = intval($data["processed"]);
+
+        if ($importType == "evaluations") {
+            return $this->importEvaluations($maxLines, $batchSize);
+        } else {
+            return $this->importPgnFiles($batchSize, $processed);
+        }
+    }
+
+    private function importEvaluations($maxLines, $batchSize): JsonResponse
+    {
+
+
+        // IF IMPORT TYPE = 'evaluations' ITS THIS FUNCTION
+        // IF IMPORT TYPE = 'move_statistics' ITS importPgnFiles (needs rewrite for batches)
 
         //dd($data);
 
@@ -707,7 +724,7 @@ class AdminController extends AbstractController
 
 
         // process the games from the pgn files and import the move totals
-        $this->importPgnFiles();
+        //$this->importPgnFiles();
 
         $seconds = time() - $time;
 
@@ -772,330 +789,194 @@ class AdminController extends AbstractController
         fclose($handle2);
     }
 
-    public function importPgnFiles()
+    public function importPgnFiles($limit, $skip): JsonResponse
     {
-        
-        // increase the memory limit
         ini_set('memory_limit', '8G');
 
-        // set the upload folder
-        $folder = './';
-
-        // done
-        //$files = ['./lichess_elite_2023-02-?.pgn'];
-        //$files = ['./lichess_elite_2023-03-?.pgn'];
-        //$files = ['./lichess_elite_2023-04-?.pgn'];
-
-        // todo
-
-        $files = ['./lichess_elite_2023-05-1.pgn'];
-        //$files = ['./lichess_elite_2023-05-1.pgn', './lichess_elite_2023-05-2.pgn'];
-
-        exit;
-
-        /*
-
-        - DO NOT SAVE TO DATABASE IF ONLY 1 GAME PLAYED!!
-        - IF WE DO THIS PER 18K GAMES, WE SAVE 80% OR MORE
-        - WILL BE MUCH FASTER.
-
-        */
-
+        $files = ['./lichess_elite_2023-05-2.pgn'];
+        $filePath = './lichess_elite_2023-05-2.pgn';
 
         $totals = [];
-
-        //
         $gameCount = 0;
         $moveCount = 0;
         $processCount = 0;
         $queryCount = 0;
+        $bytesReadTotal = 0;
 
+        // keep this configurable – smaller batches reduce memory use
         $batchSize = 10;
-        //$batchSize = 25000;
 
-        // loop through the files
         foreach ($files as $file) {
-            foreach ($this->myPgnParser->parsePgn($folder . $file) as $game) {
-                // reset the time limit so we don't timeout on large files
+            foreach ($this->myPgnParser->parsePgn($file, false, $limit, $skip) as $item) {
                 set_time_limit(300);
 
-                // process the game, pass the totals & movecount as reference
-                $this->processGame($game, $totals, $moveCount);
+                $game = $item["game"];
 
+                $bytesReadTotal = $item["bytesRead"];
+
+                $this->processGame($game, $totals, $moveCount);
                 $gameCount++;
 
-                //$usage = memory_get_usage() / 1024 / 1024;
-
-                // every 50k games or when memory is low
-                //if ($usage > 256 || $gameCount % 50000 == 0) {
-                if ($gameCount % $batchSize == 0) {
-                    // process the moves
-                    $cnt = $this->processMoves($totals);
-
-                    //$queryCount = $queryCount + $cnt;
-
+                if ($gameCount % $batchSize === 0) {
+                    $queryCount += $this->processMoves($totals);
                     $processCount++;
 
-                    // free the memory
+                    // free memory immediately after batch
                     $totals = [];
                     gc_collect_cycles();
-
-                    break 2;
                 }
 
                 unset($game);
-                gc_collect_cycles();
             }
         }
 
-        // process the moves that haven't been processed yet
-        if (count($totals) > 0) {
-            // process the moves
-            $cnt = $this->processMoves($totals);
-
-            $queryCount = $queryCount + $cnt;
-
+        // flush leftovers
+        if ($totals) {
+            $queryCount += $this->processMoves($totals);
             $processCount++;
-
-            // free the memory
             $totals = [];
+            gc_collect_cycles();
         }
 
-        print $gameCount . " games processed.<br>";
-        print $moveCount . " moves processed.<br>";
-        print $processCount . " calls to the processMoves function.<br>";
-        print $queryCount . " number of queries executed.<br>";
+        //printf("%d games processed.\n", $gameCount);
+        //printf("%d moves processed.\n", $moveCount);
+        //printf("%d calls to processMoves.\n", $processCount);
+        //printf("%d queries executed.\n", $queryCount);
+        //printf("Memory usage: %.2f MB\n", memory_get_usage() / 1024 / 1024);
 
-        $usage = memory_get_usage() / 1024 / 1024;
+        $fileSize = filesize($filePath);
+        $percentageComplete = round(($bytesReadTotal / $fileSize) * 100,2);
 
-        print "Memory usage: " . round($usage, 2) . "mb<br>";
+        return new JsonResponse([
+            "processed" => $gameCount,
+            "moveCount" => $moveCount,
+            "processCount" => $processCount,
+            "queryCount" => $queryCount,
+            "fileSize" => $fileSize,
+            "bytesRead" => $bytesReadTotal,
+            "percentageComplete" => $percentageComplete, // keep for now, just in case JS uses it
+            "fileIndex" => 0 // keep for now..
+        ]);
     }
 
-    private function processGame($game, &$totals, &$moveCount)
+    private array $fenDict = [];
+    private int $nextFenId = 1;
+
+
+    private function processGame($game, array &$totals, int &$moveCount): void
     {
-        // get the FEN parser
         $fen = new FEN();
-
-        //
-        $white = true;
-
-        //print $fen->export() . "<br>";
-
-        //print "<br>result: " . $game->getResult() . "<br>";
-
-        $result = '';
-
-        switch ($game->getResult()) {
-            case '1-0':
-                $result = 'w';
-                break;
-            case '0-1':
-                $result = 'b';
-                break;
-            case '1/2-1/2':
-                $result = 'd';
-                break;
-        }
-
-        //print "result: " . $result . "<br>";
-
-        //
         $moves = $game->getMovesArray();
-
-        //
-        // only take the 1st X moves ??
-        //
-        // we don't need all moves in all positions
-        //
-        // the 1st 20 is probably enough???
-        //
-        // we are talking about halfmoves, so 20-30 ??
-        //
-
         $maxMoves = 20;
-        $pgn = "";
+        $limit = min($maxMoves, count($moves));
 
-        for ($i = 0; $i < min($maxMoves, count($moves)); $i++) {
+        // normalize result
+        $map = ['1-0' => 'w', '0-1' => 'b', '1/2-1/2' => 'd'];
+        $result = $map[$game->getResult()] ?? '';
 
-            // safety check, encountered empty moves?
-            if ($moves[$i] == "") {
-                continue;
-            }
+        for ($i = 0; $i < $limit; $i++) {
+            $move = $moves[$i] ?? '';
+            if ($move === '') continue;
 
-            //
-            // save to database: fen, move, result
-            //
-
-            // get the fen
             $fenstr = $fen->export();
 
-            // store all in array, save once per file ? - testing..
-            if (!isset($totals[$fenstr])) {
-                //$totals[$fenstr] = ['pgn' => $pgn];
-                $totals[$fenstr] = [];
+            // get or assign a FEN ID
+            if (!isset($this->fenDict[$fenstr])) {
+                $fenId = $this->nextFenId++;
+                $this->fenDict[$fenstr] = $fenId;
+            } else {
+                $fenId = $this->fenDict[$fenstr];
             }
 
-            //
-            if (!isset($totals[$fenstr][$moves[$i]])) {
-                $totals[$fenstr][$moves[$i]] = [0, 0, 0];
+            $key = $fenId . '|' . $move;
+
+            if (!isset($totals[$key])) {
+                $totals[$key] = [0, 0, 0]; // [wins, draws, losses]
             }
 
-            //
-            // update the totals
-            if ($result == 'd') {
-                $totals[$fenstr][$moves[$i]][1]++;
-                //} else if (($white && $result == 'w') || (!$white && $result == 'b')) {
-            } else if ($result == 'w') {
-                $totals[$fenstr][$moves[$i]][0]++;
-                //} else if (($white && $result == 'b') || (!$white && $result == 'w')) {
-            } else if ($result == 'b') {
-                $totals[$fenstr][$moves[$i]][2]++;
+            switch ($result) {
+                case 'w':
+                    $totals[$key][0]++;
+                    break;
+                case 'd':
+                    $totals[$key][1]++;
+                    break;
+                case 'b':
+                    $totals[$key][2]++;
+                    break;
             }
 
-
-            // make the move
-            $fen->move($moves[$i]);
-
-            // add to the pgn
-            $pgn .= ($pgn != "" ? " " : "") . ($i % 2 == 0 ? ($i / 2 + 1) . ". " : "") . $moves[$i];
-
-            $white = !$white;
-
+            $fen->move($move);
             $moveCount++;
         }
 
-        $fen = null;
+        unset($fen, $moves);
+        gc_collect_cycles();
     }
 
-    private function processMoves($moves): int
+    private function processMoves(array $moves): int
     {
+        $stmtFind = $this->conn->prepare(
+            'SELECT id, wins, draws, losses FROM moves WHERE fen = :fen AND move = :move'
+        );
+        $stmtInsert = $this->conn->prepare(
+            'INSERT INTO moves (fen, move, wins, draws, losses) 
+         VALUES (:fen, :move, :wins, :draws, :losses)'
+        );
+        $stmtUpdate = $this->conn->prepare(
+            'UPDATE moves SET wins = :wins, draws = :draws, losses = :losses WHERE id = :id'
+        );
 
-
-        //if (!$this->conn->isConnected()) {
-        //  $this->conn->connect();
-        //}
-
-        //$em = $this->doctrine->getManager();
-        //$repo = $em->getRepository('App\Entity\Moves');
-
-        //$repo->persist();
-
-        //$conn = $this->em->getConnection();
-        //$conn = $repo->getConnection();
-
-        // prepare the select statement
-        $sql = 'SELECT * FROM moves WHERE fen = :fen AND move = :move';
-        $stmtFind = $this->conn->prepare($sql);
-
-        // prepare the insert statement
-        $sql = 'INSERT INTO moves ( fen, move, wins, draws, losses ) VALUES ( :fen, :move, :wins, :draws, :losses )';
-        $stmtInsert = $this->conn->prepare($sql);
-
-        // prepare the update statement
-        //$sql = 'UPDATE moves SET wins = :wins, draws = :draws, losses = :losses WHERE fen = :fen AND move = :move';
-        $sql = 'UPDATE moves SET wins = :wins, draws = :draws, losses = :losses WHERE id = :id';
-        $stmtUpdate = $this->conn->prepare($sql);
-
-        //$repository = $this->em->getRepository(Moves::class);
-        $i = 0;
         $queryCount = 0;
-
         $batchSize = 1000;
-
-        $this->conn->setAutoCommit(false);
         $this->conn->beginTransaction();
 
-        foreach ($moves as $fen => $fenMoves) {
-            // reset the time limit so we don't timeout on large files
+        foreach ($moves as $key => $score) {
             set_time_limit(300);
 
-            foreach ($fenMoves as $move => $score) {
+            [$fenId, $move] = explode('|', $key, 2);
 
-                // skip the 'pgn' field, not an actual move..
-                if ($move == 'pgn') {
-                    continue;
-                }
+            // retrieve the actual FEN string from dictionary
+            $fen = array_search((int)$fenId, $this->fenDict, true);
 
-                //
-                // IF ONLY 1 GAME, SKIP AND DON'T SAVE..
-                //
-                if ($score[0] + $score[1] + $score[2] < 2) {
-                    continue;
-                }
+            // skip if we have only 1 game -- temp disable, getting very few moves..
+            //if ($score[0] + $score[1] + $score[2] < 2) continue;
 
-                //
+            $queryCount++;
 
-                $queryCount++;
+            $stmtFind->bindValue('fen', $fen);
+            $stmtFind->bindValue('move', $move);
+            $item = $stmtFind->executeQuery()->fetchAssociative();
 
-                //continue;
-
-                $stmtFind->bindValue('fen', $fen);
-                $stmtFind->bindValue('move', $move);
-
-                $result = $stmtFind->executeQuery();
-
-                $item = $result->fetchAssociative();
-
-                // if the move exists
-                if ($item == false) {
-                    //
-                    $stmtInsert->bindValue('fen', $fen);
-                    $stmtInsert->bindValue('move', $move);
-                    //
-                    $stmtInsert->bindValue('wins', $score[0]);
-                    $stmtInsert->bindValue('draws', $score[1]);
-                    $stmtInsert->bindValue('losses', $score[2]);
-                    //
-                    $affected = $stmtInsert->executeStatement();
-
-                    //
-                    if ($affected == 0) {
-
-                        print "-- No rows affected rows after insert:<br>";
-
-                        print "fen: " . $fen . "<br>";
-                        print "move: " . $move . "<br>";
-                        //exit;
-                    }
-                } else {
-                    //
-                    $stmtUpdate->bindValue('id', $item["id"]);
-                    //$stmtUpdate->bindValue('fen', $fen);
-                    //$stmtUpdate->bindValue('move', $move);
-                    //
-                    $stmtUpdate->bindValue('wins', $item['wins'] + $score[0]);
-                    $stmtUpdate->bindValue('draws', $item['draws'] + $score[1]);
-                    $stmtUpdate->bindValue('losses', $item['losses'] + $score[2]);
-                    //
-                    $affected = $stmtUpdate->executeStatement();
-
-                    //
-                    if ($affected == 0) {
-
-                        print "No rows affected rows after update:<br>";
-
-                        print "fen: " . $fen . "<br>";
-                        print "move: " . $move . "<br>";
-                        //exit;
-                    }
-                }
-
-                if ($queryCount % $batchSize == 0) {
-                    $this->conn->commit();
-                }
+            if ($item === false) {
+                $stmtInsert->bindValue('fen', $fen);
+                $stmtInsert->bindValue('move', $move);
+                $stmtInsert->bindValue('wins', $score[0]);
+                $stmtInsert->bindValue('draws', $score[1]);
+                $stmtInsert->bindValue('losses', $score[2]);
+                $stmtInsert->executeStatement();
+            } else {
+                $stmtUpdate->bindValue('id', $item['id']);
+                $stmtUpdate->bindValue('wins', $item['wins'] + $score[0]);
+                $stmtUpdate->bindValue('draws', $item['draws'] + $score[1]);
+                $stmtUpdate->bindValue('losses', $item['losses'] + $score[2]);
+                $stmtUpdate->executeStatement();
             }
 
-            $i++;
+            if ($queryCount % $batchSize === 0) {
+                $this->conn->commit();
+                $this->conn->beginTransaction();
+            }
         }
 
         $this->conn->commit();
 
-        // free memory
         unset($moves);
         gc_collect_cycles();
 
         return $queryCount;
     }
+
 
     // returns the duration in text, based off of microseconds
     public function getDuration($ms)

@@ -9,47 +9,65 @@ $light: hsl(221, 14%, 96%);
 $dark: hsl(221, 14%, 21%);
 
 // Bulma color overrides and extensions
-$primary: #4a90e2;
-$link: #f6ad55;
-$info: #00bcd4;
+$primary: #f6ad55;
+$link: #0369a1;
+$info: #4dd0e1;
 $success: #4caf50;
 $warning: #ff9800;
 $danger: #f44336;
 
 // Link variants
 $link-border: #fbd38d;
+$link-text: #af6b3f;
+$link-hover: #d4a017;
 
 // Text colors
 $text-default: #b45309;
 $text-title: #c05621;
-$text-faded: #f6ad55;
+$text-faded: #d3a26d;
 $text-on-background: #d1d5db;
 
 // Surfaces
 $background: #735751;
 $surface-main: #fef6e4;
-$surface-alt: #fde68a;
+$surface-alt: #fbd38d;
 $on-surface: #2c2c2c;
 
-// Bulma colors
-$primary-dark: #4a90e2;
-$link-dark: #f6ad55;
-$info-dark: #00bcd4;
+// Custom Extras
+$surface-border: #f6ad55;
+$input-background: #fcfcfc;
+$input-text: #a0674a;
+$input-background-disabled: #f0f0f0;
+$input-text-disabled: #B89E8A; // disabled input text color
+
+// Bulma color overrides and extensions - dark mode
+$primary-dark: #D18C2B;
+$link-dark: #4c946a;
+$info-dark: #33cfe0;
 $success-dark: #4caf50;
-$warning-dark: #ff9800;
-$danger-dark: #f44336;
+$warning-dark: #ffb74d;
+$danger-dark: #e57373;
 
 // Link variants
-$link-border-dark: #fbd38d;
+$link-border-dark: #5a5a5a;
+$link-text-dark: #a39464; // #8fa799;
+$link-hover-dark: #d7ac29; // #4c946a;
 
 // Text colors
-$text-default-dark: #b45309;
-$text-title-dark: #c05621;
-$text-faded-dark: #f6ad55;
-$text-on-background-dark: #d1d5db;
+$text-default-dark: #e0e0e0;   // light grey for normal text
+$text-title-dark: #ffffff;     // pure white for titles
+$text-faded-dark: #aaaaaa;     // darker grey for secondary text / small info
+$text-on-background-dark: #cccccc; // for text over dark background images
 
 // Surfaces
-$background-dark: #0D1321;
-$surface-main-dark: #3E5C76;
-$surface-alt-dark: #2C3E50;
-$on-surface-dark: #fef6e4;
+$background-dark: #121212;     // almost black, main background
+$surface-main-dark: #1e1e1e;   // card / box main background
+$surface-alt-dark: #2a2a2a;    // alternate surfaces / highlights
+$on-surface-dark: #e0e0e0;     // text color on surfaces
+
+// Custom Extras
+$surface-border-dark: #404040;
+$input-background-dark: #090909;
+$input-text-dark: #a8a8a8;
+$input-background-disabled-dark: #2f2f2f;
+$input-text-disabled-dark: #808080; // disabled input text color

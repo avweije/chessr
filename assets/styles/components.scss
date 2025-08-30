@@ -1,29 +1,4 @@
-.box {
-    border: solid 1px rgba(0,0,0,.2);
-    background-color: var(--color-surface-main);
-    box-shadow: none;
-}
-
-.dark .box {
-    border-color: rgba(255,255,255,.2);
-}
-
-.box-header {
-    /* is-flex is-justify-content-space-between is-align-items-center m-0 p-3 border-b border-tacao-300/60 dark:border-slate-900 */
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin: 0;
-    padding: 0.75rem; /* 3 * 0.25rem */
-    border-bottom: 1px solid rgba(0,0,0,.2); /* border-tacao-300/60 */
-}
-
-.dark .box-header {
-    border-color: rgba(255,255,255,.2); /* dark:border-slate-900 */
-}
-
-
-
+/* Checkbox Switch / Toggle ?? see input-toggle */
 .checkbox-switch {
   display: flex;
   align-items: center;
@@ -49,6 +24,31 @@
   display: none;
 }
 
+
+/* button with icon that changes on hover */
+.button-icon-hover > span.icon {
+  color: var(--bulma-link-color);
+  transition: all 0.5s;
+}
+
+.button-icon-hover:hover > span.icon {
+  color: var(--bulma-link-hover-color);
+}
+
+.button-icon-hover > span.icon:first-child,
+.button-icon-hover:hover > span.icon:last-child {
+  opacity: 1;
+  display: inline-block;
+}
+
+.button-icon-hover > span.icon:last-child,
+.button-icon-hover:hover > span.icon:first-child {
+  opacity: 0;
+  display: none;
+}
+
+
+/* Maybe make this a see-through button? */
 .goto-first-btn {
     flex-shrink: 0; /* is-flex-shrink-0 */
     width: 1.75rem; /* 7 * 0.25rem */
@@ -64,16 +64,8 @@
     font-size: 1rem;
 }
 
-/* grids */
-
-.grid-2-cols {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0.5rem; /* 2 * 0.25rem */
-}
 
 /* toggle */
-
 .input-toggle {
   display: inline-flex;
   align-items: center;
@@ -100,7 +92,7 @@
 }
 
 .input-toggle > input:checked ~ .input-toggle-switch {
-  background-color: #b45309;
+  background-color: var(--color-link);
 }
 
 /* knob (circle) */
@@ -123,7 +115,6 @@
 
 
 /* boxed link */
-
 .boxed-link {
   display: flex;
   align-items: center;
@@ -146,28 +137,21 @@
   margin: 0.5rem;
 }
 
-/* boxed radio menu */
 
+/* boxed radio menu */
 .boxed-radio-menu {
   display: inline-flex;
   justify-content: center;
   overflow: hidden;
   border-radius: 0.5rem;
-  background-color: #fef6e4;
-  border: 1px solid rgba(0,0,0,.2);
-}
-
-.dark .boxed-radio-menu {
-  border-color: rgba(255,255,255,.2);
+  background-color: var(--color-surface-main);
+  border: 1px solid var(--color-surface-border);
 }
 
 .boxed-radio-menu.hidden {
   display: none;
 }
 
-.boxed-radio-menu > .boxed-radio:not(:first-child) {
-  border-left: 1px solid #fef6e4;
-}
 .boxed-radio-menu > .boxed-radio {
   color: #6b7280;
 }
@@ -196,16 +180,29 @@ div:not(.boxed-radio-menu) > .boxed-radio {
   cursor: pointer;
 }
 
-.boxed-radio-menu .boxed-radio input:not(:disabled):not(:checked) ~ .boxed-radio-label:hover {
-  background-color: #fef6e4;
+.boxed-radio-menu .boxed-radio:not(:first-of-type) .boxed-radio-label {
+  border-left: 1px solid var(--color-surface-main);
 }
 
-/* boxed radio/checkbox groups */
+.boxed-radio-menu .boxed-radio:not(:last-of-type) .boxed-radio-label {
+  border-right: 1px solid var(--color-surface-main);
+}
 
+.boxed-radio-menu .boxed-radio input:not(:disabled):not(:checked) ~ .boxed-radio-label:hover {
+  background-color: var(--color-surface-alt);
+  border-color: var(--color-surface-alt);
+}
+
+.boxed-radio-menu .boxed-radio input:not(:disabled):not(:checked) ~ .boxed-radio-label:hover ~ .boxed-radio-text {
+  color: var(--color-text-default);
+}
+
+
+/* boxed radio/checkbox groups */
 .boxed-radio-group,
 .boxed-checkbox-group {
   display: flex;
-  is-flex-wrap: wrap;
+  flex-wrap: wrap;
   gap: 0.25rem;
   justify-content: center;
 }
@@ -216,7 +213,7 @@ div:not(.boxed-radio-menu) > .boxed-radio {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #fef6e4;
+  background-color: var(--color-surface-main);
   padding: 1rem;
   font-weight: 500;
   border-radius: 0.5rem;
@@ -241,31 +238,26 @@ div:not(.boxed-radio-menu) > .boxed-radio .boxed-radio-label,
   width: 100%;
   cursor: pointer;
   border-radius: 0.5rem;
-  border: 1px solid #f6ad55;
+  border: 1px solid var(--color-surface-alt);
 }
 
 .boxed-radio-menu > .boxed-radio input:not(:disabled):checked ~ .boxed-radio-label {
-  background-color: #fbd38d;
-  border-color: #c05621;
+  background-color: var(--color-surface-alt);
+  border-color: var(--color-surface-border);
 }
 
 div:not(.boxed-radio-menu) > .boxed-radio input:not(:disabled):checked ~ .boxed-radio-label,
 .boxed-checkbox input:not(:disabled):checked ~ .boxed-checkbox-label {
-  background-color: #f6ad55;
-  border-color: #fbd38d;
+  background-color: var(--color-surface-alt);
+  border-color: var(--color-surface-border);
 }
 
 div:not(.boxed-radio-menu) > .boxed-radio input:not(:disabled):checked ~ .boxed-radio-circle {
   border-color: transparent;
-  outline: solid 2px var(--color-primary);
+  outline: solid 2px var(--color-link);
   outline-offset: 2px;
-  background-color: var(--color-primary);
+  background-color: var(--color-link);
   /* box-shadow: 0 0 0 2px #0369a1; */
-}
-
-.boxed-radio input:not(:disabled):checked ~ .boxed-radio-text,
-.boxed-checkbox input:not(:disabled):checked ~ .boxed-checkbox-text {
-  color: #f9fafb;
 }
 
 .boxed-radio .boxed-radio-circle {
@@ -280,26 +272,26 @@ div:not(.boxed-radio-menu) > .boxed-radio input:not(:disabled):checked ~ .boxed-
   /* box-shadow: 0 0 0 2px #0369a1; */
 }
 
+
+/* Boxed Checkbox */
 .boxed-checkbox .boxed-checkbox-circle {
   pointer-events: none;
   z-index: 10;
-  height: 1.4rem;
-  width: 1.4rem;
-  /* color: #f6ad55; */
+  height: 1.3rem;
+  width: 1.3rem;
+  border: solid 2px var(--color-surface-alt);
+  border-radius: 9999px;
 }
 
 /* checkbox checkmark */
 .boxed-checkbox .boxed-checkbox-checkmark {
+    display: flex;
     flex-shrink: 0;
-    font-size: 1.4rem;
+    width: 1.3rem;
+    height: 1.3rem;
+    font-size: 1.3rem;
     z-index: 10;
-    color: var(--color-primary);
-}
-
-/* checkbox circle */
-.boxed-checkbox .boxed-checkbox-circle {
-    border: solid 2px #ccc;
-    border-radius: 9999px;
+    color: var(--color-link);
 }
 
 /* toggle circle/checkmark */
@@ -313,10 +305,11 @@ div:not(.boxed-radio-menu) > .boxed-radio input:not(:disabled):checked ~ .boxed-
     display: none;
 }
 
-/* boxed radio/checkbox text */
 
+/* boxed radio/checkbox text */
 .boxed-radio .boxed-radio-text,
 .boxed-checkbox .boxed-checkbox-text {
+  color: var(--color-text-faded);
   pointer-events: none;
   z-index: 10;
   white-space: nowrap;
@@ -328,11 +321,11 @@ div:not(.boxed-radio-menu) > .boxed-radio input:not(:disabled):checked ~ .boxed-
 
 .boxed-radio input:not(:disabled):checked ~ .boxed-radio-text,
 .boxed-checkbox input:not(:disabled):checked ~ .boxed-checkbox-text {
-  color: #333;
+  color: var(--color-text-title);
 }
 
-/* boxed card - homepage? */
 
+/* boxed card - homepage? */
 .boxed-card {
   position: relative;
   display: flex;
@@ -347,8 +340,9 @@ div:not(.boxed-radio-menu) > .boxed-radio input:not(:disabled):checked ~ .boxed-
   padding-top: 0.75rem;
   padding-bottom: 0.75rem;
   /* background-color: #fef6e4; */
-  border: 1px solid #f6ad55;
+  border: 1px solid var(--color-surface-alt);
 }
+
 .boxed-card .boxed-card-arrow {
   position: absolute;
   display: flex;
@@ -361,8 +355,69 @@ div:not(.boxed-radio-menu) > .boxed-radio input:not(:disabled):checked ~ .boxed-
   height: 2rem;
   margin: 0.5rem;
   opacity: 0;
-  color: #fbbf24;
+  color: var(--color-surface-alt);
 }
+
 .boxed-card:hover .boxed-card-arrow {
   opacity: .75;
+}
+
+
+/* Input Range - Track & Thumb */
+
+// Define a mixin for styling the track
+@mixin track($bg-color, $height: 8px) {
+  background: $bg-color;
+  height: $height;
+  border-radius: calc($height / 2);
+  border: none;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+// Define a mixin for styling the thumb
+@mixin thumb($bg-color, $size: 16px) {
+  background: $bg-color;
+  width: $size;
+  height: $size;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+// Apply the mixins to the range input
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+
+  &::-webkit-slider-runnable-track {
+    @include track(#bbb);
+  }
+
+  &::-webkit-slider-thumb {
+    @include thumb(var(--color-link));
+    margin-top: -4px; // Adjust to align thumb with track
+  }
+
+  &::-moz-range-track {
+    @include track(#bbb);
+  }
+
+  &::-moz-range-thumb {
+    @include thumb(var(--color-link));
+  }
+
+  &::-ms-track {
+    @include track(#bbb);
+    border-color: transparent;
+    color: transparent;
+    background: transparent;
+  }
+
+  &::-ms-thumb {
+    @include thumb(var(--color-link));
+  }
 }

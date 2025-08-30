@@ -107,6 +107,10 @@ class ApiController extends AbstractController
                     $settings->setAnimateVariation($value);
                     break;
                 case "recommend_interval":
+                    // If the interval has changed, reset the session recommended lines
+                    if ($settings->getRecommendInterval() !== $value) {
+                        $_SESSION['recommendedLines'] = [];
+                    }
                     $settings->setRecommendInterval($value);
                     break;
                 case "analyse_engine_time":

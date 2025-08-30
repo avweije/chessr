@@ -36,13 +36,13 @@
 	<div class="box p-0">
 		<div class="box-header">
 			<p class="has-text-primary"><strong>Game</strong></p>
-			<p id="statusField" class="is-size-7 has-text-right has-text-primary-20 pl-5"></p>
+			<p id="statusField" class="is-size-7 has-text-right has-text-faded pl-5"></p>
 		</div>
-		<div class="is-flex is-align-items-center">
+		<div class="is-flex is-align-items-center p-1">
 			<button id="gotoFirstButton" disabled class="goto-first-btn">
 				<i class="fa-solid fa-backward-step"></i>
 			</button>
-			<div id="pgnField" class="py-3 pr-3 is-size-7"></div>
+			<div id="pgnField" class="is-flex is-flex-wrap-wrap py-3 pr-3 is-size-7"></div>
 		</div>
 		<div id="pgnStartPositionContainer" class="is-hidden p-2 border-t border-tacao-300/60 dark:border-slate-900">
 			<label class="p-2 block is-size-6 has-text-weight-semibold tc-base whitespace-nowrap">Starting position:</label>
@@ -58,10 +58,10 @@
 	<div class="box p-0">
 		<div class="box-header">
 			<p class="has-text-primary"><strong>Moves</strong></p>
-			<p id="ecoField" class="is-size-7 has-text-right has-text-primary-20 pl-5"></p>
+			<p id="ecoField" class="is-size-7 has-text-right has-text-faded pl-5"></p>
 		</div>
 
-		<div style="overflow-y: auto; overflow-x: is-hidden; max-height: 56vh;">
+		<div style="overflow-y: auto; overflow-x: hidden; max-height: 48vh;">
 			<div class="p-1">
 				<p class="tc-base p-3 is-hidden">No repertoire moves or book moves found.</p>
 
@@ -75,7 +75,7 @@
 	<div id="engineContainer" class="is-hidden box p-0">
 		<div class="box-header">
 			<p class="has-text-primary"><strong>Engine</strong></p>
-			<p id="engineDepth" class="text-xs has-text-weight-medium has-text-faded">depth</p>
+			<p id="engineDepth" class="is-size-7 has-text-weight-medium has-text-faded">depth</p>
 			<label class="input-toggle" style="margin-inline-end: 0;">
 				<input id="engineCheckbox" type="checkbox" class="sr-only peer">
 				<div class="input-toggle-switch"></div>
@@ -85,7 +85,7 @@
 		<div class="p-1">
 			<p class="tc-base p-3 is-hidden">Start the engine to find the best moves.</p>
 
-			<table id="engineTable" class="table-fixed min-w-full m-0">
+			<table id="engineTable" class="table-fixed min-w-full m-0 table is-transparent is-hoverable">
 				<tbody></tbody>
 			</table>
 		</div>
@@ -120,7 +120,7 @@
 				<label class="is-size-6 has-text-weight-medium tc-base">Group:</label>
 			</div>
 			<div class="w-full mb-1">
-				<input id="repertoireGroupInput" type="search" list="repertoireGroupDataList" name="repertoire_group" placeholder="Type and press Enter to add or select from list..." class="input-text-faded">
+				<input id="repertoireGroupInput" type="search" list="repertoireGroupDataList" name="repertoire_group" placeholder="Type and press Enter to add or select from list..." class="input">
 				<datalist id="repertoireGroupDataList"></datalist>
 			</div>
 			<div id="repertoireGroupTagsContainer" class="is-flex is-flex-wrap"></div>

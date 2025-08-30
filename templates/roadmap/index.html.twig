@@ -6,29 +6,29 @@
 			<div class="boxed-radio">
 				<input class="is-hidden" type="radio" name="roadmap_type" value="white" id="roadmapWhite" checked/>
 				<label class="boxed-radio-label peer-checked:border-blue-300 peer-checked:bg-blue-100" for="roadmapWhite"></label>
-				<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500 peer-checked:text-gray-700">White</span>
+				<span class="boxed-radio-text">White</span>
 			</div>
 			<div class="boxed-radio">
 				<input class="is-hidden" type="radio" name="roadmap_type" value="black" id="roadmapBlack"/>
 				<label class="boxed-radio-label peer-checked:border-blue-300 peer-checked:bg-blue-100" for="roadmapBlack"></label>
-				<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500 peer-checked:text-gray-700">Black</span>
+				<span class="boxed-radio-text">Black</span>
 			</div>
 		</div>
 	</div>
 
-	<div id="roadmapIntro" class="is-flex is-justify-content-space-around p-4 mb-4">
+	<div id="roadmapIntro" class="is-flex is-justify-content-space-around mt-4">
 		<div class="is-flex is-flex-direction-column is-align-items-center">
-			<h2 class="text-2xl has-text-weight-semibold tc-sharp">The Roadmap</h2>
-			<p id="roadmapIntroText" class="text-center mx-1 mt-6 tc-base">
+			<div class="title is-size-5">The Roadmap</div>
+			<p id="roadmapIntroText" class="mt-2">
 				Click on a move to browse through your opening repertoire.
 			</p>
 		</div>
 	</div>
 
-	<div id="roadmapTreeCurrent" class="is-hidden is-flex is-justify-content-center mb-8 px-4">
-		<div class="is-flex is-justify-content-center sm:w-full md:w-4/5 lg:w-3/5">
+	<div id="roadmapTreeCurrent" class="is-hidden is-flex is-justify-content-center mt-2 px-4">
+		<div class="is-flex is-justify-content-center">
 			<div class="is-flex w-full is-justify-content-center overflow-is-hidden">
-				<div class="is-flex is-align-items-center whitespace-nowrap overflow-is-hidden px-3 py-2">
+				<div class="is-flex is-align-items-center whitespace-nowrap overflow-is-hidden px-3">
 					<span id="roadmapTreeCurrentField" class="text-lg has-text-weight-medium tc-base truncate"></span>
 				</div>
 				<!--<div id="roadmapTreeCurrentButtons" class="is-flex is-align-items-center pr-3"></div>-->
@@ -36,15 +36,15 @@
 		</div>
 	</div>
 
-	<div id="roadmapTreePath" class="is-flex is-flex-wrap-wrap is-gap-1 is-justify-content-center"></div>
+	<div id="roadmapTreePath" class="is-flex is-flex-wrap-wrap is-gap-1 is-justify-content-center mt-4"></div>
 
-	<div id="roadmapTreeMissingMoves" class="is-hidden is-flex is-justify-content-space-around mt-6 mb-6">
-		<div class="grid grid-cols-[1fr_auto_auto_1fr] gap-0.5 rounded"></div>
+	<div id="roadmapTreeMissingMoves" class="is-hidden is-flex is-justify-content-space-around mt-4">
+		<div class="grid-1fr-auto-auto-1fr is-gap-1 rounded"></div>
 	</div>
 
-	<div id="roadmapTreeContainer" class="is-flex is-flex-direction-column gap-y-2 is-align-items-center mt-6 mb-6"></div>
+	<div id="roadmapTreeContainer" class="is-flex is-flex-direction-column gap-y-2 is-align-items-center mt-5"></div>
 
-	<div id="roadmapDetails" class="is-hidden is-flex is-justify-content-space-around p-4 mb-8">
+	<div id="roadmapDetails" class="is-hidden is-flex is-justify-content-space-around mt-5">
 		<div class="is-flex is-flex-direction-column is-align-items-center">
 			<div class="is-flex text-md p-4 tc-base">
 				<div>
@@ -69,36 +69,36 @@
 		</div>
 	</div>
 
-	<div class="fixed bottom-0 left-0 right-0 is-flex is-justify-content-center mx-8 mb-2 text-sm">
-		<div class="is-flex is-justify-content-space-around overflow-is-hidden rounded bg-white dark:bg-slate-700 border border-tacao-300/40 dark:border-slate-700 shadow">
-			<div class="is-flex is-align-items-center whitespace-nowrap overflow-is-hidden px-2 py-2 bg-tacao-50/25 dark:bg-slate-900 border-r border-tacao-300/40 dark:border-slate-700">
+	<div class="is-fixed bottom-0 left-0 right-0 is-flex is-justify-content-center mx-6 mb-2 text-sm">
+		<div class="is-flex is-justify-content-space-around overflow-is-hidden rounded bg-white">
+			<div class="is-flex is-align-items-center whitespace-nowrap overflow-is-hidden px-2 py-2">
 				<span class="has-text-faded">
 					<i class="fa-solid fa-crosshairs"></i>
 				</span>
-				<span class="text-xs has-text-faded ml-2 mr-1 truncate">Accuracy</span>
+				<span class="is-size-7 has-text-faded ml-2 mr-1 truncate">Accuracy</span>
 			</div>
-			<div class="is-flex is-align-items-center whitespace-nowrap overflow-is-hidden px-2 py-2 bg-tacao-50/25 dark:bg-slate-900 border-r border-tacao-300/40 dark:border-slate-700">
+			<div class="is-flex is-align-items-center whitespace-nowrap overflow-is-hidden px-2 py-2">
 				<span class="has-text-faded">
 					<i class="fa-solid fa-arrow-trend-down"></i>
 				</span>
-				<span class="text-xs has-text-faded ml-2 mr-1 truncate">Lowest Accuracy Variation</span>
+				<span class="is-size-7 has-text-faded ml-2 mr-1 truncate">Lowest Accuracy Variation</span>
 			</div>
-			<div class="is-flex is-align-items-center whitespace-nowrap overflow-is-hidden px-2 py-2 bg-tacao-50/25 dark:bg-slate-900 border-r border-tacao-300/40 dark:border-slate-700">
+			<div class="is-flex is-align-items-center whitespace-nowrap overflow-is-hidden px-2 py-2">
 				<span class="has-text-faded">
 					<i class="fa-solid fa-medal"></i>
 				</span>
-				<span class="text-xs has-text-faded ml-2 mr-1 truncate">Missing Top Responses</span>
+				<span class="is-size-7 has-text-faded ml-2 mr-1 truncate">Missing Top Responses</span>
 			</div>
-			<div class="is-flex is-align-items-center whitespace-nowrap overflow-is-hidden px-2 py-2 bg-tacao-50/25 dark:bg-slate-900">
+			<div class="is-flex is-align-items-center whitespace-nowrap overflow-is-hidden px-2 py-2">
 				<span class="has-text-faded">
 					<i class="fa-solid fa-arrow-turn-down"></i>
 				</span>
-				<span class="text-xs has-text-faded ml-2 mr-1 truncate">Last Variation in Line</span>
+				<span class="is-size-7 has-text-faded ml-2 mr-1 truncate">Last Variation in Line</span>
 			</div>
 		</div>
 	</div>
 
-	<form id="roadmapForm" method="POST" action="./roadmap" target="_blank">
+	<form id="roadmapForm" method="POST" action="{{ path('roadmap') }}" target="_blank">
 		<input id="roadmapIdInput" type="hidden" name="id" value=""/>
 		<input id="roadmapColorInput" type="hidden" name="color" value=""/>
 		<input id="roadmapPgnInput" type="hidden" name="pgn" value=""/>

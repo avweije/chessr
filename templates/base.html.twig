@@ -3,166 +3,109 @@
 	<head>
 		<meta charset="UTF-8">
 		<title>
-			{% block title %}Chess Repertoire
+			{% block title %}
+				Chess Repertoire
 			{% endblock %}
 		</title>
 		<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text></svg>">
 		{% block stylesheets %}
-			<!-- leave tailwind css in there while developing, so you dont have to rebuild everytime -->
-			<!-- <script src="https://cdn.tailwindcss.com"></script> -->
 			<link rel="stylesheet" href="{{ asset('styles/app.scss') }}">
-			<link rel="stylesheet" href="{{ asset('styles/components.css') }}">
 			<!-- font awesome solid icons -->
 			<link rel="stylesheet" href="{{ asset('fontawesome/css/all.min.css') }}">
 		{% endblock %}
 		{% block javascripts %}
-            {% block importmap %}
-			{{ importmap('app') }}
+			{% block importmap %}
+				{{ importmap('app') }}
 			{% endblock %}
 		{% endblock %}
 		<!-- need to check out what this script is for, copied from youtube tutorial -->
 		<script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.3.5/dist/alpine.min.js" defer></script>
 	</head>
 	<body style="--bg-image: url('{{ asset('images/pexels-seraphim-tsounis-283679744-14409978.jpg') }}');">
-	<div class="body-background"></div>
+		<div class="body-background"></div>
 		{% block header %}
 			<header class="page-header">
 				<nav class="nav-bar">
-						<div class="is-flex is-align-items-center">
-							<svg height="32px" viewbox="0 0 370 74.26240760467273" class="looka-1j8o68f">
-								<defs id="SvgjsDefs1631">
-									<radialGradient id="SvgjsRadialGradient1638">
-										<stop id="SvgjsStop1639" stop-color="#f5ec9b" offset="0"></stop>
-										<stop id="SvgjsStop1640" stop-color="#905e26" offset="1"></stop>
-									</radialGradient>
-									<linearGradient id="SvgjsLinearGradient1641" x1="-1" y1="1" x2="-1" y2="0">
-										<stop id="SvgjsStop1642" stop-color="#919295" offset="0"></stop>
-										<stop id="SvgjsStop1643" stop-color="#3f4145" offset="0.43"></stop>
-										<stop id="SvgjsStop1644" stop-color="#919295" offset="0.44"></stop>
-										<stop id="SvgjsStop1645" stop-color="#535352" offset="1"></stop>
-									</linearGradient>
-								</defs>
+					<div class="is-flex is-align-items-center">
+						<img src="{{ asset('images/chess-repertoire-logo.svg') }}" alt="" class="logo"/>
+					</div>
 
-								<g style="display: none;" id="racetrack_SvgjsG1349" featurekey="symbolFeature-0" transform="matrix(0.8632044682090942,0,0,0.8632044682090942,-8.420227930145378,-8.790219860747616)" fill="url(#SvgjsRadialGradient1355)">
-									<path xmlns="http://www.w3.org/2000/svg" d="M48.3,88.1c-8.5,0-16.7-3.7-22.3-10.6c-4.4-5.4-8.3-10-11.6-13.8c-3.7-4.2-5.3-9.7-4.4-15.2c0.9-5.5,4.1-10.3,9-13.1h0  l39-22.7c5.3-3.1,11.7-3.3,17.2-0.8c5.5,2.6,9.4,7.7,10.4,13.7l5,30.4c1.3,7.9-2.6,15.7-9.7,19.4c-5.1,2.7-12,6-20.4,9.9  C56.6,87.2,52.4,88.1,48.3,88.1z M20.9,38.8c-3.8,2.2-6.3,5.9-7,10.2c-0.7,4.3,0.6,8.7,3.5,11.9c3.4,3.8,7.3,8.5,11.7,13.9  c7.2,8.8,19.4,11.6,29.7,6.8c8.3-3.9,15.1-7.2,20.2-9.9c5.6-2.9,8.6-9,7.6-15.2l-5-30.4c-0.8-4.8-3.8-8.7-8.1-10.7  c-4.4-2.1-9.3-1.8-13.5,0.6L20.9,38.8L20.9,38.8z"></path>
-								</g>
+					<div>
+						<a class="is-hidden mr-2 is-flex is-align-items-center" href="#">
+							<img class="me-2" src="{{ asset('images/chess-board.png') }}" style="height: 32px" alt="Chess Repertoire" loading="lazy"/>
+						</a>
+					</div>
 
-
-								<g id="SvgjsG1632" featurekey="symbolFeature-0" transform="matrix(0.9318795466382606,0,0,0.9318795466382606,-11.549715150802339,-9.701798194670262)" fill="url(#SvgjsRadialGradient1638)">
-									<g xmlns="http://www.w3.org/2000/svg">
-										<g>
-											<polygon points="54.644,56.782 35.043,56.782 29.789,76.381 49.394,76.381   "></polygon>
-										</g>
-										<g>
-											<polygon points="29.789,76.381 16.071,76.381 12.394,90.102 26.115,90.102   "></polygon>
-										</g>
-										<g>
-											<polygon points="72.04,43.063 58.319,43.063 54.644,56.782 68.363,56.782   "></polygon>
-										</g>
-										<g>
-											<polygon points="60.892,33.458 51.288,33.458 48.716,43.063 58.319,43.063   "></polygon>
-										</g>
-										<g>
-											<polygon points="78.988,17.134 69.384,17.134 66.81,26.739 76.416,26.739   "></polygon>
-										</g>
-										<g>
-											<polygon points="37.616,47.18 28.013,47.18 25.438,56.782 35.043,56.782   "></polygon>
-										</g>
-										<g>
-											<polygon points="87.511,10.411 80.79,10.411 78.988,17.134 85.71,17.134   "></polygon>
-										</g>
-										<g>
-											<polygon points="80.562,36.341 73.842,36.341 72.04,43.063 78.762,43.063   "></polygon>
-										</g>
-										<g>
-											<polygon points="53.089,26.735 46.37,26.735 44.565,33.458 51.288,33.458   "></polygon>
-										</g>
-									</g>
-								</g>
-								<g id="SvgjsG1633" featurekey="nameFeature-0" transform="matrix(0.9743003518615958,0,0,0.9743003518615958,88.04510722168449,0.5154214879280197)" fill="#ba9022">
-									<path d="M17.8 14.719999999999999 c0.04 -1.32 0 -2.4 0 -3.68 c0 -1.48 -2.68 -1.32 -3.64 -1.28 c-4.28 0.28 -8.36 3 -10.32 6.72 c-0.56 1.08 -0.96 2.2 -1.24 3.36 c-0.68 2.72 -0.72 5.6 -0.4 8.36 c0.28 2.6 0.96 5.2 2.56 7.28 c2.76 3.64 7.84 4.92 12.2 4.24 c0.2 -0.04 0.4 -0.08 0.56 -0.2 c0.12 -0.08 0.24 -0.24 0.24 -0.4 l0.12 -2.28 c0.04 -0.72 0 -0.68 0 -1.4 c0 -0.96 -2 -0.24 -3.24 -0.24 c-1.2 0 -2.48 -0.04 -3.56 -0.6 c-1.92 -1.08 -3 -3.24 -3.6 -5.28 c-0.68 -2.2 -0.84 -4.56 -0.44 -6.8 c0.48 -2.92 1.88 -6.28 4.96 -7.28 c1.76 -0.6 3.64 -0.4 5.4 -0.2 c0.24 0.04 0.4 -0.12 0.4 -0.32 z M34.622 28.16 c0 1.8 -0.04 5.36 -0.08 5.36 l0 5.44 c0 0.24 -0.04 0.64 0.08 0.88 c0.12 0.28 0.48 0.2 0.72 0.16 c1.16 -0.12 2.32 0.04 3.48 0 c1.28 -0.04 0.88 -2 0.84 -2.8 c-0.16 -1.76 0.04 -15.16 0.04 -19.96 c0 -2.16 -0.08 -6.6 -0.2 -6.8 c-0.2 -0.36 -0.72 -0.44 -1.12 -0.48 c-0.88 -0.16 -1.32 0.08 -2.64 0.08 s-1.4 0.4 -1.4 1.8 l0 1.2 c-0.04 0.96 0.12 7.68 0.12 8.76 c0 0.52 -0.04 0.56 -0.56 0.56 c-1.32 -0.04 -3.16 0.12 -4.52 0 c-1.96 -0.16 -1.52 0 -1.64 -1.8 l0 -0.24 c0 -2.56 0.32 -9.2 0.2 -9.6 c-0.2 -0.6 -0.44 -0.72 -0.96 -0.68 c-1.2 0.08 -2.44 -0.12 -3.64 -0.04 c-0.4 0.04 -0.52 0.16 -0.64 0.56 c-0.04 0.2 -0.08 0.4 -0.08 0.6 c0 1.24 0.08 2.92 0.12 4.16 l-0.12 23.72 c0 1.04 0.92 0.92 2.96 0.92 c1.88 0 2.36 0.44 2.36 -1.8 c0 -1.8 -0.12 -4.08 -0.08 -5.88 c0.04 -1.4 0 -2.76 0 -4.16 c0.04 -0.52 0.16 -0.68 0.64 -0.68 c1.76 -0.04 3.68 0 5.44 0 c0.56 0 0.68 0.08 0.68 0.72 z M44.524 31.8 l-0.04 0 c0 1 -0.04 2.04 0 3.08 c0.04 1.28 0.12 2.56 0.2 3.84 c0 0.44 0.12 0.56 0.52 0.64 c0.84 0.2 1.64 0.24 2.48 0.24 c2.16 -0.08 4.32 0.08 6.48 0 c0.88 -0.04 1.28 0.04 2.16 -0.12 c0.8 -0.16 1.08 -0.6 1.08 -1.8 c-0.08 -0.76 -0.04 -1.08 -0.04 -2 c0 -1.32 -0.92 -1.76 -1.72 -1.72 c-0.56 0.04 -3.24 -0.04 -4.32 -0.04 c-1.8 0.04 -1.52 0.28 -1.52 -1.6 c0 -1.52 0.04 -3.48 0.04 -5.04 c0 -0.84 0.08 -1.12 0.88 -1.12 l5 0 c0.8 0.12 1.36 -0.44 1.36 -1.28 s0.08 -0.88 0.08 -1.72 l-0.12 -1.2 c-0.08 -0.68 -0.32 -0.92 -1 -0.92 c-0.44 0 -0.88 0.04 -1.32 0.08 c-1.72 0.12 -2.52 -0.12 -4.2 0 c-0.56 0 -0.64 -0.08 -0.68 -0.6 c-0.16 -1.56 0 -3.28 0.16 -4.84 c0.04 -0.64 0.2 -0.76 0.8 -0.8 l5.64 -0.04 c0.76 -0.08 1 -0.04 0.96 -0.8 c-0.08 -1.16 0.04 -2.36 -0.08 -3.52 c-0.08 -0.64 -0.28 -0.76 -1 -0.76 c-1.2 0.04 -1.48 0.04 -2.68 0.12 c-1.2 0.04 -6 0.04 -7.16 0.04 c-1.68 0 -1.8 -0.12 -1.84 1.92 c-0.08 1.6 -0.04 3.24 -0.04 4.88 c0 2.8 -0.16 12.84 -0.08 15.08 z M70.306 9.8 c-0.76 0.04 -1.52 0.16 -2.28 0.4 c-1.64 0.56 -3.12 1.68 -4.12 3.12 c-0.88 1.32 -1.24 2.88 -1.36 4.44 c-0.08 1.2 0.04 2.44 0.6 3.52 c0.6 1.16 1.64 2.16 2.52 3.12 c0.8 0.84 1.6 1.68 2.48 2.44 c0.8 0.76 1.72 1.36 2.52 2.16 c1.16 1.16 1.6 3.8 0.76 5.24 c-1 1.6 -3.36 1.84 -4.92 1.32 c-0.8 -0.28 -1.52 -0.88 -2.2 -1.36 c-0.4 -0.28 -0.88 -0.4 -1.16 0.08 c-0.16 0.24 -0.24 0.52 -0.32 0.76 c-0.28 1 -0.64 1.92 -0.68 3 c-0.04 1.24 2.32 1.6 3.2 1.8 c3.92 0.92 8.64 0.2 10.68 -3.68 c0.4 -0.8 0.68 -1.64 0.84 -2.52 c0.04 -0.32 0.08 -0.6 0.08 -0.92 c0.16 -2.56 -0.88 -4.72 -2.44 -6.64 c-1.68 -2.08 -3.8 -3.52 -5.76 -5.32 c-1.2 -1.12 -1.64 -2.88 -1.28 -4.48 c0.36 -1.72 2.32 -2.16 3.8 -1.72 c0.44 0.12 0.8 0.32 1.2 0.56 c0.24 0.12 0.48 0.28 0.8 0.28 c0.56 0.04 0.64 -0.4 0.76 -0.84 c0.28 -1 0.76 -1.8 0.96 -2.76 c0.2 -1.08 -0.68 -1.28 -1.56 -1.56 c-1.04 -0.28 -2.04 -0.48 -3.12 -0.44 z M89.848 9.8 c-0.76 0.04 -1.52 0.16 -2.28 0.4 c-1.64 0.56 -3.12 1.68 -4.12 3.12 c-0.88 1.32 -1.24 2.88 -1.36 4.44 c-0.08 1.2 0.04 2.44 0.6 3.52 c0.6 1.16 1.64 2.16 2.52 3.12 c0.8 0.84 1.6 1.68 2.48 2.44 c0.8 0.76 1.72 1.36 2.52 2.16 c1.16 1.16 1.6 3.8 0.76 5.24 c-1 1.6 -3.36 1.84 -4.92 1.32 c-0.8 -0.28 -1.52 -0.88 -2.2 -1.36 c-0.4 -0.28 -0.88 -0.4 -1.16 0.08 c-0.16 0.24 -0.24 0.52 -0.32 0.76 c-0.28 1 -0.64 1.92 -0.68 3 c-0.04 1.24 2.32 1.6 3.2 1.8 c3.92 0.92 8.64 0.2 10.68 -3.68 c0.4 -0.8 0.68 -1.64 0.84 -2.52 c0.04 -0.32 0.08 -0.6 0.08 -0.92 c0.16 -2.56 -0.88 -4.72 -2.44 -6.64 c-1.68 -2.08 -3.8 -3.52 -5.76 -5.32 c-1.2 -1.12 -1.64 -2.88 -1.28 -4.48 c0.36 -1.72 2.32 -2.16 3.8 -1.72 c0.44 0.12 0.8 0.32 1.2 0.56 c0.24 0.12 0.48 0.28 0.8 0.28 c0.56 0.04 0.64 -0.4 0.76 -0.84 c0.28 -1 0.76 -1.8 0.96 -2.76 c0.2 -1.08 -0.68 -1.28 -1.56 -1.56 c-1.04 -0.28 -2.04 -0.48 -3.12 -0.44 z M106.19 37 c0 -1.04 0 -7.6 0.04 -8.12 c0.04 -0.12 0.12 -0.36 0.28 -0.36 s0.24 0.08 0.28 0.2 c1.6 3.12 3 6.24 4.44 9.28 c0.2 0.44 0.64 1.72 0.76 1.84 c0.16 0.24 0.44 0.16 0.68 0.16 l4.4 0.04 c0.52 0 0.64 -0.32 0.52 -0.76 c-0.32 -1.2 -2.6 -5.44 -3.12 -6.48 c-0.36 -0.8 -2.76 -5.44 -2.84 -5.8 c-0.08 -0.16 0.52 -0.44 0.6 -0.56 c1.92 -1.72 3.64 -3.48 4 -6.16 c0.4 -2.64 -0.2 -5.52 -1.92 -7.64 c-1.32 -1.56 -3.04 -2.48 -5.08 -2.6 c-1.24 -0.08 -2.44 0.04 -3.68 0 c-1.08 -0.04 -1.84 -0.04 -3.2 -0.04 c-0.64 0 -1.04 0.36 -1.08 1.04 l0 0.48 c-0.08 3.08 0 6.16 0.04 9.2 c0 4.64 -0.08 16.88 -0.08 18.64 c0 0.52 0.08 0.64 0.56 0.64 c0.28 0 0.6 0.04 0.88 0.04 c1.12 0 1.8 -0.04 2.96 -0.04 c0.88 0 0.56 -1.44 0.56 -3 z M106.19 21.4 l0.04 -4.04 c0.04 -0.6 -0.16 -1.8 0.4 -2.24 c0.76 -0.56 2.32 0 3 0.48 c2 1.36 1.84 4.72 0.76 6.6 c-0.52 0.88 -1.4 1.4 -2.4 1.68 c-0.6 0.16 -1.72 0.36 -1.76 -0.6 c0 -0.64 -0.04 -1.88 -0.04 -1.88 z M122.41200000000002 31.8 l-0.04 0 c0 1 -0.04 2.04 0 3.08 c0.04 1.28 0.12 2.56 0.2 3.84 c0 0.44 0.12 0.56 0.52 0.64 c0.84 0.2 1.64 0.24 2.48 0.24 c2.16 -0.08 4.32 0.08 6.48 0 c0.88 -0.04 1.28 0.04 2.16 -0.12 c0.8 -0.16 1.08 -0.6 1.08 -1.8 c-0.08 -0.76 -0.04 -1.08 -0.04 -2 c0 -1.32 -0.92 -1.76 -1.72 -1.72 c-0.56 0.04 -3.24 -0.04 -4.32 -0.04 c-1.8 0.04 -1.52 0.28 -1.52 -1.6 c0 -1.52 0.04 -3.48 0.04 -5.04 c0 -0.84 0.08 -1.12 0.88 -1.12 l5 0 c0.8 0.12 1.36 -0.44 1.36 -1.28 s0.08 -0.88 0.08 -1.72 l-0.12 -1.2 c-0.08 -0.68 -0.32 -0.92 -1 -0.92 c-0.44 0 -0.88 0.04 -1.32 0.08 c-1.72 0.12 -2.52 -0.12 -4.2 0 c-0.56 0 -0.64 -0.08 -0.68 -0.6 c-0.16 -1.56 0 -3.28 0.16 -4.84 c0.04 -0.64 0.2 -0.76 0.8 -0.8 l5.64 -0.04 c0.76 -0.08 1 -0.04 0.96 -0.8 c-0.08 -1.16 0.04 -2.36 -0.08 -3.52 c-0.08 -0.64 -0.28 -0.76 -1 -0.76 c-1.2 0.04 -1.48 0.04 -2.68 0.12 c-1.2 0.04 -6 0.04 -7.16 0.04 c-1.68 0 -1.8 -0.12 -1.84 1.92 c-0.08 1.6 -0.04 3.24 -0.04 4.88 c0 2.8 -0.16 12.84 -0.08 15.08 z M140.074 15.239999999999998 c0.04 2.36 0.04 22.4 0.04 24.04 c0 0.6 0.08 0.72 0.68 0.72 c1.36 0 1.36 0.04 2.72 0 c0.28 0 0.76 0 1 -0.12 c0.28 -0.12 0.12 -9.56 0.12 -10.08 c0 -0.56 1.12 -0.44 1.44 -0.44 c6.68 0 8.52 -4.8 8.52 -8.88 c0 -3.68 -0.72 -10.48 -9.04 -10.48 c-1.44 0 -2.92 0.04 -4.32 0.04 c-0.32 0 -0.72 -0.04 -1 0.16 c-0.32 0.24 -0.2 3.8 -0.16 5.04 z M144.674 23.48 c0 -0.88 -0.04 -6.12 0 -7.72 c0 -0.24 -0.04 -0.52 0 -0.8 c0.12 -0.44 0.64 -0.44 1.04 -0.4 c2.32 0.16 3.64 2.2 3.84 4.36 c0.16 1.56 -0.04 3.88 -1.16 5.12 c-0.8 0.84 -1.84 1.36 -3.2 1.36 c-0.28 0 -0.56 -0.32 -0.56 -0.6 c0 -0.44 0 -0.88 0.04 -1.32 z M159.376 31.8 l-0.04 0 c0 1 -0.04 2.04 0 3.08 c0.04 1.28 0.12 2.56 0.2 3.84 c0 0.44 0.12 0.56 0.52 0.64 c0.84 0.2 1.64 0.24 2.48 0.24 c2.16 -0.08 4.32 0.08 6.48 0 c0.88 -0.04 1.28 0.04 2.16 -0.12 c0.8 -0.16 1.08 -0.6 1.08 -1.8 c-0.08 -0.76 -0.04 -1.08 -0.04 -2 c0 -1.32 -0.92 -1.76 -1.72 -1.72 c-0.56 0.04 -3.24 -0.04 -4.32 -0.04 c-1.8 0.04 -1.52 0.28 -1.52 -1.6 c0 -1.52 0.04 -3.48 0.04 -5.04 c0 -0.84 0.08 -1.12 0.88 -1.12 l5 0 c0.8 0.12 1.36 -0.44 1.36 -1.28 s0.08 -0.88 0.08 -1.72 l-0.12 -1.2 c-0.08 -0.68 -0.32 -0.92 -1 -0.92 c-0.44 0 -0.88 0.04 -1.32 0.08 c-1.72 0.12 -2.52 -0.12 -4.2 0 c-0.56 0 -0.64 -0.08 -0.68 -0.6 c-0.16 -1.56 0 -3.28 0.16 -4.84 c0.04 -0.64 0.2 -0.76 0.8 -0.8 l5.64 -0.04 c0.76 -0.08 1 -0.04 0.96 -0.8 c-0.08 -1.16 0.04 -2.36 -0.08 -3.52 c-0.08 -0.64 -0.28 -0.76 -1 -0.76 c-1.2 0.04 -1.48 0.04 -2.68 0.12 c-1.2 0.04 -6 0.04 -7.16 0.04 c-1.68 0 -1.8 -0.12 -1.84 1.92 c-0.08 1.6 -0.04 3.24 -0.04 4.88 c0 2.8 -0.16 12.84 -0.08 15.08 z M181.95800000000003 37 c0 -1.04 0 -7.6 0.04 -8.12 c0.04 -0.12 0.12 -0.36 0.28 -0.36 s0.24 0.08 0.28 0.2 c1.6 3.12 3 6.24 4.44 9.28 c0.2 0.44 0.64 1.72 0.76 1.84 c0.16 0.24 0.44 0.16 0.68 0.16 l4.4 0.04 c0.52 0 0.64 -0.32 0.52 -0.76 c-0.32 -1.2 -2.6 -5.44 -3.12 -6.48 c-0.36 -0.8 -2.76 -5.44 -2.84 -5.8 c-0.08 -0.16 0.52 -0.44 0.6 -0.56 c1.92 -1.72 3.64 -3.48 4 -6.16 c0.4 -2.64 -0.2 -5.52 -1.92 -7.64 c-1.32 -1.56 -3.04 -2.48 -5.08 -2.6 c-1.24 -0.08 -2.44 0.04 -3.68 0 c-1.08 -0.04 -1.84 -0.04 -3.2 -0.04 c-0.64 0 -1.04 0.36 -1.08 1.04 l0 0.48 c-0.08 3.08 0 6.16 0.04 9.2 c0 4.64 -0.08 16.88 -0.08 18.64 c0 0.52 0.08 0.64 0.56 0.64 c0.28 0 0.6 0.04 0.88 0.04 c1.12 0 1.8 -0.04 2.96 -0.04 c0.88 0 0.56 -1.44 0.56 -3 z M181.95800000000003 21.4 l0.04 -4.04 c0.04 -0.6 -0.16 -1.8 0.4 -2.24 c0.76 -0.56 2.32 0 3 0.48 c2 1.36 1.84 4.72 0.76 6.6 c-0.52 0.88 -1.4 1.4 -2.4 1.68 c-0.6 0.16 -1.72 0.36 -1.76 -0.6 c0 -0.64 -0.04 -1.88 -0.04 -1.88 z M203.22000000000003 35.64 c0.04 1.24 0.04 2.48 0.08 3.72 c0 0.56 0.04 0.64 0.6 0.64 l3.6 0 c0.76 0 0.6 -1.28 0.56 -1.96 l0.12 -22.4 c0 -0.6 0.2 -0.8 1 -0.8 l3.52 0 c0.84 0 0.64 -1.44 0.64 -2.44 c0 -0.88 0.32 -2.4 -0.64 -2.4 c-0.68 0 -7.2 0 -9.88 0.04 c-1.32 0 -2.4 -0.04 -3.72 -0.04 c-1 0 -0.96 0.8 -0.96 2.56 c0 1.12 -0.04 2.24 0.92 2.24 c0.56 0 2.84 0 3.48 0.04 c0.4 0 0.68 0.12 0.76 0.56 c0 0.12 0.04 0.24 0.04 0.36 c0 2.88 -0.2 16.28 -0.12 19.88 z M239.202 17.36 c0.84 2.48 1.04 5.16 1.04 7.8 c0 2.2 -0.4 4.32 -0.96 6.44 c-0.72 2.52 -1.92 4.8 -4.08 6.28 c-1.6 1.16 -3.28 1.92 -5.24 2.12 c-0.28 0 -0.52 0.04 -0.8 0.04 c-0.24 0 -0.48 -0.04 -0.76 -0.04 c-1.96 -0.2 -3.64 -0.96 -5.28 -2.12 c-2.12 -1.48 -3.36 -3.76 -4.04 -6.28 c-0.6 -2.12 -0.96 -4.24 -0.96 -6.44 c0 -2.64 0.2 -5.32 1.04 -7.8 c1.48 -4.28 5.56 -7.32 10 -7.4 c4.44 0.08 8.52 3.12 10.04 7.4 z M235.322 28.08 c0.4 -2.44 0.24 -4.92 -0.24 -7.36 c-0.48 -2.2 -1.44 -4.36 -3.28 -5.68 c-0.32 -0.24 -0.68 -0.44 -1.04 -0.56 c-0.52 -0.24 -1.08 -0.32 -1.6 -0.32 s-1.04 0.08 -1.56 0.32 c-0.4 0.12 -0.72 0.32 -1.04 0.56 c-1.88 1.32 -2.84 3.48 -3.28 5.68 c-0.48 2.44 -0.64 4.92 -0.24 7.36 c0.4 2.2 1.2 5.16 3.28 6.28 c0.88 0.48 1.84 0.8 2.84 0.84 c1 -0.04 2 -0.36 2.88 -0.84 c2.08 -1.12 2.88 -4.08 3.28 -6.28 z M250.50400000000002 29.68 c-0.12 -4.56 -0.08 -9.4 -0.04 -13.92 c0 -1.4 -0.08 -2.92 -0.08 -4.32 c0 -1.52 -0.6 -1.44 -1.4 -1.48 c-1.16 -0.04 -1.68 -0.04 -2.84 -0.04 c-0.76 -0.04 -1.08 0.16 -1.08 0.92 c0 3.92 -0.12 15 -0.08 16.6 s0.2 8.88 0.12 10.48 c-0.04 0.56 0 1.12 0.04 1.68 c0.04 0.2 0.16 0.4 0.48 0.4 c1.32 -0.08 2.56 -0.08 3.88 -0.12 c0.48 -0.04 0.88 -0.16 1.08 -0.68 c0.04 -0.28 -0.08 -7.6 -0.08 -9.52 z M260.286 37 c0 -1.04 0 -7.6 0.04 -8.12 c0.04 -0.12 0.12 -0.36 0.28 -0.36 s0.24 0.08 0.28 0.2 c1.6 3.12 3 6.24 4.44 9.28 c0.2 0.44 0.64 1.72 0.76 1.84 c0.16 0.24 0.44 0.16 0.68 0.16 l4.4 0.04 c0.52 0 0.64 -0.32 0.52 -0.76 c-0.32 -1.2 -2.6 -5.44 -3.12 -6.48 c-0.36 -0.8 -2.76 -5.44 -2.84 -5.8 c-0.08 -0.16 0.52 -0.44 0.6 -0.56 c1.92 -1.72 3.64 -3.48 4 -6.16 c0.4 -2.64 -0.2 -5.52 -1.92 -7.64 c-1.32 -1.56 -3.04 -2.48 -5.08 -2.6 c-1.24 -0.08 -2.44 0.04 -3.68 0 c-1.08 -0.04 -1.84 -0.04 -3.2 -0.04 c-0.64 0 -1.04 0.36 -1.08 1.04 l0 0.48 c-0.08 3.08 0 6.16 0.04 9.2 c0 4.64 -0.08 16.88 -0.08 18.64 c0 0.52 0.08 0.64 0.56 0.64 c0.28 0 0.6 0.04 0.88 0.04 c1.12 0 1.8 -0.04 2.96 -0.04 c0.88 0 0.56 -1.44 0.56 -3 z M260.286 21.4 l0.04 -4.04 c0.04 -0.6 -0.16 -1.8 0.4 -2.24 c0.76 -0.56 2.32 0 3 0.48 c2 1.36 1.84 4.72 0.76 6.6 c-0.52 0.88 -1.4 1.4 -2.4 1.68 c-0.6 0.16 -1.72 0.36 -1.76 -0.6 c0 -0.64 -0.04 -1.88 -0.04 -1.88 z M276.50800000000004 31.8 l-0.04 0 c0 1 -0.04 2.04 0 3.08 c0.04 1.28 0.12 2.56 0.2 3.84 c0 0.44 0.12 0.56 0.52 0.64 c0.84 0.2 1.64 0.24 2.48 0.24 c2.16 -0.08 4.32 0.08 6.48 0 c0.88 -0.04 1.28 0.04 2.16 -0.12 c0.8 -0.16 1.08 -0.6 1.08 -1.8 c-0.08 -0.76 -0.04 -1.08 -0.04 -2 c0 -1.32 -0.92 -1.76 -1.72 -1.72 c-0.56 0.04 -3.24 -0.04 -4.32 -0.04 c-1.8 0.04 -1.52 0.28 -1.52 -1.6 c0 -1.52 0.04 -3.48 0.04 -5.04 c0 -0.84 0.08 -1.12 0.88 -1.12 l5 0 c0.8 0.12 1.36 -0.44 1.36 -1.28 s0.08 -0.88 0.08 -1.72 l-0.12 -1.2 c-0.08 -0.68 -0.32 -0.92 -1 -0.92 c-0.44 0 -0.88 0.04 -1.32 0.08 c-1.72 0.12 -2.52 -0.12 -4.2 0 c-0.56 0 -0.64 -0.08 -0.68 -0.6 c-0.16 -1.56 0 -3.28 0.16 -4.84 c0.04 -0.64 0.2 -0.76 0.8 -0.8 l5.64 -0.04 c0.76 -0.08 1 -0.04 0.96 -0.8 c-0.08 -1.16 0.04 -2.36 -0.08 -3.52 c-0.08 -0.64 -0.28 -0.76 -1 -0.76 c-1.2 0.04 -1.48 0.04 -2.68 0.12 c-1.2 0.04 -6 0.04 -7.16 0.04 c-1.68 0 -1.8 -0.12 -1.84 1.92 c-0.08 1.6 -0.04 3.24 -0.04 4.88 c0 2.8 -0.16 12.84 -0.08 15.08 z"></path>
-								</g>
-								<g id="SvgjsG1634" featurekey="sloganFeature-0" transform="matrix(0.9998840579710145,0,0,0.9998840579710145,89.40007085252844,44.00069708251953)" fill="url(#SvgjsLinearGradient1641)">
-									<path d="M0.6 20 l0 -2.24 l0.42 -0.28 l0 -8.96 l-0.42 -0.28 l0 -2.24 l3.1 0 l2.08 5.3 l2.08 -5.3 l3.1 0 l0 2.24 l-0.42 0.28 l0 8.96 l0.42 0.28 l0 2.24 l-3.36 0 l0 -2.24 l0.42 -0.28 l0 -4.98 l-1.24 3.16 l-2 0 l-1.24 -3.16 l0 4.98 l0.42 0.28 l0 2.24 l-3.36 0 z M18.985 20 l0 -2.24 l0.42 -0.28 l1.82 -8.96 l-0.42 -0.28 l0 -2.24 l5.32 0 l0 2.24 l-0.42 0.28 l1.82 8.96 l0.42 0.28 l0 2.24 l-2.48 0 l-0.62 -3.08 l-2.76 0 l-0.62 3.08 l-2.48 0 z M22.605 14.4 l1.72 0 l-0.86 -4.28 z M35.970000000000006 20 l0 -2.24 l0.42 -0.28 l0 -8.96 l-0.42 -0.28 l0 -2.24 l3.36 0 l0 2.24 l-0.42 0.28 l0 3.92 l2.66 -3.38 l0 -0.54 l-0.42 -0.28 l0 -2.24 l3.36 0 l0 2.24 l-0.42 0.28 l0 1.42 l-1.82 2.32 l1.82 2.26 l0 2.96 l0.42 0.28 l0 2.24 l-3.36 0 l0 -2.24 l0.42 -0.28 l0 -2.08 l-0.9 -1.1 l-1.76 2.22 l0 0.96 l0.42 0.28 l0 2.24 l-3.36 0 z M52.93500000000001 20 l0 -2.24 l0.42 -0.28 l0 -8.96 l-0.42 -0.28 l0 -2.24 l7.28 0 l0 2.94 l-2.24 0 l-0.28 -0.42 l-1.82 0 l0 3.22 l3.22 0 l0 2.52 l-3.22 0 l0 3.22 l1.82 0 l0.28 -0.42 l2.24 0 l0 2.94 l-7.28 0 z M81.44500000000001 20 l0 -2.24 l0.42 -0.28 l0 -2.68 l-2.22 -6.18 l-0.58 -0.38 l0 -2.24 l2.3 0 l1.76 4.86 l1.76 -4.86 l2.3 0 l0 2.24 l-0.58 0.38 l-2.22 6.14 l0 2.74 l0.42 0.26 l0 2.24 l-3.36 0 z M97.07000000000001 20 l-1.86 -1.86 l0 -10.28 l1.86 -1.86 l4.54 0 l1.86 1.86 l0 10.28 l-1.86 1.86 l-4.54 0 z M98.11000000000001 17.48 l2.46 0 l0.38 -0.38 l0 -8.2 l-0.38 -0.38 l-2.46 0 l-0.38 0.38 l0 8.2 z M114.17500000000001 20 l-1.86 -1.86 l0 -9.62 l-0.42 -0.28 l0 -2.24 l3.36 0 l0 2.24 l-0.42 0.28 l0 8.58 l0.38 0.38 l2.32 0 l0.38 -0.38 l0 -8.58 l-0.42 -0.28 l0 -2.24 l3.36 0 l0 2.24 l-0.42 0.28 l0 9.62 l-1.86 1.86 l-4.4 0 z M129.28 20 l0 -2.24 l0.42 -0.28 l0 -8.96 l-0.42 -0.28 l0 -2.24 l6.4 0 l1.86 1.86 l0 5.1 l-1.08 1.1 l0.86 3.34 l0.5 0.36 l0 2.24 l-3.44 0 l0 -2.24 l0.36 -0.24 l-0.7 -2.7 l-1.82 0 l0 2.66 l0.42 0.28 l0 2.24 l-3.36 0 z M132.22 12.3 l2.42 0 l0.38 -0.38 l0 -3.02 l-0.38 -0.38 l-2.42 0 l0 3.78 z M156.89 20 l0 -2.24 l0.42 -0.28 l0 -8.96 l-0.42 -0.28 l0 -2.24 l3.1 0 l2.08 5.3 l2.08 -5.3 l3.1 0 l0 2.24 l-0.42 0.28 l0 8.96 l0.42 0.28 l0 2.24 l-3.36 0 l0 -2.24 l0.42 -0.28 l0 -4.98 l-1.24 3.16 l-2 0 l-1.24 -3.16 l0 4.98 l0.42 0.28 l0 2.24 l-3.36 0 z M177.535 20 l-1.86 -1.86 l0 -10.28 l1.86 -1.86 l4.54 0 l1.86 1.86 l0 10.28 l-1.86 1.86 l-4.54 0 z M178.575 17.48 l2.46 0 l0.38 -0.38 l0 -8.2 l-0.38 -0.38 l-2.46 0 l-0.38 0.38 l0 8.2 z M194.7 20 l-2.32 -11.48 l-0.42 -0.28 l0 -2.24 l2.48 0 l2 9.88 l2 -9.88 l2.48 0 l0 2.24 l-0.42 0.28 l-2.32 11.48 l-3.48 0 z M208.945 20 l0 -2.24 l0.42 -0.28 l0 -8.96 l-0.42 -0.28 l0 -2.24 l7.28 0 l0 2.94 l-2.24 0 l-0.28 -0.42 l-1.82 0 l0 3.22 l3.22 0 l0 2.52 l-3.22 0 l0 3.22 l1.82 0 l0.28 -0.42 l2.24 0 l0 2.94 l-7.28 0 z"></path>
-								</g>
-							</svg>
-						</div>
-
-						<div>
-							<a class="is-hidden mr-2 is-flex is-align-items-center" href="#">
-								<img class="me-2" src="{{ asset('images/chess-board.png') }}" style="height: 32px" alt="Chess Repertoire" loading="lazy"/>
-							</a>
-						</div>
-
-						<!-- Right elements -->
-						<div class="is-relative is-flex is-align-items-center">
-							{% if app.user %}
-								<!-- Left links -->
-								<ul class="list-style-none me-auto mr-20 is-flex ps-0 is-flex-direction-row">
-									<!-- Home -->
-									<li class="mb-0 pe-1 ps-0">
-										<a href="./" class="p-0 px-2">
-											Home
-										</a>
-									</li>
-									<!-- Repertoire -->
-									<li class="mb-0 pe-1 ps-0">
-										<a href="./repertoire" class="p-0 px-2">
-											Repertoire
-										</a>
-									</li>
-									<!-- Practice -->
-									<li class="mb-0 pe-1 ps-0">
-										{% if template.hasRepertoire() %}
-											<a href="./practice" class="p-0 px-2">
-												Practice
-											</a>
-										{% else %}
-											<span class="p-0 px-2">
-												Practice
-											</span>
-										{% endif %}
-									</li>
-								</ul>
-
-								{% if template.hasRepertoire() %}
-									<a href="./roadmap" class="px-3 py-2 has-text-weight-semibold" title="Roadmap">
-										<i class="fa-solid fa-folder-tree"></i>
+					<!-- Right elements -->
+					<div class="is-relative is-flex is-align-items-center">
+						{% if app.user %}
+							<!-- Left links -->
+							<ul
+								class="list-style-none me-auto mr-20 is-flex ps-0 is-flex-direction-row">
+								<!-- Home -->
+								<li class="mb-0 pe-1 ps-0">
+									<a href="{{ path('home') }}" class="p-0 px-2">
+										Home
 									</a>
-								{% else %}
-									<span class="px-3 py-2 has-text-weight-semibold text-primary-500" title="Roadmap">
-										<i class="fa-solid fa-folder-tree"></i>
-									</span>
-								{% endif %}
-								<a href="./settings" class="px-3 py-2 has-text-weight-semibold" title="Settings">
-									<i class="fa-solid fa-gear"></i>
+								</li>
+								<!-- Repertoire -->
+								<li class="mb-0 pe-1 ps-0">
+									<a href="{{ path('repertoire') }}" class="p-0 px-2">
+										Repertoire
+									</a>
+								</li>
+								<!-- Practice -->
+								<li class="mb-0 pe-1 ps-0">
+									{% if template.hasRepertoire() %}
+										<a href="{{ path('practice') }}" class="p-0 px-2">
+											Practice
+										</a>
+									{% else %}
+										<span class="p-0 px-2">
+											Practice
+										</span>
+									{% endif %}
+								</li>
+							</ul>
+
+							{% if template.hasRepertoire() %}
+								<a href="{{ path('roadmap') }}" class="px-3 py-2 has-text-weight-semibold" title="Roadmap">
+									<i class="fa-solid fa-folder-tree"></i>
+								</a>
+							{% else %}
+								<span class="px-3 py-2 has-text-weight-semibold text-primary-500" title="Roadmap">
+									<i class="fa-solid fa-folder-tree"></i>
+								</span>
+							{% endif %}
+							<a href="{{ path('settings') }}" class="px-3 py-2 has-text-weight-semibold" title="Settings">
+								<i class="fa-solid fa-gears"></i>
+							</a>
+						{% endif %}
+
+						<div class="checkbox-switch">
+							<input type="checkbox" id="lightSwitchCheckbox" class="light-switch"/>
+							<label class="px-3 py-2" for="lightSwitchCheckbox">
+								<a title="Switch to light mode" class="checkbox-switch-on">
+									<i class="fa-regular fa-sun"></i>
+								</a>
+								<a title="Switch to dark mode" class="checkbox-switch-off">
+									<i class="fa-regular fa-moon"></i>
+								</a>
+							</label>
+						</div>
+
+						<div class="is-flex is-align-items-center">
+							{% if app.user %}
+								<a href="{{ path('logout') }}" class="px-3 py-2 is-size-6 is-uppercase">
+									Logout
+								</a>
+							{% else %}
+								<a href="{{ path('register') }}" class="button is-primary is-uppercase">
+									Sign up for free
 								</a>
 							{% endif %}
-
-							<div class="checkbox-switch">
-								<input type="checkbox" id="lightSwitchCheckbox" class="light-switch"/>
-								<label class="px-3 py-2" for="lightSwitchCheckbox">
-									<span title="Switch to light mode" class="checkbox-switch-on a-link">
-										<i class="fa-solid fa-sun"></i>
-									</span>
-									<span title="Switch to dark mode" class="checkbox-switch-off a-link">
-										<i class="fa-solid fa-moon"></i>
-									</span>
-								</label>
-							</div>
-
-							<div class="is-flex is-align-items-center">
-								{% if app.user %}
-									<a href="./logout" class="px-3 py-2 is-size-6 is-uppercase">
-										Logout
-									</a>
-								{% else %}
-									<a href="./register" class="button is-primary is-uppercase">
-										Sign up for free
-									</a>
-								{% endif %}
-							</div>
 						</div>
+					</div>
 				</nav>
 				{% block header_bottom %}{% endblock %}
 			</header>
@@ -170,38 +113,36 @@
 
 		<!-- sticky top center container, not used right now.. ? -->
 		<div id="topCenterDiv" class="sticky left-0 pt-14" style="width: calc(100vw - 10px);">
-			{% block body_header %}
-			{% endblock %}
+		{% block body_header %}{% endblock %}
 		</div>
 
-		<!-- main content div with default padding -->
-		<div class="main-content">
-			{% block body %}
-			{% endblock %}
-		</div>
-
-		<!-- loader -->
-		<div id="pageLoadingOverlay" class="is-hidden w-full h-full fixed top-0 left-0 backdrop-grayscale-[.5] z-50">
-			<div class="is-flex w-full h-full is-justify-content-center is-align-items-center">
-				<span class="inline-block icon-[svg-spinners--90-ring-with-bg] w-12 h-12"></span>
+			<!-- main content div with default padding -->
+			<div class="main-content">
+				{% block body %}{% endblock %}
 			</div>
-		</div>
 
-		{% block footer %}
-			<footer class="is-hidden fixed bottom-0 w-full rounded bg-white dark:bg-slate-900 border-t border-zinc-300 dark:border-slate-700 shadow-dark-mild dark:text-white/70">
-				<div id="pageFooterBackground" class="is-absolute w-full h-full" style="opacity: .1; background-image: url('{{ asset('images/smokey-chess-background.webp') }}');"></div>
-				<p class="m-0 text-center text-xs py-1 md:py-2">
-					Copyright 2024 AvWeije. All Rights Reserved.
-				</p>
-			</footer>
-		{% endblock %}
+				<!-- loader -->
+				<div id="pageLoadingOverlay" class="is-hidden w-full h-full fixed top-0 left-0 backdrop-grayscale-[.5] z-50">
+					<div class="is-flex w-full h-full is-justify-content-center is-align-items-center">
+						<span class="inline-block icon-[svg-spinners--90-ring-with-bg] w-12 h-12"></span>
+					</div>
+				</div>
 
-		<div id="errorIconElement" class="fade-element fade fixed bottom-3 left-3">
-			<div class="is-flex bg-white is-rounded border border-gray-400 dark:border-slate-500">
-				<span class="is-danger">
-					<i class="fa-solid fa-triangle-exclamation"></i>
-				</span>
-			</div>
-		</div>
-	</body>
-</html>
+				{% block footer %}
+					<footer class="is-hidden fixed bottom-0 w-full rounded bg-white dark:bg-slate-900 border-t border-zinc-300 dark:border-slate-700 shadow-dark-mild dark:text-white/70">
+						<div id="pageFooterBackground" class="is-absolute w-full h-full" style="opacity: .1; background-image: url('{{ asset('images/smokey-chess-background.webp') }}');"></div>
+						<p class="m-0 text-center is-size-7 py-1 md:py-2">
+							Copyright 2024 AvWeije. All Rights Reserved.
+						</p>
+					</footer>
+				{% endblock %}
+
+				<div id="errorIconElement" class="fade-element fade fixed bottom-3 left-3">
+					<div class="is-flex bg-white is-rounded border border-gray-400 dark:border-slate-500">
+						<span class="is-danger">
+							<i class="fa-solid fa-triangle-exclamation"></i>
+						</span>
+					</div>
+				</div>
+			</body>
+		</html>

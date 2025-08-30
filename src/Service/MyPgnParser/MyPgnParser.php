@@ -32,7 +32,7 @@ class MyPgnParser
         return $game;
     }
 
-    public function parsePgn($filePath, $asText = false)
+    public function parsePgn($filePath, $asText = false, $limit = null, $skip = null)
     {
         $this->filePath = $filePath;
         $this->fileName = basename($filePath);
@@ -47,9 +47,13 @@ class MyPgnParser
         $pgnBuffer = null;
         $movesBuffer = null;
         $haveMoves = false;
+        $bytesRead = 0;
+        $i = 0;
+        $skip = $skip ?? 0;
         while (($line = fgets($handle, 4096)) !== false) {
             // When reading files line-by-line, there is a \n at the end, so remove it.
             $line = trim($line);
+            $bytesRead = $bytesRead + strlen($line);
             if (empty($line)) {
                 continue;
             }
@@ -64,6 +68,18 @@ class MyPgnParser
                 // moves and this is the start of a new game.
                 if ($haveMoves) {
 
+                    $i++;
+
+                    // if we need to skip this one
+                    if ($i <= $skip) {
+                        continue;
+                    }
+
+                    // if we reached our limit
+                    if ($limit !== null && $i >= $skip + $limit) {
+                        break;
+                    }
+
                     if (!$asText) {
                         $this->completeCurrentGame($game, $pgnBuffer);
                     }
@@ -72,7 +88,7 @@ class MyPgnParser
                     if ($asText) {
                         yield ["pgn" => $pgnBuffer, "moves" => $movesBuffer];
                     } else {
-                        yield $game;
+                        yield ["game" => $game, "bytesRead" => $bytesRead];
                     }
 
                     if (!$asText) {
@@ -109,7 +125,7 @@ class MyPgnParser
         if ($asText) {
             yield ["pgn" => $pgnBuffer, "moves" => $movesBuffer];
         } else {
-            yield $game;
+            yield ["game" => $game, "bytesRead" => $bytesRead];
         }
     }
 

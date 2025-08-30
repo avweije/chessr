@@ -1,0 +1,9 @@
+.grid-auto-1fr {
+    display: grid;
+    grid-template-columns: auto 1fr;
+}
+
+.grid-1fr-auto-auto-1fr {
+    display: grid;
+    grid-template-columns: 1fr auto auto 1fr;
+}

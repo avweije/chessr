@@ -1,23 +1,17 @@
 table.moves-table {
-    /* table-fixed min-w-full m-0 */
-    width: 100%; /* min-w-full */
-    border-collapse: collapse; /* m-0 */
-    margin: 0; /* m-0 */
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
 }
 
 table.moves-table tr.moves-row {
-    /* overflow-hidden hover:cursor-pointer hover:bg-tacao-100 hover:dark:bg-slate-600 tc-base */
-    overflow: hidden; /* overflow-hidden */
-    cursor: pointer; /* hover:cursor-pointer */
-    transition: background-color 0.3s; /* smooth transition for hover effect */
-    /* If you want dark mode, use a JS class toggle or prefers-color-scheme media query */
-    /* color: #d1d5db;  hover:dark:bg-slate-600 */
+    overflow: hidden;
+    cursor: pointer;
+    transition: background-color 0.3s;
 }
 
 table.moves-table tr.moves-row:hover {
-    background-color: #fef6e4; /* hover:bg-tacao-100 */
-    /* If you want dark mode, use a JS class toggle or prefers-color-scheme media query */
-    /* background-color: #374151;  hover:dark:bg-slate-600 */
+    background-color: var(--color-surface-alt);
 }
 
 table.moves-table tr.moves-row > td {
@@ -25,80 +19,53 @@ table.moves-table tr.moves-row > td {
 }
 
 table.moves-table tr.moves-row td.move-cell {
-    /* w-12 pl-3 pr-2 py-2 font-semibold whitespace-nowrap rounded-l-md */
-    width: 3rem; /* 12 * 0.25rem */
-    padding-left: 0.75rem; /* 3 * 0.25rem */
-    padding-right: 0.5rem; /* 2 * 0.25rem */
-    padding-top: 0.5rem; /* 2 * 0.25rem */
-    padding-bottom: 0.5rem; /* 2 * 0.25rem */
-    font-weight: 600; /* font-semibold */
-    white-space: nowrap; /* whitespace-nowrap */
-    border-top-left-radius: 0.375rem; /* rounded-l-md */
-    border-bottom-left-radius: 0.375rem; /* rounded-l-md */
+    width: 3rem;
+    padding: 0.5rem 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    border-top-left-radius: 0.375rem;
+    border-bottom-left-radius: 0.375rem;
 }
 
 table.moves-table tr.moves-row td.eco-cell {
-    /* w-full px-2 py-2 */
-    width: 100%; /* w-full */
-    padding-left: 0.5rem; /* 2 * 0.25rem */
-    padding-right: 0.5rem; /* 2 * 0.25rem */
-    padding-top: 0.5rem; /* 2 * 0.25rem */
-    padding-bottom: 0.5rem; /* 2 * 0.25rem */
+    width: 100%;
+    padding: 0.5rem;
 }
 
 table.moves-table tr.moves-row td.eval-cell {
-    /* w-full px-2 py-2 text-xs text-center has-text-faded */
-    width: 100%; /* w-full */
-    padding-left: 0.5rem; /* 2 * 0.25rem */
-    padding-right: 0.5rem; /* 2 * 0.25rem */
-    padding-top: 0.5rem; /* 2 * 0.25rem */
-    padding-bottom: 0.5rem; /* 2 * 0.25rem */
-    font-size: 0.75rem; /* text-xs */
-    text-align: center; /* text-center */
-    color: #6b7280; /* has-text-faded */
+    width: 100%;
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    text-align: center;
+    color: var(--color-text-faded);
 }
 
 table.moves-table tr.moves-row td.pct-played-cell {
-    /* w-10 px-2 py-2 text-xs text-center */
-    width: 2.5rem; /* 10 * 0.25rem */
-    padding-left: 0.5rem; /* 2 * 0.25rem */
-    padding-right: 0.5rem; /* 2 * 0.25rem */
-    padding-top: 0.5rem; /* 2 * 0.25rem */
-    padding-bottom: 0.5rem; /* 2 * 0.25rem */
-    font-size: 0.75rem; /* text-xs */
-    text-align: center; /* text-center */
+    width: 2.5rem;
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    text-align: center;
 }
 
 table.moves-table tr.moves-row td.results-cell {
-    /* px-2 py-1 */
-    padding-left: 0.5rem; /* 2 * 0.25rem */
-    padding-right: 0.5rem; /* 2 * 0.25rem */
-    padding-top: 0.25rem; /* 1 * 0.25rem */
-    padding-bottom: 0.25rem; /* 1 * 0.25rem */
+    padding: 0.25rem 0.5rem;
 }
 
 table.moves-table tr.moves-row td.in-repertoire-cell {
-    /* w-8 px-2 py-2 text-center align-middle rounded-r-md */
-    width: 2rem; /* 8 * 0.25rem */
-    padding-left: 0.5rem; /* 2 * 0.25rem */
-    padding-right: 0.5rem; /* 2 * 0.25rem */
-    padding-top: 0.5rem; /* 2 * 0.25rem */
-    padding-bottom: 0.5rem; /* 2 * 0.25rem */
-    text-align: center; /* text-center */
-    vertical-align: middle; /* align-middle */
-    border-top-right-radius: 0.375rem; /* rounded-r-md */
-    border-bottom-right-radius: 0.375rem; /* rounded-r-md */
+    width: 2rem;
+    padding: 0.5rem;
+    text-align: center;
+    vertical-align: middle;
+    border-top-right-radius: 0.375rem;
+    border-bottom-right-radius: 0.375rem;
 }
 
 .in-repertoire-dot {
-    /* inline-block w-3 h-3 bg-marigold-600 dark:bg-marigold-500 rounded-full */
     display: inline-block;
-    width: 0.75rem; /* 3 * 0.25rem */
-    height: 0.75rem; /* 3 * 0.25rem */
-    background-color: #d97706; /* bg-marigold-600 */
-    border-radius: 9999px; /* rounded-full */
-    /* If you want dark mode, use a JS class toggle or prefers-color-scheme media query */
-    /* background-color: #f59e0b;  dark:bg-marigold-500 */
+    width: 0.75rem;
+    height: 0.75rem;
+    background-color: var(--color-link);
+    border-radius: 9999px;
 }
 
 
@@ -133,7 +100,7 @@ table.moves-table tr.moves-row td.in-repertoire-cell {
 }
 
 .dark .win-draw-loss-bar .draw-bar {
-    background-color: #9ca3af; /* dark:bg-slate-400 */
+    background-color: #9ca3af;
 }
 
 .win-draw-loss-bar .loss-bar {

@@ -5,7 +5,7 @@ class Admin {
   // the elements
   maxLinesInput = null;
   batchSizeInput = null;
-  importEvaluationsButton = null;
+  importButton = null;
 
   elapsedTimeField = null;
 
@@ -24,18 +24,22 @@ class Admin {
     // get the elements
     this.maxLinesInput = document.getElementById("maxLinesInput");
     this.batchSizeInput = document.getElementById("batchSizeInput");
-    this.importEvaluationsButton = document.getElementById(
-      "importEvaluationsButton"
+    this.importButton = document.getElementById(
+      "importButton"
     );
 
     this.linesImportedField = document.getElementById("linesImportedField");
     this.elapsedTimeField = document.getElementById("elapsedTimeField");
 
     // attach event handlers
-    this.importEvaluationsButton.addEventListener(
+    this.importButton.addEventListener(
       "click",
       this.onStartStop.bind(this)
     );
+  }
+
+  getSelectedImportType() {
+    return document.querySelector('input[name="import_type"]:checked').value;
   }
 
   onStartStop() {
@@ -56,14 +60,14 @@ class Admin {
   // stop the import
   stopImport() {
     this.interruptImport = true;
-    this.importEvaluationsButton.disabled = true;
+    this.importButton.disabled = true;
   }
 
   //
   startImport() {
     // show the spinner
-    this.importEvaluationsButton.children[0].innerHTML = "Stop import";
-    this.importEvaluationsButton.children[1].classList.remove("is-hidden");
+    this.importButton.innerHTML = "Stop import";
+    //this.importButton.classList.add("is-loading");
 
     this.linesImportedField.innerHTML = "0";
 
@@ -93,8 +97,10 @@ class Admin {
     var url = "./admin/evaluations/import";
 
     var data = {
+      type: this.getSelectedImportType(),
       maxLines: this.maxLinesInput.value,
       batchSize: this.batchSizeInput.value,
+      processed: this.processed
     };
 
     // get the start time for this fetch
@@ -134,6 +140,12 @@ class Admin {
     if (data !== null) {
       var seconds = (new Date().getTime() - this.startTime) / 1000;
 
+      // for move statistics - if processed = 0, the file has been read (manual rotate to the next in AdminController)
+      if (data.processed == 0) {
+        // interrupt the import
+        this.interruptImport = true;
+      }
+
       this.processed += data.processed;
       this.average =
         this.processed > 0
@@ -170,9 +182,9 @@ class Admin {
     //
     if (this.interruptImport || data == null) {
       // hide the spinner, toggle button
-      this.importEvaluationsButton.children[0].innerHTML = "Import eveluations";
-      this.importEvaluationsButton.children[1].classList.add("is-hidden");
-      this.importEvaluationsButton.disabled = false;
+      this.importButton.innerHTML = "Start import";
+      //this.importButton.classList.remove("is-loading");
+      this.importButton.disabled = false;
 
       this.importStarted = false;
       this.interruptImport = false;

@@ -944,11 +944,15 @@ class Repertoire extends MyChessBoard {
     // load the moves table
     this.loadMovesTable(data);
 
+    // 
+    console.log("moveNumber:", this.game.moveNumber());
+
     // toggle the engine container (if no game moves)
-    if (data.games.moves.length > 0) {
-      this.toggleEngineContainer(false);
-    } else {
+    //if (data.games.moves.length > 0) {
+    if (this.game.moveNumber() > 1) {
       this.toggleEngineContainer(true);
+    } else {
+      this.toggleEngineContainer(false);
     }
 
     // set the autoplay & exclude checkboxes
@@ -987,8 +991,13 @@ class Repertoire extends MyChessBoard {
    */
 
   toggleEngineContainer(show) {
+
+    console.log('toggleEngineContainer:', show);
+
     // turn off the engine by default
     this.engineCheckbox.checked = false;
+    // interrupt the engine
+    this.engineInterrupt();
 
     if (show) {
       // clear the table
@@ -1046,13 +1055,16 @@ class Repertoire extends MyChessBoard {
       this.uci.startEngine();
       this.uci.sendUCI();
     } else {
-      // start the evaluation
-      this.onEngineReady();
+
+      console.log("Already active, calling onEngineReady..");
+
+      // restart a new evaluation
+      this.onEngineOK();
     }
   }
 
   engineStop() {
-    console.info("Stopping the engine.");
+    console.info("Stopping the engine. (Clearing this.uci, new engine should be started after...)");
 
     if (this.uci !== null) {
       this.uci.stopEngine();
@@ -1063,19 +1075,24 @@ class Repertoire extends MyChessBoard {
   engineInterrupt() {
     console.info("Interrupting the engine..");
 
-    this.uci.interrupt();
-    //this.uci.isReady();
-
-    //this.uci.onReceive("readyok", stockfish.stopEngine.bind(stockfish));
+    // stop the current process
+    if (this.uci) this.uci.interrupt();
   }
 
   onEngineOK() {
     console.info("onEngineOK");
 
+    if (!this.uci) return;
+
     this.uci.setMultiPV(3);
 
     this.uci.onReceive("readyok", this.onEngineReady.bind(this));
 
+    // stop just in case
+    this.uci.interrupt();
+    // start newgame
+    this.uci.newGame();
+    // wait for isRready
     this.uci.isReady();
 
     this.uci.onReceive("info", this.onEngineInfo.bind(this), false);
@@ -1118,7 +1135,7 @@ class Repertoire extends MyChessBoard {
     var moves = [];
     var line = "";
 
-    console.info(info);
+    //console.info(info);
 
     // make sure we have a line
     if (info.pv && info.pv.length) {
@@ -1144,7 +1161,7 @@ class Repertoire extends MyChessBoard {
 
           moves.push(last);
 
-          line = line + (line !== "" ? " " : "") + last.san;
+          line = line + (line !== "" ? " " + last.san : "<strong>" + last.san + "</strong>");
         }
       } catch (err) {
         console.error("Error:", err, info);
@@ -1282,7 +1299,7 @@ class Repertoire extends MyChessBoard {
     el.setAttribute("data-type", "tag");
 
     var txt = document.createElement("span");
-    txt.className = "text-xs mr-2 font-semibold text-secondary-800";
+    txt.className = "is-size-7 mr-2 font-semibold text-secondary-800";
     txt.innerHTML = group.name;
 
     el.appendChild(txt);
