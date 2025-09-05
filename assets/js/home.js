@@ -128,12 +128,17 @@ class Home {
       this.fields.analysis.innerHTML = "No analysed games at the moment";
     }
 
-    // remove the skeleton pulse class
-    this.fields.white.classList.remove("pulse-skeleton");
-    this.fields.black.classList.remove("pulse-skeleton");
-    this.fields.new.classList.remove("pulse-skeleton");
-    this.fields.recommended.classList.remove("pulse-skeleton");
-    this.fields.analysis.classList.remove("pulse-skeleton");
+    // remove the skeleton blocks, show the fields
+    this.fields.white.previousElementSibling.parentNode.removeChild(this.fields.white.previousElementSibling);
+    this.fields.white.classList.remove("is-hidden");
+    this.fields.black.previousElementSibling.parentNode.removeChild(this.fields.black.previousElementSibling);
+    this.fields.black.classList.remove("is-hidden");
+    this.fields.new.previousElementSibling.parentNode.removeChild(this.fields.new.previousElementSibling);
+    this.fields.new.classList.remove("is-hidden");
+    this.fields.recommended.previousElementSibling.parentNode.removeChild(this.fields.recommended.previousElementSibling);
+    this.fields.recommended.classList.remove("is-hidden");
+    this.fields.analysis.previousElementSibling.parentNode.removeChild(this.fields.analysis.previousElementSibling);
+    this.fields.analysis.classList.remove("is-hidden");
   }
 }
 

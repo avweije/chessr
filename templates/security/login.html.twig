@@ -8,23 +8,23 @@
 		<div class="box p-5">
 			<div class="px-3 py-2">
 				<h2 class="title is-size-5">Sign in</h2>
-				<p class="p-1 mt-2 text-md tc-base">Enter your email address and password to sign into your account.</p>
+				<p class="p-1 mt-2 mb-4">Enter your email address and password to sign into your account.</p>
 
 				{{ form_start(loginForm) }}
 				{{ form_row(loginForm.email, {'label': 'Email address', 'full_name': '_username', 'value': last_username, 'attr': { 'placeholder': 'Enter your email address...'}}) }}
 				{{ form_row(loginForm.password, {'label': 'Password', 'full_name': '_password', 'attr': { 'placeholder': 'Enter your password...'}}) }}
 
-				<div class="col-span-full">
+				<div class="field mt-3">
 					<label class="input-toggle">
 						<input type="checkbox" name="_remember_me" value="1" class="sr-only peer">
 						<div class="input-toggle-switch"></div>
-						<span class="ms-3 is-size-6 has-text-weight-medium text-gray-900 dark:text-gray-300">Keep me logged in</span>
+						<span class="ml-2 is-size-6">Keep me logged in</span>
 					</label>
 				</div>
 
 				<input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
 
-				<div class="col-span-full justify-self-end">
+				<div class="buttons">
 					<button type="submit" class="button is-primary">
 						Sign In
 					</button>

@@ -128,7 +128,7 @@
 
 			<div id="opponentMovesContainer" class="is-hidden is-flex is-flex-direction-column is-align-items-center mt-6">
 				<div id="opponentMovesHeader" class="box p-0 is-flex is-flex-direction-column mb-6 w-medium">
-					<div id="opponentMovesEco" class="box-header is-gap-1 px-4 py-3"></div>
+					<div id="opponentMovesEco" class="box-header is-gap-1"></div>
 					<div class="is-flex gap-x-5 is-justify-content-space-between is-align-items-center">
 						<div class="is-flex is-align-items-center px-2 py-3">
 							<button id="opponentMovesFirstButton" disabled class="is-flex-shrink-0">
@@ -136,7 +136,7 @@
 									<i class="fa-solid fa-backward-step"></i>
 								</span>
 							</button>
-							<div id="opponentMovesPgn" class="is-flex is-flex-wrap-wrap is-align-items-center has-text-left"></div>
+							<div id="opponentMovesPgnField" class="pgn-moves-container pl-2"></div>
 						</div>
 						<div id="opponentMovesInfo" class="is-flex-shrink-0 px-3 py-2 has-text-right">
 							<p class="is-size-7 mb-px has-text-faded">Wins:
@@ -147,7 +147,7 @@
 							</p>
 						</div>
 					</div>
-					<div id="opponentMovesRepertoire" class="is-hidden box-footer is-gap-2 p-3">
+					<div id="opponentMovesRepertoire" class="is-hidden box-footer is-gap-2 px-3 pb-3 pt-1">
 						<div class="is-size-6 pl-1 has-text-faded"></div>
 						<button id="opponentMoveSubmitButton" type="button" class="button is-small">
 							<span class="icon">
@@ -166,10 +166,8 @@
 					</div>
 				</div>
 
-				<div id="opponentMoveSuggestionsContainer" class="is-hidden is-flex is-flex-direction-column mb-6 w-medium">
-					<div class="is-flex is-align-items-center px-4 py-3">
-						Suggestions
-					</div>
+				<div id="opponentMoveSuggestionsContainer" class="is-hidden box p-0 mb-6 w-medium">
+					<div class="box-header">Suggestions</div>
 					<div class="is-flex is-flex-direction-column"></div>
 				</div>
 

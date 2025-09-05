@@ -16,7 +16,7 @@ class ApiController extends AbstractController
 {
     public function __construct(private Connection $conn, private EntityManagerInterface $em) {}
 
-    #[Route('/api/settings', methods: ['GET'], name: 'app_api_get_settings')]
+    #[Route('/api/settings', methods: ['GET'], name: 'api_get_settings')]
     /**
      * Get the user settings.
      *
@@ -41,6 +41,7 @@ class ApiController extends AbstractController
             $settings->setRecommendInterval(0);
             $settings->setAnalyseEngineTime(1000);
             $settings->setAnalyseIgnoreInaccuracy(false);
+            $settings->setMistakeTolerance(0);
 
             // save the settings
             $this->em->persist($settings);
@@ -56,11 +57,12 @@ class ApiController extends AbstractController
             "animate_variation" => $settings->getAnimateVariation(),
             "recommend_interval" => $settings->getRecommendInterval(),
             "analyse_engine_time" => $settings->getAnalyseEngineTime(),
-            "analyse_ignore_inaccuracy" => $settings->isAnalyseIgnoreInaccuracy()
+            "analyse_ignore_inaccuracy" => $settings->isAnalyseIgnoreInaccuracy(),
+            "analyse_mistake_tolerance" => $settings->getMistakeTolerance()
         ]]);
     }
 
-    #[Route('/api/settings', methods: ['POST'], name: 'app_api_save_settings')]
+    #[Route('/api/settings', methods: ['POST'], name: 'api_save_settings')]
     /**
      * Save (update) the user settings.
      *
@@ -86,6 +88,7 @@ class ApiController extends AbstractController
             $settings->setRecommendInterval(0);
             $settings->setAnalyseEngineTime(1000);
             $settings->setAnalyseIgnoreInaccuracy(false);
+            $settings->setMistakeTolerance(0);
         }
 
         // update all the settings
@@ -119,6 +122,9 @@ class ApiController extends AbstractController
                 case "analyse_ignore_inaccuracy":
                     $settings->setAnalyseIgnoreInaccuracy($value);
                     break;
+                case "analyse_mistake_tolerance":
+                    $settings->setMistakeTolerance($value);
+                    break;
             }
         }
 
@@ -129,7 +135,7 @@ class ApiController extends AbstractController
         return new JsonResponse(["message" => "Settings updated."]);
     }
 
-    #[Route('/api/download/settings', methods: ['GET'], name: 'app_api_download_settings')]
+    #[Route('/api/download/settings', methods: ['GET'], name: 'api_download_settings')]
     /**
      * Gets the download settings (used for analyse and/or opponent pages).
      *
@@ -167,7 +173,7 @@ class ApiController extends AbstractController
         ]]);
     }
 
-    #[Route('/api/find/similar', name: 'app_api_find_similar_positions')]
+    #[Route('/api/find/similar', name: 'api_find_similar_positions')]
     /**
      * TEST - Trying to find similar positions, based on FEN. Was close, but not giving me the positions I wanted.
      *

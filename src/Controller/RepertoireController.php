@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Controller;
 
 use App\Entity\Evaluation;
@@ -9,6 +8,7 @@ use App\Entity\Repertoire;
 use App\Entity\RepertoireGroup;
 use App\Library\ChessJs;
 use App\Controller\ChessrAbstractController;
+use App\Service\ChessHelper;
 use App\Service\RepertoireService;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
@@ -26,7 +26,8 @@ class RepertoireController extends ChessrAbstractController
         private Connection $conn, 
         private EntityManagerInterface $em, 
         private ManagerRegistry $doctrine,
-        private RepertoireService $repertoireService
+        private RepertoireService $repertoireService,
+        private ChessHelper $chessHelper
         )
     {
     }
@@ -55,7 +56,7 @@ class RepertoireController extends ChessrAbstractController
         ]);
     }
 
-    #[Route('/api/repertoire/autoplay', methods: ['POST'], name: 'app_api_repertoire_autoplay')]
+    #[Route('/api/repertoire/autoplay', methods: ['POST'], name: 'api_repertoire_autoplay')]
     /**
      * Updates the 'autoplay' boolean for a certain repertoire move.
      *
@@ -85,7 +86,7 @@ class RepertoireController extends ChessrAbstractController
         return new JsonResponse(["message" => $message]);
     }
 
-    #[Route('/api/repertoire/exclude', methods: ['POST'], name: 'app_api_repertoire_exclude')]
+    #[Route('/api/repertoire/exclude', methods: ['POST'], name: 'api_repertoire_exclude')]
     /**
      * Updates the 'exclude' boolean for a certain repertoire move.
      *
@@ -115,7 +116,7 @@ class RepertoireController extends ChessrAbstractController
         return new JsonResponse(["message" => $message]);
     }
 
-    #[Route('/api/repertoire/groups', name: 'app_api_get_repertoire_groups')]
+    #[Route('/api/repertoire/groups', name: 'api_get_repertoire_groups')]
     /**
      * Gets the repertoire groups for a certain user.
      *
@@ -135,7 +136,7 @@ class RepertoireController extends ChessrAbstractController
         return new JsonResponse(["groups" => $res]);
     }
 
-    #[Route('/api/repertoire/group', methods: ['POST'], name: 'app_api_repertoire_group_add')]
+    #[Route('/api/repertoire/group', methods: ['POST'], name: 'api_repertoire_group_add')]
     /**
      * Add a repertoire move to a certain group.
      *
@@ -197,7 +198,7 @@ class RepertoireController extends ChessrAbstractController
         return new JsonResponse(["message" => $message]);
     }
 
-    #[Route('/api/repertoire/group', methods: ['DELETE'], name: 'app_api_repertoire_group_delete')]
+    #[Route('/api/repertoire/group', methods: ['DELETE'], name: 'api_repertoire_group_delete')]
     /**
      * Remove a repertoire move from a certain group.
      *
@@ -244,7 +245,7 @@ class RepertoireController extends ChessrAbstractController
         return new JsonResponse(["message" => "Repertoire removed from group.", "repertoire" => $data["repertoire"], "groups" => $groups]);
     }
 
-    #[Route('/api/repertoire', methods: ['POST'], name: 'app_api_repertoire_save')]
+    #[Route('/api/repertoire', methods: ['POST'], name: 'api_repertoire_save')]
     /**
      * Save a repertoire move.
      *
@@ -261,7 +262,7 @@ class RepertoireController extends ChessrAbstractController
         return new JsonResponse($saved);
     }
 
-    #[Route('/api/repertoire', methods: ['DELETE'], name: 'app_api_repertoire_delete')]
+    #[Route('/api/repertoire', methods: ['DELETE'], name: 'api_repertoire_delete')]
     /**
      * Delete a repertoire move.
      *
@@ -279,7 +280,7 @@ class RepertoireController extends ChessrAbstractController
         return new JsonResponse(["message" => "The move has been deleted from the repertoire."]);
     }
 
-    #[Route('/api/repertoire/counters', methods: ['POST'], name: 'app_api_repertoire_counters')]
+    #[Route('/api/repertoire/counters', methods: ['POST'], name: 'api_repertoire_counters')]
     /**
      * Update the practice counters for a repertoire move.
      *
@@ -346,7 +347,7 @@ class RepertoireController extends ChessrAbstractController
         return new JsonResponse(["message" => "Counters updated."]);
     }
 
-    #[Route('/api/repertoire/moves', name: 'app_api_moves')]
+    #[Route('/api/repertoire/moves', name: 'api_moves')]
     /**
      * Gets the top engine evaluation moves, the most played moves and our own repertoire moves for a certain FEN position.
      *
@@ -376,58 +377,60 @@ class RepertoireController extends ChessrAbstractController
 
         $timers["evals"] = hrtime(true);
 
+        //
+        // Get the top evaluations for this position
+        //
+
+        //dd($fenWithout);
+
         // get the evaluations for this position
-        $rec = $this->em->getRepository(Evaluation::class)->findOneBy(["Fen" => $fenWithout]);
-        //$rec = null;
+        //$rec = $this->em->getRepository(Evaluation::class)->findOneBy(["Fen" => $fenWithout]);
+        $topEvals = $this->em->getRepository(Evaluation::class)->findTopEvaluationByFen($fenWithout);
 
         $timers["evals"] = (hrtime(true) - $timers["evals"]) / 1e+6;
 
-        if ($rec) {
+        if ($topEvals) {
             //
             //$chess = new ChessJs();
 
             $timers["evals-get-san"] = hrtime(true);
 
-            $temp = json_decode($rec->getEvals(), true);
+            /*
+            $temp = json_decode($topEvals->getEvals(), true);
 
             usort($temp, function ($a, $b) {
                 if ($a["depth"] > $b["depth"]) return -1;
                 if ($a["depth"] < $b["depth"]) return 1;
                 return 0;
             });
+            */
 
             // load the FEN (adding the move counters manually)
-            $chess->load($fenWithout . " 0 1");
+            //$chess->load($fenWithout . " 0 1");
             //
-            foreach ($temp as $eval) {
-                foreach ($eval["pvs"] as $pv) {
+            //foreach ($temp as $eval) {
+                //foreach ($eval["pvs"] as $pv) {
+                foreach ($topEvals as $eval) {
 
 
                     // get the moves
-                    $move = explode(" ", $pv["line"]);
+                    //$move = explode(" ", $pv["line"]);
 
-                    // get the move details
-                    $fromSquare = substr($move[0], 0, 2);
-                    $toSquare = substr($move[0], 2, 2);
-                    $promotion = strlen($move[0] == 5) ? substr($move[0], 5) : "";
-                    // make the move
-                    $ret = $chess->move(["from" => $fromSquare, "to" => $toSquare, "promotion" => $promotion]);
-                    if ($ret !== null) {
-                        // get the last move
-                        $history = $chess->history(['verbose' => true]);
-                        $last = array_pop($history);
-                        // undo the last move
-                        $chess->undo();
+                    //
+                    // WE NEED TO SEE IF WE SAVE THE SAN MOVE OR engine MOVE??
+                    // WE ONLY DO THIS NEXT PART TO TEST IF THE MOVE IS VALID..
+                    // AND TO GET THE SAN NOTATION FOR THE MOVE (WHICH WE NEED)
+                    // WE COULD NEED BOTH, IF WE DO GAME ANALYSIS??
+                    //
 
-                        // add the evaluation
-                        $evals[] = [
-                            "cp" => isset($pv["cp"]) ? $pv["cp"] : null,
-                            "mate" => isset($pv["mate"]) ? $pv["mate"] : null,
-                            "move" => $last["san"]
-                        ];
-                    }
+                    // add the evaluation
+                    $evals[] = [
+                        "cp" => $eval->getCp(),
+                        "mate" => $eval->getMate(),
+                        "move" => $eval->getSan()
+                    ];
                 }
-            }
+            //}
 
             $timers["evals-get-san"] = (hrtime(true) - $timers["evals-get-san"]) / 1e+6;
         }
@@ -437,57 +440,52 @@ class RepertoireController extends ChessrAbstractController
         // get the ECO codes for this position and the next move
         $codes = $this->em->getRepository(ECO::class)->findByPgn($data['pgn']);
 
-        $timers["get-pgn"] = (hrtime(true) - $timers["get-pgn"]) / 1e+6;
-
-        $games = ['total' => 0, 'moves' => [], 'fen' => $data['fen']];
-
-        /*
-
-        $timers["get-moves-1"] = hrtime(true);
-
-        $sql = 'SELECT * FROM moves WHERE fen = :fen ORDER BY wins+draws+losses DESC';
-        $stmtFind = $this->conn->prepare($sql);
-        $stmtFind->bindValue('fen', $data["fen"]);
-
-        $result = $stmtFind->executeQuery();
-
-        while (($mov = $result->fetchAssociative()) !== false) {
-            // get the total
-            $total = $mov["wins"] + $mov["draws"] + $mov["losses"];
-            // add to grand total
-            $games['total'] += $total;
-            // add the move
-            $games['moves'][] = [
-                'move' => $mov["move"],
-                'cp' => null,
-                'mate' => null,
-                'eco' => '',
-                'name' => '',
-                'repertoire' => 0,
-                'percentage' => 0,
-                'total' => $total,
-                'wins' => $mov["wins"],
-                'draws' => $mov["draws"],
-                'losses' => $mov["losses"]
-            ];
+        // get the current PGN
+        $current = $codes['pgn'] . ($codes['pgn'] != "" ? " " : "");
+        // if it's white to move
+        if ($codes['halfmove'] % 2 == 1) {
+            // add the move number to the PGN
+            $current = $current . (($codes['halfmove'] + 1) / 2) . ". ";
         }
 
-        $timers["get-moves-1"] = (hrtime(true) - $timers["get-moves-1"]) / 1e+6;
-        */
+        //dd($codes);
+
+        $timers["get-pgn"] = (hrtime(true) - $timers["get-pgn"]) / 1e+6;
+
+        // get the normalized FEN string
+        $fenstr = $this->chessHelper->normalizeFenForMoveStats($data['fen']);
+
+        $games = ['total' => 0, 'moves' => [], 'fen' => $data['fen'], 'fenstr' => $fenstr];
 
         $timers["get-moves-2"] = hrtime(true);
+
+        //
+        // Get the move stats for this position
+        //
 
         // get the most played moves for this position
         $qb = $this->em->createQueryBuilder();
         $qb->select('m')
-            ->from('App\Entity\Moves', 'm')
-            ->where('m.Fen = :fen')
-            ->orderBy('m.Wins + m.Draws + m.Losses', 'DESC')
-            ->setParameter('fen', $data['fen']);
+            ->from('App\Entity\MoveStats', 'm')
+            ->join('m.fen', 'f') // join the Fen entity
+            ->where('f.fen = :fen') // filter by the actual FEN string
+            ->orderBy('m.wins + m.draws + m.losses', 'DESC')
+            ->setParameter('fen', $fenstr);
+
 
         $res = $qb->getQuery()->getResult();
 
         foreach ($res as $mov) {
+            $eco = "";
+            $ecoName = "";
+            // find the ECO code
+            foreach ($codes['next'] as $code) {
+                if ($code['PGN'] == ($current . $mov->getMove())) {
+                    $eco = $code['Code'];
+                    $ecoName = $code['Name'];
+                }
+            }
+
             // get the total
             $total = $mov->getWins() + $mov->getDraws() + $mov->getLosses();
             // add to grand total
@@ -497,8 +495,8 @@ class RepertoireController extends ChessrAbstractController
                 'move' => $mov->getMove(),
                 'cp' => null,
                 'mate' => null,
-                'eco' => '',
-                'name' => '',
+                'eco' => $eco,
+                'name' => $ecoName,
                 'repertoire' => 0,
                 'percentage' => 0,
                 'total' => $total,
@@ -518,20 +516,16 @@ class RepertoireController extends ChessrAbstractController
 
         $timers["get-moves-2"] = (hrtime(true) - $timers["get-moves-2"]) / 1e+6;
 
-        // get the current PGN
-        $current = $codes['pgn'] . ($codes['pgn'] != "" ? " " : "");
-        // if it's white to move
-        if ($codes['halfmove'] % 2 == 1) {
-            // add the move number to the PGN
-            $current = $current . (($codes['halfmove'] + 1) / 2) . ". ";
-        }
-
         //print "Pgn: " . $codes['pgn'] . "<br>";
         //print "Current: $current<br>";
 
         //dd($played);
 
         $timers["get-rep"] = hrtime(true);
+
+        //
+        // Get the (saved) repertoire details
+        //
 
         // get the repository
         $repository = $this->em->getRepository(Repertoire::class);
@@ -549,7 +543,7 @@ class RepertoireController extends ChessrAbstractController
             $res = $repository->findOneBy([
                 'User' => $this->getUser(),
                 'Color' => $data['color'],
-                'FenAfter' => $data['fen']
+                'FenAfter' => $fenstr
             ]);
 
             if ($res) {
@@ -563,11 +557,15 @@ class RepertoireController extends ChessrAbstractController
             }
         }
 
+        //
+        // Get the repertoire moves for this position
+        //
+
         // find the saved repository moves from this position
         $res = $repository->findBy([
             'User' => $this->getUser(),
             'Color' => $data['color'],
-            'FenBefore' => $data['fen']
+            'FenBefore' => $fenstr
         ]);
 
         $reps = [];
@@ -613,19 +611,61 @@ class RepertoireController extends ChessrAbstractController
 
         // find the ECO codes for the moves and see if we have them in our repertoire
         for ($i = 0; $i < count($games['moves']); $i++) {
-            // find the ECO code
-            foreach ($codes['next'] as $code) {
-                if ($code['PGN'] == ($current . $games['moves'][$i]['move'])) {
-                    $games['moves'][$i]['eco'] = $code['Code'];
-                    $games['moves'][$i]['name'] = $code['Name'];
-                }
-            }
             // see if we have this move in our repertoire
             foreach ($res as $rep) {
                 if ($rep->getMove() == $games['moves'][$i]['move']) {
                     $games['moves'][$i]['repertoire'] = 1;
                 }
             }
+        }
+
+        //
+        // Add known ECO moves that aren't in our move stats ($games) or repertoire ($reps)
+        //
+
+        //dd($codes, $games, $reps);
+
+        foreach ($codes['next'] as $code) {
+            if (!isset($code['PGN']) || empty($code['PGN'])) continue;
+
+            $found = false;
+            // Get the last move
+            $moves = explode(" ", $code['PGN']);
+            if (count($moves) == 0) continue;
+
+            // Get the last move
+            $lastMove = array_pop($moves);
+
+            // Combine repertoire & move stats
+            $combined = [...$reps, ...$games['moves']];
+
+            //dd($games,$reps,$combined);
+
+            // Find in our repertoire or move stats
+            foreach ($combined as $c) {
+                if ($c['move'] == $lastMove) {
+                    $found = true;
+                    break;
+                }
+            }
+
+            if ($found) continue;
+
+            // Add the book move
+            // add the move
+            $games['moves'][] = [
+                'move' => $lastMove,
+                'cp' => null,
+                'mate' => null,
+                'eco' => $code['Code'],
+                'name' => $code['Name'],
+                'repertoire' => 0,
+                'percentage' => 0,
+                'total' => 0,
+                'wins' => 0,
+                'draws' => 0,
+                'losses' => 0
+            ];
         }
 
         $timers["get-rep"] = (hrtime(true) - $timers["get-rep"]) / 1e+6;
@@ -863,13 +903,17 @@ class RepertoireController extends ChessrAbstractController
                 // skip this one if already saved
                 if (count($data) > 0) continue;
 
+                // Normalize the FEN strings
+                $before = $this->chessHelper->normalizeFenForRepertoire($move['before']);
+                $after = $this->chessHelper->normalizeFenForRepertoire($move['after']);
+
                 // save the move to the repertoire
                 $rep = new Repertoire();
                 $rep->setUser($this->getUser());
                 $rep->setColor($color);
                 $rep->setInitialFen($initialFen);
-                $rep->setFenBefore($move['before']);
-                $rep->setFenAfter($move['after']);
+                $rep->setFenBefore($before);
+                $rep->setFenAfter($after);
                 $rep->setPgn(trim($move['pgn']));
                 $rep->setMove($move['san']);
                 $rep->setAutoPlay(isset($move['autoplay']) ? $move['autoplay'] : false);

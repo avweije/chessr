@@ -38,11 +38,13 @@
 			<p class="has-text-primary"><strong>Game</strong></p>
 			<p id="statusField" class="is-size-7 has-text-right has-text-faded pl-5"></p>
 		</div>
-		<div class="is-flex is-align-items-center p-1">
-			<button id="gotoFirstButton" disabled class="goto-first-btn">
-				<i class="fa-solid fa-backward-step"></i>
+		<div class="is-flex is-align-items-flex-start p-2">
+			<button id="gotoFirstButton" disabled class="button is-small is-flex-shrink-0">
+				<span class="icon">
+					<i class="fa-solid fa-backward-step"></i>
+				</span>
 			</button>
-			<div id="pgnField" class="is-flex is-flex-wrap-wrap py-3 pr-3 is-size-7"></div>
+			<div id="pgnField" class="pgn-moves-container is-size-6 ml-2"></div>
 		</div>
 		<div id="pgnStartPositionContainer" class="is-hidden p-2 border-t border-tacao-300/60 dark:border-slate-900">
 			<label class="p-2 block is-size-6 has-text-weight-semibold tc-base whitespace-nowrap">Starting position:</label>
@@ -63,7 +65,12 @@
 
 		<div style="overflow-y: auto; overflow-x: hidden; max-height: 48vh;">
 			<div class="p-1">
-				<p class="tc-base p-3 is-hidden">No repertoire moves or book moves found.</p>
+				<p class="p-3 is-hidden">No repertoire moves or book moves found.</p>
+
+				<!-- Skeleton loader -->
+				<div class="skeleton-moves-table">
+					<div class="skeleton-block skeleton-moves-table-rows"></div>
+				</div>
 
 				<table id="movesTable" class="moves-table">
 					<tbody></tbody>

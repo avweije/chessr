@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\IgnoreList;
+use App\Service\ChessHelper;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -12,7 +13,9 @@ use Symfony\Component\Security\Core\User\UserInterface;
  */
 class IgnoreListRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    private $chessHelper;
+
+    public function __construct(ManagerRegistry $registry, ChessHelper $chessHelper)
     {
         parent::__construct($registry, IgnoreList::class);
 
@@ -21,6 +24,8 @@ class IgnoreListRepository extends ServiceEntityRepository
         $config = new \Doctrine\ORM\Configuration();
         //$config = $conn->getConfiguration();
         $config->setResultCache($cache);
+
+        $this->chessHelper = $chessHelper;
     }
 
     /**
@@ -32,6 +37,8 @@ class IgnoreListRepository extends ServiceEntityRepository
      */
     public function isOnIgnoreList(UserInterface $user, string $fen, string $move): bool
     {
+        // Normalize the FEN string for evaluations
+        $fen = $this->chessHelper->normalizeFenForEvaluation($fen);
         // get the query
         $query = $this->createQueryBuilder('i')
             ->andWhere('i.User = :user AND i.Fen = :fen AND i.Move = :move')

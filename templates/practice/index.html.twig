@@ -105,7 +105,7 @@
 			<span class="ml-1"></span>
 		</div>
 	</div>
-	<div id="warningContainer" class="is-hidden message is-danger mb-0">
+	<div id="warningContainer" class="is-hidden message is-danger mb-1">
 		<div class="message-body" role="alert">
 			<span class="icon is-small">
 				<i class="fa-solid fa-triangle-exclamation"></i>
@@ -113,7 +113,7 @@
 			<span class="ml-1"></span>
 		</div>
 	</div>
-	<div id="hintContainer" class="is-hidden message is-warning mb-0">
+	<div id="hintContainer" class="is-hidden message is-warning mb-1">
 		<div class="message-body" role="alert">
 			<span class="icon is-small">
 				<i class="fa-solid fa-lightbulb"></i>
@@ -137,7 +137,7 @@
 		<button type="button" id="skipMoveButton" title="Skip this move" disabled class="is-hidden button is-primary mr-1">
 			<i class="fa-solid fa-forward-step"></i>
 		</button>
-		<div class="flex">
+		<div class="is-flex">
 			<input type="checkbox" id="showPracticeInfoButton" value="1" class="is-hidden">
 			<label for="showPracticeInfoButton" title="Toggle info" class="is-hidden select-none button is-primary mr-1 peer-checked:btn-checked">
 				<i class="fa-solid fa-circle-info"></i>
@@ -167,30 +167,30 @@
 	<div id="pgnContainer" class="is-hidden box p-0">
 		<div class="box-header">
 			<p class="has-text-weight-bold">PGN</p>
-			<div id="pgnNavigationContainer" class="is-flex is-align-items-center px-3">
-				<button class="w-6 h-6 tc-link-shade">
+			<div id="pgnNavigationContainer" class="is-flex is-align-items-center pl-3">
+				<button class="button is-small">
 					<span class="icon">
 						<i class="fa-solid fa-backward-step"></i>
 					</span>
 				</button>
-				<button class="w-6 h-6 tc-link-shade">
+				<button class="button is-small">
 					<span class="icon">
 						<i class="fa-solid fa-backward"></i>
 					</span>
 				</button>
-				<button class="w-6 h-6 tc-link-shade">
+				<button class="button is-small">
 					<span class="icon">
 						<i class="fa-solid fa-forward"></i>
 					</span>
 				</button>
-				<button class="w-6 h-6 tc-link-shade">
+				<button class="button is-small">
 					<span class="icon">
 						<i class="fa-solid fa-forward-step"></i>
 					</span>
 				</button>
 			</div>
 		</div>
-		<div id="pgnField" class="p-3 text-sm"></div>
+		<div id="pgnField" class="pgn-moves-container p-3 is-size-6"></div>
 	</div>
 
 	<div id="suggestionContainer" class="is-hidden box p-0">

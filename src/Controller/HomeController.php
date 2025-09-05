@@ -25,11 +25,11 @@ class HomeController extends ChessrAbstractController
         if ($user) {
             return $this->render('home/index.html.twig');
         } else {
-            return $this->redirectToRoute('app_login');
+            return $this->redirectToRoute('login');
         }
     }
 
-    #[Route('/api/statistics', methods: ['GET'], name: 'app_api_statistics')]
+    #[Route('/api/statistics', methods: ['GET'], name: 'api_statistics')]
     /**
      * Gets the statistics for the homepage. Number of repertoire, practice and analysis moves.
      *

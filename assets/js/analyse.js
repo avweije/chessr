@@ -620,6 +620,9 @@ class Analyse {
   }
 
   engineStart() {
+    
+    console.log("engine start", this.uci);
+
     if (this.uci == null) {
       this.uci = new UCI();
 
@@ -652,7 +655,7 @@ class Analyse {
   }
 
   onEngineOK() {
-    console.info("onEngineOK");
+    console.info("XX-onEngineOK");
 
     this.uci.setMultiPV(3);
 
@@ -662,13 +665,16 @@ class Analyse {
   }
 
   onEngineReady() {
-    console.info("onEngineReady");
+    console.info("XX-onEngineReady");
 
     //
     this.engineNextGame();
   }
 
   engineNextGame() {
+    
+    console.log("XX-engineNextGame:", this.currentGame, this.games.length);
+
     // if we've analysed all games
     if (this.currentGame >= this.games.length) {
       // download the next games
@@ -699,7 +705,7 @@ class Analyse {
   }
 
   engineNextEval() {
-    console.info("engineNextEval", this.analyseDialog.isCancelled);
+    console.info("XX-engineNextEval", this.analyseDialog.isCancelled);
 
     // if cancelled, don't proceed
     if (this.analyseDialog.isCancelled) {
@@ -711,13 +717,14 @@ class Analyse {
 
     var game = this.games[this.currentGame];
 
-    console.info(this.currentGame, this.currentMove, game);
+    console.info("Game:",this.currentGame, this.currentMove, game.moves.length, game.moves[this.currentMove]);
 
     while (this.currentMove < game.moves.length) {
-      if (
-        game.moves[this.currentMove].bestmoves == null &&
-        !game.moves[this.currentMove].ignore
-      ) {
+
+      const needsEngine = !(game.moves[this.currentMove].bestmoves?.length);
+
+      if (needsEngine && !game.moves[this.currentMove].ignore)
+      {
         // get the line moves
         var moves = game.moves[this.currentMove].line.uci.join(" ");
         // add the current move
@@ -731,6 +738,8 @@ class Analyse {
 
         //
         this.engineMoveCount++;
+
+        console.log("XX-Before evaluate (moves, engine time):", moves, this.settings.analyse_engine_time);
 
         // start the evaluation
         this.uci.evaluate("", moves, this.settings.analyse_engine_time);
@@ -751,6 +760,9 @@ class Analyse {
   }
 
   evaluateGame(game) {
+
+    console.log("XX- calling API to evaluate, should have all engine evals here.. ?");
+
     var url = "/api/analyse/evaluate";
 
     var data = {
@@ -818,6 +830,9 @@ class Analyse {
   }
 
   onEngineInfo(info) {
+
+    console.log("XX-onEngineInfo:");
+
     var game = this.games[this.currentGame];
     var turn = this.currentMove % 2 == 0 ? "w" : "b";
 
@@ -849,7 +864,7 @@ class Analyse {
   }
 
   onEngineBestMove(bestMove) {
-    console.info("onEngineBestMove", bestMove);
+    console.info("XX-onEngineBestMove", bestMove);
 
     var game = this.games[this.currentGame];
 

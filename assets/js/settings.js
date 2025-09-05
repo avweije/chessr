@@ -47,6 +47,7 @@ class Settings {
   recommendIntervalInput = null;
   analyseEngineTimeInput = null;
   analyseIgnoreInaccuracyCheckbox = null;
+  analyseMistakeToleranceInput = null;
   accountEmailAddress = null;
 
   settings = [];
@@ -95,6 +96,7 @@ class Settings {
     this.analyseIgnoreInaccuracyCheckbox = document.getElementById(
       "analyseIgnoreInaccuracyCheckbox"
     );
+    this.analyseMistakeToleranceInput = document.getElementById("analyseMistakeTolerance");
 
     // add event listeners
     this.tabs.buttons.children[0].children[0].addEventListener(
@@ -170,6 +172,10 @@ class Settings {
       "change",
       this.updateSettings.bind(this)
     );
+    this.analyseMistakeToleranceInput.addEventListener(
+      "change",
+      this.updateSettings.bind(this)
+    );
 
     // get the settings
     this.getSettings();
@@ -177,22 +183,22 @@ class Settings {
 
   // switch tabs
   onSwitchTab() {
-    this.tabs.account.classList.add("is-hidden");
     this.tabs.board.classList.add("is-hidden");
     this.tabs.engine.classList.add("is-hidden");
     this.tabs.practice.classList.add("is-hidden");
+    this.tabs.account.classList.add("is-hidden");
 
     if (this.tabs.buttons.children[0].children[0].checked) {
-      this.tabs.account.classList.remove("is-hidden");
-    }
-    if (this.tabs.buttons.children[1].children[0].checked) {
       this.tabs.board.classList.remove("is-hidden");
     }
-    if (this.tabs.buttons.children[2].children[0].checked) {
+    if (this.tabs.buttons.children[1].children[0].checked) {
       this.tabs.engine.classList.remove("is-hidden");
     }
-    if (this.tabs.buttons.children[3].children[0].checked) {
+    if (this.tabs.buttons.children[2].children[0].checked) {
       this.tabs.practice.classList.remove("is-hidden");
+    }
+    if (this.tabs.buttons.children[3].children[0].checked) {
+      this.tabs.account.classList.remove("is-hidden");
     }
   }
 
@@ -364,6 +370,7 @@ class Settings {
     this.analyseEngineTimeInput.value = settings.analyse_engine_time;
     this.analyseIgnoreInaccuracyCheckbox.checked =
       settings.analyse_ignore_inaccuracy;
+    this.analyseMistakeToleranceInput.value = settings.analyse_mistake_tolerance;
 
     // update the range input titles
     this.updateRangeInputTitles();
@@ -412,6 +419,7 @@ class Settings {
         recommend_interval: this.recommendIntervalInput.value,
         analyse_engine_time: this.analyseEngineTimeInput.value,
         analyse_ignore_inaccuracy: this.analyseIgnoreInaccuracyCheckbox.checked,
+        analyse_mistake_tolerance: this.analyseMistakeToleranceInput.value
       },
     };
 

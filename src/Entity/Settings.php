@@ -49,6 +49,9 @@ class Settings
     #[ORM\Column]
     private ?bool $AnalyseIgnoreInaccuracy = null;
 
+    #[ORM\Column(type: Types::SMALLINT, options: ["default" => 0])]
+    private ?int $MistakeTolerance = null;
+
     #[ORM\Column(type: Types::SMALLINT)]
     private ?int $RecommendInterval = null;
 
@@ -185,6 +188,18 @@ class Settings
     public function setAnalyseIgnoreInaccuracy(bool $AnalyseIgnoreInaccuracy): static
     {
         $this->AnalyseIgnoreInaccuracy = $AnalyseIgnoreInaccuracy;
+
+        return $this;
+    }
+
+    public function getMistakeTolerance(): ?int
+    {
+        return $this->MistakeTolerance;
+    }
+
+    public function setMistakeTolerance(int $MistakeTolerance): static
+    {
+        $this->MistakeTolerance = $MistakeTolerance;
 
         return $this;
     }

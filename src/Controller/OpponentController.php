@@ -62,7 +62,7 @@ class OpponentController extends ChessrAbstractController
         ]);
     }
 
-    #[Route('/api/opponent', methods: ['GET'], name: 'app_api_opponent_get_all')]
+    #[Route('/api/opponent', methods: ['GET'], name: 'api_opponent_get_all')]
     /**
      * Returns a JSON with the opponents and their children. Used in JS to load the opponent radio buttons, etc.
      * 
@@ -113,7 +113,7 @@ class OpponentController extends ChessrAbstractController
         return new JsonResponse(["opponents" => $opponents]);
     }
 
-    #[Route('/api/opponent/{id}', methods: ['GET'], name: 'app_api_opponent_get')]
+    #[Route('/api/opponent/{id}', methods: ['GET'], name: 'api_opponent_get')]
     /**
      * Returns the lines for the opponent identified by <id>.
      * 
@@ -148,7 +148,7 @@ class OpponentController extends ChessrAbstractController
         return new JsonResponse($resp);
     }
 
-    #[Route('/api/opponent/{id}', methods: ['DELETE'], name: 'app_api_opponent_delete')]
+    #[Route('/api/opponent/{id}', methods: ['DELETE'], name: 'api_opponent_delete')]
     /**
      * Deletes the opponent identified by <id> and all of their downloads, moves, etc.
      *
@@ -189,7 +189,7 @@ class OpponentController extends ChessrAbstractController
         return new JsonResponse(["message" => "Opponent removed."]);
     }
 
-    #[Route('/api/opponent/connect', methods: ['POST'], name: 'app_api_opponent_connect')]
+    #[Route('/api/opponent/connect', methods: ['POST'], name: 'api_opponent_connect')]
     /**
      * Connect an opponent to a parent opponent (main account, multiple accounts).
      *
@@ -227,7 +227,7 @@ class OpponentController extends ChessrAbstractController
         return new JsonResponse(["message" => "Opponent connected to parent."]);
     }
 
-    #[Route('/api/opponent/disconnect', methods: ['POST'], name: 'app_api_opponent_disconnect')]
+    #[Route('/api/opponent/disconnect', methods: ['POST'], name: 'api_opponent_disconnect')]
     /**
      * Disconnect an opponent from their parent (main) account.
      *
@@ -269,7 +269,7 @@ class OpponentController extends ChessrAbstractController
         return new JsonResponse(["message" => $cnt]);
     }
 
-    #[Route('/api/opponent/moves', methods: ['POST'], name: 'app_api_opponent_get_moves')]
+    #[Route('/api/opponent/moves', methods: ['POST'], name: 'api_opponent_get_moves')]
     /**
      * Get the opponent moves from their games. Used for moves that are or were not in our repertoire and therefor
      * had not been saved to our moves table.
@@ -402,7 +402,7 @@ class OpponentController extends ChessrAbstractController
         }
     }
 
-    #[Route('/api/opponent/analyse', methods: ['GET', 'POST'], name: 'app_api_opponent_analyse')]
+    #[Route('/api/opponent/analyse', methods: ['GET', 'POST'], name: 'api_opponent_analyse')]
     /**
      * Analyse an opponent's games against our repertoire.
      *

@@ -2,11 +2,16 @@
 
 namespace App\Controller;
 
+use App\Entity\Evaluation;
+use App\Entity\Fen;
+use App\Entity\ImportLog;
+use App\Library\ChessJs;
+use App\Service\ChessHelper;
 use App\Service\MyPgnParser\MyPgnParser;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
-use Onspli\Chess\FEN;
+use Onspli\Chess\FEN as ChessFEN;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -19,18 +24,25 @@ use Symfony\Component\Routing\Attribute\Route;
  * This controller provides admin endpoints and utilities for managing large chess data files, importing chess engine evaluations, updating evaluation records, and processing PGN files. It interacts directly with the `evaluations` and `moves` tables, and handles batch operations for efficiency.
  *
  * Key Functions:
+ * 
+ * 
+ * ****
+ * NEED TO UPDATE THIS..
+ * ****
+ * 
+ * 
+ * 
  * 1. index() - Renders admin dashboard, contains test code for splitting files, updating FENs, and updating evals.
- * 2. updateEvaluationFen() - POST /admin/evaluations/update: Batch-updates FENs in evaluations.evaluation for a range of IDs.
+ * 2. importInBatches() - for evals and move stats (need to clear up the rest, if not needed/used anymore)
  * 3. importEvaluations() - POST /admin/evaluations/import: Imports chess engine evaluations from JSONL files into the database.
- * 4. updateSingleEvals() - Scans records for single PVs, used for reporting.
- * 5. updateEvals($fen) - Updates evaluation lines for a FEN.
+ * 4. importPgnFiles() - Processes PGN files and updates move statistics.
+ * 
+ * 5. parseEvals($maxLines, $batchSize) - Reads and inserts lines from split JSONL files.
+ * 
  * 6. split_file() - Splits large JSONL files into chunks.
- * 7. parseEvals($maxLines, $batchSize) - Reads and inserts lines from split JSONL files.
  * 8. parseEvalsJson($filePath, $maxLines) - Generator for incremental import from JSONL files.
  * 9. findEvaluation($fen) - Searches split JSONL files for a FEN.
- * 10. import() - /admin/import: Imports PGN files and updates move statistics.
  * 11. splitPgnFile($path, $parts) - Splits large PGN files.
- * 12. importPgnFiles() - Processes PGN files and updates move statistics.
  * 13. processGame($game, &$totals, &$moveCount) - Processes a single chess game.
  * 14. processMoves($moves) - Inserts/updates move statistics in the moves table.
  * 15. getDuration($ms) - Converts duration to human-readable string.
@@ -48,95 +60,28 @@ class AdminController extends AbstractController
     private $em;
     private $conn;
     private $myPgnParser;
+    private $chessHelper;
 
-    public function __construct(Connection $conn, EntityManagerInterface $em, MyPgnParser $myPgnParser, ManagerRegistry $doctrine)
-    {
+    private array $fenDict = [];
+    private int $nextFenId = 1;
+
+    public function __construct(
+        Connection $conn,
+        EntityManagerInterface $em,
+        MyPgnParser $myPgnParser,
+        ManagerRegistry $doctrine,
+        ChessHelper $chessHelper
+    ) {
         $this->em = $em;
         $this->myPgnParser = $myPgnParser;
         $this->conn = $conn;
+        $this->chessHelper = $chessHelper;
     }
 
-    #[Route('/admin', name: 'app_admin')]
+    #[Route('/admin', name: 'admin')]
     public function index(): Response
     {
-
-        if (false) {
-            //$this->split_file();
-            /*
-            $sql = 'SELECT * FROM evaluations.evaluation ORDER BY id DESC LIMIT 1';
-            $stmtFind = $this->conn->prepare($sql);
-
-            $result = $stmtFind->executeQuery();
-
-            $item = $result->fetchAssociative();
-
-            // if the move exists
-            if ($item == false) {
-                print "Max record not found.<br>";
-                exit;
-            }
-
-            $bytes = $item['bytes2'];
-            */
-        }
-
-        if (false) {
-
-            print "Updating FEN<br>";
-
-            $fen = "r1bqkb1r/pp2nppp/2n1p3/3pP3/3P4/5N2/PP3PPP/RNBQKB1R w KQkq -";
-
-            $this->updateEvals($fen);
-
-            exit;
-        }
-
-        if (false) {
-
-            print "Updating all single evals:<br>";
-
-            $this->updateSingleEvals();
-
-            exit;
-        }
-
         return $this->render('admin/index.html.twig');
-    }
-
-    #[Route('/admin/evaluations/update', methods: ["POST"], name: 'app_admin_evaluations_update')]
-    public function updateEvaluationFen(Request $request): JsonResponse
-    {
-        $data = $request->getPayload()->all();
-
-        //dd($data);
-
-        $startId = intval($data["startId"]);
-        $batchSize = intval($data["batchSize"]);
-
-        // max 5 minutes
-        set_time_limit(60 * 5);
-
-        $this->conn->setAutoCommit(true);
-
-        // prepare the insert statement
-        $sql = 'UPDATE evaluations.evaluation SET fen_vchar = fen WHERE id >= :startId AND id <= :endId';
-        $stmtUpdate = $this->conn->prepare($sql);
-
-        $stmtUpdate->bindValue('startId', $startId);
-        $stmtUpdate->bindValue('endId', $startId + $batchSize);
-
-        $affected = $stmtUpdate->executeStatement();
-
-        //print "Record updated: $affected<br>";
-
-        // perform commit
-        //$this->conn->commit();
-
-        return new JsonResponse([
-            "processed" => $batchSize,
-            "affected" => $affected,
-            "percentageComplete" => 0
-        ]);
     }
 
     #[Route('/admin/evaluations/import', methods: ["POST"], name: 'app_admin_evaluations_import')]
@@ -159,17 +104,6 @@ class AdminController extends AbstractController
 
     private function importEvaluations($maxLines, $batchSize): JsonResponse
     {
-
-
-        // IF IMPORT TYPE = 'evaluations' ITS THIS FUNCTION
-        // IF IMPORT TYPE = 'move_statistics' ITS importPgnFiles (needs rewrite for batches)
-
-        //dd($data);
-
-        //$usage = round(memory_get_usage() / 1024 / 1024, 2);
-
-        //print "Memory usage: $usage<br>";
-
         $time = time();
 
         $processed = 0;
@@ -183,31 +117,9 @@ class AdminController extends AbstractController
             $processed += $lines;
         }
 
-        //$file = './lichess_db_eval.jsonl';
-
-        //$fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -";
-
-        //$temp = $this->findEvaluation($file, $fen);
-
         $seconds = time() - $time;
-        //
-        //$duration = $this->getDuration($seconds * 1000);
+
         $duration = $this->getDuration($seconds);
-
-        //print "Duration: $duration<br>";
-
-        //print $processed . " items processed.<br>";
-
-        //$fsize = filesize('./lichess_db_eval.jsonl');
-
-        //$percentageComplete = round(($bytes / $fsize) * 100, 2);
-
-        //print round(($bytes / $fsize) * 100, 2) . "% done.<br>";
-
-
-        //$usage = round(memory_get_usage() / 1024 / 1024, 2);
-
-        //print "Memory usage: $usage<br>";
 
         return new JsonResponse([
             "processed" => $processed,
@@ -216,131 +128,7 @@ class AdminController extends AbstractController
         ]);
     }
 
-    private function updateSingleEvals(): bool
-    {
-
-        $max = 10000;
-        $singles = 0;
-        $i = 0;
-
-        $sql = 'SELECT * FROM evaluations.evaluation ORDER BY id LIMIT ' . $max;
-        $stmtFind = $this->conn->prepare($sql);
-
-        $result = $stmtFind->executeQuery();
-
-        while (($rec = $result->fetchAssociative()) !== false) {
-            $pvs = json_decode($rec["pvs"]);
-            if (count($pvs) == 1) {
-                $singles++;
-            }
-            $i++;
-            if ($i >= $max) {
-                break;
-            }
-        }
-
-        print $singles . " singles found in " . $max . " records.<br>";
-
-        return true;
-    }
-
-    private function updateEvals($fen): bool
-    {
-
-        //[$fidx, $bytes, $json] = $this->findEvaluation($item["fen"]);
-        [$fidx, $bytes, $json] = $this->findEvaluation($fen);
-
-        // old version - use just the top depth pvs (sometimes gives only 1 line)
-        $deepest = null;
-        foreach ($json["evals"] as $eval) {
-            if ($deepest == null || $eval["depth"] > $deepest["depth"]) {
-                $deepest = $eval;
-            }
-        }
-
-        // new version - get up to 3 lines across all depth pvs (to ensure more than 1 line)
-        $evals = $json["evals"];
-
-        usort($evals, function ($a, $b) {
-            if ($a["depth"] > $b["depth"]) return -1;
-            if ($a["depth"] < $b["depth"]) return 1;
-            return 0;
-        });
-
-        $pvs = [];
-        $firstmoves = [];
-        $evcnt = 0;
-        foreach ($evals as $eval) {
-            foreach ($eval["pvs"] as $pv) {
-                $firstmove = explode(" ", $pv["line"])[0];
-                if (!in_array($firstmove, $firstmoves)) {
-                    $firstmoves[] = $firstmove;
-                    $pvs[] = $pv;
-
-                    // if we have 3 lines from the top eval or 5 lines from the top 2
-                    if (($evcnt == 0 && count($pvs) >= 3) || ($evcnt == 1 && count($pvs) >= 5)) {
-                        break 2;
-                    }
-                }
-            }
-            $evcnt++;
-
-            // only take lines from the top 2 evals
-            if ($evcnt >= 2) {
-                break;
-            }
-        }
-
-
-        //if ($deepest !== null) {
-        if (count($pvs) > 0) {
-
-            $sql = 'SELECT * FROM evaluations.evaluation WHERE fen = :fen';
-            $stmtFind = $this->conn->prepare($sql);
-
-            $stmtFind->bindValue('fen', $fen);
-
-            $result = $stmtFind->executeQuery();
-
-            $recs = [];
-            $id = -1;
-
-            while (($rec = $result->fetchAssociative()) !== false) {
-                if ($rec["fen"] == $fen) {
-                    $rec["found"] = true;
-                    $id = $rec["id"];
-                }
-                $recs[] = $rec;
-            }
-
-            // dd($id, $recs, $pvs);
-
-            if ($id == -1) {
-                print "Record not found.<br>";
-
-                return false;
-            }
-
-            // prepare the insert statement
-            $sql = 'UPDATE evaluations.evaluation SET pvs = :pvs WHERE id = :id';
-            $stmtUpdate = $this->conn->prepare($sql);
-
-            $stmtUpdate->bindValue('id', $id);
-            //$stmtUpdate->bindValue('fen', $json["fen"]);
-            //$stmtInsert->bindValue('pvs', json_encode($deepest["pvs"]));
-            $stmtUpdate->bindValue('pvs', json_encode($pvs));
-
-            $affected = $stmtUpdate->executeStatement();
-
-            print "Record updated: $affected<br>";
-
-            // perform commit
-            //$this->conn->commit();
-        }
-
-        return true;
-    }
-
+    // Maybe use this later..
     private function split_file()
     {
 
@@ -403,161 +191,168 @@ class AdminController extends AbstractController
         fclose($fhandle2);
     }
 
+
+    //
     private function parseEvals($maxLines = 5000, $batchSize = 1000)
     {
-        $pgn = "1. e4 c5 2. c3 d5";
-
-        //$code = $this->em->getRepository(ECO::class)->findCodeByPgn($pgn);
-
-        //$file = './build/uploads/lichess_db_eval.jsonl';
         $file = './lichess_db_eval-1.jsonl';
-        $evals = [];
 
         $processed = 0;
         $lastBytes = 0;
         $lastPct = 0;
         $lastFidx = 0;
 
-        //$sql = 'ALTER INSTANCE DISABLE INNODB REDO_LOG;';
-        //$stmtRedo = $this->conn->prepare($sql);
-        //$stmtRedo->executeStatement();
-
-        /*
-        $sql = "SELECT * FROM performance_schema.global_status WHERE variable_name = 'innodb_redo_log_enabled'";
-        $stmtRedo = $this->conn->prepare($sql);
-
-        $result = $stmtRedo->executeQuery();
-
-        $item = $result->fetchAssociative();
-
-        dd($item);
-        */
-
-        // auto-commit off
         $this->conn->setAutoCommit(false);
         $this->conn->beginTransaction();
 
-        // 
-        // 
-
-        // prepare the insert statement
-        $sql = 'INSERT INTO evaluations.evaluation ( fen, evals, bytes, fidx ) VALUES ( :fen, :evals, :bytes, :fidx )';
-        //$sql = 'INSERT INTO evaluations.evaluation_1 ( fen, evals, bytes, fidx ) VALUES ( :fen, :evals, :bytes, :fidx )';
+        $sql = 'INSERT INTO evaluations.evaluation 
+        (fen_id, uci, san, cp, mate, rank, line, depth, knodes, fidx, bytes)
+        VALUES (:fen_id, :uci, :san, :cp, :mate, :rank, :line, :depth, :knodes, :fidx, :bytes)';
         $stmtInsert = $this->conn->prepare($sql);
 
-        foreach ($this->parseEvalsJson($file, $maxLines) as [$fidx, $line, $bytes, $fsize]) {
-            // add to time limit
-            set_time_limit(300);
+        // Create once, pass in function call
+        $chess = new ChessJs();
 
-            //dd($line, $bytes);
+        foreach ($this->parseEvalsJson($file, $maxLines) as [$fidx, $line, $bytes, $fsize]) {
+            set_time_limit(300);
 
             $lastBytes = $bytes;
             $lastFidx = $fidx;
             $lastPct = round(($bytes / $fsize) * 100, 2);
 
-            // get the deepest pv
             $json = json_decode($line, true);
-
-            //dd($json);
-
-            if ($json == null) {
+            if ($json === null) {
                 print "Json = null<br>";
                 print $line . "<br>";
-
                 continue;
             }
 
-            /*
-            // old version - use just the top depth pvs (sometimes gives only 1 line)
-            $deepest = null;
-            foreach ($json["evals"] as $eval) {
-                if ($deepest == null || $eval["depth"] > $deepest["depth"]) {
-                    $deepest = $eval;
+            // Normalize FEN for evaluation
+            $fenString = $this->chessHelper->normalizeFenForEvaluation($json["fen"]);
+
+            // Get or create Fen ID
+            $fenRepo = $this->em->getRepository(Fen::class);
+
+            $fenEntity = $fenRepo->findOneBy(['fen' => $fenString]);
+            if (!$fenEntity) {
+                $fenEntity = new Fen();
+                $fenEntity->setFen($fenString);
+                $this->em->persist($fenEntity);
+                $this->em->flush();
+            }
+            $fenId = $fenEntity->getId();
+
+            // Determine top moves (1-5) from deepest PVs
+            $evalsArray = $json["evals"] ?? [];
+            if (empty($evalsArray)) {
+                continue;
+            }
+
+            usort($evalsArray, fn($a, $b) => $b['depth'] <=> $a['depth']);
+            $movesToInsert = [];
+            $uciAlready = [];
+
+            // Top depth first
+            $topEval = $evalsArray[0];
+            foreach ($topEval['pvs'] as $pv) {
+                $uci = $pv['line'] ?? '';
+                if (!in_array($uci, $uciAlready)) {
+                    // merge depth and knodes into pv array
+                    $pv['depth'] = $topEval['depth'] ?? null;
+                    $pv['knodes'] = $topEval['knodes'] ?? null;
+
+                    $movesToInsert[] = $pv;
+                    $uciAlready[] = $uci;
+                }
+                if (count($movesToInsert) >= 5) break;
+            }
+
+            // Second depth if needed
+            if (count($movesToInsert) < 5 && isset($evalsArray[1])) {
+                foreach ($evalsArray[1]['pvs'] as $pv) {
+                    $uci = $pv['line'] ?? '';
+                    if (!in_array($uci, $uciAlready)) {
+                        // merge depth and knodes into pv array
+                        $pv['depth'] = $evalsArray[1]['depth'] ?? null;
+                        $pv['knodes'] = $evalsArray[1]['knodes'] ?? null;
+
+                        $movesToInsert[] = $pv;
+                        $uciAlready[] = $uci;
+                    }
+                    if (count($movesToInsert) >= 5) break;
                 }
             }
 
-            // new version - get up to 3 lines across all depth pvs (to ensure more than 1 line)
-            $evals = $json["evals"];
+            // Insert each move
+            $rank = 1;
+            foreach ($movesToInsert as $pv) {
+                $moves = explode(" ", $pv['line']);
 
-            usort($evals, function ($a, $b) {
-                if ($a["depth"] > $b["depth"]) return -1;
-                if ($a["depth"] < $b["depth"]) return 1;
-                return 0;
-            });
+                $uci = count($moves) > 0 ? $moves[0] : '';
+                $san = ''; // convert to SAN if needed
+                $scoreCp = $pv['cp'] ?? null;
+                $scoreMate = $pv['mate'] ?? null;
+                $line = $pv['line'] ?? '';
+                $depth = $pv['depth'] ?? null;
+                $knodes = $pv['knodes'] ?? null;
 
-            $pvs = [];
-            $firstmoves = [];
-            $evcnt = 0;
-            foreach ($evals as $eval) {
-                foreach ($eval["pvs"] as $pv) {
-                    $firstmove = explode(" ", $pv["line"])[0];
-                    if (!in_array($firstmove, $firstmoves)) {
-                        $firstmoves[] = $firstmove;
-                        $pvs[] = $pv;
-
-                        // if we have 3 lines from the top eval or 5 lines from the top 2
-                        if (($evcnt == 0 && count($pvs) >= 3) || ($evcnt == 1 && count($pvs) >= 5)) {
-                            break 2;
-                        }
+                // We need to make sure line isn't longer than 255 chars
+                if (strlen($line) > 255) {
+                    // cut at the last space before the limit
+                    $truncated = substr($line, 0, 255);
+                    $lastSpace = strrpos($truncated, ' ');
+                    if ($lastSpace !== false) {
+                        $line = substr($truncated, 0, $lastSpace);
+                    } else {
+                        // fallback if no space found: just take the substring
+                        $line = $truncated;
                     }
                 }
-                $evcnt++;
 
-                // only take lines from the top 2 evals
-                if ($evcnt >= 2) {
-                    break;
+                // Get the SAN notation
+                $san = $this->chessHelper->getFirstSanMoveFromLine($chess, $json["fen"], $pv['line']);
+
+                //
+                // Appearantly there are some chess960 evaluations in here..
+                // If $san == null, we have an invalid move because of castling not possible..
+                //
+                if ($uci == '' || $san == null || count($moves) == 0) {
+                    continue;
                 }
+
+                // Attempt to filter out other variants
+                if (!$this->chessHelper->isLikelyStandardChessFEN($json["fen"])) {
+
+                    //dd("Not a standard chess game.", $json);
+
+                    continue;
+                }
+
+                //dd($uci,$san,$scoreCp,$scoreMate,$rank,$depth,$knodes,$fidx,$bytes);
+
+                $stmtInsert->bindValue('fen_id', $fenId);
+                $stmtInsert->bindValue('uci', $uci);
+                $stmtInsert->bindValue('san', $san);
+                $stmtInsert->bindValue('cp', $scoreCp);
+                $stmtInsert->bindValue('mate', $scoreMate);
+                $stmtInsert->bindValue('rank', $rank);
+                $stmtInsert->bindValue('line', $line);
+                $stmtInsert->bindValue('depth', $depth);
+                $stmtInsert->bindValue('knodes', $knodes);
+                $stmtInsert->bindValue('fidx', $fidx);
+                $stmtInsert->bindValue('bytes', $bytes);
+
+                $stmtInsert->executeStatement();
+                $rank++;
             }
-
-
-            //if ($deepest !== null) {
-            if (count($pvs) > 0) {
-            */
-
-            $evals = json_encode($json["evals"]);
-
-            if (strlen($evals) >= 8192) {
-
-                // commit inserts up till now..
-                $this->conn->commit();
-
-                print "evals string larger than 8192 (column size) - exiting import..";
-
-                // exit program..
-                exit;
-            }
-            //8192
-
-            $stmtInsert->bindValue('fen', $json["fen"]);
-            //$stmtInsert->bindValue('knodes', $deepest["knodes"]);
-            //$stmtInsert->bindValue('depth', $deepest["depth"]);
-            //$stmtInsert->bindValue('pvs', json_encode($deepest["pvs"]));
-            //$stmtInsert->bindValue('pvs', json_encode($pvs));
-            $stmtInsert->bindValue('evals', $evals);
-            $stmtInsert->bindValue('bytes', $bytes);
-            $stmtInsert->bindValue('fidx', $fidx);
-
-            $affected = $stmtInsert->executeStatement();
 
             $processed++;
-
-            //print "Record added: $fidx - $bytes<br>";
-
-            // perform commit
             if ($processed % $batchSize == 0) {
                 $this->conn->commit();
-                //$this->conn->beginTransaction();
+                $this->conn->beginTransaction();
             }
-
-            //dd($evals);
-            //exit;
-            //}
-
-            //$evals[] = json_decode($eval, true);
-            //$evals[] = $eval;
         }
 
-        // perform final commit
         $this->conn->commit();
 
         return [$processed, $lastBytes, $lastFidx, $lastPct];
@@ -603,28 +398,9 @@ class AdminController extends AbstractController
 
             $fsize = filesize($filePath);
 
-            //dd($bytes, $fsize);
-
             while (($line = fgets($handle, 8192)) !== false) {
 
-                // print "LINE-$i: " . $line . "<br>";
-
-                //dd($fidx, $bytes, json_decode($line, true));
-                //if ($bytes)
                 $bytes += strlen($line);
-                //$bytes = bcadd($bytes, strlen($line));
-                //$bytes = ftell($handle);
-
-
-                //dd($line, strlen($line), $bytesPrev, $bytes);
-
-                //if ($i == 2) {
-                //  print "bytes for 3 lines: " . $bytes . "<br>";
-                //}
-
-                //if ($i == 4) {
-                //  exit;
-                //}
 
                 // When reading files line-by-line, there is a \n at the end, so remove it.
                 $line = trim($line);
@@ -633,10 +409,6 @@ class AdminController extends AbstractController
                     continue;
                 }
 
-                //print "Line $i ($maxLines)<br>";
-
-                //$buffer .= $line . "\n";
-
                 yield [$fidx, $line, $bytes, $fsize];
 
                 $i++;
@@ -644,10 +416,6 @@ class AdminController extends AbstractController
                 if ($i >= $maxLines) {
                     break 2;
                 }
-
-                //if ($bytes >= $maxBytes) {
-                //break;
-                //}
             }
 
             fclose($handle);
@@ -700,45 +468,6 @@ class AdminController extends AbstractController
     }
 
 
-    #[Route('/admin/import', name: 'app_admin_import')]
-    public function import()
-    {
-
-        if (false) {
-
-            $this->splitPgnFile("./lichess_elite_2023-05.pgn");
-
-            exit;
-        }
-
-        //exit;
-
-        gc_enable();
-
-        gc_collect_cycles();
-
-        //exit;
-
-
-        $time = time();
-
-
-        // process the games from the pgn files and import the move totals
-        //$this->importPgnFiles();
-
-        $seconds = time() - $time;
-
-        $hours = floor($seconds / 3600);
-        $minutes = floor(($seconds - $hours * 3600) / 60);
-        $seconds = floor($seconds - ($hours * 3600) - ($minutes * 60));
-
-        print "Duration of the script: " . $hours . "h " . $minutes . "m " . $seconds . "s<br>";
-
-        gc_collect_cycles();
-
-        exit;
-    }
-
     private function splitPgnFile($path, $parts = 10)
     {
 
@@ -789,12 +518,13 @@ class AdminController extends AbstractController
         fclose($handle2);
     }
 
-    public function importPgnFiles($limit, $skip): JsonResponse
-    {
-        ini_set('memory_limit', '8G');
 
-        $files = ['./lichess_elite_2023-05-2.pgn'];
-        $filePath = './lichess_elite_2023-05-2.pgn';
+    public function importPgnFiles(int $limit, int $skip): JsonResponse
+    {
+        ini_set('memory_limit', '2G');
+
+        $files = ['./lichess_elite_2025-05.pgn'];
+        $filePath = $files[0];
 
         $totals = [];
         $gameCount = 0;
@@ -802,50 +532,93 @@ class AdminController extends AbstractController
         $processCount = 0;
         $queryCount = 0;
         $bytesReadTotal = 0;
+        
+        $batchSize = $limit;
 
-        // keep this configurable – smaller batches reduce memory use
-        $batchSize = 10;
+        // Get the import log repo
+        $importLogRepo = $this->em->getRepository(ImportLog::class);
+
+        // prepare FEN insert statement once
+        $stmtInsertFen = $this->conn->prepare(
+            'INSERT INTO fen (fen) VALUES (:fen)'
+        );
 
         foreach ($files as $file) {
+
+            // Check to see if we already partially imported this file
+            $log = $importLogRepo->findOneBy(['filename' => $file]);
+
+            if ($log) {
+                // Get the games read from the log
+                $skip = $log->getGamesRead();
+            } else {
+                // Add a new import log
+                $log = new ImportLog();
+                $log->setFilename($file);
+                $log->setGamesRead(0);
+                $log->setFinished(false);
+            }
+
+            //dd($file, $skip, $log);
+
+            // If this file is finished, continue to the next
+            if ($log->isFinished()) {
+                continue;
+            }
+
+            // Keep track of game count for this file
+            $fileGameCount = 0;
+            $gamesRead = $log->getGamesRead();
+
+            // Parse the PGN files
             foreach ($this->myPgnParser->parsePgn($file, false, $limit, $skip) as $item) {
                 set_time_limit(300);
 
-                $game = $item["game"];
+                $game = $item['game'];
+                $bytesReadTotal = $item['bytesRead'];
 
-                $bytesReadTotal = $item["bytesRead"];
+                $this->processGame($game, $totals, $moveCount, $stmtInsertFen);
 
-                $this->processGame($game, $totals, $moveCount);
                 $gameCount++;
+                $fileGameCount++;
 
                 if ($gameCount % $batchSize === 0) {
                     $queryCount += $this->processMoves($totals);
                     $processCount++;
 
-                    // free memory immediately after batch
+                    // Update import log
+                    $log->setGamesRead($gamesRead + $gameCount);
+
+                    // Persist and flush
+                    $this->em->persist($log);
+                    $this->em->flush();
+
                     $totals = [];
                     gc_collect_cycles();
                 }
 
                 unset($game);
             }
-        }
 
-        // flush leftovers
-        if ($totals) {
-            $queryCount += $this->processMoves($totals);
-            $processCount++;
-            $totals = [];
-            gc_collect_cycles();
-        }
+            // flush leftover totals
+            if (!empty($totals)) {
+                $queryCount += $this->processMoves($totals);
+                $processCount++;
+                $totals = [];
+                gc_collect_cycles();
+            }
 
-        //printf("%d games processed.\n", $gameCount);
-        //printf("%d moves processed.\n", $moveCount);
-        //printf("%d calls to processMoves.\n", $processCount);
-        //printf("%d queries executed.\n", $queryCount);
-        //printf("Memory usage: %.2f MB\n", memory_get_usage() / 1024 / 1024);
+            // Update the import log
+            $log->setGamesRead($gamesRead + $gameCount);
+            $log->setFinished($fileGameCount == 0);
+
+            // Persist and flush
+            $this->em->persist($log);
+            $this->em->flush();
+        }
 
         $fileSize = filesize($filePath);
-        $percentageComplete = round(($bytesReadTotal / $fileSize) * 100,2);
+        $percentageComplete = round(($bytesReadTotal / $fileSize) * 100, 2);
 
         return new JsonResponse([
             "processed" => $gameCount,
@@ -854,35 +627,48 @@ class AdminController extends AbstractController
             "queryCount" => $queryCount,
             "fileSize" => $fileSize,
             "bytesRead" => $bytesReadTotal,
-            "percentageComplete" => $percentageComplete, // keep for now, just in case JS uses it
-            "fileIndex" => 0 // keep for now..
+            "skip" => $skip,
+            "percentageComplete" => $percentageComplete,
+            "fileIndex" => 0
         ]);
     }
 
-    private array $fenDict = [];
-    private int $nextFenId = 1;
-
-
-    private function processGame($game, array &$totals, int &$moveCount): void
+    private function processGame($game, array &$totals, int &$moveCount, $stmtInsertFen): void
     {
-        $fen = new FEN();
+        $fen = new ChessFEN();
         $moves = $game->getMovesArray();
-        $maxMoves = 20;
-        $limit = min($maxMoves, count($moves));
+        $maxMoves = min(20, count($moves));
 
         // normalize result
         $map = ['1-0' => 'w', '0-1' => 'b', '1/2-1/2' => 'd'];
         $result = $map[$game->getResult()] ?? '';
 
-        for ($i = 0; $i < $limit; $i++) {
+        for ($i = 0; $i < $maxMoves; $i++) {
             $move = $moves[$i] ?? '';
             if ($move === '') continue;
 
             $fenstr = $fen->export();
 
-            // get or assign a FEN ID
+            // Normalize the FEN string for move stats
+            $fenstr = $this->chessHelper->normalizeFenForMoveStats($fenstr);
+
+            // assign or retrieve FEN ID
             if (!isset($this->fenDict[$fenstr])) {
-                $fenId = $this->nextFenId++;
+                // check database first
+                $stmtFindFen = $this->conn->prepare('SELECT id FROM fen WHERE fen = :fen');
+                $stmtFindFen->bindValue('fen', $fenstr);
+                $item = $stmtFindFen->executeQuery()->fetchAssociative();
+
+                if ($item !== false) {
+                    $fenId = (int) $item['id'];
+                } else {
+                    // insert new FEN
+                    $stmtInsertFen->bindValue('fen', $fenstr);
+                    $stmtInsertFen->executeStatement();
+                    $fenId = (int) $this->conn->lastInsertId();
+                }
+
+                // cache it
                 $this->fenDict[$fenstr] = $fenId;
             } else {
                 $fenId = $this->fenDict[$fenstr];
@@ -891,7 +677,7 @@ class AdminController extends AbstractController
             $key = $fenId . '|' . $move;
 
             if (!isset($totals[$key])) {
-                $totals[$key] = [0, 0, 0]; // [wins, draws, losses]
+                $totals[$key] = [0, 0, 0]; // wins, draws, losses
             }
 
             switch ($result) {
@@ -917,14 +703,13 @@ class AdminController extends AbstractController
     private function processMoves(array $moves): int
     {
         $stmtFind = $this->conn->prepare(
-            'SELECT id, wins, draws, losses FROM moves WHERE fen = :fen AND move = :move'
+            'SELECT wins, draws, losses FROM move_stats WHERE fen_id = :fenId AND move = :move'
         );
         $stmtInsert = $this->conn->prepare(
-            'INSERT INTO moves (fen, move, wins, draws, losses) 
-         VALUES (:fen, :move, :wins, :draws, :losses)'
+            'INSERT INTO move_stats (fen_id, move, wins, draws, losses) VALUES (:fenId, :move, :wins, :draws, :losses)'
         );
         $stmtUpdate = $this->conn->prepare(
-            'UPDATE moves SET wins = :wins, draws = :draws, losses = :losses WHERE id = :id'
+            'UPDATE move_stats SET wins = :wins, draws = :draws, losses = :losses WHERE fen_id = :fenId AND move = :move'
         );
 
         $queryCount = 0;
@@ -936,32 +721,27 @@ class AdminController extends AbstractController
 
             [$fenId, $move] = explode('|', $key, 2);
 
-            // retrieve the actual FEN string from dictionary
-            $fen = array_search((int)$fenId, $this->fenDict, true);
-
-            // skip if we have only 1 game -- temp disable, getting very few moves..
-            //if ($score[0] + $score[1] + $score[2] < 2) continue;
-
-            $queryCount++;
-
-            $stmtFind->bindValue('fen', $fen);
+            $stmtFind->bindValue('fenId', (int)$fenId);
             $stmtFind->bindValue('move', $move);
             $item = $stmtFind->executeQuery()->fetchAssociative();
 
             if ($item === false) {
-                $stmtInsert->bindValue('fen', $fen);
+                $stmtInsert->bindValue('fenId', (int)$fenId);
                 $stmtInsert->bindValue('move', $move);
                 $stmtInsert->bindValue('wins', $score[0]);
                 $stmtInsert->bindValue('draws', $score[1]);
                 $stmtInsert->bindValue('losses', $score[2]);
                 $stmtInsert->executeStatement();
             } else {
-                $stmtUpdate->bindValue('id', $item['id']);
+                $stmtUpdate->bindValue('fenId', (int)$fenId);
+                $stmtUpdate->bindValue('move', $move);
                 $stmtUpdate->bindValue('wins', $item['wins'] + $score[0]);
                 $stmtUpdate->bindValue('draws', $item['draws'] + $score[1]);
                 $stmtUpdate->bindValue('losses', $item['losses'] + $score[2]);
                 $stmtUpdate->executeStatement();
             }
+
+            $queryCount++;
 
             if ($queryCount % $batchSize === 0) {
                 $this->conn->commit();

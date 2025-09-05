@@ -56,7 +56,7 @@ class PracticeController extends ChessrAbstractController
         return $this->render('practice/index.html.twig', $data);
     }
 
-    #[Route('/api/practice', methods: ['GET', 'POST'], name: 'app_api_practice')]
+    #[Route('/api/practice', methods: ['GET', 'POST'], name: 'api_practice')]
     /**
      * Returns all practice lines. Optionally can return the roadmap (based on the practice lines) or just get the lines in
      * order to get the statistics.
@@ -122,9 +122,6 @@ class PracticeController extends ChessrAbstractController
             $resp['white'] = $this->repertoireService->getWhiteLines($lines);
             // get the black lines
             $resp['black'] = $this->repertoireService->getBlackLines($lines);
-
-            //dd($resp["black"][2]);
-            //dd("lines:", $lines[1]["moves"][2]);
 
             // not needed for the roadmap
             if (!$isRoadmap) {
@@ -320,7 +317,7 @@ class PracticeController extends ChessrAbstractController
         }
     }
 
-    #[Route('/api/analysis', methods: ['DELETE'], name: 'app_api_analysis_delete')]
+    #[Route('/api/analysis', methods: ['DELETE'], name: 'api_analysis_delete')]
     /**
      * Delete a certain analysis record.
      *
@@ -346,7 +343,7 @@ class PracticeController extends ChessrAbstractController
         return new JsonResponse(["message" => "Analysis deleted.", "ret" => $ret]);
     }
 
-    #[Route('/api/analysis/save', methods: ['POST'], name: 'app_api_analysis_save')]
+    #[Route('/api/analysis/save', methods: ['POST'], name: 'api_analysis_save')]
     /**
      * Save an analysis record to our repertoire.
      *
@@ -378,7 +375,7 @@ class PracticeController extends ChessrAbstractController
         return $resp;
     }
 
-    #[Route('/api/analysis/ignore', methods: ['POST'], name: 'app_api_analysis_ignore')]
+    #[Route('/api/analysis/ignore', methods: ['POST'], name: 'api_analysis_ignore')]
     /**
      * Add an analysis record to our ignore list and delete the analysis record.
      *

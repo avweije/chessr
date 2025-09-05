@@ -50,14 +50,13 @@
 
 /* Maybe make this a see-through button? */
 .goto-first-btn {
-    flex-shrink: 0; /* is-flex-shrink-0 */
-    width: 1.75rem; /* 7 * 0.25rem */
-    height: 1.75rem; /* 7 * 0.25rem */
-    margin-top: 0.5rem; /* 2 * 0.25rem */
-    margin-bottom: 0.5rem; /* 2 * 0.25rem */
-    margin-left: 0.5rem; /* 2 * 0.25rem */
-    margin-right: 0.25rem; /* 1 * 0.25rem */
-    /* color: #059669; */ /* tc-link-shade */
+    flex-shrink: 0;
+    width: 1.75rem;
+    height: 1.75rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    margin-left: 0.5rem;
+    margin-right: 0.25rem;
     background: none;
     border: none;
     cursor: pointer;
@@ -360,6 +359,108 @@ div:not(.boxed-radio-menu) > .boxed-radio input:not(:disabled):checked ~ .boxed-
 
 .boxed-card:hover .boxed-card-arrow {
   opacity: .75;
+}
+
+
+/* Pgn Moves Container */
+.pgn-moves-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  text-align: left;
+}
+
+.pgn-moves-container .pgn-move-group {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.pgn-moves-container .pgn-move-group > .pgn-text:last-child {
+  padding-right: 0.25em;
+}
+
+.pgn-moves-container .pgn-text + .pgn-text {
+  padding-left: 0.25em;
+}
+
+.pgn-moves-container .pgn-text.move-number + .pgn-text,
+.pgn-moves-container .pgn-text.move-number + .pgn-move {
+  x-margin-left: -0.15em;
+}
+
+.pgn-moves-container .pgn-move {
+  padding: 0.125em;
+  //margin: -0.125em;
+  border-radius: 0.375em;
+  border: 1px solid transparent;
+}
+
+.pgn-moves-container .pgn-move + .pgn-move {
+  x-margin-left: -0.25em;
+}
+
+.pgn-moves-container .pgn-move-group > .pgn-move,
+.pgn-moves-container .is-variation.pgn-move {
+  cursor: pointer;
+}
+
+.pgn-moves-container .pgn-move.current-move {
+  color: var(--color-link);
+  background: var(--color-link-light);
+  border: 1px solid rgba(0,0,0,.2);
+}
+
+.pgn-moves-container .pgn-move-group > .pgn-move:not(.current-move):hover,
+.pgn-moves-container .is-variation.pgn-move:not(.current-move):hover {
+  color: var(--color-link);
+  background: var(--color-link-light);
+  border: 1px solid rgba(0,0,0,.1);
+}
+
+.pgn-moves-container .pgn-move.variation,
+.pgn-moves-container .is-variation {
+  color: var(--color-text-faded);
+  font-style: italic;
+  font-size: .9em;
+}
+
+.pgn-moves-container .is-variation + .pgn-move-group {
+  padding-left: 0.25em;
+}
+
+
+/* Skeletons */
+.skeleton-block.skeleton-opponent-radio {
+  width: 13rem;
+  height: 5.3rem;
+  border-radius: 0.5rem;
+}
+
+.skeleton-block.skeleton-single-line {
+  width: 9rem;
+  height: 1.9rem;
+  min-height: 1.9rem;
+  max-height: 1.9rem;
+  margin: 0 !important;
+  border-radius: 0.25rem;
+}
+
+.skeleton-block.skeleton-single-line.is-full {
+  width: 100%;
+}
+
+.skeleton-moves-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.skeleton-block.skeleton-moves-table-rows {
+  height: 12rem;
+  min-height: 12rem;
+  max-height: 12rem;
+  margin: 0 !important;
 }
 
 

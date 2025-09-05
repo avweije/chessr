@@ -2,30 +2,60 @@
 
 {# Widgets #}
 
-{% block form_start -%}
-	{{- parent() -}}
-	<div class="mt-6 is-flex is-flex-direction-column is-gap-1">
-	{% endblock form_start %}
+{# Bulma-friendly Form Theme #}
 
-	{% block form_end -%}
-	</div>
-	{{- parent() -}}
+{% block form_start -%}
+    {{ parent() }}
+    <div class="mt-4">
+{% endblock form_start %}
+
+{% block form_end -%}
+    </div>
+    {{ parent() }}
 {% endblock form_end %}
 
 {% block form_row -%}
-	{%- set row_attr = row_attr|merge({class: (row_attr.class|default('') ~ ' col-span-full')|trim}) -%}
-	{{- parent() -}}
+    <div class="field {{ (row_attr.class|default('')) }}">
+        {{ form_label(form) }}
+        <div class="control">
+            {{ form_widget(form) }}
+        </div>
+        {{ form_errors(form) }}
+    </div>
 {% endblock form_row %}
 
 {% block form_label -%}
-	{%- set label_attr = label_attr|merge({class: (label_attr.class|default('') ~ ' is-size-6 mb-1')|trim}) -%}
-	{{- parent() -}}
+    {% if label is not same as(false) %}
+        {%- set label_attr = label_attr|merge({class: (label_attr.class|default('') ~ ' label is-size-6 mb-1')|trim}) -%}
+        {{ parent() }}
+    {% endif %}
 {% endblock form_label %}
 
-
 {% block form_widget_simple -%}
-	{% if type is not defined or type not in ['file', 'is-hidden'] %}
-		{%- set attr = attr|merge({class: (attr.class|default('') ~ ' input-text')|trim}) -%}
-	{% endif %}
-	{{- parent() -}}
+    {% if type is not defined or type not in ['file', 'hidden'] %}
+        {%- set attr = attr|merge({class: (attr.class|default('') ~ ' input')|trim}) -%}
+    {% endif %}
+    {{ parent() }}
 {% endblock form_widget_simple %}
+
+{% block textarea_widget -%}
+    {%- set attr = attr|merge({class: (attr.class|default('') ~ ' textarea')|trim}) -%}
+    {{ parent() }}
+{% endblock textarea_widget %}
+
+{% block choice_widget_collapsed -%}
+    {%- set attr = attr|merge({class: (attr.class|default('') ~ ' select')|trim}) -%}
+    <div class="select">
+        {{ parent() }}
+    </div>
+{% endblock choice_widget_collapsed %}
+
+{% block form_errors -%}
+    {% if errors|length > 0 %}
+        <p class="help is-danger">
+            {% for error in errors %}
+                {{ error.message }}<br>
+            {% endfor %}
+        </p>
+    {% endif %}
+{% endblock form_errors %}

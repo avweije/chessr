@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\User;
 use App\Entity\Repertoire;
+use App\Service\ChessHelper;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -15,10 +16,13 @@ class RepertoireRepository extends ServiceEntityRepository
 {
     private $user = null;
     private $settings = null;
+    private $chessHelper;
 
-    public function __construct(ManagerRegistry $registry, private Security $security)
+    public function __construct(ManagerRegistry $registry, private Security $security, ChessHelper $chessHelper)
     {
         parent::__construct($registry, Repertoire::class);
+
+        $this->chessHelper = $chessHelper;
 
         $this->user = $security->getUser();
         if ($this->user instanceof User) {
@@ -28,6 +32,13 @@ class RepertoireRepository extends ServiceEntityRepository
 
     public function fenCompare($fenSource, $fenTarget): string
     {
+        // Normalize the FEN for repertoire
+        $fenSource = $this->chessHelper->normalizeFenForRepertoire($fenSource);
+        $fenTarget = $this->chessHelper->normalizeFenForRepertoire($fenTarget);
+
+        return $fenSource == $fenTarget;
+
+        /*
         // split the FEN, get the parts and replace the ep square with a dash
         $parts = explode(" ", $fenSource);
         $fenSourceDash = implode(" ", array_slice($parts, 0, 3)) . " - " . $parts[4];
@@ -35,22 +46,21 @@ class RepertoireRepository extends ServiceEntityRepository
         $fenTargetDash = implode(" ", array_slice($parts, 0, 3)) . " - " . $parts[4];
 
         return $fenSource == $fenTarget || $fenSource == $fenTargetDash || $fenSourceDash == $fenTarget || $fenSourceDash == $fenTargetDash;
+        */
     }
 
     public function findOneBy(array $criteria, array|null $orderBy = null): object|null
     {
         // if the FenBefore is set
         if (isset($criteria['FenBefore'])) {
-            // get the FenBefore with a dash instead of ep
-            $parts = explode(" ", $criteria['FenBefore']);
-            $fenBeforeDash = implode(" ", array_slice($parts, 0, 3)) . " - " . $parts[4];
-            // if the FenBefore with a dash differs, search for both
-            if ($fenBeforeDash != $criteria['FenBefore']) {
-                $criteria['FenBefore'] = [$criteria['FenBefore'], $fenBeforeDash];
-            }
+            // Normalize the FEN for repertoire
+            $criteria['FenBefore'] = $this->chessHelper->normalizeFenForRepertoire($criteria['FenBefore']);
         }
         // if the FenAfter is set
         if (isset($criteria['FenAfter'])) {
+            // Normalize the FEN for repertoire
+            $criteria['FenAfter'] = $this->chessHelper->normalizeFenForRepertoire($criteria['FenAfter']);
+            /*
             // get the FenAfter with a dash instead of ep
             $parts = explode(" ", $criteria['FenAfter']);
             $fenAfterDash = implode(" ", array_slice($parts, 0, 3)) . " - " . $parts[4];
@@ -58,6 +68,7 @@ class RepertoireRepository extends ServiceEntityRepository
             if ($fenAfterDash != $criteria['FenAfter']) {
                 $criteria['FenAfter'] = [$criteria['FenAfter'], $fenAfterDash];
             }
+                */
         }
 
         return parent::findOneBy($criteria, $orderBy);
@@ -67,6 +78,9 @@ class RepertoireRepository extends ServiceEntityRepository
     {
         // if the FenBefore is set
         if (isset($criteria['FenBefore'])) {
+            // Normalize the FEN for repertoire
+            $criteria['FenBefore'] = $this->chessHelper->normalizeFenForRepertoire($criteria['FenBefore']);
+            /*
             // get the FenBefore with a dash instead of ep
             $parts = explode(" ", $criteria['FenBefore']);
             $fenBeforeDash = implode(" ", array_slice($parts, 0, 3)) . " - " . $parts[4];
@@ -74,9 +88,13 @@ class RepertoireRepository extends ServiceEntityRepository
             if ($fenBeforeDash != $criteria['FenBefore']) {
                 $criteria['FenBefore'] = [$criteria['FenBefore'], $fenBeforeDash];
             }
+                */
         }
         // if the FenAfter is set
         if (isset($criteria['FenAfter'])) {
+            // Normalize the FEN for repertoire
+            $criteria['FenAfter'] = $this->chessHelper->normalizeFenForRepertoire($criteria['FenAfter']);
+            /*
             // get the FenAfter with a dash instead of ep
             $parts = explode(" ", $criteria['FenAfter']);
             $fenAfterDash = implode(" ", array_slice($parts, 0, 3)) . " - " . $parts[4];
@@ -84,6 +102,7 @@ class RepertoireRepository extends ServiceEntityRepository
             if ($fenAfterDash != $criteria['FenAfter']) {
                 $criteria['FenAfter'] = [$criteria['FenAfter'], $fenAfterDash];
             }
+                */
         }
 
         return parent::findBy($criteria, $orderBy, $limit, $offset);
@@ -93,6 +112,9 @@ class RepertoireRepository extends ServiceEntityRepository
     public function isIncluded(string $fenBefore): bool
     {
         $included = false;
+
+        // Normalize the FEN for repertoire
+        $fenBefore = $this->chessHelper->normalizeFenForRepertoire($fenBefore);
 
         $res = $this->findBy([
             "User" => $this->security->getUser(),

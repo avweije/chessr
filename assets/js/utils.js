@@ -116,4 +116,4 @@ export class Utils {
   }
 }
 
-Utils.overrideConsole();
+//Utils.overrideConsole();

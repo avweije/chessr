@@ -21,7 +21,6 @@ class Repertoire extends MyChessBoard {
 
   statusField = null;
   ecoField = null;
-  pgnField = null;
   pgnStartPositionContainer = null;
 
   color = "white";
@@ -110,6 +109,9 @@ class Repertoire extends MyChessBoard {
 
     // get the buttons
     this.gotoFirstButton = document.getElementById("gotoFirstButton");
+
+    console.log('gotoFirstButton: ', this.gotoFirstButton);
+
     this.loadPgnButton = document.getElementById("loadPgnButton");
     this.closePgnButton = document.getElementById("closePgnButton");
     this.saveRepertoireButton = document.getElementById("saveRepertoireButton");
@@ -160,6 +162,9 @@ class Repertoire extends MyChessBoard {
 
     // attach the event handlers
     this.gotoFirstButton.addEventListener("click", this.onGotoFirst.bind(this));
+
+    console.log('Repertoire.js - gotoFirstButton click handler added');
+
     this.loadPgnButton.addEventListener("click", this.onLoadPgn.bind(this));
     this.closePgnButton.addEventListener("click", this.onClosePgn.bind(this));
 
@@ -206,69 +211,7 @@ class Repertoire extends MyChessBoard {
     // enable the load pgn button
     this.loadPgnButton.disabled = false;
 
-    /*
-    // get the modal elements
-    this.confirmDialog.modal = document.getElementById("confirmModal");
-    this.confirmDialog.closeButton = document.getElementById(
-      "confirmModalCloseButton"
-    );
-    this.confirmDialog.cancelButton = document.getElementById(
-      "confirmModalCancelButton"
-    );
-    this.confirmDialog.confirmButton = document.getElementById(
-      "confirmModalConfirmButton"
-    );
-
-    // register the modal
-    Modal.register(this.confirmDialog.modal, [
-      {
-        element: this.confirmDialog.closeButton,
-        action: "close",
-      },
-      {
-        element: this.confirmDialog.cancelButton,
-        action: "close",
-      },
-      {
-        element: this.confirmDialog.confirmButton,
-        action: "handler",
-        handler: this.onRemoveLineConfirmed.bind(this),
-      },
-    ]);
-
-    // get the modal elements
-    this.loadPgnDialog.modal = document.getElementById("loadPgnModal");
-    this.loadPgnDialog.closeButton = document.getElementById(
-      "loadPgnModalCloseButton"
-    );
-    this.loadPgnDialog.cancelButton = document.getElementById(
-      "loadPgnModalCancelButton"
-    );
-    this.loadPgnDialog.confirmButton = document.getElementById(
-      "loadPgnModalConfirmButton"
-    );
-    this.loadPgnDialog.loadPgnModalPgnTextArea = document.getElementById(
-      "loadPgnModalPgnTextArea"
-    );
-
-    // register the modal
-    Modal.register(this.loadPgnDialog.modal, [
-      {
-        element: this.loadPgnDialog.closeButton,
-        action: "close",
-      },
-      {
-        element: this.loadPgnDialog.cancelButton,
-        action: "close",
-      },
-      {
-        element: this.loadPgnDialog.confirmButton,
-        action: "handler",
-        handler: this.onLoadPgnConfirmed.bind(this),
-      },
-    ]);
-    */
-
+    // initialise the modals
     this.initModals();
 
     // hide the page loader
@@ -467,6 +410,9 @@ class Repertoire extends MyChessBoard {
 
   // called when the button is clicked
   onGotoFirst(event) {
+    
+    console.log('onGotoFirst');
+
     // goto the 1st move
     this.gotoFirst();
   }
@@ -1294,7 +1240,7 @@ class Repertoire extends MyChessBoard {
     //
     var el = document.createElement("span");
     el.className =
-      "flex  is-align-items-center mr-1 rounded py-1 px-2 bg-secondary-100 border border-secondary-300";
+      "is-flex is-align-items-center mr-1 rounded py-1 px-2";
     el.setAttribute("data-id", group.id);
     el.setAttribute("data-type", "tag");
 
@@ -1614,6 +1560,8 @@ class Repertoire extends MyChessBoard {
 
   // load the moves table
   loadMovesTable(data) {
+    // hide the skeleton loader
+    this.movesTable.previousElementSibling.classList.add("is-hidden");
     // remove all current moves
     while (this.movesTable.tBodies[0].rows.length > 0) {
       this.movesTable.tBodies[0].deleteRow(0);
@@ -1895,12 +1843,21 @@ class Repertoire extends MyChessBoard {
   }
 
   afterGotoMove(moveNr, variationIdx) {
+
+    console.log('afterGotoMove:', moveNr, variationIdx);
+
     // reset the history to the current position
     if (!this.pgnLoaded) {
       //this.resetToCurrent(this.initialFen);
     }
     // update the status, get the ECO codes for next position.. etc
     this.updateStatus();
+
+    // update the pgn field
+    //this.pgnField.resetTo(moveNr);
+    //this.pgnField.gotoMove(moveNr);
+
+    //
   }
   /**
    * Called after a move was move. Update the status fields and fetch the moves.
@@ -1944,8 +1901,9 @@ class Repertoire extends MyChessBoard {
     this.currentTurn = this.game.turn();
     // update the pgn field
     this.updatePgnField();
+
     // toggle the goto first move button
-    this.gotoFirstButton.disabled = this.currentMove == 0;
+    this.gotoFirstButton.disabled = this.isFirst();
 
     // get the moves for the new position
     this.getMoves();

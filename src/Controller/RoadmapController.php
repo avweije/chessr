@@ -22,7 +22,7 @@ class RoadmapController extends ChessrAbstractController
         return $this->render('roadmap/index.html.twig');
     }
 
-    #[Route('/api/roadmap', methods: ['GET'], name: 'app_api_roadmap')]
+    #[Route('/api/roadmap', methods: ['GET'], name: 'api_roadmap')]
     /**
      * Gets the roadmap. All lines and variations for white and black, with ECO codes, number of moves,
      * number of variations and accuracy per variation.

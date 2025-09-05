@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Entity\Moves;
+use App\Entity\MoveStats;
 use App\Entity\User;
 use App\Repository\RepertoireRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -13,6 +14,7 @@ class RepertoireService
     private $user = null;
     private $settings = null;
     private $repo;
+    private $chessHelper;
 
     private array $candidates = [
         'must'   => [],
@@ -21,24 +23,18 @@ class RepertoireService
         'low'    => [],
     ];
 
-    public function __construct(ManagerRegistry $registry, private Security $security, RepertoireRepository $repository)
+    public function __construct(
+        ManagerRegistry $registry, 
+        private Security $security, 
+        RepertoireRepository $repository,
+        ChessHelper $chessHelper)
     {
         $this->user = $security->getUser();
         if ($this->user instanceof User) {
             $this->settings = $this->user->getSettings();
         }
         $this->repo = $repository;
-    }
-
-    public function fenCompare($fenSource, $fenTarget): string
-    {
-        // split the FEN, get the parts and replace the ep square with a dash
-        $parts = explode(" ", $fenSource);
-        $fenSourceDash = implode(" ", array_slice($parts, 0, 3)) . " - " . $parts[4];
-        $parts = explode(" ", $fenTarget);
-        $fenTargetDash = implode(" ", array_slice($parts, 0, 3)) . " - " . $parts[4];
-
-        return $fenSource == $fenTarget || $fenSource == $fenTargetDash || $fenSourceDash == $fenTarget || $fenSourceDash == $fenTargetDash;
+        $this->chessHelper = $chessHelper;
     }
 
     // get the roadmap (split by eco/moves??)
@@ -51,7 +47,8 @@ class RepertoireService
     public function getWhiteLines($lines)
     {
         // get the white lines
-        $white = $this->findLines($lines, 'white', false, false);
+        //$white = $this->findLines($lines, 'white', false, false);
+        $white = $this->collectLinesUntil($lines, 'white');
         // group by position and return
         return $this->groupByPosition($white, $lines);
     }
@@ -60,7 +57,8 @@ class RepertoireService
     public function getBlackLines($lines)
     {
         // get the black lines
-        $black = $this->findLines($lines, 'black', false, false);
+        //$black = $this->findLines($lines, 'black', false, false);
+        $black = $this->collectLinesUntil($lines, 'black');
         // group by position and return
         return $this->groupByPosition($black, $lines);
     }
@@ -71,9 +69,7 @@ class RepertoireService
         // get the new lines
         //$new = $this->findLines($lines, '', true, false, true);
 
-        $new = $this->collectNewMovesLineUntil($lines);
-
-        //dd($new);
+        $new = $this->collectLinesUntil($lines, '', true);
 
         // group by position and return
         return $this->groupByPosition($new, $lines);
@@ -102,7 +98,7 @@ class RepertoireService
         $lines = $this->assignRecommendation($lines, $globalStats);
         //$this->assignRecommendation($lines, $globalStats);
 
-        //dd($this->candidates);
+        //dd($lines, $this->candidates);
 
         $targetSize = $this->determineTargetSize($globalStats);
         $totalMoves = 0;
@@ -124,14 +120,16 @@ class RepertoireService
                 $moveKey = $candidate['id'];
                 if (isset($usedMoves[$moveKey])) continue;
 
-                // get the composite score
-                $baseScore = $this->isOurMove($candidate['before'] ?? '', $candidate['color'] ?? '') ? $this->getCompositeScore($candidate) : -1;
-
-                // test a bit with the threshold
+                // test a bit with the threshold (to keep moves in a line together)
                 $threshold = 1;
-                // collect line until recommendation drops
+
+                // Always start with -1, our own move is in the candidate
+                $baseScore = -1;
+
+                // Collect line until recommendation drops
                 $lineUntil = $this->collectRecommendedUntil(['moves' => [$candidate]], $usedMoves, $baseScore, $threshold);
 
+                // Make sure we have at least one move
                 $moveCount = $this->countMoves($lineUntil);
                 $totalMoves = $totalMoves + $moveCount;
                 if ($moveCount > 0) {
@@ -142,6 +140,10 @@ class RepertoireService
                 }
             }
         }
+
+        //dd($totalMoves);
+
+        //dd($targetSize);
 
         // does group by position cause this?
 
@@ -278,7 +280,7 @@ class RepertoireService
             $move['baseScore'] = $baseScore;
             $move['baseIsOurMove'] = $isOurMove;
 
-            // If we don't have the base score yet (top level not our move)
+            // If we don't have the base score yet (top level call)
             if ($baseScore == -1) {
                 $thisBase = $isOurMove ? $this->getCompositeScore($move) : -1;
             } else if ($isOurMove) {
@@ -292,6 +294,8 @@ class RepertoireService
                 $compositeScore = $this->getCompositeScore($move);
                 $drop = $baseScore - $compositeScore;
 
+                //dd($baseScore, $compositeScore, $drop, $move);
+
                 $move['baseDrop'] = $drop;
                 $move['baseThreshold'] = $minThreshold;
                 $move['compositeScore'] = $compositeScore;
@@ -300,6 +304,9 @@ class RepertoireService
                 if ($drop > $minThreshold) {
                     break;
                 }
+            } else {
+                // Not our move, reset base
+                $thisBase = -1;
             }
 
             $move['thisBase'] = $thisBase;
@@ -311,6 +318,9 @@ class RepertoireService
             }
 
             if ($isOurMove || count($move['moves']) > 0) {
+                // Add the move count (our moves)
+                $move['ourMoveCount'] = 1 + $this->countMoves($move['moves']);
+
                 $result[] = $move;
             }
         }
@@ -321,11 +331,11 @@ class RepertoireService
     private function isUnderRecommendationThreshold($move): bool
     {
         // Get the recommend interval (0-3)
-        $recommendInterval = 4 - ($this->settings->getRecommendInterval() ?? 0);
+        $recommendInterval = 4 - ($this->settings->getRecommendInterval() ?? 1);
         // Set the threshold based on the interval
         $threshold = 0.2 * $recommendInterval;
 
-        return (isset($move['recommendation']) && $move['recommendation']['level'] == 'low' && $move['recommendation']['factor'] <= $threshold);
+        return (isset($move['recommendation']) && $move['recommendation']['level'] == 'low' && $move['recommendation']['factor'] < $threshold);
     }
 
     /**
@@ -360,16 +370,22 @@ class RepertoireService
      * @param array &$seen       Keeps track of seen positions to prevent duplicates
      * @return array             Array of moves with full info and preceding line
      */
-    private function collectNewMovesLineUntil(array $lines, array $lineSoFar = [], array &$seen = []): array
+    private function collectLinesUntil(array $lines, string $color = '', bool $newOnly = false, array $lineSoFar = [], array &$seen = []): array
     {
         $result = [];
+
+        $ourMoveCount = 0;
 
         foreach ($lines as $move) {
             // Determine if this move is "our move"
             $ourMove = isset($move['before']) && isset($move['color']) ? $this->isOurMove($move['before'], $move['color']) : false;
 
-            // Only consider moves that are "new" and our move
+            // Get if this move is new and matches the color filter
             $isNew = $ourMove && (!empty($move['new']) && $move['new'] == 1);
+            $isRightColor = empty($color) || ($move['color'] ?? '') == $color;
+
+            // Determine if this move matches our criteria
+            $isMatch = ($newOnly && $isNew) && $isRightColor;
 
             // Build the line leading to this move
             $currentLine = $lineSoFar;
@@ -378,11 +394,18 @@ class RepertoireService
             $uniqueKey = $move['after'] ?? null;
 
             // Start a new practice line if this move is new
-            if ($isNew && isset($move['move']) && $uniqueKey && !isset($seen[$uniqueKey])) {
+            if ($isMatch && isset($move['move']) && $uniqueKey && !isset($seen[$uniqueKey])) {
+            //if ($isMatch && isset($move['move']) && $uniqueKey) {
                 $seen[$uniqueKey] = true;
 
+                // Increase our move count
+                //$ourMoveCount++;
+
                 // Recursively collect moves in this contiguous block
-                [$subMoves,] = $this->collectLineUntil($move['moves'], $seen);
+                [$subMoves, $lineMoveCount] = $this->collectLineUntil($move['moves'], $color, $newOnly, $seen);
+
+                // Add the line move count (our moves)
+                $ourMoveCount += $lineMoveCount;
 
                 $result[] = [
                     'move' => $move['move'],
@@ -393,6 +416,7 @@ class RepertoireService
                     'new' => $move['new'] ?? 0,
                     'recommended' => $move['recommended'] ?? 0,
                     'autoplay' => $move['autoplay'] ?? false,
+                    'ourMoveCount' => $ourMoveCount,
                     'moves' => $subMoves,
                     'id' => $move['id'] ?? 0,
                     'initialFen' => $move['initialFen'] ?? '',
@@ -411,7 +435,7 @@ class RepertoireService
                 }
                 $result = array_merge(
                     $result,
-                    $this->collectNewMovesLineUntil($move['moves'], $childLineSoFar, $seen)
+                    $this->collectLinesUntil($move['moves'], $color, $newOnly, $childLineSoFar, $seen)
                 );
             }
         }
@@ -427,29 +451,38 @@ class RepertoireService
      * @param array &$seen
      * @return array [subMoves, ourMoveCount]
      */
-    private function collectLineUntil(array $moves, array &$seen): array
+    private function collectLineUntil(array $moves, string $color = '', bool $newOnly = false, array &$seen): array
     {
         $line = [];
         $ourMoveCount = 0;
 
         foreach ($moves as $move) {
             $ourMove = isset($move['before']) && isset($move['color']) ? $this->isOurMove($move['before'], $move['color']) : false;
-            $isNew = $ourMove && (!empty($move['new']) && $move['new'] == 1);
             $autoplay = $move['autoplay'] ?? false;
 
+            // Get if this move is new and matches the color filter
+            $isNew = $ourMove && (!empty($move['new']) && $move['new'] == 1);
+            $isRightColor = empty($color) || ($move['color'] ?? '') == $color;
+
+            // Determine if this move matches our criteria
+            $isMatch = ($newOnly && $isNew) && $isRightColor;
+
             // Stop the block if it's our move and not new
-            if ($ourMove && !$isNew) {
+            if ($ourMove && !$isMatch) {
                 continue;
             }
 
             $uniqueKey = $move['after'] ?? null;
-            if ($isNew && $uniqueKey && !isset($seen[$uniqueKey])) {
+            if ($isMatch && $uniqueKey && !isset($seen[$uniqueKey])) {
                 $seen[$uniqueKey] = true;
             }
 
             // Recursively include child moves
-            [$subMoves, $subCount] = $this->collectLineUntil($move['moves'] ?? [], $seen);
+            [$subMoves, $subCount] = $this->collectLineUntil($move['moves'] ?? [], $color, $newOnly, $seen);
+            
             $ourMoveCount += $ourMove && !$autoplay ? 1 + $subCount : $subCount;
+            // Only count this move if it's ours and new (and not autoplay)
+            //$ourMoveCount += $ourMove && !$autoplay && (!$newOnly || $isNew) ? 1 + $subCount : $subCount;
 
             $line[] = [
                 'move' => $move['move'] ?? '',
@@ -529,7 +562,7 @@ class RepertoireService
     {
 
         // Use user settings to determine min/max targetSize (0-3)
-        $recommendInterval = ($this->settings->getRecommendInterval() ?? 0) + 1;
+        $recommendInterval = ($this->settings->getRecommendInterval() ?? 1) + 1;
         
         $min = 20;
         $max = 60;
@@ -561,24 +594,6 @@ class RepertoireService
     }
 
     // recursively assign recommendation to all lines
-    private function assignRecommendation_xx(array &$lines, array $globalStats): void
-    {
-        foreach ($lines as &$line) {
-            // if this is a move
-            if (isset($line['move']) && $this->isOurMove($line['before'] ?? '', $line['color'] ?? '')) {
-                // compute and assign recommendation
-                $line['recommendation'] = $this->computeRecommendationForLine($line, $globalStats);
-                // store candidates by level for potential further processing
-                $this->candidates[$line['recommendation']['level']][] = &$line;
-                //$this->candidates[$line['recommendation']['level']][] = $line;
-            }
-            // recurse into children
-            if (!empty($line['moves'])) {
-                $this->assignRecommendation($line['moves'], $globalStats);
-            }
-        }
-    }
-
     private function assignRecommendation(array $lines, array $globalStats): array
     {
         $result = [];
@@ -626,14 +641,21 @@ class RepertoireService
         $score = 0;
 
         // success factor
-        if ($successRate < 0.5) $score += 0.6;
-        elseif ($successRate < 0.8) $score += 0.3;
+        //if ($successRate < 0.5) $score += 0.6;
+        //elseif ($successRate < 0.8) $score += 0.3;
+        //$maxSuccessScore = 0.8;
+        $maxSuccessScore = 2;
+        $score += $maxSuccessScore * (1 - $successRate);
 
         // streak factor
-        if ($streak < 3) $score += 0.3;
+        //if ($streak < 3) $score += 0.3;
+        if ($streak < 3) $score += 0.7;
 
         // frequency factor
-        if ($frequency !== null && $frequency > 7) $score += 0.4;
+        if ($frequency !== null && $frequency > 0) {
+            //$score += min($frequency, 7) / 7 * 0.4;
+            $score += min($frequency, 7) / 7 * 0.8;
+        }
 
         // adjust with global stats
         if ($globalStats['successRate'] > 0.85) $score *= 0.9;
@@ -643,10 +665,20 @@ class RepertoireService
             $score *= 1.2;
         }
 
+        // Get the recommend interval user setting
+        $recommendInterval = $this->settings->getRecommendInterval() ?? 1;
+        // Adjust the score based on the preference
+        $prefFactors = [0 => 0.8, 1 => 1.0, 2 => 1.2, 3 => 1.4];
+        // Adjust the score
+        $score *= $prefFactors[$recommendInterval] ?? 1.0;
+
         // classify level
         return [
             'level'  => $score > 1 ? 'high' : ($score > 0.4 ? 'medium' : 'low'),
-            'factor' => min(1, $score),
+            'factor' => min(3, $score),
+            'successRate' => $successRate,
+            'streak' => $streak,
+            'frequency' => $frequency
         ];
     }
 
@@ -987,7 +1019,7 @@ class RepertoireService
             // if not excluded and a match
             //if ($rep->isExclude() == false && $rep->getColor() == $color && $rep->getFenBefore() == $fen) {
             //if ($rep->getColor() == $color && $rep->getFenBefore() == $fen) {
-            if ($rep->getColor() == $color && $this->fenCompare($rep->getFenBefore(), $fen) && !in_array($rep->getFenAfter(), $usedFenAfters)) {
+            if ($rep->getColor() == $color && $this->chessHelper->fenCompare($rep->getFenBefore(), $fen) && !in_array($rep->getFenAfter(), $usedFenAfters)) {
                 // get the ECO code
                 //$eco = $ecoRepo->findCode($rep->getPgn());
 
@@ -1733,8 +1765,6 @@ class RepertoireService
     {
         $roadmap = [];
         $i = 0;
-
-        $mrepo = $this->repo->getEntityManager()->getRepository(Moves::class);
 
         foreach ($lines as $line) {
 

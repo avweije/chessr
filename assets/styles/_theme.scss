@@ -248,36 +248,3 @@
     background-color: var(--color-surface-alt) !important;
   }
 }
-
-
-/*
-
-Bulma uses these vars for the following elements
-
-box:
-- background-color: --bulma-scheme-main
-- color: --bulma-text
-- border-radius: --bulma-radius-large
-- padding: 1.25rem
-
-title/subtitle:
-- color: generated from $vars
-
-custom colors (has-text-faded):
-- color: generated from $vars
-
-a:
-- color: --bulma-link-text
-
-label:
-- color: --bulma-label-color
-
-
-*********
-
-Our Own Custom Elements:
-
-navbar:
-- background-color: --color-surface-main
-
-*/

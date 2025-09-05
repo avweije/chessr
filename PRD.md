@@ -10,6 +10,8 @@
 
 - make pgn field (opponents) a component, hover is nice, keys left right up down (optional), click = callback, etc.
 
+- move api functions to appropriate controllers, remove api controller.
+
 # Ideas for later:
 
 Batch engine blunder-check for novelties only

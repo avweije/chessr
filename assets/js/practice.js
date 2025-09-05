@@ -159,11 +159,11 @@ class Practice extends MyChessBoard {
     this.worker.addEventListener("message", this.onWorkerMessage.bind(this));
 
     // get the board element
-    var el = document.getElementById("board");
+    const boardElement = document.getElementById("board");
     // get the practice type
-    this.type = el.getAttribute("data-type");
+    this.type = boardElement.getAttribute("data-type");
     // get the repertoire id (from the roadmap)
-    this.repertoireId = el.getAttribute("data-id");
+    this.repertoireId = boardElement.getAttribute("data-id");
 
     // get the practice type buttons
     this.buttons.repertoireType = document.getElementById(
@@ -510,6 +510,75 @@ class Practice extends MyChessBoard {
     }
   }
 
+
+  // Enqueue a new target line, overwriting any previous queued target
+  enqueueRun(line, move) {
+    const now = Date.now();
+    let debounceTime = 100; // default for first click
+
+    if (this.practice._lastClickTime) {
+      const gap = now - this.practice._lastClickTime;
+      debounceTime = gap < 200 ? 350 : 100;
+    }
+
+    this.practice._lastClickTime = now;
+
+    console.log('enqueueRun:', line, move, 'debounce', debounceTime);
+
+    this.practice._nextQueuedItem = { line, move, debounceTime };
+    this.practice._nextQueuedItemUpdated = true;
+
+    if (!this._queueRunning) {
+      this._queueRunning = true;
+      this._processQueue();
+    }
+  }
+
+  async _processQueue() {
+    while (this.practice._nextQueuedItem !== null) {
+      const { line, move, debounceTime } = this.practice._nextQueuedItem;
+
+      console.log('_processQueue:', line, move);
+      
+      this.practice._nextQueuedItem = null;
+
+      this.stopAnimation();  // interrupt animation if running
+
+      console.log('_processQueue - before runPractice', line, move);
+
+      this.practice._currentPracticePromise = this.runPractice(line, move); // await the animation + rest of function
+
+      await this.practice._currentPracticePromise;
+
+      console.log('_processQueue - after runPractice', line, move);
+
+      this.practice._currentPracticePromise = null;
+
+      while (this.practice._nextQueuedItem !== null) {
+        // we read the nextQueuedItem now..
+        this.practice._nextQueuedItemUpdated = false;
+        // use the debounceTime of the last queued item
+        const debounce = this.practice._nextQueuedItem?.debounceTime ?? 250;
+        // wait 50ms, then check again
+        await new Promise(resolve => setTimeout(resolve, debounce));
+        // break if not updated in the meantime
+        if (this.practice._nextQueuedItemUpdated === false) break;
+      }
+    }
+    this._queueRunning = false;
+  }
+
+  stopAnimation() {
+    this.practice._interruptPractice = true;
+  }
+
+  // Interrupt the practice & animation
+  _interruptPractice() {
+    this.practice._interruptPractice = true;
+  }
+
+
+
   /**
    * Called after a move is made (through chessboard.js).
    *
@@ -695,11 +764,13 @@ class Practice extends MyChessBoard {
 
     this.repertoireForm.appendChild(inp);
 
-    for (var i = 0; i < this.game.history({ verbose: true }).length; i++) {
+    const history = this.game.history({ verbose: true });
+
+    for (var i = 0; i < history.length; i++) {
       var inp = document.createElement("input");
       inp.type = "hidden";
       inp.name = "line[]";
-      inp.value = this.history[i].san;
+      inp.value = history[i].san;
 
       this.repertoireForm.appendChild(inp);
     }
@@ -765,6 +836,8 @@ class Practice extends MyChessBoard {
    */
 
   togglePracticeInfo(eventObject) {
+    // blur the button
+    this.buttons.showPracticeInfo.blur();
 
     console.info("togglePracticeInfo", eventObject);
     
@@ -838,6 +911,8 @@ class Practice extends MyChessBoard {
 
   // fired when the analysis save to repertoire button is clicked
   onAnalysisSave(event) {
+    // blur the button
+    this.analysis.saveButton.blur();
     // configure the save dialog
     switch (this.practice.lines[this.practice.lineIdx].moves.length) {
       case 1:
@@ -1038,6 +1113,8 @@ class Practice extends MyChessBoard {
 
   // fired when the analysis discard button is clicked
   onAnalysisDiscard(event, removeFromDb = true) {
+    // blur the button
+    this.analysis.discardButton.blur();
     // we need to refresh the repertoire data when starting a new practice
     this.needsRefresh = true;
 
@@ -1317,7 +1394,9 @@ class Practice extends MyChessBoard {
         this.gotoNextMove(false);
       }
     } else {
-      this.runPractice();
+      // Enqueue the practice run
+      this.enqueueRun(this.practice.lineIdx, this.practice.moveIdx);
+      //this.runPractice();
     }
   }
 
@@ -1330,7 +1409,9 @@ class Practice extends MyChessBoard {
     this.practice.animateToPosition = animate;
     this.practice.animateFromBeginning = false;
 
-    this.runPractice();
+      // Enqueue the practice run
+      this.enqueueRun(this.practice.lineIdx, this.practice.moveIdx);
+    //this.runPractice();
   }
 
   // goto the next line
@@ -1344,7 +1425,9 @@ class Practice extends MyChessBoard {
     this.practice.animateToPosition = animate;
     this.practice.animateFromBeginning = false;
 
-    this.runPractice();
+      // Enqueue the practice run
+      this.enqueueRun(this.practice.lineIdx, this.practice.moveIdx);
+    //this.runPractice();
   }
 
   // called when a practice is finished, all moves played
@@ -1483,21 +1566,31 @@ class Practice extends MyChessBoard {
     this.stopPractice();
     // set the type
     this.type = type;
+    // toggle the pgn field
+    this.pgnField.setOptions({ pauseUpdate: (type == 'analysis') });
+    // if we don't have this repertoire type, do nothing
+    if (this.repertoire.length == 0) {
+      return;
+    }
     // reset the board
     this.game.reset();
-    this.board.setPosition(this.game.fen());
-    // remove the markers
-    this.board.removeMarkers();
-    // remove arrows
-    this.board.removeArrows();
-    // set the orientation
-    var orient = this.type == "black" ? COLOR.black : COLOR.white;
-    if (this.board.getOrientation() != orient) {
-      this.board.setOrientation(orient);
-    }
+    // Make sure the board is loaded
+    if (this.board) {
+      // reset the position
+      this.board.setPosition(this.game.fen());
+      // remove the markers
+      this.board.removeMarkers();
+      // remove arrows
+      this.board.removeArrows();
+      // set the orientation
+      var orient = this.type == "black" ? COLOR.black : COLOR.white;
+      if (this.board.getOrientation() != orient) {
+        this.board.setOrientation(orient);
+      }
 
-    // disable move input
-    this.disableMoveInput();
+      // disable move input
+      this.disableMoveInput();
+    }
 
     // refresh the repertoire
     this.getRepertoire();
@@ -1800,8 +1893,13 @@ class Practice extends MyChessBoard {
 
     // reset vars
     this.practice.moveNr = 1;
+    
     this.practice.lineIdx = 0;
     this.practice.moveIdx = 0;
+
+    this.practice.lastQueuedLine = 0;
+    this.practice.lastQueuedMove = 0;
+
     this.practice.skip_lineIdx = 0;
     this.practice.skip_moveIdx = 0;
     this.practice.skipCount = 0;
@@ -1869,8 +1967,10 @@ class Practice extends MyChessBoard {
     this.practice.animateToPosition = true;
     this.practice.animateFromBeginning = false;
 
+      // Enqueue the practice run
+      this.enqueueRun(this.practice.lineIdx, this.practice.moveIdx);
     // run the practice
-    this.runPractice();
+    //this.runPractice();
 
     return;
   }
@@ -1897,7 +1997,10 @@ class Practice extends MyChessBoard {
 
     // reset the game & board
     this.game.reset();
-    this.board.setPosition(this.game.fen());
+    // Make sure the board is loaded
+    if (this.board) {
+      this.board.setPosition(this.game.fen());
+    }
 
     // hide the played moves container
     this.hidePlayedMoves();
@@ -2096,13 +2199,22 @@ class Practice extends MyChessBoard {
     _moveIdx = this.practice.moveIdx
   ) {
     //await this.waitForAnimationFinish();
-    await this.interruptPractice();
+    //await this.interruptPractice();
 
     // this function is running
     this.practice.isRunning = true;
     this.practice.isInterrupted = false;
 
     this.buttons.prevMove.disabled = _lineIdx == 0 && _moveIdx == 0;
+
+
+    // New queued way..
+    this.practice.lineIdx = _lineIdx;
+    this.practice.moveIdx = _moveIdx;
+    this.practice.lastQueuedLine = _lineIdx;
+    this.practice.lastQueuedMove = _moveIdx;
+
+
 
     // hide the hint (if showing)
     this.hideHint();
@@ -2254,7 +2366,9 @@ class Practice extends MyChessBoard {
             if (next.move) {
               //this.game.move(this.practice.lines[this.practice.lineIdx].move);
               this.game.move(next.move);
-              boardMoves.push(this.game.history({ verbose: true }).pop());
+
+              const last = this.game.history({ verbose: true }).pop();
+              boardMoves.push(last);
             }
           }
 
@@ -2289,7 +2403,10 @@ class Practice extends MyChessBoard {
 
               // pauseBoard
               // animate the last move
-              await this.animateMoves(_lineIdx, _moveIdx, [last]);
+              this.practice._currentAnimatePromise = this.animateMoves(_lineIdx, _moveIdx, [last]);
+              // wait for it
+              await this.practice._currentAnimatePromise;
+              this.practice._currentAnimatePromise = null;
             }
           } else {
             // update the board
@@ -2298,7 +2415,10 @@ class Practice extends MyChessBoard {
             }
 
             //await this.animateMoves(history);
-            await this.animateMoves(_lineIdx, _moveIdx, boardMoves);
+            this.practice._currentAnimatePromise = this.animateMoves(_lineIdx, _moveIdx, boardMoves);
+            // wait for it
+            await this.practice._currentAnimatePromise;
+            this.practice._currentAnimatePromise = null;
           }
 
           // update the board (in case of interruption)
@@ -2372,6 +2492,8 @@ class Practice extends MyChessBoard {
 
     // remember the current move number
     this.practice.moveNr = this.game.history().length + 1;
+
+    console.log('Practice - runPractice set moveNr', this.practice.moveNr, this.game.history())
 
     // if the user needs to make a move
     if (!this.isAutoMove()) {
@@ -2600,7 +2722,7 @@ class Practice extends MyChessBoard {
     }
 
     // get the next moves
-    //var [moves, multiple, playable] = this.getMoves();
+    //let [moves, multiple, playable] = this.getMoves();
     var next = this.getMoves();
 
     // if any moves to play
@@ -2612,6 +2734,13 @@ class Practice extends MyChessBoard {
 
       // animate the move
       await this.board.movePiece(last.from, last.to, true);
+
+      
+      
+      // update the pgn history
+      this.addMoveToHistory(last);
+
+
 
       // update the board (in case of castling)
       this.board.setPosition(this.game.fen());
@@ -2803,7 +2932,23 @@ class Practice extends MyChessBoard {
     }
   }
 
-  interruptPractice(timeout = 2000) {
+  async interruptPractice(timeout = 2000) {
+
+    return new Promise(function (resolve, reject) {
+        resolve(true);
+      });
+
+    console.log('interruptPractice:', (this.this.practice._currentPracticePromise ? 'still running' : 'alreay stopped'))
+
+    if (!this.this.practice._currentPracticePromise) return true;
+
+    this.practice._interruptPractice = true;
+
+    console.log('Setting _interruptPractice = true');
+
+    return await this.this.practice._currentPracticePromise;
+
+
     if (this.practice.isRunning == false) {
       return new Promise(function (resolve, reject) {
         resolve(true);
@@ -2867,6 +3012,7 @@ class Practice extends MyChessBoard {
 
     // reset stop animating boolean
     this.practice.stopAnimating = false;
+    this.practice._interruptPractice = false;
 
     // animate the moves 1 by 1 (except for the last move)
     for (var i = 0; i < moves.length; i++) {
@@ -2878,6 +3024,7 @@ class Practice extends MyChessBoard {
       );
 
       // if we need to stop animating
+      if (this.practice._interruptPractice) break;
       if (this.practice.stopAnimating || this.practice.isInterrupted) {
         break;
       }
@@ -3043,6 +3190,8 @@ class Practice extends MyChessBoard {
 
   // give a hint
   giveHint() {
+    // blur the button
+    this.buttons.giveHint.blur();
     // if this is the 1st hint
     if (this.hintCounter == 0) {
       // get the hint and show it
@@ -3344,6 +3493,8 @@ class Practice extends MyChessBoard {
     _lineIdx = this.practice.lineIdx,
     _moveIdx = this.practice.moveIdx
   ) {
+    // blur the button
+    this.buttons.prevMove.blur();
     // get the previous move values
     var [prev_lineIdx, prev_moveIdx, playableCount] = this.getPrevMove(
       this.practice.skip_lineIdx,
@@ -3398,8 +3549,10 @@ class Practice extends MyChessBoard {
       this.board.removeMarkers();
       // remove arrows
       this.board.removeArrows();
+      // Enqueue the practice run
+      this.enqueueRun(this.practice.lineIdx, this.practice.moveIdx);
       // run the previous practice
-      this.runPractice();
+      //this.runPractice();
     }
   }
 
@@ -3408,6 +3561,8 @@ class Practice extends MyChessBoard {
     _lineIdx = this.practice.skip_lineIdx,
     _moveIdx = this.practice.skip_moveIdx
   ) {
+    // blur the button
+    this.buttons.skipMove.blur();
     // if practice was paused
     if (this.practice.paused) {
       // continue practice
@@ -3415,6 +3570,28 @@ class Practice extends MyChessBoard {
 
       return;
     }
+
+
+    // Get the last queued line/move
+    const lastQueuedLine = this.practice.lastQueuedLine;
+    const lastQueuedMove = this.practice.lastQueuedMove;
+
+    // Get the next move values
+    var [nextLine, nextMove, playable] = this.getNextMove(
+      lastQueuedLine,
+      lastQueuedMove
+    );
+
+      // Enqueue the practice run
+      this.enqueueRun(nextLine, nextMove);
+
+    //
+    // Reduce count for counters ??
+    //
+    // In here or with runPractice?
+    // Maybe pass it here or keep track somehow..
+    //
+
 
     // remember the current line/move idx
     var curr_lineIdx = this.practice.skip_lineIdx;
@@ -3497,8 +3674,10 @@ class Practice extends MyChessBoard {
     this.board.removeMarkers();
     // remove arrows
     this.board.removeArrows();
+      // Enqueue the practice run
+      this.enqueueRun(this.practice.lineIdx, this.practice.moveIdx);
     // run the previous practice
-    this.runPractice();
+    //this.runPractice();
   }
 
   onAnalyseGame() {
@@ -3534,7 +3713,7 @@ class Practice extends MyChessBoard {
     for (var i = 0; i < count; i++) {
       var row = document.createElement("div");
       row.className =
-        "flex is-justify-content-space-between  is-align-items-center px-2 py-3" +
+        "is-flex is-justify-content-space-between is-align-items-center px-2 py-3" +
         (i + 1 == count
           ? ""
           : " border-b border-tacao-300/60 dark:border-slate-800");
@@ -3547,7 +3726,7 @@ class Practice extends MyChessBoard {
 
       cell = document.createElement("div");
       cell.className =
-        "hidden cursor-pointer px-2 py-1 is-size-7 font-semibold tc-sharp hover:bg-tacao-100 hover:dark:bg-slate-600 rounded-full border border-transparent hover:border-tacao-200 hover:dark:border-slate-800";
+        "is-hidden cursor-pointer px-2 py-1 is-size-7 font-semibold tc-sharp hover:bg-tacao-100 hover:dark:bg-slate-600 rounded-full border border-transparent hover:border-tacao-200 hover:dark:border-slate-800";
       cell.innerHTML = "";
 
       row.appendChild(cell);
@@ -3588,21 +3767,25 @@ class Practice extends MyChessBoard {
     if (line && line.length > 0) {
       this.playedMovesList.children[index].children[1].innerHTML = "show line";
       this.playedMovesList.children[index].children[1].classList.remove(
-        "hidden"
+        "is-hidden"
       );
 
       // add the click handler
       this.playedMovesList.children[index].children[1].addEventListener(
         "click",
         (event) => {
+
+          event.preventDefault();
+
           // add the variation
           var variation = this.addVariation(this.practice.moveNr, line);
+
           // update the pgn field
           this.updatePgnField();
           // if the practice is paused
           if (this.practice.paused) {
             // goto the move
-            this.gotoMove(this.practice.moveNr, variation);
+            //this.gotoMove(this.practice.moveNr, variation);
           }
         }
       );

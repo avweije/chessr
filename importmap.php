@@ -32,6 +32,10 @@ return [
         'path' => './assets/js/chess.js',
         'entrypoint' => true,
     ],
+    'pgn-field' => [
+        'path' => './assets/js/pgn-field.js',
+        'entrypoint' => true,
+    ],
     'chessboard' => [
         'path' => './assets/js/chessboard.js',
         'entrypoint' => true,

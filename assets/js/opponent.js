@@ -1,4 +1,5 @@
 import { Utils } from "utils";
+import { PgnField } from "pgn-field";
 
 class Opponent {
   // the elements
@@ -94,7 +95,30 @@ class Opponent {
   // the opponents
   opponents = [];
 
+  // the PgnField instance
+  pgnField = null;
+
   constructor() {
+    // initialise the pgn field
+    this.pgnField  = new PgnField({ 
+      container: document.getElementById("opponentMovesPgnField"), 
+      options: {
+        navigationEnabled: false, 
+        useVariations: true,
+        withLinks: true,
+        noLinkForLastMove: true,
+        emptyText: "Click on a move to see the follow up."
+      },
+      handlers: {
+        onGotoMove: (moveNr, variationIdx) => {
+          
+          console.log("Opponent.js - onGotoMove:", moveNr, variationIdx, this);
+
+          this.onGotoMove(moveNr, variationIdx);
+        }
+      }
+    });
+
     // get the elements
     this.tabButtons.download = document.getElementById("opponentDownloadRadio");
     this.tabButtons.analysis = document.getElementById("opponentAnalysisRadio");
@@ -426,6 +450,15 @@ class Opponent {
     // show the page loader
     Utils.showLoading();
 
+    //
+    // create and show skeleton here?
+    //
+    this.opponentContainer.innerHTML = `
+      <div class="skeleton-block skeleton-opponent-radio"></div>
+      <div class="skeleton-block skeleton-opponent-radio"></div>
+      <div class="skeleton-block skeleton-opponent-radio"></div>
+    `;
+
     fetch(url, {
       method: "GET",
     })
@@ -470,15 +503,12 @@ class Opponent {
 
   // get the currently selected opponent
   getSelectedOpponent() {
-    for (var i = 0; i < this.opponentContainer.children.length; i++) {
-      if (this.opponentContainer.children[i].children[0].checked) {
+    const selected = this.opponentContainer.querySelector('.boxed-radio input[type="radio"]:checked');
+    if (selected) {
         return {
-          id: this.opponentContainer.children[i].children[0].getAttribute(
-            "data-id"
-          ),
-          username: this.opponentContainer.children[i].children[0].value,
+          id: selected.getAttribute("data-id"),
+          username: selected.value,
         };
-      }
     }
 
     return { id: "", username: "" };
@@ -908,6 +938,10 @@ class Opponent {
 
     // reset the line
     this.opponentData.line = [];
+    
+    //pgn-field
+    this.pgnField.reset();
+
     // load the suggestions
     this.loadMoveSuggestions();
     // reload the opponent moves
@@ -1330,9 +1364,7 @@ class Opponent {
   // load the opponents container
   loadOpponents() {
     // remove all radio boxes
-    while (this.opponentContainer.firstChild) {
-      this.opponentContainer.removeChild(this.opponentContainer.lastChild);
-    }
+    this.opponentContainer.innerHTML = "";
 
     console.info("loadOpponents");
     console.info(this.opponents);
@@ -1651,8 +1683,7 @@ class Opponent {
     for (var i = 0; i < sugg.length; i++) {
       var row = document.createElement("div");
       row.className =
-        "flex is-justify-content-space-between  is-align-items-center py-2 px-3" +
-        (i > 0 ? " border-t border-tacao-300/60 dark:border-slate-900" : "");
+        "is-flex is-justify-content-space-between is-align-items-center py-2 px-3";
 
       var col1 = document.createElement("div");
       col1.className = "has-text-left mr-6";
@@ -1663,7 +1694,7 @@ class Opponent {
       pEco.innerHTML = sugg[i].eco ? sugg[i].eco.name : "";
 
       var pPgn = document.createElement("p");
-      pPgn.className = "is-size-6 p-0.5 cursor-pointer font-semibold tc-link";
+      pPgn.className = "is-size-6 p-0.5 cursor-pointer has-link-color";
       pPgn.title = "Jump to this line";
       pPgn.innerHTML = sugg[i].pgn;
       pPgn.addEventListener(
@@ -1686,7 +1717,7 @@ class Opponent {
 
       var btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "flex appearance-none";
+      btn.className = "button is-small";
       btn.addEventListener(
         "click",
         ((idx) => {
@@ -1698,7 +1729,7 @@ class Opponent {
 
       var icon = document.createElement("span");
       icon.className =
-        "text-2xl tc-link-shade";
+        "icon";
       icon.title = "Open in repertoire";
       icon.innerHTML = '<i class="fa-solid fa-up-right-from-square"></i>';
 
@@ -1719,6 +1750,10 @@ class Opponent {
 
     // add to the line
     this.opponentData.line.push(move);
+
+    // pgn-field
+    this.pgnField.addMoveToHistory(move);
+
     // reload the table
     this.loadOpponentMoves();
   }
@@ -1727,8 +1762,15 @@ class Opponent {
   loadOpponentMoves(fetchGameMoves = true) {
     console.log("loadOpponentMoves:", this.opponentData.line);
 
-    // update the header
-    this.updateOpponentPgn();
+    // update the move details
+    this.updateOpponentMoveDetails();
+
+    // toggle the goto first button
+    this.opponentMoves.first.disabled = this.opponentData.line.length == 0;
+
+    // reset to current line
+    this.pgnField.reset("", this.opponentData.line);
+    //this.pgnField.updatePgnField();
 
     console.log("afterUpdateOpp");
 
@@ -1810,7 +1852,7 @@ class Opponent {
           ? "win"
           : "loss";
 
-      console.log(moves[i].total, winPct, lossPct, diff, rate);
+      //console.log(moves[i].total, winPct, lossPct, diff, rate);
 
       // create the footer part
       var ftr = document.createElement("div");
@@ -1860,18 +1902,26 @@ class Opponent {
 
     // reset the line
     this.opponentData.line = [];
+
+    // pgn-field
+    this.pgnField.reset();
+
     // reload the table
     this.loadOpponentMoves();
   }
 
   // go back to a certain move in the line
-  onGotoMove(idx) {
-    console.log("onGotoMove", idx);
+  onGotoMove(moveNr) {
+    console.log("onGotoMove", moveNr);
 
     // reset the line to the index
-    var temp = this.opponentData.line.splice(idx + 1);
+    var temp = this.opponentData.line.splice(moveNr);
 
     console.log(temp, this.opponentData.line);
+
+    // pgn-field
+    //this.pgnField.gotoMove(idx);
+    this.pgnField.resetTo(moveNr);
 
     // reload the table
     this.loadOpponentMoves();
@@ -1990,42 +2040,10 @@ class Opponent {
     return pgn;
   }
 
-  // update the opponent PGN, with links to browse through the moves
-  updateOpponentPgn() {
-    console.log("updateOpponentPgn", this.opponentData.line);
+  // update the opponent move, wins, losses, ECO
+  updateOpponentMoveDetails() {
 
-    // get the PGN
-    this.opponentMoves.pgn.innerHTML =
-      this.opponentData.line == 0
-        ? "Click on a move to see the follow-up."
-        : "";
-    for (var i = 0; i < this.opponentData.line.length; i++) {
-      if (i % 2 == 0) {
-        var sp = document.createElement("span");
-        sp.className = "opponent-pgn-text";
-        sp.innerHTML = i / 2 + 1 + ".";
-
-        this.opponentMoves.pgn.appendChild(sp);
-      }
-
-      var sp = document.createElement("span");
-      sp.className = "opponent-pgn-move";
-      sp.innerHTML = this.opponentData.line[i];
-
-      sp.addEventListener(
-        "click",
-        ((idx) => {
-          return function (event) {
-            this.onGotoMove(idx);
-          };
-        })(i).bind(this)
-      );
-
-      this.opponentMoves.pgn.appendChild(sp);
-    }
-
-    // toggle the goto first button
-    this.opponentMoves.first.disabled = this.opponentData.line.length == 0;
+    console.log("updateOpponentMoveDetails", this.opponentData.line);
 
     // get the current line
     var current = this.getCurrent();
@@ -2041,8 +2059,6 @@ class Opponent {
         losses = losses + moves[i].losses;
       }
     }
-
-    console.log("total", wins, losses, current, moves);
 
     // set the ECO field
     this.opponentMoves.eco.innerHTML =

@@ -2,7 +2,8 @@
 
 {% block body %}
 
-	<div class="w-full">
+<div class="is-flex is-justify-content-space-around p-4">
+	<div class="box">
 		<div class="is-flex">
 			<div class="mr-2">
 				<label for="maxLinesInput" class="py-1 is-size-6 has-text-weight-medium text-gray-900 dark:text-gray-200">Max. lines:</label>
@@ -44,6 +45,7 @@
 			<span id="elapsedTimeField" class="p-1 has-text-weight-medium text-gray-900 dark:text-gray-200">0s</span>
 		</div>
 	</div>
+</div>
 {% endblock %}
 {% block javascripts %}
 {{ parent() }}
