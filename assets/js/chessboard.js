@@ -1,25 +1,14 @@
-//import { Chess } from "chess.js/dist/esm/chess.js";
 import { MyChess } from "chess";
-import { Chessboard, FEN } from "../cm-chessboard/src/Chessboard.js";
-import {
-  COLOR,
-  INPUT_EVENT_TYPE,
-} from "../cm-chessboard/src/view/ChessboardView.js";
-import {
-  MARKER_TYPE,
-  Markers,
-} from "../cm-chessboard/src/extensions/markers/Markers.js";
-import { PromotionDialog } from "../cm-chessboard/src/extensions/promotion-dialog/PromotionDialog.js";
-import {
-  ARROW_TYPE,
-  Arrows,
-} from "../cm-chessboard/src/extensions/arrows/Arrows.js";
+import { Chessboard, FEN } from "../vendor/cm-chessboard/src/Chessboard.js";
+import { COLOR, INPUT_EVENT_TYPE } from "../vendor/cm-chessboard/src/view/ChessboardView.js";
+import { MARKER_TYPE, Markers } from "../vendor/cm-chessboard/src/extensions/markers/Markers.js";
+import { PromotionDialog } from "../vendor/cm-chessboard/src/extensions/promotion-dialog/PromotionDialog.js";
 import { ThickerArrows } from "./ThickerArrows.js";
 import { PgnField } from "pgn-field";
 
 import "../styles/chessboard.css";
-import "../cm-chessboard/assets/extensions/promotion-dialog/promotion-dialog.css";
-import "../cm-chessboard/assets/extensions/arrows/arrows.css";
+import "../vendor/cm-chessboard/assets/extensions/promotion-dialog/promotion-dialog.css";
+import "../vendor/cm-chessboard/assets/extensions/arrows/arrows.css";
 
 export const CUSTOM_MARKER_TYPE = {
   checkmark: {
@@ -76,9 +65,11 @@ export const PIECE_TILESIZE = {
   },
 };
 
-/*
-MyChessBoard Class - Integrates Chess.js with cm-chessboard, validates moves, adds markers, etc.
-*/
+/**
+ * MyChessBoard integrates Chess.js with cm-chessboard.
+ * It validates moves, adds markers, keeps track of history and variations.
+ * You can navigate through moves. The game object always holds the current line or variation.
+ */
 export class MyChessBoard {
   board = null;
   game = null;
@@ -113,37 +104,6 @@ export class MyChessBoard {
 
   history = [];
   variations = [];
-
-  /*
-
-  - keep track of complete history with variations
-  - option to move back and forward through game
-
-  - keep track of main line (user can just make moves playing around)
-  - main line should be kept in tact
-  - and you should be able to have a getMoves / history function for the main line ??
-
-  - options: 
-  - + useVariations = on new move, add variation or overwrite existing line
-  - + keepMainLine = ? see above, probably the same setting?
-
-  - newGame()
-  - reset(?fen)
-  - load(fen)
-  - goBack(), goForward(), goFirst(), goLast()
-  - makeMoves(moves)
-  - jumpToMove(moveNr, variationNr)
-  - getVariations()
-  - getMainLine() ?
-
-  - getPgn(withVariations = true)
-  - getPgnLinks(withVariations = true)
-
-  - currentFen()
-  - currentLine() ?
-  - currentVariation() ?
-
-  */
 
   // the custom markers
   markers = {
@@ -196,6 +156,13 @@ export class MyChessBoard {
   - color: the initial orientation of the chessboard.
   */
 
+  /**
+   * Creates the cm-chessboard instance instance.
+   * 
+   * @param {*} boardElement  - The container element that holds the chess board.
+   * @param {*} boardSettings - The cm-chessboard board settings.
+   * @param {*} settings      - Additional settings? Why separate --> TODO: checkout
+   */
   init(boardElement, boardSettings = {}, settings = {}) {
     // the default board settings
     var _boardSettings = {
@@ -235,6 +202,12 @@ export class MyChessBoard {
     this.boardSettings = this.deepMerge(this.boardSettings, settings);
   }
 
+  /**
+   * Updates one of the board settings.
+   * 
+   * @param {*} setting - The board setting.
+   * @param {*} value   - The updated value.
+   */
   setOption(setting, value) {
     try {
       // get the (nested) setting keys
@@ -250,10 +223,16 @@ export class MyChessBoard {
     }
   }
 
+  /**
+   * Updates the PgnField. Pass-through for PgnField.
+   */
   updatePgnField() {
     this.pgnField.updatePgnField();
   }
 
+  /**
+   * Deep merges 2 objects.
+   */
   deepMerge(obj1, obj2) {
     for (let key in obj2) {
       if (obj2.hasOwnProperty(key)) {
@@ -267,7 +246,11 @@ export class MyChessBoard {
     return obj1;
   }
 
-  // remove all markers, optionally excluding the premove marker
+  /**
+   * Removes all markers from the board.
+   * 
+   * @param {*} keepPremove - Keep premove markers.
+   */
   removeMarkers(keepPremove = true) {
     this.board.removeMarkers(MARKER_TYPE.bevel);
     this.board.removeMarkers(MARKER_TYPE.circle);
@@ -290,7 +273,9 @@ export class MyChessBoard {
   Public functions.
   */
 
-  // enable move input
+  /**
+   * Enable move input on the board.
+   */
   enableMoveInput() {
     try {
       this.board.enableMoveInput(this.moveInputHandler.bind(this));
@@ -299,7 +284,9 @@ export class MyChessBoard {
     }
   }
 
-  // disable move input
+  /**
+   * Disable move input on the board.
+   */
   disableMoveInput() {
     try {
       this.board.disableMoveInput();
@@ -308,7 +295,12 @@ export class MyChessBoard {
     }
   }
 
-  // get the correct FEN notation (en passant rule not included if not actually possible, should always be included if pawn moved 2 squares)
+  /**
+   * Returns the current FEN string with en-passant rule included, even if there is no pawn that can take en-passant.
+   * Officially, this is how it's supposed to be, but the game component only adds it if capture is possible.
+   * 
+   * @returns {string} - The FEN string with en-passant rule included.
+   */
   getFen() {
     // the en passant notation
     var enPassant = "-";
@@ -332,13 +324,16 @@ export class MyChessBoard {
     return fenParts.join(" ");
   }
 
-  //
-  async resetToPosition(
-    initialFen,
-    moves,
-    resetMoves = false,
-    updateBoard = true
-  ) {
+  /**
+   * Resets the position to the initial FEN and moves given.
+   * 
+   * @param {string} initialFen - The initial starting position.
+   * @param {array} moves       - The moves to make after resetting.
+   * @param {bool} resetMoves   - Reset all the moves.
+   * @param {bool} updateBoard  - Update the board once done.
+   * @returns 
+   */
+  async resetToPosition(initialFen, moves, resetMoves = false, updateBoard = true) {
 
     console.log('Chessboard.js - resetToPosition', moves, resetMoves, updateBoard);
 
@@ -411,20 +406,23 @@ export class MyChessBoard {
     return newMoves;
   }
 
-  // make a move
+  /**
+   * Make a move on the board.
+   * 
+   * @param {move} move - The move to make. Can be a simple test 'e4' or a move object from the game component.
+   */
   makeMove(move) {
     try {
+
+      console.log('Chessboard.js - makeMove', move);
+
       // make the move
       this.game.move(move);
       // set the new position
       this.board.setPosition(this.game.fen());
 
-      // add the move to our history with variations
-      //this.pgnField.addMoveToHistory(this.game.history({ verbose: true }).pop());
-
-      // in case of clicking back into a line and then clicking a different move (repertoire)
       // we need to reset to the current history
-      this.pgnField.reset('', this.game.history({ verbose: true }));
+      this.pgnField.resetToCurrent('', this.game.history({ verbose: true }));
 
       // process the move
       this.afterMakeMove();
@@ -435,7 +433,11 @@ export class MyChessBoard {
     }
   }
 
-  // jump to a certain position
+  /**
+   * Jumpt to a move in the current line or variation.
+   * 
+   * @param {int} index - The move index to jump to. TODO: need to add variation? or not..
+   */
   jumpToMove(index) {
     try {
 
@@ -473,9 +475,10 @@ export class MyChessBoard {
   }
 
   /**
-   * history + variations
+   * Starts a new game. Resets the game component, the history and variations.
+   * @param {string} fen  - The initial starting position.
+   * @param {array} moves - The moves to make after resetting.
    */
-
   newGame(fen = "", moves = []) {
     // remember the initial FEN position
     this.initialFen = fen;
@@ -490,42 +493,51 @@ export class MyChessBoard {
     this.pgnField.reset();
   }
 
+  /**
+   * Reset to the current position in the game component.
+   * 
+   * @param {string} fen - The initial starting position
+   */
   resetToCurrent(fen = "") {
     this.initialFen = fen;
 
     console.log('Chessboard.js - resetToCurrent', fen);
     
-    //
-    // maybe pass moves here?? to make sure its synchronized ??
-    //
-
-    //this.history = this.game.history({ verbose: true });
-
     // reset the pgn field to this the current history
     this.pgnField.resetToCurrent(fen, this.game.history({ verbose: true }));
   }
 
-  gameMove(move) {
-    //
-    this.game.move(move);
-    //
-    this.pgnField.addMoveToHistory(move);
-  }
-
-  gameUndo() {
+  /**
+   * Undoes the last move in the game component and PgnField and updates the board.
+   */
+  undoLastMove() {
     // undo the move
     this.game.undo();
     // update the board
     this.board.setPosition(this.game.fen());
-
-    // 
+    // keep the PgnField in sync
     this.pgnField.removeLast();
   }
 
+  /**
+   * Adds a variation at the specified move number. Pass-through for PgnField.
+   * @param {int} moveNr  - The move number at which to add the variation.
+   * @param {array} moves - The moves for the variation.
+   * @returns 
+   */
   addVariation(moveNr, moves) {
     return this.pgnField.addVariation(moveNr, moves);
   }
 
+  /**
+   * Navigates to a move inside the main line or inside a variation.
+   * 
+   * @param {int} moveNr       - The move number.
+   * @param {int} variationIdx - The variation index.
+   * @param {array} moves      - The moves needed for this line/variation.
+   * 
+   * @returns {bool}
+   */
   gotoMove(moveNr, variationIdx = -1, moves = []) {
 
     //
@@ -547,79 +559,111 @@ export class MyChessBoard {
     return true;
   }
 
-  // functions to pass through to PgnField
+  /**
+   * Returns true if navigation is currently on the 1st move. Pass-through for PgnField.
+   * 
+   * @returns {bool}
+   */
   isFirst() {
     return this.pgnField.isFirst();
   }
 
+  /**
+   * Returns true if navigation is currently on the last move in the current line or variation.
+   * Pass-through for PgnField.
+   * 
+   * @returns {bool}
+   */
   isLast() {
     return this.pgnField.isLast();
   }
 
+   /**
+   * Navigates to the 1st move in the current line or variation. Pass-through for PgnField.
+   * 
+   * @returns {bool}
+   */
   gotoFirst() {
     console.log('Chessboard.js - gotoFirst', this.pgnField);
 
     this.pgnField.gotoFirst()
   }
 
+   /**
+   * Navigates to the last move in the current line or variation. Pass-through for PgnField.
+   * 
+   * @returns {bool}
+   */
   gotoLast() {
     this.pgnField.gotoLast();
   }
 
+   /**
+   * Navigates to the previous move in the current line or variation. Pass-through for PgnField.
+   * 
+   * @returns {bool}
+   */
   gotoPrevious() {
     this.pgnField.gotoPrevious();
   }
 
+   /**
+   * Navigates to the next move in the current line or variation. Pass-through for PgnField.
+   * 
+   * @returns {bool}
+   */
   gotoNext() {
     this.pgnField.gotoNext();
   }
 
+  /**
+   * Adds a move to the history. Pass-through for PgnField.
+   * 
+   * @param {move} move 
+   * @returns 
+   */
   addMoveToHistory(move) {
     return this.pgnField.addMoveToHistory(move);
   }
 
-  // set the PgnField container
+  /**
+   * Sets the container for the PgnField. The PGN text or links will be shown inside this container.
+   * Pass-through for PgnField.
+   * 
+   * @param {*} element 
+   */
   setPgnField(element) {
-    //this.pgnField = element;
-
     // update the pgn field container
     this.pgnField.setContainer(element);
-
   }
 
+  /**
+   * Sets one or several PgnField options at runtime. Pass-through for PgnField.
+   * 
+   * @param {string} option - The name of the option to change.
+   * @param {*} value       - The new value.
+   */
+  setPgnOptions(options) {
+    this.pgnField.setOptions(options);
+  }
+
+  /**
+   * Toggles using links or text for the PGN.
+   * 
+   * @param {bool} toggle 
+   */
   setPgnWithLinks(toggle = true) {
-    this.boardSettings.pgn.withLinks = toggle;
-
-    //
+    // toggle the use of links
     this.pgnField.setPgnWithLinks(toggle);
-
     // update the pgn field
     this.updatePgnField();
   }
 
-  getHistoryMove(moveNr) {
-    var moves = [];
-
-    // add the main line move
-    if (this.history.length >= moveNr) {
-      moves.push(this.history[moveNr]);
-    }
-
-    // add the variations moves
-    for (var i = 0; i < this.variations.length; í++) {
-      if (
-        this.variations[i].moveNr <= moveNr &&
-        this.variations[i].moveNr + this.variations[i].moves.length >= moveNr
-      ) {
-        moves.push(
-          this.variations[i].moves[moveNr - this.variations[i].moveNr]
-        );
-      }
-    }
-
-    return moves;
-  }
-
+  /**
+   * Updates the board status. Checks to see if we need to make a premove.
+   * 
+   * @param {BOARD_STATUS} status 
+   */
   // update the board status
   setStatus(status) {
     this.status = status;
@@ -663,13 +707,15 @@ export class MyChessBoard {
   }
   
 
-  /*
-  Public event handlers, override in extended class.
-  - onValidateMove: called when a legal move is being made, return false to cancel the move
-  - afterMove: called after a legal move was made
-  - afterIllegalMove: called after an illegal move was made
-  - afterGotoMove: called after one of these functions is called: gotoFirst, gotoLast, gotoNext, gotoPrevious, gotoMove
-  */
+  /**
+   * The following functions are callbacks, to be overriden in extended classes.
+   * 
+   * onValidateMove   - Called when a legal move is being made, return false to cancel the move.
+   * afterMove        - Called after a legal move was made.
+   * afterIllegalMove - Called after an illegal move was made.
+   * afterGotoMove    - Called after navigation: gotoFirst, gotoLast, gotoNext, gotoPrevious, gotoMove.
+   */
+
   onValidateMove(move) {
     return true;
   }
@@ -680,8 +726,15 @@ export class MyChessBoard {
 
   afterGotoMove(moveNr, variationIdx) { }
 
-  /*
-  Private event handlers.
+
+  /**
+   * Board event handlers. These are the events from cm-chessboard that we need to capture.
+   * 
+   * moveInputHandler
+   * moveInputStarted
+   * validateMoveInput
+   * moveInputCancelled
+   * moveInputFinished
    */
 
   moveInputHandler(event) {
@@ -877,6 +930,14 @@ export class MyChessBoard {
     }
   }
 
+
+
+  /**
+   * Called after a move was made or after we navigated to another move.
+   * Adds a last move marker for the move that was made.
+   * 
+   * @param {bool} removeMarkers - Optionally remove the current board markers.
+   */
   // called after a move was made
   afterMakeMove(removeMarkers = true) {
     // remove the legal move markers

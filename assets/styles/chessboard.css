@@ -1,6 +1,19 @@
-@import url("../cm-chessboard/assets/chessboard.css");
+@import url("../vendor/cm-chessboard/assets/chessboard.css");
 /* @import "cm-chessboard/assets/extensions/markers/markers.css"; */
 
 svg.cm-chessboard {
   overflow: visible;
+}
+
+.board-left-container {
+  width: 45vw;
+  height: 45vw;
+  max-width: 74vh;
+  max-height: 74vh;
+}
+
+.board-right-container {
+  width: 45vw;
+  min-width: min-content;
+  max-width: 74vh;
 }

@@ -1,5 +1,4 @@
 import { Utils } from "utils";
-import { Modal } from "modal";
 import { UCI } from "uci";
 
 class Analyse {
@@ -120,58 +119,32 @@ class Analyse {
 
     this.startButton.addEventListener("click", this.analyseGames.bind(this));
 
-    /*
-    // get the modal elements
-    this.analyseDialog.modal = document.getElementById("analyseModal");
-    this.analyseDialog.fieldsContainer =
-      document.getElementById("analyseModalFields");
-    this.analyseDialog.errorContainer =
-      document.getElementById("analyseModalError");
-
-    var fields = this.analyseDialog.fieldsContainer.getElementsByTagName("p");
-
-    this.analyseDialog.statusField = fields[0];
-    this.analyseDialog.gameField = fields[1];
-    this.analyseDialog.periodField = fields[2];
-    this.analyseDialog.mistakesField = fields[3];
-    this.analyseDialog.elapsedTimeField = fields[4];
-
-    fields = this.analyseDialog.errorContainer.getElementsByTagName("p");
-
-    this.analyseDialog.errorField = fields[0];
-
-    this.analyseDialog.stopButton = document.getElementById(
-      "analyseModalStopButton"
-    );
-    this.analyseDialog.closeButton = document.getElementById(
-      "analyseModalCloseButton"
-    );
-
-    // register the modal
-    Modal.register(
-      this.analyseDialog.modal,
-      [
-        {
-          element: this.analyseDialog.closeButton,
-          action: "close",
-        },
-        {
-          element: this.analyseDialog.stopButton,
-          action: "close",
-        },
-      ],
-      this.onCloseDialog.bind(this)
-    );
-    */
-
     this.initAnalyseModal();
 
     // get settings
     this.getSettings();
   }
 
+  getElements() {
+    // Get the data-elements for reference
+    this.elements = [];
+    document.querySelectorAll("[data-element]").forEach(el => {
+      if (el.dataset.element !== "yes") return;
+      this.elements[el.id] = el;
+    });
+
+    // get the elements
+    this.tabs.buttons = document.getElementById("settingsTabButtons");
+    this.tabs.account = document.getElementById("settingsTabAccount");
+    this.tabs.board = document.getElementById("settingsTabBoard");
+    this.tabs.engine = document.getElementById("settingsTabEngine");
+    this.tabs.practice = document.getElementById("settingsTabPractice");
+
+    console.log('getElements', this.elements);
+  }
+
   initAnalyseModal() {
-    // --- ANALYSE MODAL ---
+    // Analyse Modal
     const modal = document.getElementById("analyseModal");
     const analyseModalBkgd = modal.getElementsByClassName("modal-background")[0];
     const fieldsContainer = document.getElementById("analyseModalFields");
@@ -190,14 +163,12 @@ class Analyse {
     const stopButton = document.getElementById("analyseModalStopButton");
     const closeButton = document.getElementById("analyseModalCloseButton");
 
-    // --- Helper functions to show/hide modal ---
     const showModal = () => modal.classList.add("is-active");
     const closeModal = () => {
       modal.classList.remove("is-active");
       this.onCloseDialog(); // call the same close handler
     };
 
-    // --- Attach handlers ---
     analyseModalBkgd.addEventListener("click", closeModal);
     closeButton.addEventListener("click", closeModal);
     stopButton.addEventListener("click", closeModal);
@@ -226,7 +197,7 @@ class Analyse {
   getSettings() {
     console.log("getSettings:");
 
-    var url = "/api/download/settings";
+    const url = "/api/download/settings";
 
     // show the page loader
     Utils.showLoading();
@@ -320,7 +291,7 @@ class Analyse {
 
   // get the selected types array
   getSelectedTypes() {
-    var types = [];
+    const types = [];
     if (this.typeCheckbox.daily.checked) {
       types.push("daily");
     }
@@ -345,7 +316,7 @@ class Analyse {
     console.log("inProgress: " + this.analyseDialog.inProgress);
 
     // get the period
-    var period = {
+    const period = {
       recent: this.periodCheckbox.recent.checked,
       older: this.periodCheckbox.older.checked,
     };
@@ -386,7 +357,7 @@ class Analyse {
 
     // update the elapsed time
     this.analyseDialog.intervalId = setInterval(() => {
-      var seconds =
+      const seconds =
         (new Date().getTime() - this.analyseDialog.startTime) / 1000;
 
       this.analyseDialog.elapsedTimeField.innerHTML = this.getDuration(seconds);
@@ -410,7 +381,7 @@ class Analyse {
       this.analyseDialog.fieldsContainer.classList.remove("is-hidden");
 
       // set the mistakes text
-      var mistakes =
+      let mistakes =
         this.analyseDialog.totals.inaccuracies > 0
           ? this.analyseDialog.totals.inaccuracies +
           " " +
@@ -436,7 +407,7 @@ class Analyse {
           : "";
 
       if (this.analyseDialog.processed > 0) {
-        var games =
+        const games =
           this.analyseDialog.processed > 0
             ? this.analyseDialog.processed +
             " game" +
@@ -526,9 +497,9 @@ class Analyse {
       "</span>";
     this.analyseDialog.gameField.innerHTML = "";
 
-    var url = "/api/analyse/download";
+    const url = "/api/analyse/download";
 
-    var data = {
+    const data = {
       site: this.siteRadio.chesscom.checked ? "Chess.com" : "Lichess",
       username: this.siteUsername.value,
       period: {
@@ -620,7 +591,7 @@ class Analyse {
   }
 
   engineStart() {
-    
+
     console.log("engine start", this.uci);
 
     if (this.uci == null) {
@@ -672,7 +643,7 @@ class Analyse {
   }
 
   engineNextGame() {
-    
+
     console.log("XX-engineNextGame:", this.currentGame, this.games.length);
 
     // if we've analysed all games
@@ -684,12 +655,12 @@ class Analyse {
     }
 
     //
-    var game = this.games[this.currentGame];
+    const game = this.games[this.currentGame];
 
     console.log(game);
 
     // get the color
-    var color = game.color.charAt(0).toUpperCase() + game.color.slice(1);
+    const color = game.color.charAt(0).toUpperCase() + game.color.slice(1);
 
     //this.analyseDialog.statusField.innerHTML =
     //'Evaluating with <span class="has-text-weight-medium">Stockfish</span> (0%)';
@@ -715,18 +686,17 @@ class Analyse {
       return false;
     }
 
-    var game = this.games[this.currentGame];
+    const game = this.games[this.currentGame];
 
-    console.info("Game:",this.currentGame, this.currentMove, game.moves.length, game.moves[this.currentMove]);
+    console.info("Game:", this.currentGame, this.currentMove, game.moves.length, game.moves[this.currentMove]);
 
     while (this.currentMove < game.moves.length) {
 
       const needsEngine = !(game.moves[this.currentMove].bestmoves?.length);
 
-      if (needsEngine && !game.moves[this.currentMove].ignore)
-      {
+      if (needsEngine && !game.moves[this.currentMove].ignore) {
         // get the line moves
-        var moves = game.moves[this.currentMove].line.uci.join(" ");
+        let moves = game.moves[this.currentMove].line.uci.join(" ");
         // add the current move
         moves = moves + " " + game.moves[this.currentMove].uci;
 
@@ -763,9 +733,9 @@ class Analyse {
 
     console.log("XX- calling API to evaluate, should have all engine evals here.. ?");
 
-    var url = "/api/analyse/evaluate";
+    const url = "/api/analyse/evaluate";
 
-    var data = {
+    const data = {
       game: game,
       site: this.siteRadio.chesscom.checked ? "Chess.com" : "Lichess",
       username: this.siteUsername.value,
@@ -833,22 +803,22 @@ class Analyse {
 
     console.log("XX-onEngineInfo:");
 
-    var game = this.games[this.currentGame];
-    var turn = this.currentMove % 2 == 0 ? "w" : "b";
+    const game = this.games[this.currentGame];
+    const turn = this.currentMove % 2 == 0 ? "w" : "b";
 
-    var move = game.moves[this.currentMove];
+    const move = game.moves[this.currentMove];
 
     if (move.bestmoves == null) {
       move.bestmoves = [null, null, null];
     }
 
     // we need to invert the score if it's the opposite color move
-    var invert =
+    const invert =
       (game.color == "white" && turn == "b") ||
       (game.color == "black" && turn == "w");
-    var cp =
+    const cp =
       info.score.cp !== null && invert ? info.score.cp * -1 : info.score.cp;
-    var mate =
+    const mate =
       info.score.mate !== null && invert
         ? info.score.mate * -1
         : info.score.mate;
@@ -866,15 +836,13 @@ class Analyse {
   onEngineBestMove(bestMove) {
     console.info("XX-onEngineBestMove", bestMove);
 
-    var game = this.games[this.currentGame];
+    const game = this.games[this.currentGame];
 
     console.info(game.moves[this.currentMove]);
 
     // remove null evals (in case of multipv)
     for (
-      var i = game.moves[this.currentMove].bestmoves.length - 1;
-      i >= 0;
-      i--
+      let i = game.moves[this.currentMove].bestmoves.length - 1; i >= 0; i--
     ) {
       if (game.moves[this.currentMove].bestmoves[i] == null) {
         game.moves[this.currentMove].bestmoves.splice(i, 1);
@@ -888,9 +856,9 @@ class Analyse {
 
   // get a printable duration for a number of seconds (2h 14m 32s)
   getDuration(seconds) {
-    var h = Math.floor(seconds / 3600);
-    var m = Math.floor((seconds - h * 3600) / 60);
-    var s = Math.floor(seconds - h * 3600 - m * 60);
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds - h * 3600) / 60);
+    const s = Math.floor(seconds - h * 3600 - m * 60);
 
     return (h > 0 ? h + "h " : "") + (h > 0 || m > 0 ? m + "m " : "") + s + "s";
   }
@@ -898,5 +866,5 @@ class Analyse {
 
 // initialise the Practice object once the page is loaded
 document.addEventListener("DOMContentLoaded", (event) => {
-  var analyse = new Analyse();
+  const analyse = new Analyse();
 });

@@ -20,10 +20,6 @@ return [
         'path' => './assets/js/utils.js',
         'entrypoint' => true,
     ],
-    'modal' => [
-        'path' => './assets/js/modal.js',
-        'entrypoint' => true,
-    ],
     'uci' => [
         'path' => './assets/js/uci.js',
         'entrypoint' => true,
@@ -42,6 +38,10 @@ return [
     ],
     'ThickerArrows' => [
         'path' => './assets/js/ThickerArrows.js',
+        'entrypoint' => true,
+    ],
+    'balloons' => [
+        'path' => './assets/vendor/balloons/balloons.js',
         'entrypoint' => true,
     ],
 ];

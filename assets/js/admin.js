@@ -1,5 +1,4 @@
 import { Utils } from "utils";
-import { Modal } from "modal";
 
 class Admin {
   // the elements
@@ -36,6 +35,24 @@ class Admin {
       "click",
       this.onStartStop.bind(this)
     );
+  }
+
+  getElements() {
+    // Get the data-elements for reference
+    this.elements = [];
+    document.querySelectorAll("[data-element]").forEach(el => {
+      if (el.dataset.element !== "yes") return;
+      this.elements[el.id] = el;
+    });
+
+    // get the elements
+    this.tabs.buttons = document.getElementById("settingsTabButtons");
+    this.tabs.account = document.getElementById("settingsTabAccount");
+    this.tabs.board = document.getElementById("settingsTabBoard");
+    this.tabs.engine = document.getElementById("settingsTabEngine");
+    this.tabs.practice = document.getElementById("settingsTabPractice");
+
+    console.log('getElements', this.elements);
   }
 
   getSelectedImportType() {
@@ -94,9 +111,9 @@ class Admin {
   nextImport() {
     console.log("nextImport:");
 
-    var url = "./admin/evaluations/import";
+    const url = "./admin/evaluations/import";
 
-    var data = {
+    const data = {
       type: this.getSelectedImportType(),
       maxLines: this.maxLinesInput.value,
       batchSize: this.batchSizeInput.value,
@@ -134,11 +151,11 @@ class Admin {
     console.log("onImportDone:");
     console.log(data);
 
-    var averageLoss = 0;
+    let averageLoss = 0;
 
     // update totals
     if (data !== null) {
-      var seconds = (new Date().getTime() - this.startTime) / 1000;
+      const seconds = (new Date().getTime() - this.startTime) / 1000;
 
       // for move statistics - if processed = 0, the file has been read (manual rotate to the next in AdminController)
       if (data.processed == 0) {
@@ -154,7 +171,7 @@ class Admin {
 
       // if not the 1st call
       if (this.processed > data.processed) {
-        var secondsLatest =
+        const secondsLatest =
           (new Date().getTime() - this.startTimeLatest) / 1000;
         this.averageLatest =
           data.processed > 0
@@ -171,7 +188,7 @@ class Admin {
 
       this.linesImportedField.innerHTML =
         this.processed +
-        ' <sup class="font-normal">(' +
+        ' <sup>(' +
         data.percentageComplete +
         "%)</sup>";
 
@@ -207,12 +224,12 @@ class Admin {
 
   //
   setElapsedTime() {
-    var seconds = (new Date().getTime() - this.startTime) / 1000;
+    const seconds = (new Date().getTime() - this.startTime) / 1000;
 
     this.elapsedTimeField.innerHTML =
       this.getDuration(seconds) +
       (this.average > 0
-        ? ' <sup class="font-normal">(' +
+        ? ' <sup>(' +
           this.average +
           " p/s)" +
           (this.averageLatest > 0 ? " [" + this.averageLatest + " p/s]" : "") +
@@ -222,9 +239,9 @@ class Admin {
 
   // get a printable duration for a number of seconds (2h 14m 32s)
   getDuration(seconds) {
-    var h = Math.floor(seconds / 3600);
-    var m = Math.floor((seconds - h * 3600) / 60);
-    var s = Math.floor(seconds - h * 3600 - m * 60);
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds - h * 3600) / 60);
+    const s = Math.floor(seconds - h * 3600 - m * 60);
 
     return (h > 0 ? h + "h " : "") + (h > 0 || m > 0 ? m + "m " : "") + s + "s";
   }
@@ -232,5 +249,5 @@ class Admin {
 
 // initialise the Practice object once the page is loaded
 document.addEventListener("DOMContentLoaded", (event) => {
-  var admin = new Admin();
+  const admin = new Admin();
 });

@@ -7,11 +7,11 @@
 		<div class="is-flex">
 			<div class="mr-2">
 				<label for="maxLinesInput" class="py-1 is-size-6 has-text-weight-medium text-gray-900 dark:text-gray-200">Max. lines:</label>
-				<input id="maxLinesInput" type="number" value="5000" min="1000" max="10000" step="1000" class="is-medium-rounded border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600">
+				<input id="maxLinesInput" data-element="yes" type="number" value="5000" min="1000" max="10000" step="1000" class="is-medium-rounded border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600">
 			</div>
 			<div>
 				<label for="batchSizeInput" class="py-1 is-size-6 has-text-weight-medium text-gray-900 dark:text-gray-200">Batch size:</label>
-				<input id="batchSizeInput" type="number" value="100" min="10" max="5000" step="50" class="is-medium-rounded border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600">
+				<input id="batchSizeInput" data-element="yes" type="number" value="100" min="10" max="5000" step="50" class="is-medium-rounded border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600">
 			</div>
 		</div>
 
@@ -30,19 +30,19 @@
 		</div>
 
 		<div class="py-3">
-			<button type="button" id="importButton" class="button is-primary">
+			<button type="button" id="importButton" data-element="yes" class="button is-primary">
 				Start import
 			</button>
 		</div>
 
 		<div class="py-3">
 			<label class="py-1 is-size-6 has-text-weight-medium text-gray-900 dark:text-gray-200">Lines imported:</label>
-			<span id="linesImportedField" class="inline-block p-1 has-text-weight-medium text-gray-900 dark:text-gray-200">0</span>
+			<span id="linesImportedField" data-element="yes" class="inline-block p-1 has-text-weight-medium text-gray-900 dark:text-gray-200">0</span>
 		</div>
 
 		<div class="py-3">
 			<label class="py-1 is-size-6 has-text-weight-medium text-gray-900 dark:text-gray-200">Elapsed time:</label>
-			<span id="elapsedTimeField" class="p-1 has-text-weight-medium text-gray-900 dark:text-gray-200">0s</span>
+			<span id="elapsedTimeField" data-element="yes" class="p-1 has-text-weight-medium text-gray-900 dark:text-gray-200">0s</span>
 		</div>
 	</div>
 </div>
@@ -50,5 +50,5 @@
 {% block javascripts %}
 {{ parent() }}
 
-<script type="module" src="{{ asset('js/admin.js') }}">
-	{% endblock %}
+<script type="module" src="{{ asset('js/admin.js') }}"></script>
+{% endblock %}

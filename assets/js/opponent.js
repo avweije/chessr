@@ -104,9 +104,9 @@ class Opponent {
       container: document.getElementById("opponentMovesPgnField"), 
       options: {
         navigationEnabled: false, 
-        useVariations: true,
+        useVariations: false,
         withLinks: true,
-        noLinkForLastMove: true,
+        useTextForLastMove: true,
         emptyText: "Click on a move to see the follow up."
       },
       handlers: {
@@ -264,6 +264,24 @@ class Opponent {
     this.getOpponents();
   }
 
+  getElements() {
+    // Get the data-elements for reference
+    this.elements = [];
+    document.querySelectorAll("[data-element]").forEach(el => {
+      if (el.dataset.element !== "yes") return;
+      this.elements[el.id] = el;
+    });
+
+    // get the elements
+    this.tabs.buttons = document.getElementById("settingsTabButtons");
+    this.tabs.account = document.getElementById("settingsTabAccount");
+    this.tabs.board = document.getElementById("settingsTabBoard");
+    this.tabs.engine = document.getElementById("settingsTabEngine");
+    this.tabs.practice = document.getElementById("settingsTabPractice");
+
+    console.log('getElements', this.elements);
+  }
+  
   initModals() {
   // --- ANALYSE MODAL ---
   const analyseModal = document.getElementById("analyseModal");

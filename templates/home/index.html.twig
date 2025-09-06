@@ -7,38 +7,38 @@
 				{# if template.hasGames() #}
 				<div class="box boxed-card">
 					<h2 class="title is-5 mb-0 p-1">Your repertoire</h2>
-					<p class="p-1 mt-3">Work on your opening repertoire.</p>
-					<div class="is-flex is-flex-direction-column is-flex-is-flex-grow-1 is-justify-content-center is-align-items-flex-start is-gap-1 p-2">
-						<div class="skeleton-block skeleton-single-line"></div>
-						<p id="statsWhiteField" class="is-hidden has-text-faded">White:
-							<span class="has-text-weight-semibold">99 moves</span>
-						</p>
-						<div class="skeleton-block skeleton-single-line"></div>
-						<p id="statsBlackField" class="is-hidden has-text-faded">Black:
-							<span class="has-text-weight-semibold">99 moves</span>
-						</p>
+					<p class="p-1 mt-3">Keep building your repertoire or review your lines.</p>
+					<div class="is-flex is-flex-direction-column is-flex-grow-1 is-justify-content-center is-align-items-flex-start is-gap-half p-2">
+						<div class="skeleton-container is-flex is-gap-1">
+							<div class="skeleton-block skeleton-full"></div>
+							<p id="statsWhiteField" class="has-text-weight-semibold has-text-faded">White:</p>
+							<span class="has-text-weight-semibold">99</span>
+						</div>
+						<div class="skeleton-container is-flex is-gap-1">
+							<div class="skeleton-block skeleton-full"></div>
+							<p id="statsBlackField" class="has-text-weight-semibold has-text-faded">Black:</p>
+							<span class="has-text-weight-semibold">99</span>
+						</div>
 					</div>
-						<span class="boxed-card-arrow">
-							<i class="fa-solid fa-arrow-right-to-bracket"></i>
-						</span>
 				</div>
+
 				<div class="box boxed-card">
 					<h2 class="title is-5 mb-0 p-1">Practice</h2>
-					<p class="p-1 mt-3">Practice your moves to keep improving.</p>
-					<div class="is-flex is-flex-direction-column is-flex-is-flex-grow-1 is-justify-content-center is-align-items-flex-start is-gap-1 p-2">
-						<div class="skeleton-block skeleton-single-line"></div>
-						<p id="statsNewField" class="is-hidden has-text-faded">New:
-							<span class="has-text-weight-semibold">99 moves</span>
-						</p>
-						<div class="skeleton-block skeleton-single-line"></div>
-						<p id="statsRecommendedField" class="is-hidden has-text-faded">Recommended:
-							<span class="has-text-weight-semibold">99 moves</span>
-						</p>
+					<p class="p-1 mt-3">Practice your repertoire and review your analysis.</p>
+					<div class="is-flex is-flex-direction-column is-flex-grow-1 is-justify-content-center is-align-items-flex-start is-gap-half p-2">
+						<div class="skeleton-container is-flex is-gap-1">
+							<div class="skeleton-block skeleton-full"></div>
+							<p id="statsNewField" class="has-text-weight-semibold has-text-faded">New:</p>
+							<span class="has-text-weight-semibold">99</span>
+						</div>
+						<div class="skeleton-container is-flex is-gap-1">
+							<div class="skeleton-block skeleton-full"></div>
+							<p id="statsRecommendedField" class="has-text-weight-semibold has-text-faded">Recommended:</p>
+							<span class="has-text-weight-semibold">99</span>
+						</div>
 					</div>
-						<span class="boxed-card-arrow">
-							<i class="fa-solid fa-arrow-right-to-bracket"></i>
-						</span>
 				</div>
+
 				<div class="box boxed-card">
 					<h2 class="title is-5 mb-0 p-1">Analysis</h2>
 					<p class="p-1 mt-3">Analyse your games from
@@ -47,38 +47,31 @@
 						<span class="has-text-weight-semibold has-text-faded">Lichess</span>
 						for opening mistakes. You can then practice these moves and add them to your repertoire if you want.
 					</p>
-					<div class="is-flex is-flex-direction-column is-flex-is-flex-grow-1 is-justify-content-center is-align-items-flex-start is-gap-1 p-2">
-						<div class="skeleton-block skeleton-single-line"></div>
-						<p id="statsAnalysisField" class="is-hidden has-text-faded">Analysis:
+					<div class="is-flex is-flex-direction-column is-flex-grow-1 is-justify-content-center is-align-items-flex-start is-gap-half p-2">
+						<div class="skeleton-container is-flex is-gap-1">
+							<div class="skeleton-block skeleton-full"></div>
+							<p id="statsAnalysisField" class="has-text-weight-semibold has-text-faded">Analysis:</p>
 							<span class="has-text-weight-semibold">99 lines</span>
-						</p>
+						</div>
 					</div>
-						<span class="boxed-card-arrow">
-							<i class="fa-solid fa-arrow-right-to-bracket"></i>
-						</span>
 				</div>
-				{# if template.hasRepertoire() #}
-					<div class="box boxed-card">
-						<h2 class="title is-5 mb-0 p-1">The Roadmap</h2>
-						<p class="p-1 mt-3">Use the roadmap to get an overview of your opening repertoire and see your accuracy for each line and variation.</p>
-						<span class="boxed-card-arrow">
-							<i class="fa-solid fa-arrow-right-to-bracket"></i>
-						</span>
-					</div>
-				{# endif #}
+
+				<div class="box boxed-card">
+					<h2 class="title is-5 mb-0 p-1">The Roadmap</h2>
+					<p class="p-1 mt-3">Use the roadmap to get an overview of your opening repertoire and see your accuracy for each line and variation.</p>
+					<span class="boxed-card-arrow">
+						<i class="fa-solid fa-arrow-right-to-bracket"></i>
+					</span>
+				</div>
+
 				<div class="box boxed-card">
 					<h2 class="title is-5 mb-0 p-1">Opponents</h2>
 					<p class="p-1 mt-3">Download your opponent's games and analyse them against your opening repertoire. Find their most played moves and see their win percentages for different moves.</p>
-						<span class="boxed-card-arrow">
-							<i class="fa-solid fa-arrow-right-to-bracket"></i>
-						</span>
 				</div>
+
 				<div class="box boxed-card">
 					<h2 class="title is-5 mb-0 p-1">Settings</h2>
 					<p class="p-1 mt-3">Change the settings for the chess board, the piece animations and for analysing your games.</p>
-						<span class="boxed-card-arrow">
-							<i class="fa-solid fa-arrow-right-to-bracket"></i>
-						</span>
 				</div>
 			</div>
 		</div>
@@ -88,13 +81,11 @@
 {% block stylesheets %}
 	{{ parent() }}
 
-	<link rel="stylesheet" href="{{ asset('styles/chessboard.css') }}">
-	<link rel="stylesheet" href="{{ asset('markers/markers.css') }}">
 	<link rel="stylesheet" href="{{ asset('styles/home.scss') }}">
 {% endblock %}
 
 {% block javascripts %}
 	{{ parent() }}
 
-	<script type="module" src="{{ asset('js/home.js') }}">
+	<script type="module" src="{{ asset('js/home.js') }}"></script>
 {% endblock %}

@@ -1,14 +1,14 @@
 {% extends 'board.html.twig' %}
 
 {% block board_header %}
-	<div id="repertoireColorButtons" class="boxed-radio-menu">
+	<div id="repertoireColorButtons" data-element="yes" class="boxed-radio-menu">
 		<div class="boxed-radio">
-			<input class="is-hidden" type="radio" name="repertoire_color" value="white" id="whiteRepertoireRadio" {{ repertoireColor == 'black' ? '' : 'checked' }}/>
+			<input class="is-hidden" type="radio" name="repertoire_color" value="white" id="whiteRepertoireRadio" data-element="yes" {{ repertoireColor == 'black' ? '' : 'checked' }}/>
 			<label class="boxed-radio-label" for="whiteRepertoireRadio"></label>
 			<span class="boxed-radio-text">White</span>
 		</div>
 		<div class="boxed-radio">
-			<input class="is-hidden" type="radio" name="repertoire_color" value="black" id="blackRepertoireRadio" {{ repertoireColor == 'black' ? 'checked' : '' }}/>
+			<input class="is-hidden" type="radio" name="repertoire_color" value="black" id="blackRepertoireRadio" data-element="yes" {{ repertoireColor == 'black' ? 'checked' : '' }}/>
 			<label class="boxed-radio-label" for="blackRepertoireRadio"></label>
 			<span class="boxed-radio-text">Black</span>
 		</div>
@@ -17,41 +17,43 @@
 
 {% block board_top %}
 	<div class="is-flex is-justify-content-flex-end mt-0 mb-2">
-		<button type="button" id="loadPgnButton" disabled class="button is-primary mr-1">
+		<button type="button" id="loadPgnButton" data-element="yes" disabled class="button is-primary mr-1">
 			Load PGN
 		</button>
-		<button type="button" id="saveRepertoireButton" disabled class="button is-primary">
+		<button type="button" id="saveRepertoireButton" data-element="yes" disabled class="button is-primary">
 			Save to your repertoire
 		</button>
 	</div>
 {% endblock %}
 
 {% block board_left %}
-	<div id="board" class="" data-color="{{ repertoireColor }}" data-fen="{{ repertoireFen }}" data-line="{{ repertoireLine }}"></div>
-
+	<div class="skeleton-container board-left-container">
+		<div class="skeleton-block skeleton-full"></div>
+		<div id="board" data-element="yes" data-color="{{ repertoireColor }}" data-fen="{{ repertoireFen }}" data-line="{{ repertoireLine }}"></div>
+	</div>
 {% endblock %}
 
 {% block board_right %}
 
 	<div class="box p-0">
 		<div class="box-header">
-			<p class="has-text-primary"><strong>Game</strong></p>
-			<p id="statusField" class="is-size-7 has-text-right has-text-faded pl-5"></p>
+			<p class="has-text-weight-semibold">Game</p>
+			<p id="statusField" data-element="yes" class="is-size-7 has-text-right has-text-faded pl-5"></p>
 		</div>
 		<div class="is-flex is-align-items-flex-start p-2">
-			<button id="gotoFirstButton" disabled class="button is-small is-flex-shrink-0">
+			<button id="gotoFirstButton" data-element="yes" disabled class="button is-small is-flex-shrink-0">
 				<span class="icon">
 					<i class="fa-solid fa-backward-step"></i>
 				</span>
 			</button>
-			<div id="pgnField" class="pgn-moves-container is-size-6 ml-2"></div>
+			<div id="pgnField" data-element="yes" class="pgn-moves-container is-size-6 ml-2"></div>
 		</div>
-		<div id="pgnStartPositionContainer" class="is-hidden p-2 border-t border-tacao-300/60 dark:border-slate-900">
-			<label class="p-2 block is-size-6 has-text-weight-semibold tc-base whitespace-nowrap">Starting position:</label>
-			<p class="p-2 pt-0 block is-size-6 w-full truncate tc-base"></p>
+		<div id="pgnStartPositionContainer" data-element="yes" class="is-hidden p-2 border-t border-tacao-300/60 dark:border-slate-900">
+			<label class="p-2 block is-size-6 has-text-weight-semibold whitespace-nowrap">Starting position:</label>
+			<p class="p-2 pt-0 block is-size-6 w-full is-ellipsis"></p>
 		</div>
 		<div class="is-flex is-justify-content-flex-end">
-			<button type="button" id="closePgnButton" class="button is-hidden m-3 mt-2">
+			<button type="button" id="closePgnButton" data-element="yes" class="button is-hidden m-3 mt-2">
 				Close PGN
 			</button>
 		</div>
@@ -59,8 +61,8 @@
 
 	<div class="box p-0">
 		<div class="box-header">
-			<p class="has-text-primary"><strong>Moves</strong></p>
-			<p id="ecoField" class="is-size-7 has-text-right has-text-faded pl-5"></p>
+			<p class="has-text-weight-semibold">Moves</p>
+			<p id="ecoField" data-element="yes" class="is-size-7 has-text-right has-text-faded pl-5"></p>
 		</div>
 
 		<div style="overflow-y: auto; overflow-x: hidden; max-height: 48vh;">
@@ -72,82 +74,78 @@
 					<div class="skeleton-block skeleton-moves-table-rows"></div>
 				</div>
 
-				<table id="movesTable" class="moves-table">
+				<table id="movesTable" data-element="yes" class="moves-table">
 					<tbody></tbody>
 				</table>
 			</div>
 		</div>
 	</div>
 
-	<div id="engineContainer" class="is-hidden box p-0">
+	<div id="engineContainer" data-element="yes" class="is-hidden box p-0">
 		<div class="box-header">
-			<p class="has-text-primary"><strong>Engine</strong></p>
-			<p id="engineDepth" class="is-size-7 has-text-weight-medium has-text-faded">depth</p>
-			<label class="input-toggle" style="margin-inline-end: 0;">
-				<input id="engineCheckbox" type="checkbox" class="sr-only peer">
-				<div class="input-toggle-switch"></div>
+			<p class="has-text-weight-semibold">Engine</p>
+			<p id="engineDepth" data-element="yes" class="is-size-7 has-text-weight-medium has-text-faded">depth</p>
+			<label class="toggle" style="margin-inline-end: 0;">
+				<input id="engineCheckbox" data-element="yes" type="checkbox" class="sr-only peer">
+				<div class="knob"></div>
 			</label>
 		</div>
 
 		<div class="p-1">
-			<p class="tc-base p-3 is-hidden">Start the engine to find the best moves.</p>
+			<p class="p-3 is-hidden">Start the engine to find the best moves.</p>
 
-			<table id="engineTable" class="table-fixed min-w-full m-0 table is-transparent is-hoverable">
+			<table id="engineTable" data-element="yes" class="table-fixed min-w-full m-0 table is-transparent is-hoverable">
 				<tbody></tbody>
 			</table>
 		</div>
 	</div>
 
-	<div id="repertoireContainer" class="is-hidden box p-0">
+	<div id="repertoireContainer" data-element="yes" class="is-hidden box p-0">
 		<div class="box-header">
-			<p class="has-text-primary"><strong>Repertoire</strong></p>
+			<p class="has-text-weight-semibold">Repertoire</p>
 			<div class="pr-2"></div>
 		</div>
 
 		<div class="w-full p-3">
 			<div class="py-1">
-				<label class="input-toggle">
-					<input id="repertoireAutoPlayCheckbox" type="checkbox" class="sr-only peer">
-					<div class="input-toggle-switch"></div>
-					<div class="ml-2">
-						<p class="font-normal tc-base">Auto-play this move in practice</p>
-					</div>
+				<label class="toggle">
+					<input id="repertoireAutoPlayCheckbox" data-element="yes" type="checkbox" class="sr-only peer">
+					<div class="knob"></div>
+					<div class="toggle-label">Auto-play this move in practice</div>
 				</label>
 			</div>
 			<div class="mb-1 py-1">
-				<label class="input-toggle">
-					<input id="repertoireExcludeCheckbox" type="checkbox" class="sr-only peer">
-					<div class="input-toggle-switch"></div>
-					<div class="ml-2">
-						<p class="font-normal tc-base">Temporarily exclude this line from practice</p>
-					</div>
+				<label class="toggle">
+					<input id="repertoireExcludeCheckbox" data-element="yes" type="checkbox" class="sr-only peer">
+					<div class="knob"></div>
+					<div class="toggle-label">Temporarily exclude this line from practice</div>
 				</label>
 			</div>
 			<div class="mb-2">
-				<label class="is-size-6 has-text-weight-medium tc-base">Group:</label>
+				<label class="is-size-6 has-text-weight-medium">Group:</label>
 			</div>
 			<div class="w-full mb-1">
-				<input id="repertoireGroupInput" type="search" list="repertoireGroupDataList" name="repertoire_group" placeholder="Type and press Enter to add or select from list..." class="input">
-				<datalist id="repertoireGroupDataList"></datalist>
+				<input id="repertoireGroupInput" data-element="yes" type="search" list="repertoireGroupDataList" name="repertoire_group" placeholder="Type and press Enter to add or select from list..." class="input">
+				<datalist id="repertoireGroupDataList" data-element="yes"></datalist>
 			</div>
-			<div id="repertoireGroupTagsContainer" class="is-flex is-flex-wrap"></div>
+			<div id="repertoireGroupTagsContainer" data-element="yes" class="is-flex is-flex-wrap"></div>
 		</div>
 
 		<div class="is-flex is-justify-content-flex-end p-3 pt-0">
-			<button type="button" id="removeRepertoireButton" class="button">
+			<button type="button" id="removeRepertoireButton" data-element="yes" class="button">
 				Remove from your repertoire
 			</button>
 		</div>
 	</div>
 
-	<div id="initialFenContainer" class="is-hidden box p-0">
+	<div id="initialFenContainer" data-element="yes" class="is-hidden box p-0">
 		<div class="box-header">
-			<p class="has-text-primary"><strong>Starting position</strong></p>
+			<p class="has-text-weight-semibold">Starting position</p>
 		</div>
 
 		<div class="p-3">
 			<div class="is-relative inline-block">
-				<select id="initialFenSelect" class="appearance-none inline-block w-full is-medium-rounded border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"></select>
+				<select id="initialFenSelect" data-element="yes" class="appearance-none inline-block w-full is-medium-rounded border-0 py-2 pl-3 pr-8 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600"></select>
 				<div class="pointer-events-none is-absolute inset-y-0 right-0 is-flex is-align-items-center px-2 text-gray-700">
 					<svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
 				</div>
@@ -157,7 +155,7 @@
 	</div>
 
 	<div class="is-flex is-justify-content-flex-end mt-2">
-		<button type="button" id="analyseGameButton" disabled class="button is-link">
+		<button type="button" id="analyseGameButton" data-element="yes" disabled class="button is-link">
 			Analyse on Lichess
 		</button>
 	</div>
@@ -177,5 +175,5 @@
 {% block javascripts %}
 	{{ parent() }}
 
-	<script type="module" src="{{ asset('js/repertoire.js') }}">
+	<script type="module" src="{{ asset('js/repertoire.js') }}"></script>
 {% endblock %}

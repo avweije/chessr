@@ -2,24 +2,24 @@
 
 {% block body %}
 	<div class="is-flex is-justify-content-space-around p-4">
-		<div id="settingsTabButtons" class="boxed-radio-menu">
+		<div id="settingsTabButtons" data-element="yes" class="boxed-radio-menu">
 			<div class="boxed-radio">
-				<input class="is-hidden" type="radio" name="settings_tab" value="board" id="settingsBoardRadio" checked/>
+				<input class="is-hidden" type="radio" name="settings_tab" value="board" id="settingsBoardRadio" data-element="yes" checked/>
 				<label class="boxed-radio-label" for="settingsBoardRadio"></label>
 				<span class="boxed-radio-text">Board</span>
 			</div>
 			<div class="boxed-radio">
-				<input class="is-hidden" type="radio" name="settings_tab" value="engine" id="settingsEngineRadio"/>
+				<input class="is-hidden" type="radio" name="settings_tab" value="engine" id="settingsEngineRadio" data-element="yes"/>
 				<label class="boxed-radio-label" for="settingsEngineRadio"></label>
 				<span class="boxed-radio-text">Engine</span>
 			</div>
 			<div class="boxed-radio">
-				<input class="is-hidden" type="radio" name="settings_tab" value="engine" id="settingsPracticeRadio"/>
+				<input class="is-hidden" type="radio" name="settings_tab" value="engine" id="settingsPracticeRadio" data-element="yes"/>
 				<label class="boxed-radio-label" for="settingsPracticeRadio"></label>
 				<span class="boxed-radio-text">Practice</span>
 			</div>
 			<div class="boxed-radio">
-				<input class="is-hidden" type="radio" name="settings_tab" value="engine" id="settingsAccountRadio"/>
+				<input class="is-hidden" type="radio" name="settings_tab" value="engine" id="settingsAccountRadio" data-element="yes"/>
 				<label class="boxed-radio-label" for="settingsAccountRadio"></label>
 				<span class="boxed-radio-text">Account</span>
 			</div>
@@ -27,7 +27,8 @@
 	</div>
 
 	<div class="w-medium mx-auto is-flex is-justify-content-space-around mt-6">
-		<div id="settingsTabBoard" class="box is-flex is-flex-direction-column is-gap-3 p-5">
+		<div id="settingsTabBoard" class="box is-flex is-flex-direction-column p-5">
+			<h2 class="title is-size-5 mb-4">Board Settings</h2>
 			<div class="is-flex is-flex-direction-row is-align-items-flex-start is-justify-content-space-between is-gap-2">
 				<div class="is-flex is-gap-2">
 					<div class="is-flex is-align-items-center is-gap-1">
@@ -35,7 +36,7 @@
   							<label class="label">Theme</label>
   							<div class="control">
 								<div class="select">
-									<select id="boardThemeSelect">
+									<select id="boardThemeSelect" data-element="yes">
 										<option value="chess-club">Chess Club</option>
 										<option value="green">Green</option>
 										<option value="blue">Blue</option>
@@ -49,7 +50,7 @@
 							<label class="label">Pieces</label>
 							<div class="control">
 								<div class="select">
-									<select id="boardPiecesSelect">
+									<select id="boardPiecesSelect" data-element="yes">
 										<option value="standard.svg">Standard</option>
 										<option value="companion.svg">Companion</option>
 										<option value="gioco.svg">Gioco</option>
@@ -74,69 +75,79 @@
 										<span class="is-size-7">0ms</span>
 										<span class="is-size-7">500ms</span>
 									</div>
-									<input id="animationDurationInput" type="range" min="0" max="500" step="50" value="300">
+									<input id="animationDuration" data-element="yes" type="range" min="0" max="500" step="50" value="300" style="width: 12rem;">
 								</div>
 							</div>
 						</div>
 					</div>
 			</div>
 
-			<div class="is-flex">
-				<div id="board" style="width: 60vh; max-width: 40vw;"></div>
+			<div class="is-flex mt-4">
+				<div class="skeleton-container">
+					<div class="skeleton-block skeleton-full"></div>
+					<div id="board" data-element="yes" class="settings-board"></div>
+				</div>
 			</div>
 		</div>
 
-		<div id="settingsTabEngine" class="is-hidden box">
+		<div id="settingsTabEngine" class="is-hidden box p-5">
+			<h2 class="title is-size-5 mb-4">Repertoire</h2>
 			<div id="animationSettingsContainer" class="is-flex is-flex-direction-column is-align-items-flex-start">
-				<div class="mb-5">
-					<label class="label">Maximum Search Time</label>
-					<p class="p-1 mb-1">The maximum amount of time the engine can search a position when being used in the repertoire.</p>
-					<span class="is-relative pb-5">
-						<div class="is-absolute left-0 right-0 bottom-0 is-flex is-justify-content-space-between">
-							<span class="is-size-7">10s</span>
-							<span class="is-size-7">2m</span>
-						</div>
-						<input id="repertoireEngineTimeInput" type="range" min="10" max="120" step="10" value="30" class="">
-					</span>
+				<div>
+					<div class="is-flex is-flex-direction-row is-justify-content-space-between is-align-items-flex-end">
+						<label class="label">Max. Search Time</label>
+						<span class="is-relative is-flex-shrink-0">
+							<div class="is-absolute left-0 right-0 top-0 is-flex is-justify-content-space-between" style="top: -1rem;">
+								<span class="is-size-7">10s</span>
+								<span class="is-size-7">2m</span>
+							</div>
+							<input id="repertoireEngineTime" data-element="yes" type="range" min="10" max="120" step="10" value="30" style="width: 12rem;">
+						</span>
+					</div>
+					<div class="is-flex is-flex-direction-row is-flex-wrap-nowrap is-align-items-flex-end">
+						<p class="p-1 mb-1">The maximum amount of time the engine can search a position when being used in the repertoire.</p>
+					</div>
 				</div>
-				<div class="mt-4 mb-5">
-					<label class="label">Search Time / Move</label>
+				<h2 class="title is-size-5 mt-5 mb-4">Analysis</h2>
+				<div class="mb-5">
+					<label class="label is-flex is-align-items-flex-start">Search Time / Move</label>
 					<p class="p-1 mb-1">The amount of time the engine will use for each move that needs to be evaluated when analysing your games.</p>
 					<span class="is-relative pb-5">
 						<div class="is-absolute left-0 right-0 bottom-0 is-flex is-justify-content-space-between">
 							<span class="is-size-7">500ms</span>
 							<span class="is-size-7">5s</span>
 						</div>
-						<input id="analyseEngineTimeInput" type="range" min="500" max="5000" step="500" value="1000" class="">
+						<input id="analyseEngineTime" data-element="yes" type="range" min="500" max="5000" step="500" value="1000" class="">
 					</span>
 				</div>
-				<div class="mt-4">
-					<label class="label">Mistakes</label>
-					<p class="p-1 mb-2">When analysing your games, you can choose to ignore the inaccuracies. Only mistakes and blunders will be added to your analysis practice run.</p>
-					<label class="input-toggle">
-						<input id="analyseIgnoreInaccuracyCheckbox" type="checkbox" name="animate_complete" value="1" class="sr-only peer">
-						<div class="input-toggle-switch"></div>
-						<div class="ml-3">
-							<p class="is-size-6 font-normal tc-base">Ignore inaccuracies during analysis.</p>
-							<p class="is-size-7">Only count mistakes and blunders.</p>
-						</div>
-					</label>
-				</div>
 				<div class="mt-4 mb-5">
-					<label class="label">Mistake Tolerance</label>
+					<label class="label is-flex is-align-items-flex-start">Mistake Tolerance</label>
 					<p class="p-1 mb-1">Determines when to stop analysing your games based on the centipawn loss.</p>
 					<span class="is-relative pb-5 mb-5">
 						<div class="is-absolute left-0 right-0 bottom-0 is-flex is-justify-content-space-between">
 							<span class="is-size-7">Strict</span>
 							<span class="is-size-7">Lenient</span>
 						</div>
-						<input id="analyseMistakeTolerance" type="range" min="0" max="2" step="1" value="0" class="">
+						<input id="analyseMistakeTolerance" data-element="yes" type="range" min="0" max="2" step="1" value="0" class="">
 					</span>
+				</div>
+				<div class="mt-4">
+					<label class="label is-flex is-align-items-flex-start">Inaccuracies</label>
+					<p class="p-1 mb-2">When analysing your games, you can choose to ignore the inaccuracies. Only mistakes and blunders will be added to your analysis practice run.</p>
+					<label class="toggle">
+						<input id="analyseIgnoreInaccuracy" data-element="yes" type="checkbox" name="animate_complete" value="1" class="sr-only peer">
+						<div class="knob"></div>
+						<div class="toggle-label">
+							<p class="is-size-6">Ignore inaccuracies during analysis.</p>
+							<p class="is-size-7">Only count mistakes and blunders.</p>
+						</div>
+					</label>
 				</div>
 			</div>
 		</div>
 
-		<div id="settingsTabPractice" class="is-hidden box">
+		<div id="settingsTabPractice" class="is-hidden box p-5">
+			<h2 class="title is-size-5 mb-4">Practice Settings</h2>
 			<div id="variationSettingsContainer" class="is-flex is-flex-direction-column is-align-items-flex-start">
 				<div class="mb-5">
 					<label class="label">Recommend Moves</label>
@@ -146,17 +157,17 @@
 							<span class="is-size-7">Less</span>
 							<span class="is-size-7">More</span>
 						</div>
-						<input id="recommendIntervalInput" type="range" min="0" max="3" step="1" value="0" class="">
+						<input id="recommendInterval" data-element="yes" type="range" min="0" max="3" step="1" value="0" class="">
 					</span>
 				</div>
 				<div class="mt-4">
 					<label class="label">Animate Variations</label>
-					<p class="tc-base p-1 mb-2">Each line is animated from the beginning of that line. Any variations that follow can be animated from the start of the variation or from the beginning of the line.</p>
-					<label class="input-toggle">
-						<input id="animateVariationCheckbox" type="checkbox" value="1" class="sr-only">
-						<div class="input-toggle-switch"></div>
-						<div class="ml-3">
-							<p class="is-size-6 ">Animate from the beginning of the line.</p>
+					<p class="p-1 mb-2">Each line is animated from the beginning of that line. Any variations that follow can be animated from the start of the variation or from the beginning of the line.</p>
+					<label class="toggle">
+						<input id="animateVariation" data-element="yes" type="checkbox" value="1" class="sr-only">
+						<div class="knob"></div>
+						<div class="toggle-label">
+							<p class="is-size-6">Animate from the beginning of the line.</p>
 							<p class="is-size-7">Instead of from the start of the variation.</p>
 						</div>
 					</label>
@@ -165,12 +176,13 @@
 		</div>
 
 		<div id="settingsTabAccount" class="is-hidden box w-full p-5">
+			<h2 class="title is-size-5 mb-4">User Account</h2>
 			<div class="field">
 				<label class="label">Email address</label>
 				<div class="control">
 					<div class="is-flex is-align-items-center is-gap-1">
-						<input id="accountEmailAddress" disabled type="email" value="" class="input">
-						<button id="unlockEmailAddressButton" type="button" class="button-icon-hover">
+						<input id="accountEmailAddress" data-element="yes" disabled type="email" value="" class="input">
+						<button id="unlockEmailAddressButton" data-element="yes" type="button" class="button-icon-hover">
 							<span class="icon">
 								<i class="fa-solid fa-lock"></i>
 							</span>
@@ -191,11 +203,10 @@
 						<span class="ml-1">Your new email address needs to be verified. Click on the link below to send a verification email and follow the instructions to confirm your changes.</span>
 					</div>
 				</article>
-				<button id="sendVerificationEmailButton" type="button" class="button is-primary">Send the verification email</button>
+				<button id="sendVerificationEmailButton" data-element="yes" type="button" class="button is-primary">Send the verification email</button>
 			</div>
 		</div>
 	</div>
-
 {% endblock %}
 {% block stylesheets %}
 	{{ parent() }}
@@ -208,5 +219,5 @@
 {% block javascripts %}
 	{{ parent() }}
 
-	<script type="module" src="{{ asset('js/settings.js') }}">
+	<script type="module" src="{{ asset('js/settings.js') }}"></script>
 {% endblock %}

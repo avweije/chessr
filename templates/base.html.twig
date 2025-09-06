@@ -2,6 +2,8 @@
 <html>
 	<head>
 		<meta charset="UTF-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>
 			{% block title %}
 				Chess Repertoire
@@ -11,15 +13,13 @@
 		{% block stylesheets %}
 			<link rel="stylesheet" href="{{ asset('styles/app.scss') }}">
 			<!-- font awesome solid icons -->
-			<link rel="stylesheet" href="{{ asset('fontawesome/css/all.min.css') }}">
+			<link rel="stylesheet" href="{{ asset('vendor/fontawesome/css/all.min.css') }}">
+		{% endblock %}
+		{% block importmap %}
+			{{ importmap('app') }}
 		{% endblock %}
 		{% block javascripts %}
-			{% block importmap %}
-				{{ importmap('app') }}
-			{% endblock %}
 		{% endblock %}
-		<!-- need to check out what this script is for, copied from youtube tutorial -->
-		<script src="https://cdn.jsdelivr.net/gh/alpinejs/alpine@v2.3.5/dist/alpine.min.js" defer></script>
 	</head>
 	<body style="--bg-image: url('{{ asset('images/pexels-seraphim-tsounis-283679744-14409978.jpg') }}');">
 		<div class="body-background"></div>
@@ -112,20 +112,11 @@
 		{% endblock %}
 
 		<!-- sticky top center container, not used right now.. ? -->
-		<div id="topCenterDiv" class="sticky left-0 pt-14" style="width: calc(100vw - 10px);">
-		{% block body_header %}{% endblock %}
-		</div>
-
-			<!-- main content div with default padding -->
-			<div class="main-content">
-				{% block body %}{% endblock %}
+		<div id="topCenterDiv" class="sticky left-0 pt-14" style="width: calc(100vw - 10px);"> {% block body_header %}{% endblock %}
 			</div>
 
-				<!-- loader -->
-				<div id="pageLoadingOverlay" class="is-hidden w-full h-full fixed top-0 left-0 backdrop-grayscale-[.5] z-50">
-					<div class="is-flex w-full h-full is-justify-content-center is-align-items-center">
-						<span class="inline-block icon-[svg-spinners--90-ring-with-bg] w-12 h-12"></span>
-					</div>
+			<!-- main content div with default padding -->
+			<div class="main-content"> {% block body %}{% endblock %}
 				</div>
 
 				{% block footer %}

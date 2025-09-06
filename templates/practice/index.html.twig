@@ -1,19 +1,19 @@
 {% extends 'board.html.twig' %}
 
 {% block board_header %}
-	<div id="practiceRepertoireButtons" class="boxed-radio-menu">
+	<div id="practiceRepertoireButtons" data-element="yes" class="boxed-radio-menu">
 		<div class="boxed-radio">
-			<input class="is-hidden" type="radio" name="repertoire_type" value="white" id="repertoireWhite"/>
+			<input class="is-hidden" type="radio" name="repertoire_type" value="white" id="repertoireWhite" data-element="yes"/>
 			<label class="boxed-radio-label" for="repertoireWhite"></label>
 			<span class="boxed-radio-text">White</span>
 		</div>
 		<div class="boxed-radio">
-			<input class="is-hidden" type="radio" name="repertoire_type" value="black" id="repertoireBlack"/>
+			<input class="is-hidden" type="radio" name="repertoire_type" value="black" id="repertoireBlack" data-element="yes"/>
 			<label class="boxed-radio-label" for="repertoireBlack"></label>
 			<span class="boxed-radio-text">Black</span>
 		</div>
 		<div class="boxed-radio is-hidden">
-			<input class="is-hidden" type="radio" name="repertoire_type" value="new" id="repertoireNew"/>
+			<input class="is-hidden" type="radio" name="repertoire_type" value="new" id="repertoireNew" data-element="yes"/>
 			<label class="boxed-radio-label" for="repertoireNew"></label>
 			<span class="boxed-radio-text is-flex is-align-items-center">
 				New
@@ -21,7 +21,7 @@
 			</span>
 		</div>
 		<div class="boxed-radio is-hidden">
-			<input class="is-hidden" type="radio" name="repertoire_type" value="recommended" id="repertoireRecommended"/>
+			<input class="is-hidden" type="radio" name="repertoire_type" value="recommended" id="repertoireRecommended" data-element="yes"/>
 			<label class="boxed-radio-label" for="repertoireRecommended"></label>
 			<span class="boxed-radio-text is-flex is-align-items-center">
 				Recommended
@@ -29,12 +29,12 @@
 			</span>
 		</div>
 		<div class="boxed-radio">
-			<input class="is-hidden" type="radio" name="repertoire_type" value="all" id="repertoireAll" checked/>
+			<input class="is-hidden" type="radio" name="repertoire_type" value="all" id="repertoireAll" data-element="yes" checked/>
 			<label class="boxed-radio-label" for="repertoireAll"></label>
 			<span class="boxed-radio-text">All</span>
 		</div>
 		<div class="boxed-radio">
-			<input class="is-hidden" type="radio" name="repertoire_type" value="analysis" id="repertoireAnalysis"/>
+			<input class="is-hidden" type="radio" name="repertoire_type" value="analysis" id="repertoireAnalysis" data-element="yes"/>
 			<label class="boxed-radio-label" for="repertoireAnalysis"></label>
 			<span class="boxed-radio-text is-flex is-align-items-center">
 				Analysis
@@ -43,7 +43,7 @@
 		</div>
 	</div>
 
-	<div id="practiceCustomRepertoireField" class="is-hidden boxed-radio-menu">
+	<div id="practiceCustomRepertoireField" data-element="yes" class="is-hidden boxed-radio-menu">
 		<div class="boxed-radio">
 			<span class="px-2"></span>
 		</div>
@@ -52,44 +52,47 @@
 
 {% block board_top %}
 	<div class="is-flex is-justify-content-space-between is-align-items-center mt-0 mb-2">
-		<div id="practiceGroupContainer" class="is-hidden is-flex is-align-items-center" style="max-width: 75vh;">
+		<div id="practiceGroupContainer" data-element="yes" class="is-hidden is-flex is-align-items-center" style="max-width: 75vh;">
 			<span class="is-size-6 pr-2">Group:</span>
 			<div class="select">
-				<select id="practiceGroupSelect">
+				<select id="practiceGroupSelect" data-element="yes">
 					<option>No groups available</option>
 				</select>
 			</div>
 		</div>
 		<div></div>
-		<div id="practiceCountersContainer" class="is-hidden is-flex is-align-self-flex-end is-align-items-center pt-3">
+		<div id="practiceCountersContainer" data-element="yes" class="is-hidden is-flex is-align-self-flex-end is-align-items-center pt-3">
 			<div class="tag is-medium is-info mr-1">
 				<div class="icon">
 					<i class="fa-solid fa-chess-queen"></i>
 				</div>
-				<span id="practiceMoveCounter"></span>
+				<span id="practiceMoveCounter" data-element="yes"></span>
 			</div>
 			<div class="tag is-medium is-success mr-1">
 				<div class="icon">
 					<i class="fa-solid fa-check"></i>
 				</div>
-				<span id="practiceCorrectCounter"></span>
+				<span id="practiceCorrectCounter" data-element="yes"></span>
 			</div>
 			<div class="tag is-medium is-danger">
 				<div class="icon">
 					<i class="fa-solid fa-xmark"></i>
 				</div>
-				<span id="practiceFailedCounter"></span>
+				<span id="practiceFailedCounter" data-element="yes"></span>
 			</div>
 		</div>
 	</div>
 {% endblock %}
 
 {% block board_left %}
-	<div id="board" class="" data-type="{{ repertoireType }}" data-id="{{ repertoireId }}"></div>
+	<div class="skeleton-container board-left-container">
+		<div class="skeleton-block skeleton-full"></div>
+		<div id="board" data-element="yes" data-type="{{ repertoireType }}" data-id="{{ repertoireId }}"></div>
+	</div>
 {% endblock %}
 
 {% block board_right %}
-	<div id="infoContainer" class="message is-info mb-1">
+	<div id="infoContainer" data-element="yes" class="message is-info mb-1">
 		<div class="message-body" role="alert">
 			<span class="icon is-small">
 				<i class="fa-solid fa-circle-info"></i>
@@ -97,7 +100,7 @@
 			<span class="ml-1">To start your practice, click the button below.</span>
 		</div>
 	</div>
-	<div id="confirmContainer" class="is-hidden message is-success mb-1">
+	<div id="confirmContainer" data-element="yes" class="is-hidden message is-success mb-1">
 		<div class="message-body" role="alert">
 			<span class="icon is-small">
 				<i class="fa-solid fa-circle-check"></i>
@@ -105,7 +108,7 @@
 			<span class="ml-1"></span>
 		</div>
 	</div>
-	<div id="warningContainer" class="is-hidden message is-danger mb-1">
+	<div id="warningContainer" data-element="yes" class="is-hidden message is-danger mb-1">
 		<div class="message-body" role="alert">
 			<span class="icon is-small">
 				<i class="fa-solid fa-triangle-exclamation"></i>
@@ -113,7 +116,7 @@
 			<span class="ml-1"></span>
 		</div>
 	</div>
-	<div id="hintContainer" class="is-hidden message is-warning mb-1">
+	<div id="hintContainer" data-element="yes" class="is-hidden message is-warning mb-1">
 		<div class="message-body" role="alert">
 			<span class="icon is-small">
 				<i class="fa-solid fa-lightbulb"></i>
@@ -123,51 +126,51 @@
 	</div>
 
 	<div class="is-flex is-justify-content-flex-end my-2">
-		<button type="button" id="startPracticeButton" disabled class="button is-primary">
+		<button type="button" id="startPracticeButton" data-element="yes" disabled class="button is-primary">
 			Start your practice
 		</button>
-		<button type="button" id="giveHintButton" title="Hint" disabled class="is-hidden button is-primary mr-1">
+		<button type="button" id="giveHintButton" data-element="yes" title="Hint" disabled class="is-hidden button is-primary mr-1">
 			<icon>
 				<i class="fa-solid fa-lightbulb"></i>
 			</icon>
 		</button>
-		<button type="button" id="prevMoveButton" title="Previous move" disabled class="is-hidden button is-primary mr-1">
+		<button type="button" id="prevMoveButton" data-element="yes" title="Previous move" disabled class="is-hidden button is-primary mr-1">
 			<i class="fa-solid fa-backward-step"></i>
 		</button>
-		<button type="button" id="skipMoveButton" title="Skip this move" disabled class="is-hidden button is-primary mr-1">
+		<button type="button" id="skipMoveButton" data-element="yes" title="Skip this move" disabled class="is-hidden button is-primary mr-1">
 			<i class="fa-solid fa-forward-step"></i>
 		</button>
 		<div class="is-flex">
-			<input type="checkbox" id="showPracticeInfoButton" value="1" class="is-hidden">
+			<input type="checkbox" id="showPracticeInfoButton" data-element="yes" value="1" class="is-hidden">
 			<label for="showPracticeInfoButton" title="Toggle info" class="is-hidden select-none button is-primary mr-1 peer-checked:btn-checked">
 				<i class="fa-solid fa-circle-info"></i>
 			</label>
 		</div>
 		<div id="analysisGameButtons" class="is-hidden is-flex">
-			<button type="button" id="analysisSaveButton" title="Save to repertoire" disabled class="button is-primary">
+			<button type="button" id="analysisSaveButton" data-element="yes" title="Save to repertoire" disabled class="button is-primary">
 				<i class="fa-solid fa-floppy-disk"></i>
 			</button>
-			<button type="button" id="analysisIgnoreButton" title="Not a mistake" disabled class="button is-primary mx-1">
+			<button type="button" id="analysisIgnoreButton" data-element="yes" title="Not a mistake" disabled class="button is-primary mx-1">
 				<i class="fa-solid fa-ban"></i>
 			</button>
-			<button type="button" id="analysisDiscardButton" title="Discard" disabled class="button is-primary">
+			<button type="button" id="analysisDiscardButton" data-element="yes" title="Discard" disabled class="button is-primary">
 				<i class="fa-solid fa-trash"></i>
 			</button>
 		</div>
 	</div>
 
-	<div id="playedMovesContainer" class="is-hidden box p-0">
-		<p class="box-header">Moves</p>
-		<div id="playedMovesList" class="p-2">
+	<div id="playedMovesContainer" data-element="yes" class="is-hidden box p-0">
+		<p class="box-header has-text-weight-semibold">Moves</p>
+		<div id="playedMovesList" data-element="yes" class="p-2">
 			<div class="border-b border-tacao-200 dark:border-slate-900 p-2">1. _</div>
 			<div class="p-2">1. _</div>
 		</div>
 	</div>
 
-	<div id="pgnContainer" class="is-hidden box p-0">
+	<div id="pgnContainer" data-element="yes" class="is-hidden box p-0">
 		<div class="box-header">
-			<p class="has-text-weight-bold">PGN</p>
-			<div id="pgnNavigationContainer" class="is-flex is-align-items-center pl-3">
+			<p class="has-text-weight-semibold">PGN</p>
+			<div id="pgnNavigationContainer" data-element="yes" class="is-flex is-align-items-center pl-3">
 				<button class="button is-small">
 					<span class="icon">
 						<i class="fa-solid fa-backward-step"></i>
@@ -190,14 +193,14 @@
 				</button>
 			</div>
 		</div>
-		<div id="pgnField" class="pgn-moves-container p-3 is-size-6"></div>
+		<div id="pgnField" data-element="yes" class="pgn-moves-container p-3 is-size-6"></div>
 	</div>
 
-	<div id="suggestionContainer" class="is-hidden box p-0">
-		<p class="box-header">Suggestion</p>
+	<div id="suggestionContainer" data-element="yes" class="is-hidden box p-0">
+		<p class="box-header has-text-weight-semibold">Suggestion</p>
 		<div class="is-flex is-align-items-center p-2">
-			<div id="suggestionField" class="p-2"></div>
-			<button id="suggestionSubmitButton" type="button" class="button is-small">
+			<div id="suggestionField" data-element="yes" class="p-2"></div>
+			<button id="suggestionSubmitButton" data-element="yes" type="button" class="button is-small">
 				<span class="icon">
 					<i class="fa-solid fa-up-right-from-square"></i>
 				</span>
@@ -205,33 +208,33 @@
 		</div>
 	</div>
 
-	<form id="repertoireForm" method="post" target="_blank" action=""></form>
+	<form id="repertoireForm" data-element="yes" method="post" target="_blank" action=""></form>
 
-	<div id="analysisGameContainer" class="is-hidden box p-0">
-			<p class="box-header">Game</p>
-			<div id="analysisGameFields" class="grid-auto-1fr is-align-items-center p-2">
-				<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">Opponent:</label>
-				<p class="p-2 is-size-6 w-full truncate tc-base"></p>
-				<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">Move:</label>
-				<p class="p-2 is-size-6 w-full truncate tc-base"></p>
-				<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">FEN:</label>
-				<p class="p-2 is-size-6 w-full truncate tc-base"></p>
-				<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">Link:</label>
-				<a href="#" target="_blank" class="p-2 is-size-6 w-full truncate"></a>
-			</div>
+	<div id="analysisGameContainer" data-element="yes" class="is-hidden box p-0">
+		<p class="box-header has-text-weight-semibold">Game</p>
+		<div id="analysisGameFields" data-element="yes" class="grid-auto-1fr is-align-items-center p-2">
+			<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">Opponent:</label>
+			<p class="p-2 is-size-6 w-full is-ellipsis"></p>
+			<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">Move:</label>
+			<p class="p-2 is-size-6 w-full is-ellipsis"></p>
+			<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">FEN:</label>
+			<p class="p-2 is-size-6 w-full is-ellipsis"></p>
+			<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">Link:</label>
+			<a href="#" target="_blank" class="p-2 is-size-6 w-full is-ellipsis"></a>
+		</div>
 	</div>
 
-	<div id="practiceInfoContainer" class="is-hidden">
+	<div id="practiceInfoContainer" data-element="yes" class="is-hidden">
 		<div class="box p-0">
 			<div class="box-header">
-				<p class="title m-0 is-size-6 ">Info</p>
-					<button type="button" title="Open in repertoire" class="button is-small" id="practiceInfoOpenInRepertoireButton">
-						<span class="icon">
-							<i class="fa-solid fa-up-right-from-square"></i>
-						</span>
-					</button>
+				<p class="has-text-weight-semibold">Info</p>
+				<button type="button" title="Open in repertoire" class="button is-small" id="practiceInfoOpenInRepertoireButton" data-element="yes">
+					<span class="icon">
+						<i class="fa-solid fa-up-right-from-square"></i>
+					</span>
+				</button>
 			</div>
-			<div id="practiceInfoFields" class="grid-auto-1fr is-align-items-center p-2">
+			<div id="practiceInfoFields" data-element="yes" class="grid-auto-1fr is-align-items-center p-2">
 				<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">ECO:</label>
 				<p class="p-2 is-ellipsis"></p>
 				<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">PGN:</label>
@@ -244,7 +247,7 @@
 		</div>
 
 		<div class="is-flex is-justify-content-flex-end mt-2">
-			<button type="button" id="analyseGameButton" class="button is-primary">
+			<button type="button" id="analyseGameButton" data-element="yes" class="button is-primary">
 				Analyse on Lichess
 			</button>
 		</div>
@@ -269,5 +272,5 @@
 	<script>
 		const workerUrl = "{{ asset('js/workers/practice01.js') }}";
 	</script>
-	<script type="module" src="{{ asset('js/practice.js') }}">
+	<script type="module" src="{{ asset('js/practice.js') }}"></script>
 {% endblock %}

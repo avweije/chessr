@@ -66,6 +66,24 @@ class Home {
     this.getStatistics();
   }
 
+  getElements() {
+    // Get the data-elements for reference
+    this.elements = [];
+    document.querySelectorAll("[data-element]").forEach(el => {
+      if (el.dataset.element !== "yes") return;
+      this.elements[el.id] = el;
+    });
+
+    // get the elements
+    this.tabs.buttons = document.getElementById("settingsTabButtons");
+    this.tabs.account = document.getElementById("settingsTabAccount");
+    this.tabs.board = document.getElementById("settingsTabBoard");
+    this.tabs.engine = document.getElementById("settingsTabEngine");
+    this.tabs.practice = document.getElementById("settingsTabPractice");
+
+    console.log('getElements', this.elements);
+  }
+  
   // get the repertoire statistics
   getStatistics() {
     var url = "/api/statistics";
@@ -97,48 +115,50 @@ class Home {
     // store the repertoire
     this.statistics = stats;
 
+    console.log(this.fields.white, this.fields.white.nextElementSibling);
+
     // update the statistics fields
     if (stats.white > 0) {
-      this.fields.white.children[0].innerHTML = stats.white;
+      //this.fields.white.nextElementSibling.innerHTML = stats.white + " move" + (stats.white === 1 ? "" : "s");
+      this.fields.white.nextElementSibling.innerHTML = stats.white;
     } else {
+      this.fields.white.nextElementSibling.innerHTML = "";
       this.fields.white.innerHTML = "No white moves yet";
     }
     if (stats.black > 0) {
-      this.fields.black.children[0].innerHTML = stats.black;
+      //this.fields.black.nextElementSibling.innerHTML = stats.black + " move" + (stats.black === 1 ? "" : "s");
+      this.fields.black.nextElementSibling.innerHTML = stats.black;
     } else {
+      this.fields.black.nextElementSibling.innerHTML = "";
       this.fields.black.innerHTML = "No black moves yet";
     }
     if (stats.new > 0) {
-      this.fields.new.children[0].innerHTML = stats.new;
+      //this.fields.new.nextElementSibling.innerHTML = stats.new + " move" + (stats.new === 1 ? "" : "s");
+      this.fields.new.nextElementSibling.innerHTML = stats.new;
     } else {
+      this.fields.new.nextElementSibling.innerHTML = "";
       this.fields.new.innerHTML = "No new moves";
     }
     if (stats.recommended > 0) {
-      this.fields.recommended.children[0].innerHTML = stats.recommended;
+      //this.fields.recommended.nextElementSibling.innerHTML = stats.recommended + " move" + (stats.recommended === 1 ? "" : "s");
+      this.fields.recommended.nextElementSibling.innerHTML = stats.recommended;
     } else {
+      this.fields.recommended.nextElementSibling.innerHTML = "";
       this.fields.recommended.innerHTML = "No recommended moves";
     }
     if (stats.analysis > 0) {
-      this.fields.analysis.children[0].innerHTML = stats.analysis;
-      this.fields.analysis.innerHTML =
-        this.fields.analysis.innerHTML +
-        " line" +
-        (stats.analysis > 1 ? "s" : "");
+      this.fields.analysis.nextElementSibling.innerHTML = stats.analysis + " line" + (stats.analysis === 1 ? "" : "s");
     } else {
+      this.fields.analysis.nextElementSibling.innerHTML = "";
       this.fields.analysis.innerHTML = "No analysed games at the moment";
     }
 
     // remove the skeleton blocks, show the fields
-    this.fields.white.previousElementSibling.parentNode.removeChild(this.fields.white.previousElementSibling);
-    this.fields.white.classList.remove("is-hidden");
-    this.fields.black.previousElementSibling.parentNode.removeChild(this.fields.black.previousElementSibling);
-    this.fields.black.classList.remove("is-hidden");
-    this.fields.new.previousElementSibling.parentNode.removeChild(this.fields.new.previousElementSibling);
-    this.fields.new.classList.remove("is-hidden");
-    this.fields.recommended.previousElementSibling.parentNode.removeChild(this.fields.recommended.previousElementSibling);
-    this.fields.recommended.classList.remove("is-hidden");
-    this.fields.analysis.previousElementSibling.parentNode.removeChild(this.fields.analysis.previousElementSibling);
-    this.fields.analysis.classList.remove("is-hidden");
+    this.fields.white.parentNode.removeChild(this.fields.white.previousElementSibling);
+    this.fields.black.parentNode.removeChild(this.fields.black.previousElementSibling);
+    this.fields.new.parentNode.removeChild(this.fields.new.previousElementSibling);
+    this.fields.recommended.parentNode.removeChild(this.fields.recommended.previousElementSibling);
+    this.fields.analysis.parentNode.removeChild(this.fields.analysis.previousElementSibling);
   }
 }
 

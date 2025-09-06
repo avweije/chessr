@@ -3,34 +3,34 @@
 {% block body %}
 
 	<div class="is-flex is-flex-direction-column is-align-items-center p-4">
-		<p class="has-text-weight-medium has-text-on-background mt-6 mb-4">From which website do you want to download your games?</p>
+		<p class="has-text-weight-medium has-text-on-background is-size-5 mt-6 mb-5">From which website do you want to download your games?</p>
 
-		<div id="analyseWebsiteButtons" class="boxed-radio-group m-2">
+		<div id="analyseWebsiteButtons" data-element="yes" class="boxed-radio-group">
 			<div class="boxed-radio">
-				<input class="is-hidden" type="radio" name="website" value="Chess.com" id="siteChessDotComRadio" checked/>
+				<input class="is-hidden" type="radio" name="website" value="Chess.com" id="siteChessDotComRadio" data-element="yes" checked/>
 				<label class="boxed-radio-label" for="siteChessDotComRadio"></label>
 				<div class="boxed-radio-circle"></div>
 				<span class="boxed-radio-text">Chess.com</span>
 			</div>
 			<div class="boxed-radio">
-				<input class="is-hidden" type="radio" name="website" value="Lichess" id="siteLichessRadio"/>
+				<input class="is-hidden" type="radio" name="website" value="Lichess" id="siteLichessRadio" data-element="yes"/>
 				<label class="boxed-radio-label" for="siteLichessRadio"></label>
 				<div class="boxed-radio-circle"></div>
 				<span class="boxed-radio-text">Lichess</span>
 			</div>
 		</div>
 
-		<p class="has-text-weight-medium has-text-on-background mt-6 mb-4">What is your username there?</p>
+		<p class="has-text-weight-medium has-text-on-background is-size-5 mt-6 mb-5">What is your username there?</p>
 
 		<div>
-			<input id="siteUsername" type="text" name="username" value="" placeholder="Enter your account name.." class="input"/>
+			<input id="siteUsername" data-element="yes" type="text" name="username" value="" placeholder="Enter your account name.." class="input"/>
 		</div>
 
-		<p class="has-text-weight-medium has-text-on-background mt-6 mb-4">What time period do you want to analyse?</p>
+		<p class="has-text-weight-medium has-text-on-background is-size-5 mt-6 mb-5">What time period do you want to analyse?</p>
 
-		<div class="boxed-checkbox-group m-2">
+		<div class="boxed-checkbox-group">
 			<div class="boxed-checkbox">
-				<input class="is-hidden" type="checkbox" name="period_recent" id="periodRecentRadio" checked/>
+				<input class="is-hidden" type="checkbox" name="period_recent" id="periodRecentRadio" data-element="yes" checked/>
 				<label class="boxed-checkbox-label" for="periodRecentRadio"></label>
 				<div class="boxed-checkbox-checkmark">
 					<i class="fa-solid fa-circle-check"></i>
@@ -39,7 +39,7 @@
 				<span class="boxed-checkbox-text">The past year</span>
 			</div>
 			<div class="boxed-checkbox">
-				<input class="is-hidden" type="checkbox" name="period_older" id="periodOlderRadio"/>
+				<input class="is-hidden" type="checkbox" name="period_older" id="periodOlderRadio" data-element="yes"/>
 				<label class="boxed-checkbox-label" for="periodOlderRadio"></label>
 				<div class="boxed-checkbox-checkmark">
 					<i class="fa-solid fa-circle-check"></i>
@@ -49,11 +49,11 @@
 			</div>
 		</div>
 
-		<p class="has-text-weight-medium has-text-on-background mt-6 mb-4">Which time controls do you want to include?</p>
+		<p class="has-text-weight-medium has-text-on-background is-size-5 mt-6 mb-5">Which time controls do you want to include?</p>
 
-		<div class="boxed-checkbox-group m-2">
+		<div class="boxed-checkbox-group">
 			<div class="boxed-checkbox">
-				<input class="is-hidden" type="checkbox" name="type_daily" value="daily" id="typeDailyCheckbox" checked/>
+				<input class="is-hidden" type="checkbox" name="type_daily" value="daily" id="typeDailyCheckbox" data-element="yes" checked/>
 				<label class="boxed-checkbox-label" for="typeDailyCheckbox"></label>
 				<div class="boxed-checkbox-checkmark">
 					<i class="fa-solid fa-circle-check"></i>
@@ -62,7 +62,7 @@
 				<span class="boxed-checkbox-text">Daily</span>
 			</div>
 			<div class="boxed-checkbox">
-				<input class="is-hidden" type="checkbox" name="type_rapid" value="rapid" id="typeRapidCheckbox" checked/>
+				<input class="is-hidden" type="checkbox" name="type_rapid" value="rapid" id="typeRapidCheckbox" data-element="yes" checked/>
 				<label class="boxed-checkbox-label" for="typeRapidCheckbox"></label>
 				<div class="boxed-checkbox-checkmark">
 					<i class="fa-solid fa-circle-check"></i>
@@ -71,7 +71,7 @@
 				<span class="boxed-checkbox-text">Rapid</span>
 			</div>
 			<div class="boxed-checkbox">
-				<input class="is-hidden" type="checkbox" name="type_blitz" value="blitz" id="typeBlitzCheckbox" checked/>
+				<input class="is-hidden" type="checkbox" name="type_blitz" value="blitz" id="typeBlitzCheckbox" data-element="yes" checked/>
 				<label class="boxed-checkbox-label" for="typeBlitzCheckbox"></label>
 				<div class="boxed-checkbox-checkmark">
 					<i class="fa-solid fa-circle-check"></i>
@@ -80,7 +80,7 @@
 				<span class="boxed-checkbox-text">Blitz</span>
 			</div>
 			<div class="boxed-checkbox">
-				<input class="is-hidden" type="checkbox" name="type_bullet" value="bullet" id="typeBulletCheckbox"/>
+				<input class="is-hidden" type="checkbox" name="type_bullet" value="bullet" id="typeBulletCheckbox" data-element="yes"/>
 				<label class="boxed-checkbox-label" for="typeBulletCheckbox"></label>
 				<div class="boxed-checkbox-checkmark">
 					<i class="fa-solid fa-circle-check"></i>
@@ -91,7 +91,7 @@
 		</div>
 
 		<div class="mt-6 mb-4">
-			<button type="button" id="startButton" disabled class="button is-primary">
+			<button type="button" id="startButton" data-element="yes" disabled class="button is-primary">
 				Start analysing
 			</button>
 		</div>
@@ -107,5 +107,5 @@
 {% block javascripts %}
 	{{ parent() }}
 
-	<script type="module" src="{{ asset('js/analyse.js') }}">
+	<script type="module" src="{{ asset('js/analyse.js') }}"></script>
 {% endblock %}

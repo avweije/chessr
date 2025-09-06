@@ -2,50 +2,50 @@
 
 {% block body %}
 	<div class="is-flex is-justify-content-space-around p-4">
-		<div id="opponentTabButtons" class="boxed-radio-menu">
+		<div id="opponentTabButtons" data-element="yes" class="boxed-radio-menu">
 			<div class="boxed-radio">
-				<input class="is-hidden" type="radio" name="opponent_page" value="download" id="opponentDownloadRadio" checked/>
+				<input class="is-hidden" type="radio" name="opponent_page" value="download" id="opponentDownloadRadio" data-element="yes" checked/>
 				<label class="boxed-radio-label" for="opponentDownloadRadio"></label>
-				<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500">Download</span>
+				<span class="boxed-radio-text">Download</span>
 			</div>
 			<div class="boxed-radio">
-				<input class="is-hidden" type="radio" name="opponent_page" value="analysis" id="opponentAnalysisRadio"/>
+				<input class="is-hidden" type="radio" name="opponent_page" value="analysis" id="opponentAnalysisRadio" data-element="yes"/>
 				<label class="boxed-radio-label" for="opponentAnalysisRadio"></label>
-				<span class="boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500">Analysis</span>
+				<span class="boxed-radio-text">Analysis</span>
 			</div>
 		</div>
 	</div>
 
-	<div id="opponentDownloadTab" class="is-flex is-flex-direction-column is-align-items-center p-4">
-		<p class="has-text-weight-medium has-text-on-background mt-6 mb-4">On which website does your opponent play?</p>
+	<div id="opponentDownloadTab" data-element="yes" class="is-flex is-flex-direction-column is-align-items-center">
+		<p class="has-text-weight-medium has-text-on-background is-size-5 mt-6 mb-5">On which website does your opponent play?</p>
 
-		<div id="analyseWebsiteButtons" class="boxed-radio-group m-2">
+		<div id="analyseWebsiteButtons" data-element="yes" class="boxed-radio-group">
 			<div class="boxed-radio">
-				<input class="is-hidden" type="radio" name="website" value="Chess.com" id="siteChessDotComRadio" checked/>
+				<input class="is-hidden" type="radio" name="website" value="Chess.com" id="siteChessDotComRadio" data-element="yes" checked/>
 				<label class="boxed-radio-label" for="siteChessDotComRadio"></label>
 				<div class="boxed-radio-circle"></div>
 				<span class="boxed-radio-text">Chess.com</span>
 			</div>
 			<div class="boxed-radio">
-				<input class="is-hidden" type="radio" name="website" value="Lichess" id="siteLichessRadio"/>
+				<input class="is-hidden" type="radio" name="website" value="Lichess" id="siteLichessRadio" data-element="yes"/>
 				<label class="boxed-radio-label" for="siteLichessRadio"></label>
 				<div class="boxed-radio-circle"></div>
 				<span class="boxed-radio-text">Lichess</span>
 			</div>
 		</div>
 
-		<p class="has-text-weight-medium has-text-on-background mt-6 mb-4">What is their username there?</p>
+		<p class="has-text-weight-medium has-text-on-background is-size-5 mt-6 mb-5">What is their username there?</p>
 
 		<div>
-			<input id="siteUsername" type="search" name="username" value="" list="siteUsernameDataListChessCom" placeholder="Enter your opponent's account name.." class="input"/>
-			<datalist id="siteUsernameDataListChessCom">
+			<input id="siteUsername" data-element="yes" type="search" name="username" value="" list="siteUsernameDataListChessCom" placeholder="Enter your opponent's account name.." class="input"/>
+			<datalist id="siteUsernameDataListChessCom" data-element="yes">
 				{% for opp in opponents %}
 					{% if opp.site is same as ("Chess.com") %}
 						<option value="{{ opp.username|e }}">{{ opp.site|e }}</option>
 					{% endif %}
 				{% endfor %}
 			</datalist>
-			<datalist id="siteUsernameDataListLichess">
+			<datalist id="siteUsernameDataListLichess" data-element="yes">
 				{% for opp in opponents %}
 					{% if opp.site is same as("Lichess") %}
 						<option value="{{ opp.username|e }}">{{ opp.site|e }}</option>
@@ -54,11 +54,11 @@
 			</datalist>
 		</div>
 
-		<p class="has-text-weight-medium has-text-on-background mt-6 mb-4">Which time controls do you want to include?</p>
+		<p class="has-text-weight-medium has-text-on-background is-size-5 mt-6 mb-5">Which time controls do you want to include?</p>
 
-		<div class="boxed-checkbox-group m-2">
+		<div class="boxed-checkbox-group">
 			<div class="boxed-checkbox">
-				<input class="is-hidden" type="checkbox" name="type_daily" value="daily" id="typeDailyCheckbox" checked/>
+				<input class="is-hidden" type="checkbox" name="type_daily" value="daily" id="typeDailyCheckbox" data-element="yes" checked/>
 				<label class="boxed-checkbox-label" for="typeDailyCheckbox"></label>
 				<div class="boxed-checkbox-checkmark">
 					<i class="fa-solid fa-circle-check"></i>
@@ -67,7 +67,7 @@
 				<span class="boxed-checkbox-text">Daily</span>
 			</div>
 			<div class="boxed-checkbox">
-				<input class="is-hidden" type="checkbox" name="type_rapid" value="rapid" id="typeRapidCheckbox" checked/>
+				<input class="is-hidden" type="checkbox" name="type_rapid" value="rapid" id="typeRapidCheckbox" data-element="yes" checked/>
 				<label class="boxed-checkbox-label" for="typeRapidCheckbox"></label>
 				<div class="boxed-checkbox-checkmark">
 					<i class="fa-solid fa-circle-check"></i>
@@ -76,7 +76,7 @@
 				<span class="boxed-checkbox-text">Rapid</span>
 			</div>
 			<div class="boxed-checkbox">
-				<input class="is-hidden" type="checkbox" name="type_blitz" value="blitz" id="typeBlitzCheckbox" checked/>
+				<input class="is-hidden" type="checkbox" name="type_blitz" value="blitz" id="typeBlitzCheckbox" data-element="yes" checked/>
 				<label class="boxed-checkbox-label" for="typeBlitzCheckbox"></label>
 				<div class="boxed-checkbox-checkmark">
 					<i class="fa-solid fa-circle-check"></i>
@@ -85,7 +85,7 @@
 				<span class="boxed-checkbox-text">Blitz</span>
 			</div>
 			<div class="boxed-checkbox">
-				<input class="is-hidden" type="checkbox" name="type_bullet" value="bullet" id="typeBulletCheckbox"/>
+				<input class="is-hidden" type="checkbox" name="type_bullet" value="bullet" id="typeBulletCheckbox" data-element="yes"/>
 				<label class="boxed-checkbox-label" for="typeBulletCheckbox"></label>
 				<div class="boxed-checkbox-checkmark">
 					<i class="fa-solid fa-circle-check"></i>
@@ -96,49 +96,49 @@
 		</div>
 
 		<div class="mt-6 mb-4">
-			<button type="button" id="startButton" disabled class="button is-primary">
+			<button type="button" id="startButton" data-element="yes" disabled class="button is-primary">
 				Start analysing
 			</button>
 		</div>
 	</div>
 
-	<div id="opponentAnalysisTab" class="is-hidden is-flex is-flex-direction-column is-align-items-center is-justify-content-space-around">
+	<div id="opponentAnalysisTab" data-element="yes" class="is-hidden is-flex is-flex-direction-column is-align-items-center is-justify-content-space-around">
 		<div class="is-flex is-flex-direction-column is-align-items-center is-justify-content-center p-4">
 			<div id="opponentTextAndContainer" class="p-6">
-				<p id="chooseOpponentText" class="has-text-weight-medium has-text-on-background has-text-centered">Choose your opponent:</p>
-				<div id="opponentContainer" class="boxed-radio-group m-2 mt-6"></div>
+				<p id="chooseOpponentText" data-element="yes" class="has-text-weight-medium has-text-on-background has-text-centered">Choose your opponent:</p>
+				<div id="opponentContainer" data-element="yes" class="boxed-radio-group m-2 mt-6"></div>
 			</div>
 
 			<p class="has-text-weight-medium has-text-on-background mt-6 mb-4">Which side of your opponent do you want to see?</p>
 
-			<div id="opponentColorButtons" class="boxed-radio-group m-2">
+			<div id="opponentColorButtons" data-element="yes" class="boxed-radio-group m-2">
 				<div class="boxed-radio">
-					<input class="is-hidden" type="radio" name="opponent_color" value="white" id="opponentColorWhiteRadio" checked/>
+					<input class="is-hidden" type="radio" name="opponent_color" value="white" id="opponentColorWhiteRadio" data-element="yes" checked/>
 					<label class="boxed-radio-label" for="opponentColorWhiteRadio"></label>
 					<div class="boxed-radio-circle"></div>
 					<span class="boxed-radio-text">White</span>
 				</div>
 				<div class="boxed-radio">
-					<input class="is-hidden" type="radio" name="opponent_color" value="black" id="opponentColorBlackRadio"/>
+					<input class="is-hidden" type="radio" name="opponent_color" value="black" id="opponentColorBlackRadio" data-element="yes"/>
 					<label class="boxed-radio-label" for="opponentColorBlackRadio"></label>
 					<div class="boxed-radio-circle"></div>
 					<span class="boxed-radio-text">Black</span>
 				</div>
 			</div>
 
-			<div id="opponentMovesContainer" class="is-hidden is-flex is-flex-direction-column is-align-items-center mt-6">
-				<div id="opponentMovesHeader" class="box p-0 is-flex is-flex-direction-column mb-6 w-medium">
-					<div id="opponentMovesEco" class="box-header is-gap-1"></div>
+			<div id="opponentMovesContainer" data-element="yes" class="is-hidden is-flex is-flex-direction-column is-align-items-center mt-6">
+				<div id="opponentMovesHeader" data-element="yes" class="box p-0 is-flex is-flex-direction-column mb-6 w-medium">
+					<div id="opponentMovesEco" data-element="yes" class="box-header is-gap-1"></div>
 					<div class="is-flex gap-x-5 is-justify-content-space-between is-align-items-center">
 						<div class="is-flex is-align-items-center px-2 py-3">
-							<button id="opponentMovesFirstButton" disabled class="is-flex-shrink-0">
+							<button id="opponentMovesFirstButton" data-element="yes" disabled class="is-flex-shrink-0">
 								<span class="icon">
 									<i class="fa-solid fa-backward-step"></i>
 								</span>
 							</button>
-							<div id="opponentMovesPgnField" class="pgn-moves-container pl-2"></div>
+							<div id="opponentMovesPgnField" data-element="yes" class="pgn-moves-container pl-2"></div>
 						</div>
-						<div id="opponentMovesInfo" class="is-flex-shrink-0 px-3 py-2 has-text-right">
+						<div id="opponentMovesInfo" data-element="yes" class="is-flex-shrink-0 px-3 py-2 has-text-right">
 							<p class="is-size-7 mb-px has-text-faded">Wins:
 								<span class="ml-1">0</span>
 							</p>
@@ -147,7 +147,7 @@
 							</p>
 						</div>
 					</div>
-					<div id="opponentMovesRepertoire" class="is-hidden box-footer is-gap-2 px-3 pb-3 pt-1">
+					<div id="opponentMovesRepertoire" data-element="yes" class="is-hidden box-footer is-gap-2 px-3 pb-3 pt-1">
 						<div class="is-size-6 pl-1 has-text-faded"></div>
 						<button id="opponentMoveSubmitButton" type="button" class="button is-small">
 							<span class="icon">
@@ -155,8 +155,8 @@
 							</span>
 						</button>
 					</div>
-					<form id="opponentMoveForm" method="post" action="{{ path('repertoire') }}" target="_blank"></form>
-					<div id="opponentMoveSuggestions" class="is-hidden is-flex is-justify-content-space-between is-align-items-center is-gap-2 p-3">
+					<form id="opponentMoveForm" data-element="yes" method="post" action="{{ path('repertoire') }}" target="_blank"></form>
+					<div id="opponentMoveSuggestions" data-element="yes" class="is-hidden is-flex is-justify-content-space-between is-align-items-center is-gap-2 p-3">
 						<div class="is-size-6 pl-1 has-text-faded"></div>
 						<button id="opponentMoveSuggestionsButton" type="button" class="button is-small">
 							<span class="icon">
@@ -166,16 +166,16 @@
 					</div>
 				</div>
 
-				<div id="opponentMoveSuggestionsContainer" class="is-hidden box p-0 mb-6 w-medium">
-					<div class="box-header">Suggestions</div>
+				<div id="opponentMoveSuggestionsContainer" data-element="yes" class="is-hidden box p-0 mb-6 w-medium">
+					<div class="box-header has-text-weight-semibold">Suggestions</div>
 					<div class="is-flex is-flex-direction-column"></div>
 				</div>
 
-				<div id="opponentMovesTable" class="is-flex is-flex-wrap-wrap is-gap-1 is-justify-content-center mx-6 mb-2"></div>
+				<div id="opponentMovesTable" data-element="yes" class="is-flex is-flex-wrap-wrap is-gap-1 is-justify-content-center mx-6 mb-2"></div>
 			</div>
 
 			<div class="is-fixed right-0 bottom-0 p-2 dialog-open-hide">
-				<button id="opponentRemoveButton" type="button" title="Remove this opponent" class="button is-hidden is-danger is-small">
+				<button id="opponentRemoveButton" data-element="yes" type="button" title="Remove this opponent" class="button is-hidden is-danger is-small">
 					<span class="icon">
 						<i class="fa-solid fa-trash"></i>
 					</span>
@@ -198,5 +198,5 @@
 {% block javascripts %}
 	{{ parent() }}
 
-	<script type="module" src="{{ asset('js/opponent.js') }}">
+	<script type="module" src="{{ asset('js/opponent.js') }}"></script>
 {% endblock %}

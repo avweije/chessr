@@ -467,8 +467,8 @@ class RepertoireController extends ChessrAbstractController
         $qb = $this->em->createQueryBuilder();
         $qb->select('m')
             ->from('App\Entity\MoveStats', 'm')
-            ->join('m.fen', 'f') // join the Fen entity
-            ->where('f.fen = :fen') // filter by the actual FEN string
+            ->join('m.fen', 'f')
+            ->where('f.fen = :fen')
             ->orderBy('m.wins + m.draws + m.losses', 'DESC')
             ->setParameter('fen', $fenstr);
 

@@ -17,7 +17,7 @@ export class Utils {
 
   static showLoading() {
     if (this.showCounter == 0) {
-      this.pageLoadingOverlay.classList.remove("is-hidden");
+      //this.pageLoadingOverlay.classList.remove("is-hidden");
     }
 
     this.showCounter++;
@@ -27,7 +27,7 @@ export class Utils {
     this.showCounter--;
 
     if (this.showCounter <= 0 || force) {
-      this.pageLoadingOverlay.classList.add("is-hidden");
+      //this.pageLoadingOverlay.classList.add("is-hidden");
       this.showCounter = 0;
     }
   }

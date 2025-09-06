@@ -98,6 +98,24 @@ class Roadmap {
     this.getRoadmap();
   }
 
+  getElements() {
+    // Get the data-elements for reference
+    this.elements = [];
+    document.querySelectorAll("[data-element]").forEach(el => {
+      if (el.dataset.element !== "yes") return;
+      this.elements[el.id] = el;
+    });
+
+    // get the elements
+    this.tabs.buttons = document.getElementById("settingsTabButtons");
+    this.tabs.account = document.getElementById("settingsTabAccount");
+    this.tabs.board = document.getElementById("settingsTabBoard");
+    this.tabs.engine = document.getElementById("settingsTabEngine");
+    this.tabs.practice = document.getElementById("settingsTabPractice");
+
+    console.log('getElements', this.elements);
+  }
+  
   // get the currently selected color
   getCurrentColor() {
     return this.roadmapTypeButtons.children[0].children[0].checked
@@ -289,7 +307,7 @@ class Roadmap {
     // show the current ECO and PGN
     this.roadmapTreeCurrentField.innerHTML = data.eco
       ? data.eco.name +
-        ' (<span class="font-normal">' +
+        ' (<span>' +
         data.pgn +
         "</span>)"
       : data.pgn;
@@ -395,7 +413,7 @@ class Roadmap {
     for (var i = 0; i < moves.length; i++) {
       //
       var row = document.createElement("div");
-      row.className = "grid-row-hover contents cursor-pointer tc-base";
+      row.className = "grid-row-hover contents cursor-pointer";
 
       // add the percentage played
       div = document.createElement("div");

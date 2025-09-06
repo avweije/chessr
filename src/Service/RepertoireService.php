@@ -2,7 +2,6 @@
 
 namespace App\Service;
 
-use App\Entity\Moves;
 use App\Entity\MoveStats;
 use App\Entity\User;
 use App\Repository\RepertoireRepository;
@@ -385,7 +384,7 @@ class RepertoireService
             $isRightColor = empty($color) || ($move['color'] ?? '') == $color;
 
             // Determine if this move matches our criteria
-            $isMatch = ($newOnly && $isNew) && $isRightColor;
+            $isMatch = ($newOnly && $isNew) || (!$newOnly && $isRightColor);
 
             // Build the line leading to this move
             $currentLine = $lineSoFar;
@@ -465,7 +464,7 @@ class RepertoireService
             $isRightColor = empty($color) || ($move['color'] ?? '') == $color;
 
             // Determine if this move matches our criteria
-            $isMatch = ($newOnly && $isNew) && $isRightColor;
+            $isMatch = ($newOnly && $isNew) || (!$newOnly && $isRightColor);
 
             // Stop the block if it's our move and not new
             if ($ourMove && !$isMatch) {
@@ -1811,9 +1810,10 @@ class RepertoireService
                             // get the most played moves for this position
                             $qb = $this->repo->getEntityManager()->createQueryBuilder();
                             $qb->select('m')
-                                ->from('App\Entity\Moves', 'm')
-                                ->where('m.Fen = :fen')
-                                ->orderBy('m.Wins + m.Draws + m.Losses', 'DESC')
+                                ->from('App\Entity\MoveStats', 'm')
+                                ->join('m.fen', 'f')
+                                ->where('f.fen = :fen')
+                                ->orderBy('m.wins + m.draws + m.losses', 'DESC')
                                 ->setParameter('fen', $line["after"]);
 
                             $res = $qb->getQuery()->getResult();

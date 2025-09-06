@@ -14,17 +14,17 @@
 				{{ form_row(loginForm.email, {'label': 'Email address', 'full_name': '_username', 'value': last_username, 'attr': { 'placeholder': 'Enter your email address...'}}) }}
 				{{ form_row(loginForm.password, {'label': 'Password', 'full_name': '_password', 'attr': { 'placeholder': 'Enter your password...'}}) }}
 
-				<div class="field mt-3">
-					<label class="input-toggle">
+				<div class="field mt-4">
+					<label class="toggle">
 						<input type="checkbox" name="_remember_me" value="1" class="sr-only peer">
-						<div class="input-toggle-switch"></div>
-						<span class="ml-2 is-size-6">Keep me logged in</span>
+						<div class="knob"></div>
+						<span class="toggle-label">Remember me</span>
 					</label>
 				</div>
 
 				<input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
 
-				<div class="buttons">
+				<div class="buttons is-justify-content-flex-end mt-5">
 					<button type="submit" class="button is-primary">
 						Sign In
 					</button>

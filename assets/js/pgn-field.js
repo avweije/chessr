@@ -2,7 +2,14 @@ import { MyChess } from "chess";
 
 
 /**
+ * PgnField class that renders a PGN in a container using text or links.
+ * Keeps track of the history of moves for a main line and optionally for 1 or more variations.
+ * Keeps track of the current move.
+ * Offers functions for navigation that fire callbacks for synchronizing.
  * 
+ * @param {element} container - The container where the PGN will be rendered.
+ * @param {object} options    - The options for the PgnField. See default options.
+ * @param {object} handlers   - The event handlers to call when navigating. See event handlers.
  */
 export class PgnField {
   pgnField = null;
@@ -16,108 +23,87 @@ export class PgnField {
   history = [];
   variations = [];
 
-  /**
-   * What do we want..
-   * 
-   * - reset(fen, moves) -> reset to fen, clear variations, set moves as main line
-   * - resetToCurrent(fen) -> uses this.game.history(), I don't think we need the game here..
-   * - isFirst(), isLast() -> we need to remember current move, this is part of it
-   * - gotoFirst(), gotoLast() -> we need these too, we set current move so the pgn field 
-   * highlights the current move. do we need to pass something to the controller?
-   * or does the controller just call this to update the pgn field? and handles the rest themselves?
-   * no... for the variations, the board needs to make all the moves from the start for it to be valid
-   * so with the goTo() function, it needs to return the moves to make?
-   * 
-   * - add onGotoMove callback to do something after a gotoMove() call
-   * 
-   * - addMoveToHistory(move) -> adds a move to the history or variations - need this
-   * - addVariation(moveNr, moves) -> adds a variation at moveNr with moves - need this
-   * 
-   * - getPgn(withVariations, pgnField) -> returns the pgn string, if pgnField is set, it updates it too
-   * 
-   * - setPgnField(element) -> sets the pgn field element - we do this in constructor now
-   * 
-   * - setPgnWithLinks(toggle) -> toggle links on/off, updates the pgn field
-   * 
-   * - updatePgnField() -> updates the pgn field if set
-   * 
-   * - getPgnWithLinks(withVariations) -> internal, keep
-   * 
-   * - getPgnForVariation(i, x, pgnField) -> internal, keep
-   * 
-   * - addPgnVariations(i, pgnField, groupSpan) -> internal, keep
-   * 
-   * - getHistoryMove(moveNr) -> returns an array of moves at moveNr, main line + variations
-   * 
-   */
-
   handlers = {};
   options = {};
 
   // The default options
   static defaultOptions = {
-    navigationEnabled: true,  // Adds event listeners for left & right arrow keys for navigating the pgn
-    useVariations: true,      // Allows the use of variations
-    withLinks: true,          // Uses links in the pgn for navigation
-    noLinkForLastMove: false, // Omits the link for the last move (only when withLinks = true)
-    emptyText: null,          // Optionally display an empty text when there are no moves instead of '1.'
-    pauseUpdate: false        // Temporarily pause the updating of the pgn field
+    navigationEnabled: true,   // Adds event listeners for left & right arrow keys for navigating the pgn
+    useVariations: true,       // Allows the use of variations
+    withLinks: true,           // Uses links in the pgn for navigation
+    useTextForLastMove: false, // Uses text for the last move if withLinks is set to true
+    highlightLastMove: true,   // Highlight the last move if it's the current one
+    emptyText: null,           // Optionally display an empty text when there are no moves instead of '1.'
+    pauseUpdate: false         // Temporarily pause the updating of the pgn field
   };
 
+  /**
+   * 
+   * @param {*} param0 
+   */
   constructor({
     container = null,
     options = {},
     handlers = {}
   }) {
-
-    //console.log("pgnContainer", container, options, handlers);
-
-    // the pgn field container
+    // Store the container
     this.pgnField = container;
-
+    // Store the options
     this.options = { ...PgnField.defaultOptions, ...options };
-
-    //console.log("pgnField options:", this.options);
-
+    // Store the handlers
     const defaultHandlers = {
       onGotoMove: () => { }
     };
 
     this.handlers = { ...defaultHandlers, ...handlers };
 
-    //console.log('pgnField handlers:', this.handlers);
-
-    // create the chess game
+    // Create the chess game
     this.game = new MyChess();
 
-    // add keydown event listeners for left/right (prev/next move)
+    // Add the keyboard navigation event listeners
     document.addEventListener("keydown", (event) => {
-      // if navigation is enabled and arrow left/right was hit
+      // If navigation is enabled and arrow left/right was hit
       if (
         this.options.navigationEnabled &&
-        (event.key == "ArrowRight" || event.key == "ArrowLeft") &&
+        (['ArrowRight','ArrowLeft','ArrowUp','ArrowDown'].includes(event.key)) &&
         (!document.activeElement ||
           !["INPUT", "SELECT", "TEXTAREA"].includes(
             document.activeElement.nodeName
           ))
       ) {
-        if (event.key == "ArrowRight") {
-          this.gotoNext();
-        } else {
-          this.gotoPrevious();
+        // Navigate to next or previous
+        switch (event.key) {
+          case 'ArrowRight':
+            this.gotoNext();
+            break;
+          case 'ArrowLeft':
+            this.gotoPrevious();
+            break;
+          case 'ArrowUp':
+            this.gotoFirst();
+            break;
+          case 'ArrowDown':
+            this.gotoLast();
+            break;
         }
       }
     });
-
-    // if no container, can we create it and return it??
   }
 
-  // Set the container
+  /**
+   * Overrides the current container element.
+   * 
+   * @param {element} container - The new container element for the PGN.
+   */
   setContainer(container) {
     this.pgnField = container;
   }
 
-  // update one or several options runtime
+  /**
+   * Update 1 or several options during runtime.
+   * 
+   * @param {object} options - One or several options to override. See default options.
+   */
   setOptions(options = {}) {
     for (const [key, value] of Object.entries(options)) {
       if (!(key in PgnField.defaultOptions)) {
@@ -129,12 +115,11 @@ export class PgnField {
 
 
   /**
-   * Reset history to a certain position with moves, clear variations, update pgn field
+   * Resets the game history and makes the moves. Clears variations and resets the current move to the 1st.
    * 
-   * @param {string} fen 
-   * @param {array} moves
+   * @param {string} fen  - The intiial starting position.
+   * @param {array} moves - The moves to make after resetting.
    */
-
   _resetWithMoves(fen, moves = []) {
     // reset the game
     this.game.reset();
@@ -156,6 +141,12 @@ export class PgnField {
     this.currentVariation = -1;
   }
 
+  /**
+   * Resets the game history and optionally makes moves after resetting.
+   * 
+   * @param {string} fen  - The initial starting position.
+   * @param {array} moves - The moves to make after resetting.
+   */
   reset(fen = "", moves = []) {
 
     console.log("pgnField.reset", fen, moves);
@@ -172,6 +163,8 @@ export class PgnField {
   }
 
   /**
+   * Reset to the current game history. Needs to be passed from chessboard.js.
+   * Updates the current move to last move.
    * 
    * @param {*} fen 
    */
@@ -179,12 +172,21 @@ export class PgnField {
     // reset the game and make the moves to get the correct history
     this._resetWithMoves(fen, moves);
 
-    //console.log('PgnField - resetToCurrent', fen, this.history);
+    console.log('PgnField - resetToCurrent', fen, this.history);
+
+    // Update the current move to the last move
+    this.currentMove = this.history.length;
 
     // update the pgn field
     this.updatePgnField();
   }
 
+  /**
+   * Resets to a certain move number. Removes history after that. 
+   * Resets variations and sets the current move to the last move.
+   * 
+   * @param {int} moveNr - The move number to reset to.
+   */
   resetTo(moveNr) {
 
     //console.log('PgnField - resetTo history', this.game.history({ verbose: true }));
@@ -203,8 +205,9 @@ export class PgnField {
     this.updatePgnField();
   }
 
-  // addMove - addMoveToHistory
-
+  /**
+   * Remove the last move. Undoes the last game move.
+   */
   removeLast() {
     // undo the move
     this.game.undo();
@@ -224,17 +227,26 @@ export class PgnField {
     this.updatePgnField();
   }
 
-  //
-  // need an addToHistory and removeFromHistory or undoLastMove function ??
-  //
-
+  /**
+   * Returns true if the current move is the 1st move.
+   * 
+   * @returns {bool}
+   */
   isFirst() {
+
+    console.log('PgnField - isFirst', this.currentMove, this.history.length);
+  
     // make sure we have the currentMove
     this.currentMove = this.currentMove == -1 ? this.history.length : this.currentMove;
 
     return this.currentMove == 0;
   }
 
+  /**
+   * Returns true if the current move is the last move in the current line or variation.
+   * 
+   * @returns {bool}
+   */
   isLast() {
     // make sure we have the currentMove
     this.currentMove = this.currentMove == -1 ? this.history.length : this.currentMove;
@@ -263,8 +275,17 @@ export class PgnField {
     }
   }
 
+  /**
+   * Jumps to a certain move in the current history. Leaves history in tact.
+   * Returns the moves to make to get to the new position.
+   * 
+   * @param {int} moveNr         - The move number to jump to.
+   * @param {int} variationIdx   - The variation to jump to.
+   * @param {bool} afterGotoMove - If this is the current move, optionally call afterGotoMove.
+   * @returns 
+   */
   gotoMove(moveNr, variationIdx = -1, afterGotoMove = true) {
-    var moves = [];
+    let moves = [];
 
     // safety, 1st move minimum
     moveNr = Math.max(0, moveNr);
@@ -333,10 +354,10 @@ export class PgnField {
       moves = this.history.slice(0, moveNr);
     } else {
       // get the 1st move of the top (parent) variation
-      var varStart = this.variations[variationIdx].moveNr;
+      let varStart = this.variations[variationIdx].moveNr;
       // get all the parent-variations, top level 1st
-      var parent = this.variations[variationIdx].parent;
-      var parents = [];
+      let parent = this.variations[variationIdx].parent;
+      const parents = [];
       while (parent !== null) {
         // add to the beginning of the parents array
         parents.splice(0, 0, parent);
@@ -349,8 +370,8 @@ export class PgnField {
       moves = this.history.slice(0, varStart - 1);
 
       // add the parent(s) variation moves
-      for (var i = 0; i < parents.length; i++) {
-        var varEnd =
+      for (let i = 0; i < parents.length; i++) {
+        let varEnd =
           parents.length > i + 1
             ? this.variations[parents[i + 1]].moveNr
             : this.variations[variationIdx].moveNr;
@@ -385,26 +406,29 @@ export class PgnField {
     return moves;
   }
 
-  // goto 1st move main line
+  /**
+   * Goto the first move in the current line or variation.
+   */
   gotoFirst() {
-
-    //console.log('PgnField - gotoFirst');
-
     this.gotoMove(0);
   }
 
-  // goto last move main line
+  /**
+   * Goto the last move in the current line or variation.
+   */
   gotoLast() {
     this.gotoMove(this.history.length);
   }
 
-  // goto previous move in current line or variation
+  /**
+   * Goto the previous move in the current line or variation.
+   */
   gotoPrevious() {
     // make sure we have the currentMove
     this.currentMove =
       this.currentMove == -1 ? this.history.length : this.currentMove;
 
-    var gotoMove = this.currentMove - 1;
+    let gotoMove = this.currentMove - 1;
 
     // if we are on the 1st move of a variation
     if (
@@ -418,7 +442,9 @@ export class PgnField {
     this.gotoMove(gotoMove, this.currentVariation, false);
   }
 
-  // goto next move in current line or variation
+  /**
+   * Goto the next move in the current line or variation.
+   */
   gotoNext() {
     // make sure we have the currentMove
     this.currentMove =
@@ -427,7 +453,11 @@ export class PgnField {
     this.gotoMove(this.currentMove + 1, this.currentVariation, false);
   }
 
-  //
+  /**
+   * Adds a move to the game history. Sets the current move to this move.
+   * 
+   * @param {move} move 
+   */
   addMoveToHistory(move) {
 
     console.info("PgnField.addMoveToHistory", move, this.game.history());
@@ -441,8 +471,8 @@ export class PgnField {
       //move = this.game.history({ verbose: true }).pop();
 
       // get the current move index
-      //var moveNr = this.game.moveNumber();
-      var moveNr = this.game.history().length;
+      //const moveNr = this.game.moveNumber();
+      const moveNr = this.game.history().length;
 
       console.log("PgnField addMoveToHistory - moveNr:", moveNr, this.currentVariation);
 
@@ -457,9 +487,9 @@ export class PgnField {
 
           if (this.options.useVariations) {
             //
-            var addVariation = true;
+            let addVariation = true;
             //
-            for (var i = 0; i < this.variations.length; i++) {
+            for (let i = 0; i < this.variations.length; i++) {
               if (this.variations[i].moveNr == moveNr) {
                 //
                 if (this.variations[i].moves[0].san == move.san) {
@@ -536,15 +566,22 @@ export class PgnField {
     }
   }
 
+  /**
+   * Adds a variation at the specified move number.
+   * 
+   * @param {int} moveNr  - The move number at which to add the variation.
+   * @param {array} moves - The moves for the variation.
+   * @returns 
+   */
   addVariation(moveNr, moves) {
 
     console.info("addVariation", moveNr, moves);
 
-    var currVar = -1;
-    var match = true;
+    let currVar = -1;
+    let match = true;
     // loop through the moves
-    for (var i = 0; i < moves.length; i++) {
-      var ii = moveNr - 1 + i;
+    for (let i = 0; i < moves.length; i++) {
+      let ii = moveNr - 1 + i;
       // if no more history or (current) variation moves
       if (
         !match ||
@@ -562,7 +599,7 @@ export class PgnField {
       // if the history move does not match
       if (currVar == -1 && this.history[ii].san !== moves[i]) {
         // not a match, check main line variations
-        for (var x = 0; x < this.variations.length; x++) {
+        for (let x = 0; x < this.variations.length; x++) {
           if (
             this.variations[x].parent == null &&
             this.variations[x].moveNr == ii + 1 &&
@@ -585,9 +622,9 @@ export class PgnField {
         this.variations[currVar].moves[ii - this.variations[currVar].moveNr + 1]
           .san !== moves[i]
       ) {
-        var found = false;
+        let found = false;
         // not a match, check child variations
-        for (var x = 0; x < this.variations.length; x++) {
+        for (let x = 0; x < this.variations.length; x++) {
           if (
             this.variations[x].parent == this.variations[currVar].parent &&
             this.variations[x].moveNr == ii + 1 &&
@@ -607,7 +644,7 @@ export class PgnField {
     }
 
     // create a game to make the moves
-    var game = new MyChess();
+    const game = new MyChess();
     if (this.initialFen != "") {
       game.load(this.initialFen);
     }
@@ -615,13 +652,13 @@ export class PgnField {
     //console.log('PgnField - addVariation - make moves', moveNr, this.history);
 
     // play all moves up to moveNr - 1
-    for (var i = 0; i < moveNr - 1; i++) {
+    for (let i = 0; i < moveNr - 1; i++) {
       game.move(this.history[i].san);
     }
 
     // play all the new moves
-    var madeMoves = [];
-    for (var i = 0; i < moves.length; i++) {
+    let madeMoves = [];
+    for (let i = 0; i < moves.length; i++) {
       game.move(moves[i]);
       madeMoves.push(game.history({ verbose: true }).pop());
     }
@@ -637,27 +674,40 @@ export class PgnField {
     return this.variations.length - 1;
   }
 
+  /**
+   * Toggle the use of links.
+   * 
+   * @param {bool} toggle 
+   */
   setPgnWithLinks(toggle = true) {
     this.options.withLinks = toggle;
     // update the pgn field
     this.updatePgnField();
   }
 
+  /**
+   * Updates the PGN container with the current PGN and variations (optionally).
+   */
   updatePgnField() {
 
-    console.log("updatePgnField", this.pgnField, this.options?.pauseUpdate);
+    console.log('PgnField - updatePgnField:', this.pgnField, this.options?.pauseUpdate);
 
+    // If we have a container element and updating is not paused
     if (this.pgnField && !this.options?.pauseUpdate) {
       this.getPgn(this.options.useVariations, this.pgnField);
     }
   }
 
-  getPgnWithLinks(withVariations = true) {
-    return this.getPgn(withVariations, true);
-  }
-
+  /**
+   * Builds a PGN string and renders the PGN in the container element.
+   * Uses text or links depending on current settings.
+   * 
+   * @param {bool} withVariations - Include variations.
+   * @param {element} pgnField    - The container element to render the PGN in (allows for custom overrides from extended classes).
+   * @returns 
+   */
   getPgn(withVariations = true, pgnField = null) {
-    var pgn = "";
+    let pgn = "";
 
     console.log('PgnField.getPgn', withVariations, pgnField, this.history);
 
@@ -686,14 +736,14 @@ export class PgnField {
     }
 
     // make sure we have the currentMove
-    var currentMove = this.currentMove == -1 ? this.history.length : this.currentMove;
+    const currentMove = this.currentMove == -1 ? this.history.length : this.currentMove;
 
     //console.log("PgnField getPgn", withVariations, this.currentMove, this.history, this.options);
 
     let groupSpan = null;
     // loop through the moves
-    for (var i = 0; i < this.history.length; i++) {
-      var moveNr = Math.floor(i / 2) + 1;
+    for (let i = 0; i < this.history.length; i++) {
+      const moveNr = Math.floor(i / 2) + 1;
 
       if (i % 2 == 0) {
         // add the previous group span
@@ -721,18 +771,21 @@ export class PgnField {
       pgn += this.history[i].san + " ";
 
       if (pgnField) {
-        var moveSpan = document.createElement("span");
+        const moveSpan = document.createElement("span");
 
         //console.log('getPgn - currentMove:', i, this.history.length, this.options);
 
         // Add move or text styling
-        if (this.options.withLinks && !(this.options.noLinkForLastMove && i + 1 == this.history.length)) {
+        if (this.options.withLinks && !(this.options.useTextForLastMove && i + 1 == this.history.length)) {
           moveSpan.classList.add('pgn-move');
         } else {
           moveSpan.classList.add('pgn-text');
         }
-        // Add current move styling
-        if (this.currentVariation == -1 && currentMove == i + 1) {
+        // Add current move styling (unless we dont want to highlight the last move and it is)
+        if (
+          this.currentVariation == -1 && currentMove == i + 1 &&
+          (this.options.highlightLastMove || i + 1 < this.history.length)
+        ) {
           moveSpan.classList.add('current-move')
         }
 
@@ -770,10 +823,18 @@ export class PgnField {
     return pgn.trim();
   }
 
+  /**
+   * Adds a variation to the PGN.
+   * 
+   * @param {int} i             - The variation index.
+   * @param {element} pgnField  - The container element.
+   * @param {element} groupSpan - The current group span. 
+   * @returns 
+   */
   addPgnVariations(i, pgnField, groupSpan) {
     let groupRecreated = false;
     let pgn = '';
-    for (var x = 0; x < this.variations.length; x++) {
+    for (let x = 0; x < this.variations.length; x++) {
       if (
         this.variations[x].parent == null &&
         this.variations[x].moveNr == i + 1
@@ -791,11 +852,19 @@ export class PgnField {
     return pgn;
   }
 
+  /**
+   * Gets the PGN for a variation.
+   * 
+   * @param {int} i            - The variation index.
+   * @param {int} x            - The variation move index.
+   * @param {element} pgnField - The container element.
+   * @returns 
+   */
   getPgnForVariation(i, x, pgnField) {
-    var pgn = '<span class="pgn-moves-variation">(';
+    let pgn = '<span class="pgn-moves-variation">(';
 
     if (pgnField) {
-      var sp = document.createElement("span");
+      const sp = document.createElement("span");
       sp.classList.add('is-variation');
       sp.classList.add('pgn-text');
 
@@ -804,13 +873,13 @@ export class PgnField {
       pgnField.appendChild(sp);
     }
 
-    var moveNr = Math.floor(i / 2) + 1;
+    let moveNr = Math.floor(i / 2) + 1;
 
     if (i % 2 == 1) {
       pgn += moveNr + "... ";
 
       if (pgnField) {
-        var sp = document.createElement("span");
+        const sp = document.createElement("span");
         sp.classList.add('is-variation');
         sp.classList.add('pgn-text');
         sp.innerHTML = moveNr + "...";
@@ -818,7 +887,7 @@ export class PgnField {
       }
     }
 
-    for (var y = 0; y < this.variations[x].moves.length; y++) {
+    for (let y = 0; y < this.variations[x].moves.length; y++) {
       // get the move number
       moveNr = Math.floor((i + y) / 2) + 1;
 
@@ -826,7 +895,7 @@ export class PgnField {
         pgn += moveNr + ". ";
 
         if (pgnField) {
-          var sp = document.createElement("span");
+          const sp = document.createElement("span");
           sp.classList.add('is-variation');
           sp.classList.add('pgn-text');
           sp.classList.add('move-number');
@@ -837,7 +906,7 @@ export class PgnField {
       pgn += this.variations[x].moves[y].san + " ";
 
       if (pgnField) {
-        var sp = document.createElement("span");
+        const sp = document.createElement("span");
         sp.classList.add('is-variation');
 
         // Add move or text styling
@@ -871,7 +940,7 @@ export class PgnField {
       }
 
       // look for any sub-variations from this point
-      for (var z = 0; z < this.variations.length; z++) {
+      for (let z = 0; z < this.variations.length; z++) {
         if (
           this.variations[z].parent == x &&
           this.variations[z].moveNr == i + y + 1
@@ -883,7 +952,7 @@ export class PgnField {
     pgn += ")</span>";
 
     if (pgnField) {
-      var sp = document.createElement("span");
+      const sp = document.createElement("span");
       sp.classList.add('is-variation');
       sp.classList.add('pgn-text');
 
@@ -894,28 +963,4 @@ export class PgnField {
 
     return pgn;
   }
-
-  getHistoryMove(moveNr) {
-    var moves = [];
-
-    // add the main line move
-    if (this.history.length >= moveNr) {
-      moves.push(this.history[moveNr]);
-    }
-
-    // add the variations moves
-    for (var i = 0; i < this.variations.length; í++) {
-      if (
-        this.variations[i].moveNr <= moveNr &&
-        this.variations[i].moveNr + this.variations[i].moves.length >= moveNr
-      ) {
-        moves.push(
-          this.variations[i].moves[moveNr - this.variations[i].moveNr]
-        );
-      }
-    }
-
-    return moves;
-  }
-
 }
