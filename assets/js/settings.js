@@ -40,7 +40,7 @@ class Settings {
 
   getElements() {
     // Get the data-elements for reference
-    this.elements = [];
+    this.elements = {};
     document.querySelectorAll("[data-element]").forEach(el => {
       if (el.dataset.element !== "yes") return;
       this.elements[el.id] = el;
@@ -52,8 +52,6 @@ class Settings {
     this.tabs.board = document.getElementById("settingsTabBoard");
     this.tabs.engine = document.getElementById("settingsTabEngine");
     this.tabs.practice = document.getElementById("settingsTabPractice");
-
-    console.log('getElements', this.elements);
   }
 
   addListeners() {
@@ -68,10 +66,8 @@ class Settings {
         this.elements.accountEmailAddress.value == "" ||
         this.elements.accountEmailAddress.value == this.settings.email
       ) {
-        this.elements.accountConfirmContainer.classList.remove("opacity-100");
         this.elements.accountConfirmContainer.classList.add("is-hidden");
       } else {
-        this.elements.accountConfirmContainer.classList.add("opacity-100");
         this.elements.accountConfirmContainer.classList.remove("is-hidden");
       }
     });
@@ -85,24 +81,15 @@ class Settings {
       "click", this.sendVerificationEmail.bind(this));
 
       // Add select and range input change handlers
-    this.elements.boardThemeSelect.addEventListener(
-      "change", this.onChangeBoardSettings.bind(this));
-    this.elements.boardPiecesSelect.addEventListener(
-      "change", this.onChangeBoardSettings.bind(this));
-    this.elements.animationDuration.addEventListener(
-      "change", this.onChangeAnimationDuration.bind(this));
-    this.elements.repertoireEngineTime.addEventListener(
-      "change", this.updateSettings.bind(this));
-    this.elements.animateVariation.addEventListener(
-      "change", this.updateSettings.bind(this));
-    this.elements.recommendInterval.addEventListener(
-      "change", this.updateSettings.bind(this));
-    this.elements.analyseEngineTime.addEventListener(
-      "change", this.updateSettings.bind(this));
-    this.elements.analyseIgnoreInaccuracy.addEventListener(
-      "change", this.updateSettings.bind(this));
-    this.elements.analyseMistakeTolerance.addEventListener(
-      "change", this.updateSettings.bind(this));
+    this.elements.boardThemeSelect.addEventListener("change", this.onChangeBoardSettings.bind(this));
+    this.elements.boardPiecesSelect.addEventListener("change", this.onChangeBoardSettings.bind(this));
+    this.elements.animationDuration.addEventListener("change", this.onChangeAnimationDuration.bind(this));
+    this.elements.repertoireEngineTime.addEventListener("change", this.updateSettings.bind(this));
+    this.elements.animateVariation.addEventListener("change", this.updateSettings.bind(this));
+    this.elements.recommendInterval.addEventListener("change", this.updateSettings.bind(this));
+    this.elements.analyseEngineTime.addEventListener("change", this.updateSettings.bind(this));
+    this.elements.analyseIgnoreInaccuracy.addEventListener("change", this.updateSettings.bind(this));
+    this.elements.analyseMistakeTolerance.addEventListener("change", this.updateSettings.bind(this));
 
     // get the settings
     this.getSettings();
@@ -252,9 +239,6 @@ class Settings {
     })
       .then((res) => res.json())
       .then((response) => {
-        console.log("Success:");
-        console.log(response);
-
         // store the settings
         this.onGetSettings(response.settings);
       })

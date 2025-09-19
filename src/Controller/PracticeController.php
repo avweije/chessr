@@ -7,6 +7,7 @@ use App\Entity\ECO;
 use App\Entity\IgnoreList;
 use App\Entity\Repertoire;
 use App\Controller\ChessrAbstractController;
+use App\Library\Debugger;
 use App\Service\RepertoireService;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\DBAL\Connection;
@@ -27,7 +28,8 @@ class PracticeController extends ChessrAbstractController
         private EntityManagerInterface $em, 
         private ManagerRegistry $doctrine, 
         private RepertoireController $repertoire,
-        private RepertoireService $repertoireService
+        private RepertoireService $repertoireService,
+        private Debugger $debugger
         ) {}
 
     #[Route('/practice', methods: ['GET', 'POST'], name: 'practice')]
@@ -73,8 +75,11 @@ class PracticeController extends ChessrAbstractController
         // get the payload (if posted)
         $data = $request->getPayload()->all();
 
-        // get the repertoire id (from the roadmap)
+        // Get the payload
         $repertoireId = isset($data["id"]) ? intval($data["id"]) : null;
+        $refreshRecommended = $data["refreshRecommended"] ?? false;
+
+        //dd($repertoireId, $refreshRecommended, count($_SESSION['recommendedLines']));
 
         // get the repertoire repository
         $repoRep = $this->em->getRepository(Repertoire::class);
@@ -92,7 +97,10 @@ class PracticeController extends ChessrAbstractController
         // if we need a specific repertoire line
         if ($repertoireId != null) {
             // get the lines
-            $repertoireItem = $this->repertoireService->getLines($repertoireId);
+            //$repertoireItem = $this->repertoireService->getLines($repertoireId);
+            $repertoireItem = $this->repertoireService->getLinesForMove($repertoireId);
+
+            //dd($repertoireItem);
 
             return new JsonResponse([
                 "custom" => $repertoireItem,
@@ -128,7 +136,11 @@ class PracticeController extends ChessrAbstractController
                 // find the new lines
                 $resp['new'] = $this->repertoireService->getNewLines($lines);
                 // find the recommended lines
-                $resp['recommended'] = $this->repertoireService->getRecommendedLines($lines);
+                $resp['recommended'] = $this->repertoireService->getRecommendedLines($lines, $refreshRecommended);
+                // Get the recommended completed flag
+                $resp['recommendedCompleted'] = $_SESSION['recommendedCompleted'] ?? false;
+                $resp['recommendedCount'] = $this->repertoireService->countMoves($resp['recommended']);
+                $resp['debugger'] = $this->debugger::report();
             }
         }
 

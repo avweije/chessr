@@ -2,60 +2,6 @@ import { Utils } from "utils";
 import { PgnField } from "pgn-field";
 
 class Opponent {
-  // the elements
-  tabButtons = {
-    download: null,
-    analysis: null,
-  };
-
-  tabContainers = {
-    download: null,
-    analysis: null,
-  };
-
-  siteRadio = {
-    chesscom: null,
-    lichess: null,
-  };
-
-  siteUsername = null;
-  lastUsername = null;
-
-  typeCheckbox = {
-    daily: null,
-    rapid: null,
-    blitz: null,
-    bullet: null,
-  };
-
-  startButton = null;
-
-  chooseOpponentText = null;
-  opponentContainer = null;
-  opponentRemoveButton = null;
-
-  opponentColorRadio = {
-    white: null,
-    black: null,
-  };
-
-  opponentMoves = {
-    container: null,
-    header: null,
-    eco: null,
-    first: null,
-    pgn: null,
-    info: null,
-    repertoire: null,
-    submit: null,
-    suggestions: {
-      text: null,
-      button: null,
-      container: null,
-    },
-    table: null,
-  };
-
   opponentData = {
     id: null,
     moves: null,
@@ -64,17 +10,12 @@ class Opponent {
   };
 
   analyseDialog = {
-    modal: null,
-    fieldsContainer: null,
-    errorContainer: null,
     typeField: null,
     statusField: null,
     elapsedTimeField: null,
     matchesField: null,
     periodField: null,
     errorField: null,
-    stopButton: null,
-    closeButton: null,
     startTime: null,
     intervalId: null,
     inProgress: false,
@@ -100,10 +41,10 @@ class Opponent {
 
   constructor() {
     // initialise the pgn field
-    this.pgnField  = new PgnField({ 
-      container: document.getElementById("opponentMovesPgnField"), 
+    this.pgnField = new PgnField({
+      container: document.getElementById("opponentMovesPgnField"),
       options: {
-        navigationEnabled: false, 
+        navigationEnabled: false,
         useVariations: false,
         withLinks: true,
         useTextForLastMove: true,
@@ -111,316 +52,194 @@ class Opponent {
       },
       handlers: {
         onGotoMove: (moveNr, variationIdx) => {
-          
-          console.log("Opponent.js - onGotoMove:", moveNr, variationIdx, this);
-
           this.onGotoMove(moveNr, variationIdx);
         }
       }
     });
 
-    // get the elements
-    this.tabButtons.download = document.getElementById("opponentDownloadRadio");
-    this.tabButtons.analysis = document.getElementById("opponentAnalysisRadio");
-
-    this.tabContainers.download = document.getElementById(
-      "opponentDownloadTab"
-    );
-    this.tabContainers.analysis = document.getElementById(
-      "opponentAnalysisTab"
-    );
-
-    this.siteRadio.chesscom = document.getElementById("siteChessDotComRadio");
-    this.siteRadio.lichess = document.getElementById("siteLichessRadio");
-
-    this.siteUsername = document.getElementById("siteUsername");
-
-    this.typeCheckbox.daily = document.getElementById("typeDailyCheckbox");
-    this.typeCheckbox.rapid = document.getElementById("typeRapidCheckbox");
-    this.typeCheckbox.blitz = document.getElementById("typeBlitzCheckbox");
-    this.typeCheckbox.bullet = document.getElementById("typeBulletCheckbox");
-
-    this.startButton = document.getElementById("startButton");
-
-    this.chooseOpponentText = document.getElementById("chooseOpponentText");
-    this.opponentContainer = document.getElementById("opponentContainer");
-
-    this.opponentRemoveButton = document.getElementById("opponentRemoveButton");
-    this.opponentRemoveButton.addEventListener(
-      "click",
-      this.onRemoveOpponent.bind(this)
-    );
-
-    this.opponentColorRadio.white = document.getElementById(
-      "opponentColorWhiteRadio"
-    );
-    this.opponentColorRadio.black = document.getElementById(
-      "opponentColorBlackRadio"
-    );
-
-    this.opponentMoves.container = document.getElementById(
-      "opponentMovesContainer"
-    );
-    this.opponentMoves.header = document.getElementById("opponentMovesHeader");
-    this.opponentMoves.eco = document.getElementById("opponentMovesEco");
-    this.opponentMoves.first = document.getElementById(
-      "opponentMovesFirstButton"
-    );
-    this.opponentMoves.pgn = document.getElementById("opponentMovesPgn");
-    this.opponentMoves.info = document.getElementById("opponentMovesInfo");
-    this.opponentMoves.repertoire = document.getElementById(
-      "opponentMovesRepertoire"
-    );
-    this.opponentMoves.submit = document.getElementById(
-      "opponentMoveSubmitButton"
-    );
-    this.opponentMoves.suggestions.text = document.getElementById(
-      "opponentMoveSuggestions"
-    );
-    this.opponentMoves.suggestions.button = document.getElementById(
-      "opponentMoveSuggestionsButton"
-    );
-    this.opponentMoves.suggestions.container = document.getElementById(
-      "opponentMoveSuggestionsContainer"
-    );
-    this.opponentMoves.table = document.getElementById("opponentMovesTable");
-
-    // attach event handlers
-    this.tabButtons.download.addEventListener(
-      "change",
-      this.switchTab.bind(this)
-    );
-    this.tabButtons.analysis.addEventListener(
-      "change",
-      this.switchTab.bind(this)
-    );
-
-    this.siteRadio.chesscom.addEventListener(
-      "change",
-      this.switchSite.bind(this)
-    );
-    this.siteRadio.lichess.addEventListener(
-      "change",
-      this.switchSite.bind(this)
-    );
-
-    this.siteUsername.addEventListener(
-      "input",
-      this.toggleStartButton.bind(this)
-    );
-    this.typeCheckbox.daily.addEventListener(
-      "click",
-      this.toggleStartButton.bind(this)
-    );
-    this.typeCheckbox.rapid.addEventListener(
-      "click",
-      this.toggleStartButton.bind(this)
-    );
-    this.typeCheckbox.blitz.addEventListener(
-      "click",
-      this.toggleStartButton.bind(this)
-    );
-    this.typeCheckbox.bullet.addEventListener(
-      "click",
-      this.toggleStartButton.bind(this)
-    );
-
-    this.startButton.addEventListener("click", this.analyseGames.bind(this));
-
-    // switch opponent color event handlers
-    this.opponentColorRadio.white.addEventListener(
-      "click",
-      this.onSwitchColor.bind(this)
-    );
-    this.opponentColorRadio.black.addEventListener(
-      "click",
-      this.onSwitchColor.bind(this)
-    );
-
-    // moves goto first button
-    this.opponentMoves.first.addEventListener(
-      "click",
-      this.onGotoFirst.bind(this)
-    );
-
-    // open move in repertoire button
-    this.opponentMoves.submit.addEventListener(
-      "click",
-      this.onOpenLineInRepertoire.bind(this)
-    );
-
-    // show suggestions
-    this.opponentMoves.suggestions.button.addEventListener(
-      "click",
-      this.onToggleSuggestions.bind(this)
-    );
-
+    // Get the elements
+    this.getElements();
+    // Add event listeners
+    this.addListeners();
+    // Initialize the modals
     this.initModals();
-
     // get settings
     this.getSettings();
-
     // get the opponents
     this.getOpponents();
   }
 
+  // Uses the data-element attribute to gather all the elements needed for this JS file
   getElements() {
     // Get the data-elements for reference
-    this.elements = [];
+    this.elements = {};
     document.querySelectorAll("[data-element]").forEach(el => {
       if (el.dataset.element !== "yes") return;
       this.elements[el.id] = el;
     });
-
-    // get the elements
-    this.tabs.buttons = document.getElementById("settingsTabButtons");
-    this.tabs.account = document.getElementById("settingsTabAccount");
-    this.tabs.board = document.getElementById("settingsTabBoard");
-    this.tabs.engine = document.getElementById("settingsTabEngine");
-    this.tabs.practice = document.getElementById("settingsTabPractice");
-
-    console.log('getElements', this.elements);
   }
-  
+
+  // Add event listeners
+  addListeners() {
+    // Remove button
+    this.elements.opponentRemoveButton.addEventListener(
+      "click",
+      this.onRemoveOpponent.bind(this)
+    );
+    // Switch tab
+    this.elements.opponentDownloadRadio.addEventListener(
+      "change",
+      this.switchTab.bind(this)
+    );
+    this.elements.opponentAnalysisRadio.addEventListener(
+      "change",
+      this.switchTab.bind(this)
+    );
+    // Switch site
+    this.elements.siteChessDotComRadio.addEventListener(
+      "change",
+      this.switchSite.bind(this)
+    );
+    this.elements.siteLichessRadio.addEventListener(
+      "change",
+      this.switchSite.bind(this)
+    );
+    // Site username
+    this.elements.siteUsername.addEventListener(
+      "input",
+      this.toggleStartButton.bind(this)
+    );
+    // Type checkboxes
+    this.elements.typeDailyCheckbox.addEventListener(
+      "click",
+      this.toggleStartButton.bind(this)
+    );
+    this.elements.typeRapidCheckbox.addEventListener(
+      "click",
+      this.toggleStartButton.bind(this)
+    );
+    this.elements.typeBlitzCheckbox.addEventListener(
+      "click",
+      this.toggleStartButton.bind(this)
+    );
+    this.elements.typeBulletCheckbox.addEventListener(
+      "click",
+      this.toggleStartButton.bind(this)
+    );
+    // Start button
+    this.elements.startButton.addEventListener("click", this.analyseGames.bind(this));
+
+    // switch opponent color event handlers
+    this.elements.opponentColorWhiteRadio.addEventListener(
+      "click",
+      this.onSwitchColor.bind(this)
+    );
+    this.elements.opponentColorBlackRadio.addEventListener(
+      "click",
+      this.onSwitchColor.bind(this)
+    );
+
+    // Pgn goto first button
+    this.elements.opponentMovesFirstButton.addEventListener(
+      "click",
+      this.onGotoFirst.bind(this)
+    );
+
+    // Open move in repertoire button
+    this.elements.opponentMoveSubmitButton.addEventListener(
+      "click",
+      this.onOpenLineInRepertoire.bind(this)
+    );
+    // Toggle suggestions
+    this.elements.opponentMoveSuggestionsButton.addEventListener(
+      "click",
+      this.onToggleSuggestions.bind(this)
+    );
+  }
+
+  // Load the modals
   initModals() {
-  // --- ANALYSE MODAL ---
-  const analyseModal = document.getElementById("analyseModal");
-  const analyseModalBkgd = analyseModal.getElementsByClassName("modal-background")[0];
-  const analyseFieldsContainer = document.getElementById("analyseModalFields");
-  const analyseFields = analyseFieldsContainer.getElementsByTagName("p");
-  const analyseErrorContainer = document.getElementById("analyseModalError");
-  const analyseError = analyseErrorContainer.getElementsByTagName("p");
-  const analyseStop = document.getElementById("analyseModalStopButton");
-  const analyseClose = document.getElementById("analyseModalCloseButton");
+    // Analyse modal
+    const analyseModalBkgd = this.elements.analyseModal.getElementsByClassName("modal-background")[0];
+    const analyseFields = this.elements.analyseModalFields.getElementsByTagName("p");
+    const analyseError = this.elements.analyseModalError.getElementsByTagName("p");
 
-  const showAnalyseModal = () => analyseModal.classList.add("is-active");
-  const closeAnalyseModal = () => {
-    analyseModal.classList.remove("is-active");
-    this.onCloseDialog();
-  };
+    const showAnalyseModal = () => this.elements.analyseModal.classList.add("is-active");
+    const closeAnalyseModal = () => {
+      this.elements.analyseModal.classList.remove("is-active");
+      this.onCloseDialog();
+    };
 
-  analyseModalBkgd.addEventListener("click", closeAnalyseModal);
-  analyseClose.addEventListener("click", closeAnalyseModal);
-  analyseStop.addEventListener("click", closeAnalyseModal);
+    analyseModalBkgd.addEventListener("click", closeAnalyseModal);
+    this.elements.analyseModalCloseButton.addEventListener("click", closeAnalyseModal);
+    this.elements.analyseModalStopButton.addEventListener("click", closeAnalyseModal);
 
-   
-  this.analyseDialog.modal = analyseModal;
-  this.analyseDialog.fieldsContainer = analyseFieldsContainer;
-  this.analyseDialog.typeField = analyseFields[0];
-  this.analyseDialog.statusField = analyseFields[1];
-  this.analyseDialog.matchesField = analyseFields[2];
-  this.analyseDialog.periodField = analyseFields[3];
-  this.analyseDialog.elapsedTimeField = analyseFields[4];
-  this.analyseDialog.errorContainer = analyseErrorContainer;
-  this.analyseDialog.errorField = analyseError[0];
-  this.analyseDialog.stopButton = analyseStop;
-  this.analyseDialog.closeButton = analyseClose;
-  this.analyseDialog.showModal = showAnalyseModal;
-  this.analyseDialog.closeModal = closeAnalyseModal;
+    this.analyseDialog.typeField = analyseFields[0];
+    this.analyseDialog.statusField = analyseFields[1];
+    this.analyseDialog.matchesField = analyseFields[2];
+    this.analyseDialog.periodField = analyseFields[3];
+    this.analyseDialog.elapsedTimeField = analyseFields[4];
+    this.analyseDialog.errorField = analyseError[0];
 
-  this.showAnalyseModal = showAnalyseModal;
-  this.closeAnalyseModal = closeAnalyseModal
+    this.showAnalyseModal = showAnalyseModal;
+    this.closeAnalyseModal = closeAnalyseModal
 
-  // --- CONFIRM MODAL ---
-  const confirmModal = document.getElementById("confirmModal");
-  const confirmModalBkgd = confirmModal.getElementsByClassName("modal-background")[0];
-  const confirmClose = document.getElementById("confirmModalCloseButton");
-  const confirmCancel = document.getElementById("confirmModalCancelButton");
-  const confirmButton = document.getElementById("confirmModalConfirmButton");
+    // Confirm modal
+    const confirmModalBkgd = this.elements.confirmModal.getElementsByClassName("modal-background")[0];
+    
+    const showConfirmModal = () => this.elements.confirmModal.classList.add("is-active");
+    const closeConfirmModal = () => this.elements.confirmModal.classList.remove("is-active");
 
-  const showConfirmModal = () => confirmModal.classList.add("is-active");
-  const closeConfirmModal = () => confirmModal.classList.remove("is-active");
+    confirmModalBkgd.addEventListener("click", closeConfirmModal);
+    this.elements.confirmModalCloseButton.addEventListener("click", closeConfirmModal);
+    this.elements.confirmModalCancelButton.addEventListener("click", closeConfirmModal);
+    this.elements.confirmModalConfirmButton.addEventListener("click", () => {
+      this.onRemoveOpponentConfirmed();
+      closeConfirmModal();
+    });
 
-  confirmModalBkgd.addEventListener("click", closeConfirmModal);
-  confirmClose.addEventListener("click", closeConfirmModal);
-  confirmCancel.addEventListener("click", closeConfirmModal);
-  confirmButton.addEventListener("click", () => {
-    this.onRemoveOpponentConfirmed();
-    closeConfirmModal();
-  });
+    this.showConfirmModal = showConfirmModal;
+    this.closeConfirmModal = closeConfirmModal
 
-  this.confirmDialog = {
-    modal: confirmModal,
-    closeButton: confirmClose,
-    cancelButton: confirmCancel,
-    confirmButton: confirmButton,
-    showModal: showConfirmModal,
-    closeModal: closeConfirmModal,
-  };
+    // Connect modal
+    const connectModalBkgd = this.elements.connectModal.getElementsByClassName("modal-background")[0];
 
-  this.showConfirmModal = showConfirmModal;
-  this.closeConfirmModal = closeConfirmModal
+    const showConnectModal = () => this.elements.connectModal.classList.add("is-active");
+    const closeConnectModal = () => this.elements.connectModal.classList.remove("is-active");
 
-  // --- CONNECT MODAL ---
-  const connectModal = document.getElementById("connectModal");
-  const connectModalBkgd = connectModal.getElementsByClassName("modal-background")[0];
-  const connectClose = document.getElementById("connectModalCloseButton");
-  const connectCancel = document.getElementById("connectModalCancelButton");
-  const connectConfirm = document.getElementById("connectModalConfirmButton");
-  const connectOpponent = document.getElementById("connectModalOpponentUsername");
-  const connectParentContainer = document.getElementById("connectModalParentAccountContainer");
+    connectModalBkgd.addEventListener("click", closeConnectModal);
+    this.elements.connectModalCloseButton.addEventListener("click", closeConnectModal);
+    this.elements.connectModalCancelButton.addEventListener("click", closeConnectModal);
+    this.elements.connectModalConfirmButton.addEventListener("click", () => {
+      this.onConnectOpponentConfirmed();
+      closeConnectModal();
+    });
 
-  const showConnectModal = () => connectModal.classList.add("is-active");
-  const closeConnectModal = () => connectModal.classList.remove("is-active");
+    this.connectDialog = {
+      showModal: showConnectModal,
+      closeModal: closeConnectModal,
+    };
 
-  connectModalBkgd.addEventListener("click", closeConnectModal);
-  connectClose.addEventListener("click", closeConnectModal);
-  connectCancel.addEventListener("click", closeConnectModal);
-  connectConfirm.addEventListener("click", () => {
-    this.onConnectOpponentConfirmed();
-    closeConnectModal();
-  });
+    this.showConnectModal = showConnectModal;
+    this.closeConnectModal = closeConnectModal
 
-  this.connectDialog = {
-    modal: connectModal,
-    closeButton: connectClose,
-    cancelButton: connectCancel,
-    confirmButton: connectConfirm,
-    opponentUsername: connectOpponent,
-    parentAccountContainer: connectParentContainer,
-    showModal: showConnectModal,
-    closeModal: closeConnectModal,
-  };
+    // Disconnect modal
+    const disconnectModalBkgd = this.elements.disconnectModal.getElementsByClassName("modal-background")[0];
 
-  this.showConnectModal = showConnectModal;
-  this.closeConnectModal = closeConnectModal
+    const showDisconnectModal = () => this.elements.disconnectModal.classList.add("is-active");
+    const closeDisconnectModal = () => this.elements.disconnectModal.classList.remove("is-active");
 
-  // --- DISCONNECT MODAL ---
-  const disconnectModal = document.getElementById("disconnectModal");
-  const disconnectModalBkgd = disconnectModal.getElementsByClassName("modal-background")[0];
-  const disconnectClose = document.getElementById("disconnectModalCloseButton");
-  const disconnectCancel = document.getElementById("disconnectModalCancelButton");
-  const disconnectConfirm = document.getElementById("disconnectModalConfirmButton");
-  const disconnectOpponent = document.getElementById("disconnectModalOpponentUsername");
-  const disconnectChildContainer = document.getElementById("disconnectModalChildAccountContainer");
+    disconnectModalBkgd.addEventListener("click", closeDisconnectModal);
+    this.elements.disconnectModalCloseButton.addEventListener("click", closeDisconnectModal);
+    this.elements.disconnectModalCancelButton.addEventListener("click", closeDisconnectModal);
+    this.elements.disconnectModalConfirmButton.addEventListener("click", () => {
+      this.onDisconnectOpponentConfirmed();
+      closeDisconnectModal();
+    });
 
-  const showDisconnectModal = () => disconnectModal.classList.add("is-active");
-  const closeDisconnectModal = () => disconnectModal.classList.remove("is-active");
-
-  disconnectModalBkgd.addEventListener("click", closeDisconnectModal);
-  disconnectClose.addEventListener("click", closeDisconnectModal);
-  disconnectCancel.addEventListener("click", closeDisconnectModal);
-  disconnectConfirm.addEventListener("click", () => {
-    this.onDisconnectOpponentConfirmed();
-    closeDisconnectModal();
-  });
-
-  this.disconnectDialog = {
-    modal: disconnectModal,
-    closeButton: disconnectClose,
-    cancelButton: disconnectCancel,
-    confirmButton: disconnectConfirm,
-    opponentUsername: disconnectOpponent,
-    childAccountContainer: disconnectChildContainer,
-    showModal: showDisconnectModal,
-    closeModal: closeDisconnectModal,
-  };
-
-  this.showDisconnectModal = showDisconnectModal;
-  this.closeDisconnectModal = closeDisconnectModal
-}
-
-
+    this.showDisconnectModal = showDisconnectModal;
+    this.closeDisconnectModal = closeDisconnectModal
+  }
 
   // get the settings
   getSettings() {
@@ -471,7 +290,7 @@ class Opponent {
     //
     // create and show skeleton here?
     //
-    this.opponentContainer.innerHTML = `
+    this.elements.opponentContainer.innerHTML = `
       <div class="skeleton-block skeleton-opponent-radio"></div>
       <div class="skeleton-block skeleton-opponent-radio"></div>
       <div class="skeleton-block skeleton-opponent-radio"></div>
@@ -507,12 +326,12 @@ class Opponent {
 
   // switch tabs
   switchTab() {
-    if (this.tabButtons.download.checked) {
-      this.tabContainers.download.classList.remove("is-hidden");
-      this.tabContainers.analysis.classList.add("is-hidden");
+    if (this.elements.opponentDownloadRadio.checked) {
+      this.elements.opponentDownloadTab.classList.remove("is-hidden");
+      this.elements.opponentAnalysisTab.classList.add("is-hidden");
     } else {
-      this.tabContainers.download.classList.add("is-hidden");
-      this.tabContainers.analysis.classList.remove("is-hidden");
+      this.elements.opponentDownloadTab.classList.add("is-hidden");
+      this.elements.opponentAnalysisTab.classList.remove("is-hidden");
 
       // make sure we have the opponent moves
       this.getOpponentMoves(this.opponentData.needsRefresh);
@@ -521,12 +340,12 @@ class Opponent {
 
   // get the currently selected opponent
   getSelectedOpponent() {
-    const selected = this.opponentContainer.querySelector('.boxed-radio input[type="radio"]:checked');
+    const selected = this.elements.opponentContainer.querySelector('.boxed-radio input[type="radio"]:checked');
     if (selected) {
-        return {
-          id: selected.getAttribute("data-id"),
-          username: selected.value,
-        };
+      return {
+        id: selected.getAttribute("data-id"),
+        username: selected.value,
+      };
     }
 
     return { id: "", username: "" };
@@ -597,7 +416,7 @@ class Opponent {
     // load the suggestions
     this.loadMoveSuggestions();
     // show the opponent moves container
-    this.opponentMoves.container.classList.remove("is-hidden");
+    this.elements.opponentMovesContainer.classList.remove("is-hidden");
     // reload the table
     this.loadOpponentMoves();
   }
@@ -605,29 +424,29 @@ class Opponent {
   // switch sites
   switchSite() {
     // get the selected site
-    this.settings.site = this.siteRadio.chesscom.checked
-      ? this.siteRadio.chesscom.value
-      : this.siteRadio.lichess.value;
+    this.settings.site = this.elements.siteChessDotComRadio.checked
+      ? this.elements.siteChessDotComRadio.value
+      : this.elements.siteLichessRadio.value;
 
     // set the correct username
     if (this.settings.site == "Lichess") {
       // store the current username
-      this.settings.chess_username = this.siteUsername.value;
+      this.settings.chess_username = this.elements.siteUsername.value;
       // set the lichess username
-      this.siteUsername.value = this.settings.lichess_username
+      this.elements.siteUsername.value = this.settings.lichess_username
         ? this.settings.lichess_username
         : "";
       // attach the lichess datalist
-      this.siteUsername.setAttribute("list", "siteUsernameDataListLichess");
+      this.elements.siteUsername.setAttribute("list", "siteUsernameDataListLichess");
     } else {
       // store the current username
-      this.settings.lichess_username = this.siteUsername.value;
+      this.settings.lichess_username = this.elements.siteUsername.value;
       // set the chess.com username
-      this.siteUsername.value = this.settings.chess_username
+      this.elements.siteUsername.value = this.settings.chess_username
         ? this.settings.chess_username
         : "";
       // attach the chess.com datalist
-      this.siteUsername.setAttribute("list", "siteUsernameDataListChessCom");
+      this.elements.siteUsername.setAttribute("list", "siteUsernameDataListChessCom");
     }
 
     // toggle the start button
@@ -636,27 +455,27 @@ class Opponent {
 
   // toggle the start button
   toggleStartButton() {
-    this.startButton.disabled =
-      this.siteUsername.value == "" ||
-      (!this.typeCheckbox.daily.checked &&
-        !this.typeCheckbox.rapid.checked &&
-        !this.typeCheckbox.blitz.checked &&
-        !this.typeCheckbox.bullet.checked);
+    this.elements.startButton.disabled =
+      this.elements.siteUsername.value == "" ||
+      (!this.elements.typeDailyCheckbox.checked &&
+        !this.elements.typeRapidCheckbox.checked &&
+        !this.elements.typeBlitzCheckbox.checked &&
+        !this.elements.typeBulletCheckbox.checked);
   }
 
   // get the selected types array
   getSelectedTypes() {
     var types = [];
-    if (this.typeCheckbox.daily.checked) {
+    if (this.elements.typeDailyCheckbox.checked) {
       types.push("daily");
     }
-    if (this.typeCheckbox.rapid.checked) {
+    if (this.elements.typeRapidCheckbox.checked) {
       types.push("rapid");
     }
-    if (this.typeCheckbox.blitz.checked) {
+    if (this.elements.typeBlitzCheckbox.checked) {
       types.push("blitz");
     }
-    if (this.typeCheckbox.bullet.checked) {
+    if (this.elements.typeBulletCheckbox.checked) {
       types.push("bullet");
     }
 
@@ -682,8 +501,8 @@ class Opponent {
     }
 
     // show the spinner
-    this.startButton.disabled = true;
-    this.startButton.classList.add("is-loading");
+    this.elements.startButton.disabled = true;
+    this.elements.startButton.classList.add("is-loading");
 
     // initialise the analyse process
     this.analyseDialog.inProgress = true;
@@ -700,10 +519,9 @@ class Opponent {
     this.analyseDialog.elapsedTimeField.innerHTML = "";
 
     // set the stop button text
-    this.analyseDialog.stopButton.innerHTML = "Stop analysing";
+    this.elements.analyseModalStopButton.innerHTML = "Stop analysing";
 
     // open the dialog
-    //Modal.open(this.analyseDialog.modal);
     this.showAnalyseModal();
 
     // get the start time
@@ -714,7 +532,7 @@ class Opponent {
       var seconds =
         (new Date().getTime() - this.analyseDialog.startTime) / 1000;
 
-      this.analyseDialog.elapsedTimeField.innerHTML = this.getDuration(seconds);
+      this.analyseDialog.elapsedTimeField.innerHTML = Utils.getDuration(seconds);
     }, 1000);
 
     // start analysing
@@ -726,15 +544,15 @@ class Opponent {
     // if we have an error
     if (error) {
       // show the error
-      this.analyseDialog.errorContainer.classList.remove("is-hidden");
+      this.elements.analyseModalError.classList.remove("is-hidden");
       this.analyseDialog.errorField.innerHTML = error;
       // hide the other fields
-      this.analyseDialog.fieldsContainer.classList.add("is-hidden");
+      this.elements.analyseModalFields.classList.add("is-hidden");
     } else {
       // get the types
       var types = this.getSelectedTypes();
       // show the fields
-      this.analyseDialog.fieldsContainer.classList.remove("is-hidden");
+      this.elements.analyseModalFields.classList.remove("is-hidden");
 
       console.log("updateFields:");
 
@@ -750,12 +568,12 @@ class Opponent {
         this.analyseDialog.matches == 0
           ? ""
           : this.analyseDialog.matches +
-            " matching " +
-            (this.analyseDialog.matches > 1 ? "games" : "game") +
-            " found";
+          " matching " +
+          (this.analyseDialog.matches > 1 ? "games" : "game") +
+          " found";
       this.analyseDialog.periodField.innerHTML = this.analyseDialog.period;
       // hide the error
-      this.analyseDialog.errorContainer.classList.add("is-hidden");
+      this.elements.analyseModalError.classList.add("is-hidden");
       this.analyseDialog.errorField.innerHTML = "";
     }
   }
@@ -799,9 +617,9 @@ class Opponent {
       }
 
       // update the stop button text
-      this.analyseDialog.stopButton.innerHTML = "Close";
-      this.analyseDialog.stopButton.classList.remove("is-warning");
-      this.analyseDialog.stopButton.classList.add("is-primary");
+      this.elements.analyseModalStopButton.innerHTML = "Close";
+      this.elements.analyseModalStopButton.classList.remove("is-warning");
+      this.elements.analyseModalStopButton.classList.add("is-primary");
       // end the progress
       this.analyseEndProgress();
 
@@ -814,8 +632,8 @@ class Opponent {
     var url = "/api/opponent/analyse";
 
     var data = {
-      site: this.siteRadio.chesscom.checked ? "Chess.com" : "Lichess",
-      username: this.siteUsername.value,
+      site: this.elements.siteChessDotComRadio.checked ? "Chess.com" : "Lichess",
+      username: this.elements.siteUsername.value,
       period: {
         recent: 1,
         older: 1,
@@ -908,9 +726,9 @@ class Opponent {
     }
 
     // update the stop button text
-    this.analyseDialog.stopButton.innerHTML = "Close";
-    this.analyseDialog.stopButton.classList.remove("is-warning");
-    this.analyseDialog.stopButton.classList.add("is-primary");
+    this.elements.analyseModalStopButton.innerHTML = "Close";
+    this.elements.analyseModalStopButton.classList.remove("is-warning");
+    this.elements.analyseModalStopButton.classList.add("is-primary");
 
     // end the progress
     this.analyseEndProgress();
@@ -921,17 +739,8 @@ class Opponent {
     // no longer in progress
     this.analyseDialog.inProgress = false;
     // hide the spinner
-    this.startButton.disabled = false;
-    this.startButton.classList.remove("is-loading");
-  }
-
-  // get a printable duration for a number of seconds (2h 14m 32s)
-  getDuration(seconds) {
-    var h = Math.floor(seconds / 3600);
-    var m = Math.floor((seconds - h * 3600) / 60);
-    var s = Math.floor(seconds - h * 3600 - m * 60);
-
-    return (h > 0 ? h + "h " : "") + (h > 0 || m > 0 ? m + "m " : "") + s + "s";
+    this.elements.startButton.disabled = false;
+    this.elements.startButton.classList.remove("is-loading");
   }
 
   // switch opponents
@@ -942,7 +751,7 @@ class Opponent {
     this.getOpponentMoves();
 
     // show the remove opponent button
-    this.opponentRemoveButton.classList.remove("is-hidden");
+    this.elements.opponentRemoveButton.classList.remove("is-hidden");
   }
 
   // switch opponent color
@@ -956,7 +765,7 @@ class Opponent {
 
     // reset the line
     this.opponentData.line = [];
-    
+
     //pgn-field
     this.pgnField.reset();
 
@@ -979,14 +788,13 @@ class Opponent {
     }
 
     // set the username
-    this.connectDialog.opponentUsername.innerHTML = selected.username;
+    this.elements.connectModalOpponentUsername.innerHTML = selected.username;
     // disable the confirm button
-    this.connectDialog.confirmButton.disabled = true;
+    this.elements.connectModalConfirmButton.disabled = true;
     // load the parent accounts radio boxes
     this.loadConnectDialogParentAccounts(selected);
 
     // open the dialog
-    //Modal.open(this.connectDialog.modal);
     this.showConnectModal();
   }
 
@@ -996,15 +804,15 @@ class Opponent {
     // get the selected main account
     for (
       var i = 0;
-      i < this.connectDialog.parentAccountContainer.children.length;
+      i < this.elements.connectModalParentAccountContainer.children.length;
       i++
     ) {
       if (
-        this.connectDialog.parentAccountContainer.children[i].children[0]
+        this.elements.connectModalParentAccountContainer.children[i].children[0]
           .checked
       ) {
         parentId =
-          this.connectDialog.parentAccountContainer.children[
+          this.elements.connectModalParentAccountContainer.children[
             i
           ].children[0].getAttribute("data-id");
         break;
@@ -1012,7 +820,6 @@ class Opponent {
     }
 
     // close the modal
-    //Modal.close(this.connectDialog.modal);
     this.closeConnectModal();
 
     // get the current opponent
@@ -1086,14 +893,14 @@ class Opponent {
     }
 
     // remove the child radio box
-    for (var i = 0; i < this.opponentContainer.children.length; i++) {
+    for (var i = 0; i < this.elements.opponentContainer.children.length; i++) {
       var id =
-        this.opponentContainer.children[i].children[0].getAttribute("data-id");
+        this.elements.opponentContainer.children[i].children[0].getAttribute("data-id");
 
       console.info("id", id, opp);
       if (id == opp.id) {
         // remove it
-        this.opponentContainer.removeChild(this.opponentContainer.children[i]);
+        this.elements.opponentContainer.removeChild(this.elements.opponentContainer.children[i]);
 
         console.info("child radio removed");
 
@@ -1102,16 +909,16 @@ class Opponent {
     }
 
     // update the parent radio box
-    for (var i = 0; i < this.opponentContainer.children.length; i++) {
+    for (var i = 0; i < this.elements.opponentContainer.children.length; i++) {
       var id =
-        this.opponentContainer.children[i].children[0].getAttribute("data-id");
+        this.elements.opponentContainer.children[i].children[0].getAttribute("data-id");
 
       console.info("id", id, parent);
 
       if (id == parent.id) {
         // add the connect link
         this.addOpponentRadioBoxConnect(
-          this.opponentContainer.children[i],
+          this.elements.opponentContainer.children[i],
           parent
         );
 
@@ -1128,9 +935,9 @@ class Opponent {
   // load the connect dialog parent accounts container
   loadConnectDialogParentAccounts(selected) {
     // remove all radio boxes
-    while (this.connectDialog.parentAccountContainer.firstChild) {
-      this.connectDialog.parentAccountContainer.removeChild(
-        this.connectDialog.parentAccountContainer.lastChild
+    while (this.elements.connectModalParentAccountContainer.firstChild) {
+      this.elements.connectModalParentAccountContainer.removeChild(
+        this.elements.connectModalParentAccountContainer.lastChild
       );
     }
 
@@ -1149,7 +956,7 @@ class Opponent {
       // create the radio box
       var box = this.createOpponentRadioBox(this.opponents[i], false, true);
       // add it
-      this.connectDialog.parentAccountContainer.appendChild(box);
+      this.elements.connectModalParentAccountContainer.appendChild(box);
     }
   }
 
@@ -1166,14 +973,13 @@ class Opponent {
     }
 
     // set the username
-    this.disconnectDialog.opponentUsername.innerHTML = selected.username;
+    this.elements.disconnectModalOpponentUsername.innerHTML = selected.username;
     // disable the confirm button
-    this.disconnectDialog.confirmButton.disabled = true;
+    this.elements.disconnectModalConfirmButton.disabled = true;
     // load the child accounts radio boxes
     this.loadDisconnectDialogChildAccounts(selected);
 
     // open the dialog
-    //Modal.open(this.disconnectDialog.modal);
     this.showDisconnectModal();
   }
 
@@ -1183,15 +989,15 @@ class Opponent {
     // get the unchecked child account(s)
     for (
       var i = 0;
-      i < this.disconnectDialog.childAccountContainer.children.length;
+      i < this.elements.disconnectModalChildAccountContainer.children.length;
       i++
     ) {
       if (
-        !this.disconnectDialog.childAccountContainer.children[i].children[0]
+        !this.elements.disconnectModalChildAccountContainer.children[i].children[0]
           .checked
       ) {
         childsToRemove.push(
-          this.disconnectDialog.childAccountContainer.children[
+          this.elements.disconnectModalChildAccountContainer.children[
             i
           ].children[0].getAttribute("data-id")
         );
@@ -1201,7 +1007,6 @@ class Opponent {
     }
 
     // close the modal
-    //Modal.close(this.disconnectDialog.modal);
     this.closeDisconnectModal();
 
     // get the current opponent
@@ -1262,7 +1067,7 @@ class Opponent {
 
               // add the radio box
               var box = this.createOpponentRadioBox(main);
-              this.opponentContainer.appendChild(box);
+              this.elements.opponentContainer.appendChild(box);
 
               // add the opponent
               this.opponents.push(main);
@@ -1286,16 +1091,16 @@ class Opponent {
     }
 
     // update the parent radio box
-    for (var i = 0; i < this.opponentContainer.children.length; i++) {
+    for (var i = 0; i < this.elements.opponentContainer.children.length; i++) {
       var id =
-        this.opponentContainer.children[i].children[0].getAttribute("data-id");
+        this.elements.opponentContainer.children[i].children[0].getAttribute("data-id");
 
       console.info("id", id, parent);
 
       if (id == parent.id) {
         // add the connect spans
         this.addOpponentRadioBoxConnect(
-          this.opponentContainer.children[i],
+          this.elements.opponentContainer.children[i],
           parent
         );
 
@@ -1312,15 +1117,14 @@ class Opponent {
   // load the disconnect dialog child accounts container
   loadDisconnectDialogChildAccounts(selected) {
     // remove all radio boxes
-    while (this.disconnectDialog.childAccountContainer.firstChild) {
-      this.disconnectDialog.childAccountContainer.removeChild(
-        this.disconnectDialog.childAccountContainer.lastChild
+    while (this.elements.disconnectModalChildAccountContainer.firstChild) {
+      this.elements.disconnectModalChildAccountContainer.removeChild(
+        this.elements.disconnectModalChildAccountContainer.lastChild
       );
     }
 
     console.info("loadDisconnectDialogChildAccounts");
     console.info(this.opponents);
-    console.info(this.disconnectDialog);
 
     // find the parent, add the child accounts
     for (var i = 0; i < this.opponents.length; i++) {
@@ -1331,7 +1135,7 @@ class Opponent {
             this.opponents[i].children[y]
           );
           // add it
-          this.disconnectDialog.childAccountContainer.appendChild(box);
+          this.elements.disconnectModalChildAccountContainer.appendChild(box);
         }
       }
     }
@@ -1342,14 +1146,12 @@ class Opponent {
     console.info("onRemoveOpponent");
 
     // open the dialog
-    //Modal.open(this.confirmDialog.modal);
     this.showConfirmModal();
   }
 
   // fired when the remove opponent modal has been confirmed
   onRemoveOpponentConfirmed(event) {
     // close the modal
-    //Modal.close(this.confirmDialog.modal);
     this.closeConfirmModal();
 
     // get the current opponent id
@@ -1382,16 +1184,16 @@ class Opponent {
   // load the opponents container
   loadOpponents() {
     // remove all radio boxes
-    this.opponentContainer.innerHTML = "";
+    this.elements.opponentContainer.innerHTML = "";
 
     console.info("loadOpponents");
     console.info(this.opponents);
 
     // toggle the choose opponent text
     if (this.opponents.length > 1) {
-      this.chooseOpponentText.classList.remove("is-hidden");
+      this.elements.chooseOpponentText.classList.remove("is-hidden");
     } else {
-      this.chooseOpponentText.classList.add("is-hidden");
+      this.elements.chooseOpponentText.classList.add("is-hidden");
     }
 
     // add the parent accounts
@@ -1402,7 +1204,7 @@ class Opponent {
         this.opponents.length == 1
       );
       // add it
-      this.opponentContainer.appendChild(box);
+      this.elements.opponentContainer.appendChild(box);
     }
   }
 
@@ -1415,15 +1217,15 @@ class Opponent {
 
     // toggle the choose opponent text
     if (this.opponents.length > 1) {
-      this.chooseOpponentText.classList.remove("is-hidden");
+      this.elements.chooseOpponentText.classList.remove("is-hidden");
     } else {
-      this.chooseOpponentText.classList.add("is-hidden");
+      this.elements.chooseOpponentText.classList.add("is-hidden");
     }
 
     // add the opponent box
     var box = this.createOpponentRadioBox(opponent);
 
-    this.opponentContainer.appendChild(box);
+    this.elements.opponentContainer.appendChild(box);
   }
 
   // create an opponent radio box
@@ -1447,7 +1249,7 @@ class Opponent {
     // enable the confirm button
     if (forModal) {
       inp.addEventListener("click", () => {
-        this.connectDialog.confirmButton.disabled = false;
+        this.elements.connectModalConfirmButton.disabled = false;
       });
     } else {
       inp.addEventListener("click", this.onSwitchOpponent.bind(this));
@@ -1553,7 +1355,7 @@ class Opponent {
 
     // enable the confirm button
     inp.addEventListener("click", () => {
-      this.disconnectDialog.confirmButton.disabled = false;
+      this.elements.disconnectModalConfirmButton.disabled = false;
     });
 
     box.appendChild(inp);
@@ -1586,11 +1388,11 @@ class Opponent {
 
   // remove an opponent from the analysis tab
   removeOpponentFromAnalysis() {
-    for (var i = 0; i < this.opponentContainer.children.length; i++) {
-      if (this.opponentContainer.children[i].children[0].checked) {
+    for (var i = 0; i < this.elements.opponentContainer.children.length; i++) {
+      if (this.elements.opponentContainer.children[i].children[0].checked) {
         // get the id
         var id =
-          this.opponentContainer.children[i].children[0].getAttribute(
+          this.elements.opponentContainer.children[i].children[0].getAttribute(
             "data-id"
           );
 
@@ -1605,7 +1407,7 @@ class Opponent {
 
                 // add the radio box
                 var box = this.createOpponentRadioBox(main);
-                this.opponentContainer.appendChild(box);
+                this.elements.opponentContainer.appendChild(box);
 
                 // add the opponent
                 this.opponents.push(main);
@@ -1619,10 +1421,10 @@ class Opponent {
         }
 
         // remove the opponent radio box
-        this.opponentContainer.removeChild(this.opponentContainer.children[i]);
+        this.elements.opponentContainer.removeChild(this.elements.opponentContainer.children[i]);
         // hide the moves container & the remove button
-        this.opponentMoves.container.classList.add("is-hidden");
-        this.opponentRemoveButton.classList.add("is-hidden");
+        this.elements.opponentMovesContainer.classList.add("is-hidden");
+        this.elements.opponentRemoveButton.classList.add("is-hidden");
 
         break;
       }
@@ -1633,7 +1435,7 @@ class Opponent {
   getCurrent() {
     console.log("getCurrent", this.opponentData.line);
 
-    var current = this.opponentColorRadio.white.checked
+    var current = this.elements.opponentColorWhiteRadio.checked
       ? this.opponentData.moves.white
       : this.opponentData.moves.black;
 
@@ -1684,16 +1486,16 @@ class Opponent {
     console.log("loadMoveSuggestions");
 
     // get the suggestions
-    var sugg = this.opponentColorRadio.white.checked
+    var sugg = this.elements.opponentColorWhiteRadio.checked
       ? this.opponentData.moves.white.suggestions
       : this.opponentData.moves.black.suggestions;
 
     console.log("sugg", sugg);
 
     // clear the suggestions
-    while (this.opponentMoves.suggestions.container.children[1].firstChild) {
-      this.opponentMoves.suggestions.container.children[1].removeChild(
-        this.opponentMoves.suggestions.container.children[1].lastChild
+    while (this.elements.opponentMoveSuggestionsContainer.children[1].firstChild) {
+      this.elements.opponentMoveSuggestionsContainer.children[1].removeChild(
+        this.elements.opponentMoveSuggestionsContainer.children[1].lastChild
       );
     }
 
@@ -1758,7 +1560,7 @@ class Opponent {
       row.appendChild(col1);
       row.appendChild(col2);
 
-      this.opponentMoves.suggestions.container.children[1].appendChild(row);
+      this.elements.opponentMoveSuggestionsContainer.children[1].appendChild(row);
     }
   }
 
@@ -1784,7 +1586,7 @@ class Opponent {
     this.updateOpponentMoveDetails();
 
     // toggle the goto first button
-    this.opponentMoves.first.disabled = this.opponentData.line.length == 0;
+    this.elements.opponentMovesFirstButton.disabled = this.opponentData.line.length == 0;
 
     // reset to current line
     this.pgnField.reset("", this.opponentData.line);
@@ -1793,8 +1595,8 @@ class Opponent {
     console.log("afterUpdateOpp");
 
     // clear the table
-    while (this.opponentMoves.table.firstChild) {
-      this.opponentMoves.table.removeChild(this.opponentMoves.table.lastChild);
+    while (this.elements.opponentMovesTable.firstChild) {
+      this.elements.opponentMovesTable.removeChild(this.elements.opponentMovesTable.lastChild);
     }
 
     //
@@ -1867,8 +1669,8 @@ class Opponent {
         diff < 8 || Math.abs(moves[i].wins - moves[i].losses) < 3
           ? "even"
           : winPct > lossPct
-          ? "win"
-          : "loss";
+            ? "win"
+            : "loss";
 
       //console.log(moves[i].total, winPct, lossPct, diff, rate);
 
@@ -1880,16 +1682,16 @@ class Opponent {
         (rate == "win"
           ? "accuracy-green"
           : rate == "even"
-          ? "accuracy-orange"
-          : "accuracy-red") +
+            ? "accuracy-orange"
+            : "accuracy-red") +
         '">W: ' +
         moves[i].wins +
         '</span><span class="' +
         (rate == "loss"
           ? "accuracy-red"
           : rate == "even"
-          ? "accuracy-orange"
-          : "accuracy-green") +
+            ? "accuracy-orange"
+            : "accuracy-green") +
         '">L: ' +
         moves[i].losses +
         "</span>";
@@ -1910,7 +1712,7 @@ class Opponent {
       );
 
       // add the move to the table
-      this.opponentMoves.table.appendChild(holder);
+      this.elements.opponentMovesTable.appendChild(holder);
     }
   }
 
@@ -1959,7 +1761,7 @@ class Opponent {
     // set the form action
     document.forms["opponentMoveForm"].action =
       "./repertoire/" +
-      (this.opponentColorRadio.white.checked ? "black" : "white");
+      (this.elements.opponentColorWhiteRadio.checked ? "black" : "white");
     // add the form inputs
     for (var i = 0; i < this.opponentData.line.length; i++) {
       var inp = document.createElement("input");
@@ -1988,10 +1790,10 @@ class Opponent {
     // set the form action
     document.forms["opponentMoveForm"].action =
       "./repertoire/" +
-      (this.opponentColorRadio.white.checked ? "black" : "white");
+      (this.elements.opponentColorWhiteRadio.checked ? "black" : "white");
 
     // get the suggestion
-    var sugg = this.opponentColorRadio.white.checked
+    var sugg = this.elements.opponentColorWhiteRadio.checked
       ? this.opponentData.moves.white.suggestions[idx]
       : this.opponentData.moves.black.suggestions[idx];
 
@@ -2015,7 +1817,7 @@ class Opponent {
   onToggleSuggestions(show) {
     console.log(
       "onToggleSuggestions",
-      this.opponentMoves.suggestions.container,
+      this.elements.opponentMoveSuggestionsContainer,
       show
     );
 
@@ -2026,20 +1828,20 @@ class Opponent {
 
     // toggle the suggestions container
     if (
-      this.opponentMoves.suggestions.container.classList.contains("is-hidden") &&
+      this.elements.opponentMoveSuggestionsContainer.classList.contains("is-hidden") &&
       (show === undefined || show == true)
     ) {
       console.log("show");
 
-      this.opponentMoves.suggestions.container.classList.remove("is-hidden");
+      this.elements.opponentMoveSuggestionsContainer.classList.remove("is-hidden");
       // toggle the button icon
-      this.opponentMoves.suggestions.button.children[0].innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
+      this.elements.opponentMoveSuggestionsButton.children[0].innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
     } else {
       console.log("hide");
 
-      this.opponentMoves.suggestions.container.classList.add("is-hidden");
+      this.elements.opponentMoveSuggestionsContainer.classList.add("is-hidden");
       // toggle the button icon
-      this.opponentMoves.suggestions.button.children[0].innerHTML = '<i class="fa-solid fa-eye"></i>';
+      this.elements.opponentMoveSuggestionsButton.children[0].innerHTML = '<i class="fa-solid fa-eye"></i>';
     }
   }
 
@@ -2079,59 +1881,59 @@ class Opponent {
     }
 
     // set the ECO field
-    this.opponentMoves.eco.innerHTML =
+    this.elements.opponentMovesEco.innerHTML =
       this.opponentData.line.length > 0
         ? current.eco && current.eco.code
           ? "<span>" +
-            current.eco.name +
-            '</span><span class="text-sm">' +
-            current.eco.code +
-            "</span>"
+          current.eco.name +
+          '</span><span class="text-sm">' +
+          current.eco.code +
+          "</span>"
           : "ECO unavailable"
         : "Starting position";
 
     // set the totals
-    this.opponentMoves.info.children[0].children[0].innerHTML = wins;
-    this.opponentMoves.info.children[1].children[0].innerHTML = losses;
+    this.elements.opponentMovesInfo.children[0].children[0].innerHTML = wins;
+    this.elements.opponentMovesInfo.children[1].children[0].innerHTML = losses;
 
     // show wether we have this move in our repertoire or not
     if (this.opponentData.line.length > 0) {
-      this.opponentMoves.repertoire.children[0].innerHTML = current.matches
+      this.elements.opponentMovesRepertoire.children[0].innerHTML = current.matches
         ? "This move is in your repertoire."
         : "This move is not in your repertoire.";
-      this.opponentMoves.repertoire.classList.remove("is-hidden");
+      this.elements.opponentMovesRepertoire.classList.remove("is-hidden");
       // hide the suggestions field & container
-      this.opponentMoves.suggestions.text.classList.add("is-hidden");
+      this.elements.opponentMoveSuggestions.classList.add("is-hidden");
       this.onToggleSuggestions(false);
     } else {
       // hide the in repertoire field
-      this.opponentMoves.repertoire.children[0].innerHTML = "";
-      this.opponentMoves.repertoire.classList.add("is-hidden");
+      this.elements.opponentMovesRepertoire.children[0].innerHTML = "";
+      this.elements.opponentMovesRepertoire.classList.add("is-hidden");
       // show the suggestions if we have any
-      var suggestions = this.opponentColorRadio.white.checked
+      var suggestions = this.elements.opponentColorWhiteRadio.checked
         ? this.opponentData.moves.white.suggestions
         : this.opponentData.moves.black.suggestions;
 
       console.log("suggestions", suggestions);
 
       if (suggestions.length > 0) {
-        this.opponentMoves.suggestions.text.children[0].innerHTML =
+        this.elements.opponentMoveSuggestions.children[0].innerHTML =
           "Found " +
           suggestions.length +
           " suggestion" +
           (suggestions.length > 1 ? "s" : "") +
           " for your " +
-          (this.opponentColorRadio.white.checked ? "black" : "white") +
+          (this.elements.opponentColorWhiteRadio.checked ? "black" : "white") +
           " repertoire.";
-        this.opponentMoves.suggestions.text.classList.remove("is-hidden");
+        this.elements.opponentMoveSuggestions.classList.remove("is-hidden");
       } else {
-        this.opponentMoves.suggestions.text.classList.add("is-hidden");
+        this.elements.opponentMoveSuggestions.classList.add("is-hidden");
         this.onToggleSuggestions(false);
       }
     }
 
     // update the PGN field
-    //this.opponentMoves.pgn.innerHTML = pgn;
+    //this.elements.opponentMovesPgn.innerHTML = pgn;
   }
 
   // get the opponent moves from their games in our DB (not in our repo, so not analysed moves)
@@ -2145,7 +1947,7 @@ class Opponent {
 
     var data = {
       id: this.getSelectedOpponent().id,
-      color: this.opponentColorRadio.white.checked ? "white" : "black",
+      color: this.elements.opponentColorWhiteRadio.checked ? "white" : "black",
       pgn: this.getCurrentPgn(),
     };
 

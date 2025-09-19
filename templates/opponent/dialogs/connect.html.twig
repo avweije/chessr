@@ -1,26 +1,26 @@
-<div id="connectModal" class="modal is-large-rounded">
+<div id="connectModal" data-element="yes" class="modal is-large-rounded">
 	<div class="modal-background"></div>
 	<div class="modal-card">
 		<header class="modal-card-head">
 			<p class="modal-card-title">Connect to main account</p>
-			<button id="connectModalCloseButton" class="delete" aria-label="close"></button>
+			<button id="connectModalCloseButton" data-element="yes" class="delete" aria-label="close"></button>
 		</header>
 		<section class="modal-card-body">
 			<p>If your opponent has multiple accounts, you can connect them to combine their games.</p>
 			<p class="mt-3">
 				Select the main account for
-				<span id="connectModalOpponentUsername" class="has-text-weight-semibold">Opponent</span>:
+				<span id="connectModalOpponentUsername" data-element="yes" class="has-text-weight-semibold">Opponent</span>:
 			</p>
 
-			<div id="connectModalParentAccountContainer" class="boxed-radio-group is-justify-content-flex-start mt-5">
+			<div id="connectModalParentAccountContainer" data-element="yes" class="boxed-radio-group is-justify-content-flex-start mt-5">
 			</div>
 		</section>
 		<footer class="modal-card-foot is-justify-content-flex-end">
 			<div class="buttons">
-				<button id="connectModalCancelButton" type="button" class="button">
+				<button id="connectModalCancelButton" data-element="yes" type="button" class="button">
 					Cancel
 				</button>
-				<button id="connectModalConfirmButton" type="button" class="button is-warning">
+				<button id="connectModalConfirmButton" data-element="yes" type="button" class="button is-warning">
 					Confirm
 				</button>
 			</div>

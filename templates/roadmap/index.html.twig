@@ -18,7 +18,7 @@
 
 	<div id="roadmapIntro" data-element="yes" class="is-flex is-justify-content-space-around mt-6">
 		<div class="is-flex is-flex-direction-column is-align-items-center">
-			<p id="roadmapIntroText" class="is-size-5">
+			<p id="roadmapIntroText" data-element="yes" class="is-size-5">
 				Click on a move to browse through your opening repertoire.
 			</p>
 		</div>
@@ -28,7 +28,7 @@
 		<div class="is-flex is-justify-content-center">
 			<div class="is-flex w-full is-justify-content-center overflow-is-hidden">
 				<div class="is-flex is-align-items-center whitespace-nowrap overflow-is-hidden px-3">
-					<span id="roadmapTreeCurrentField" class="text-lg has-text-weight-medium is-ellipsis"></span>
+					<span id="roadmapTreeCurrentField" data-element="yes" class="text-lg has-text-weight-medium is-ellipsis"></span>
 				</div>
 				<!--<div id="roadmapTreeCurrentButtons" class="is-flex is-align-items-center pr-3"></div>-->
 			</div>
@@ -38,10 +38,17 @@
 	<div id="roadmapTreePath" data-element="yes" class="is-flex is-flex-wrap-wrap is-gap-1 is-justify-content-center mt-4"></div>
 
 	<div id="roadmapTreeMissingMoves" data-element="yes" class="is-hidden is-flex is-justify-content-space-around mt-4">
-		<div class="grid-1fr-auto-auto-1fr is-gap-1 rounded"></div>
+		<div class="box grid-4auto p-3 is-rounded"></div>
 	</div>
 
-	<div id="roadmapTreeContainer" data-element="yes" class="is-flex is-flex-direction-column gap-y-2 is-align-items-center mt-5"></div>
+	<div id="roadmapTreeContainer" data-element="yes" class="is-flex is-flex-direction-column gap-y-2 is-align-items-center mt-5">
+		<div class="is-flex is-flex-wrap-wrap is-justify-content-center is-gap-1">
+			<div class="skeleton-block skeleton-roadmap-tree-item"></div>
+			<div class="skeleton-block skeleton-roadmap-tree-item"></div>
+			<div class="skeleton-block skeleton-roadmap-tree-item"></div>
+			<div class="skeleton-block skeleton-roadmap-tree-item"></div>
+		</div>
+	</div>
 
 	<div id="roadmapDetails" data-element="yes" class="is-hidden is-flex is-justify-content-space-around mt-5">
 		<div class="is-flex is-flex-direction-column is-align-items-center">

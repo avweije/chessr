@@ -1,6 +1,5 @@
 import { MyChess } from "chess";
 
-
 /**
  * PgnField class that renders a PGN in a container using text or links.
  * Keeps track of the history of moves for a main line and optionally for 1 or more variations.
@@ -149,7 +148,7 @@ export class PgnField {
    */
   reset(fen = "", moves = []) {
 
-    console.log("pgnField.reset", fen, moves);
+    //console.log("pgnField.reset", fen, moves);
 
     // reset the game and make the moves to get the correct history
     this._resetWithMoves(fen, moves);
@@ -172,7 +171,7 @@ export class PgnField {
     // reset the game and make the moves to get the correct history
     this._resetWithMoves(fen, moves);
 
-    console.log('PgnField - resetToCurrent', fen, this.history);
+    //console.log('PgnField - resetToCurrent', fen, this.history);
 
     // Update the current move to the last move
     this.currentMove = this.history.length;
@@ -234,7 +233,7 @@ export class PgnField {
    */
   isFirst() {
 
-    console.log('PgnField - isFirst', this.currentMove, this.history.length);
+    //console.log('PgnField - isFirst', this.currentMove, this.history.length);
   
     // make sure we have the currentMove
     this.currentMove = this.currentMove == -1 ? this.history.length : this.currentMove;
@@ -284,7 +283,7 @@ export class PgnField {
    * @param {bool} afterGotoMove - If this is the current move, optionally call afterGotoMove.
    * @returns 
    */
-  gotoMove(moveNr, variationIdx = -1, afterGotoMove = true) {
+  gotoMove(moveNr, variationIdx = -1, afterGotoMove = false) {
     let moves = [];
 
     // safety, 1st move minimum
@@ -336,6 +335,9 @@ export class PgnField {
     if (moveNr == this.currentMove && variationIdx == this.currentVariation) {
       // call the afterGotoMove handler
       if (afterGotoMove) {
+
+        console.log('Current move, call onGotoMove without moves.');
+
         this.handlers.onGotoMove(moveNr, variationIdx);
       }
 
@@ -439,7 +441,7 @@ export class PgnField {
       gotoMove = gotoMove + 1;
     }
 
-    this.gotoMove(gotoMove, this.currentVariation, false);
+    this.gotoMove(gotoMove, this.currentVariation);
   }
 
   /**
@@ -450,7 +452,7 @@ export class PgnField {
     this.currentMove =
       this.currentMove == -1 ? this.history.length : this.currentMove;
 
-    this.gotoMove(this.currentMove + 1, this.currentVariation, false);
+    this.gotoMove(this.currentMove + 1, this.currentVariation);
   }
 
   /**
@@ -460,7 +462,7 @@ export class PgnField {
    */
   addMoveToHistory(move) {
 
-    console.info("PgnField.addMoveToHistory", move, this.game.history());
+    //console.info("PgnField.addMoveToHistory", move, this.game.history());
 
     try {
 
@@ -474,7 +476,7 @@ export class PgnField {
       //const moveNr = this.game.moveNumber();
       const moveNr = this.game.history().length;
 
-      console.log("PgnField addMoveToHistory - moveNr:", moveNr, this.currentVariation);
+      //console.log("PgnField addMoveToHistory - moveNr:", moveNr, this.currentVariation);
 
       // if we are in the main line
       if (this.currentVariation == -1) {
@@ -575,7 +577,7 @@ export class PgnField {
    */
   addVariation(moveNr, moves) {
 
-    console.info("addVariation", moveNr, moves);
+    //console.info("addVariation", moveNr, moves);
 
     let currVar = -1;
     let match = true;
@@ -690,7 +692,7 @@ export class PgnField {
    */
   updatePgnField() {
 
-    console.log('PgnField - updatePgnField:', this.pgnField, this.options?.pauseUpdate);
+    //console.log('PgnField - updatePgnField:', this.pgnField, this.options?.pauseUpdate);
 
     // If we have a container element and updating is not paused
     if (this.pgnField && !this.options?.pauseUpdate) {
@@ -709,7 +711,7 @@ export class PgnField {
   getPgn(withVariations = true, pgnField = null) {
     let pgn = "";
 
-    console.log('PgnField.getPgn', withVariations, pgnField, this.history);
+    //console.log('PgnField.getPgn', withVariations, pgnField, this.history);
 
     if (pgnField) {
       pgnField.innerHTML = "";

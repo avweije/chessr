@@ -11,99 +11,92 @@
 		</title>
 		<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text></svg>">
 		{% block stylesheets %}
-			<link rel="stylesheet" href="{{ asset('styles/app.scss') }}">
+			<link
+			rel="stylesheet" href="{{ asset('styles/app.scss') }}">
 			<!-- font awesome solid icons -->
 			<link rel="stylesheet" href="{{ asset('vendor/fontawesome/css/all.min.css') }}">
 		{% endblock %}
 		{% block importmap %}
 			{{ importmap('app') }}
 		{% endblock %}
-		{% block javascripts %}
-		{% endblock %}
+		{% block javascripts %}{% endblock %}
 	</head>
 	<body style="--bg-image: url('{{ asset('images/pexels-seraphim-tsounis-283679744-14409978.jpg') }}');">
 		<div class="body-background"></div>
 		{% block header %}
 			<header class="page-header">
 				<nav class="nav-bar">
-					<div class="is-flex is-align-items-center">
+					<!-- Logo -->
+					<div class="is-flex is-align-items-center p-1">
 						<img src="{{ asset('images/chess-repertoire-logo.svg') }}" alt="" class="logo"/>
 					</div>
 
-					<div>
-						<a class="is-hidden mr-2 is-flex is-align-items-center" href="#">
-							<img class="me-2" src="{{ asset('images/chess-board.png') }}" style="height: 32px" alt="Chess Repertoire" loading="lazy"/>
-						</a>
-					</div>
-
-					<!-- Right elements -->
-					<div class="is-relative is-flex is-align-items-center">
-						{% if app.user %}
-							<!-- Left links -->
-							<ul
-								class="list-style-none me-auto mr-20 is-flex ps-0 is-flex-direction-row">
-								<!-- Home -->
-								<li class="mb-0 pe-1 ps-0">
-									<a href="{{ path('home') }}" class="p-0 px-2">
-										Home
-									</a>
-								</li>
-								<!-- Repertoire -->
-								<li class="mb-0 pe-1 ps-0">
-									<a href="{{ path('repertoire') }}" class="p-0 px-2">
-										Repertoire
-									</a>
-								</li>
-								<!-- Practice -->
-								<li class="mb-0 pe-1 ps-0">
-									{% if template.hasRepertoire() %}
-										<a href="{{ path('practice') }}" class="p-0 px-2">
-											Practice
-										</a>
-									{% else %}
-										<span class="p-0 px-2">
-											Practice
-										</span>
-									{% endif %}
-								</li>
-							</ul>
-
-							{% if template.hasRepertoire() %}
-								<a href="{{ path('roadmap') }}" class="px-3 py-2 has-text-weight-semibold" title="Roadmap">
-									<i class="fa-solid fa-folder-tree"></i>
-								</a>
-							{% else %}
-								<span class="px-3 py-2 has-text-weight-semibold text-primary-500" title="Roadmap">
-									<i class="fa-solid fa-folder-tree"></i>
-								</span>
-							{% endif %}
-							<a href="{{ path('settings') }}" class="px-3 py-2 has-text-weight-semibold" title="Settings">
-								<i class="fa-solid fa-gears"></i>
-							</a>
-						{% endif %}
-
-						<div class="checkbox-switch">
-							<input type="checkbox" id="lightSwitchCheckbox" class="light-switch"/>
-							<label class="px-3 py-2" for="lightSwitchCheckbox">
-								<a title="Switch to light mode" class="checkbox-switch-on">
-									<i class="fa-regular fa-sun"></i>
-								</a>
-								<a title="Switch to dark mode" class="checkbox-switch-off">
-									<i class="fa-regular fa-moon"></i>
-								</a>
-							</label>
-						</div>
-
-						<div class="is-flex is-align-items-center">
+					<!-- Navigation & Logout/Register -->
+					<div class="is-flex is-align-items-stretch">
+						<!-- Navigation Links -->
+						<div class="navbar-hover-menu">
 							{% if app.user %}
-								<a href="{{ path('logout') }}" class="px-3 py-2 is-size-6 is-uppercase">
-									Logout
+								<a href="{{ path('home') }}" class="is-icon" title="Home">
+									<i class="fa-solid fa-house"></i>
 								</a>
-							{% else %}
-								<a href="{{ path('register') }}" class="button is-primary is-uppercase">
-									Sign up for free
+								<a href="{{ path('repertoire') }}" class="is-icon" title="Repertoire">
+									<i class="fa-solid fa-chess-board"></i>
+								</a>
+								{% if template.hasRepertoire() %}
+									<a href="{{ path('practice') }}" class="is-icon" title="Practice">
+										<i class="fa-solid fa-gamepad"></i>
+									</a>
+								{% else %}
+									<span class="is-icon is-disabled">
+										<i class="fa-solid fa-gamepad"></i>
+									</span>
+								{% endif %}
+								{% if template.hasRepertoire() %}
+									<a href="{{ path('roadmap') }}" class="is-icon" title="Roadmap">
+										<i class="fa-solid fa-map-pin"></i>
+									</a>
+								{% else %}
+									<span class="is-icon is-disabled" title="Roadmap">
+										<i class="fa-solid fa-map-pin"></i>
+									</span>
+								{% endif %}
+								<!--
+								<a href="{{ path('analyse') }}" class="is-icon" title="Analyse">
+									<i class="fa-solid fa-magnifying-glass-chart"></i>
+								</a>
+								<a href="{{ path('opponent') }}" class="is-icon" title="Opponents">
+									<i class="fa-solid fa-people-arrows"></i>
+								</a>
+								-->
+								<a href="{{ path('settings') }}" class="is-icon" title="Settings">
+									<i class="fa-solid fa-screwdriver-wrench"></i>
 								</a>
 							{% endif %}
+
+							<div class="is-icon checkbox-switch">
+								<input type="checkbox" id="lightSwitchCheckbox" class="light-switch"/>
+								<label class="" for="lightSwitchCheckbox">
+									<a title="Switch to light mode" class="checkbox-switch-on">
+										<i class="fa-regular fa-sun"></i>
+									</a>
+									<a title="Switch to dark mode" class="checkbox-switch-off">
+										<i class="fa-regular fa-moon"></i>
+									</a>
+								</label>
+							</div>
+
+							<!-- Logout/Register -->
+							<div class="px-4">
+								{% if app.user %}
+									<a href="{{ path('logout') }}" class="py-2 is-size-6 is-uppercase">
+										Logout
+									</a>
+								{% else %}
+									<a href="{{ path('register') }}" class="button is-primary is-uppercase">
+										Sign up for free
+									</a>
+								{% endif %}
+							</div>
 						</div>
 					</div>
 				</nav>
@@ -111,29 +104,31 @@
 			</header>
 		{% endblock %}
 
-		<!-- sticky top center container, not used right now.. ? -->
-		<div id="topCenterDiv" class="sticky left-0 pt-14" style="width: calc(100vw - 10px);"> {% block body_header %}{% endblock %}
+		<!-- main content div with default padding -->
+		<div class="main-content"> {% block body %}{% endblock %}
 			</div>
 
-			<!-- main content div with default padding -->
-			<div class="main-content"> {% block body %}{% endblock %}
-				</div>
+			{% block footer %}
+				<footer class="is-hidden fixed bottom-0 w-full rounded bg-white dark:bg-slate-900 border-t border-zinc-300 dark:border-slate-700 shadow-dark-mild dark:text-white/70">
+					<div id="pageFooterBackground" class="is-absolute w-full h-full" style="opacity: .1; background-image: url('{{ asset('images/smokey-chess-background.webp') }}');"></div>
+					<p class="m-0 text-center is-size-7 py-1 md:py-2">
+						Copyright 2024 AvWeije. All Rights Reserved.
+					</p>
+				</footer>
+			{% endblock %}
 
-				{% block footer %}
-					<footer class="is-hidden fixed bottom-0 w-full rounded bg-white dark:bg-slate-900 border-t border-zinc-300 dark:border-slate-700 shadow-dark-mild dark:text-white/70">
-						<div id="pageFooterBackground" class="is-absolute w-full h-full" style="opacity: .1; background-image: url('{{ asset('images/smokey-chess-background.webp') }}');"></div>
-						<p class="m-0 text-center is-size-7 py-1 md:py-2">
-							Copyright 2024 AvWeije. All Rights Reserved.
-						</p>
-					</footer>
-				{% endblock %}
+			<div id="pageLoader" class="is-hidden">
+				<div class="is-hidden loader-dots-rotate-in-circle"></div>
+				<div class="loader-bars-in-circle"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+				<div class="is-hidden loader-dots-pulse-in-circle"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+			</div>
 
-				<div id="errorIconElement" class="fade-element fade fixed bottom-3 left-3">
-					<div class="is-flex bg-white is-rounded border border-gray-400 dark:border-slate-500">
-						<span class="is-danger">
-							<i class="fa-solid fa-triangle-exclamation"></i>
-						</span>
-					</div>
+			<div id="errorIconElement" class="fade-element fade fixed bottom-3 left-3">
+				<div class="is-flex bg-white is-rounded">
+					<span class="is-danger">
+						<i class="fa-solid fa-triangle-exclamation"></i>
+					</span>
 				</div>
-			</body>
-		</html>
+			</div>
+		</body>
+	</html>

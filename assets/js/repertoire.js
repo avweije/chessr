@@ -4,6 +4,7 @@ import { MARKER_TYPE } from "../vendor/cm-chessboard/src/extensions/markers/Mark
 import { COLOR } from "../vendor/cm-chessboard/src/view/ChessboardView.js";
 import { Utils } from "utils";
 import { UCI } from "uci";
+import { EngineHelper } from "EngineHelper";
 
 import "../styles/chessboard.css";
 
@@ -17,16 +18,8 @@ class Repertoire extends MyChessBoard {
 
   pgnLoaded = false;
 
+  engineHelper = null;
   uci = null;
-
-  repertoire = {
-    id: 0,
-    container: null,
-    groupInput: null,
-    groupDataList: null,
-    groupTagsContainer: null,
-    removeButton: null,
-  };
 
   cache = [];
 
@@ -49,6 +42,9 @@ class Repertoire extends MyChessBoard {
 
     // show the page loader
     Utils.showLoading();
+
+    // Create the EngineHelper instance
+    this.engineHelper = new EngineHelper();
 
     // Get the elements
     this.getElements();
@@ -78,42 +74,46 @@ class Repertoire extends MyChessBoard {
     Utils.hideLoading();
   }
 
+  // Uses the data-element attribute to gather all the elements needed for this JS file
   getElements() {
     // Get the data-elements for reference
-    this.elements = [];
+    this.elements = {};
     document.querySelectorAll("[data-element]").forEach(el => {
       if (el.dataset.element !== "yes") return;
       this.elements[el.id] = el;
     });
-
-    console.log('getElements', this.elements);
   }
 
+  // Add event listeners
   addListeners() {
-    // add event listeners
+    // Repertoire color
     this.elements.whiteRepertoireRadio.addEventListener(
       "click", this.onRepertoireColorSwitch.bind(this));
     this.elements.blackRepertoireRadio.addEventListener(
       "click", this.onRepertoireColorSwitch.bind(this));
 
-    // Add event listeners
+    // Engine toggle
     this.elements.engineCheckbox.addEventListener(
       "click", this.onEngineToggle.bind(this));
 
+    // Inital FEN (unused?)
     this.elements.initialFenSelect.addEventListener(
       "change", this.onSelectInitialFen.bind(this));
 
+    // Pgn goto first
     this.elements.gotoFirstButton.addEventListener("click", this.onGotoFirst.bind(this));
-
+    // Pgn load/close
     this.elements.loadPgnButton.addEventListener("click", this.onLoadPgn.bind(this));
     this.elements.closePgnButton.addEventListener("click", this.onClosePgn.bind(this));
 
+    // Repertoire buttons
     this.elements.saveRepertoireButton.addEventListener(
       "click", this.onSaveRepertoire.bind(this));
 
     this.elements.analyseGameButton.addEventListener(
       "click", this.onAnalyseGame.bind(this));
 
+    // Repertoire details
     this.elements.repertoireAutoPlayCheckbox.addEventListener(
       "change", this.onRepertoireAutoPlayChange.bind(this));
 
@@ -122,23 +122,27 @@ class Repertoire extends MyChessBoard {
       this.onRepertoireExcludeChange.bind(this)
     );
 
+    // Repertoire group
     this.elements.repertoireGroupInput.addEventListener(
       "input", this.onRepertoireGroupInput.bind(this));
     this.elements.repertoireGroupInput.addEventListener(
       "keydown", this.onRepertoireGroupKeyDown.bind(this));
 
+    // Remove button
     this.elements.removeRepertoireButton.addEventListener(
       "click", this.onRemoveRepertoireClick.bind(this));
   }
 
+  // Creates the chessboard, removes skeleton loader
   createChessboard() {
-    // the board settings
+    // The board settings
     const boardSettings = {
       orientation: this.color == "white" ? COLOR.white : COLOR.black,
       style: {
         pieces: {},
       },
     };
+    // TODO: needs improving..
     if (this.settings.board) {
       boardSettings.style.cssClass = this.settings.board;
     }
@@ -160,6 +164,7 @@ class Repertoire extends MyChessBoard {
     this.elements.board.parentNode.removeChild(this.elements.board.previousElementSibling);
   }
 
+  // Initialise the modals
   initModals() {
     // Confirm Modal
     const confirmModal = document.getElementById("confirmModal");
@@ -235,9 +240,6 @@ class Repertoire extends MyChessBoard {
     })
       .then((res) => res.json())
       .then((response) => {
-        console.log("Success:");
-        console.log(response);
-
         // store the settings
         this.onGetSettings(response.settings);
       })
@@ -252,18 +254,24 @@ class Repertoire extends MyChessBoard {
       });
   }
 
+  // After getting the settings, we can create the chessboard
+  // If the repertoire is started for a certain FEN or line
+  // We can move to that position
   onGetSettings(settings) {
     // store the settings
     this.settings = settings;
 
+    // Set the EngineHelper options
+    this.engineHelper.setOptions({
+        duration: this.settings.repertoire_engine_time * 1000,
+        onReceive: this.onEngineInfo.bind(this)
+    });
+
     // get the repertoire initial fen & line (in case we need to jump to a certain position through a POST)
     const fen = this.elements.board.getAttribute("data-fen");
-    const line = this.elements.board.getAttribute("data-line");
+    let line = this.elements.board.getAttribute("data-line");
 
     line = line && line != "" ? line.split(",") : [];
-
-    console.log("onGetSettings:");
-    console.log(fen, line);
 
     // Create the chessboard
     this.createChessboard();
@@ -295,6 +303,7 @@ class Repertoire extends MyChessBoard {
     this.updateStatus();
   }
 
+  // Color switch handler
   onRepertoireColorSwitch() {
     // get the color
     const color = this.elements.whiteRepertoireRadio.checked ? "white" : "black";
@@ -323,40 +332,38 @@ class Repertoire extends MyChessBoard {
     }
   }
 
-  // called when the button is clicked
+  // Pgn goto first move
   onGotoFirst(event) {
-
-    console.log('onGotoFirst');
-
     // goto the 1st move
     this.gotoFirst();
   }
 
+  // Show the pgn load modal
   onLoadPgn(event) {
     console.log("onLoadPgn:");
 
     console.log(this.loadPgnDialog.pgnTextarea.value);
 
-    // clear the textarea
+    // Clear the textarea
     this.loadPgnDialog.pgnTextarea.value = "";
 
-    // show the modal
-    //Modal.open(this.loadPgnDialog.modal);
+    // Show the modal
     this.showLoadPgnModal();
   }
 
+  // Load the pgn into the repertoire
   onLoadPgnConfirmed() {
     console.log("onLoadPgnConfirmed:");
     console.log(this.loadPgnDialog.pgnTextarea.value);
 
     // close the modal
-    //Modal.close(this.loadPgnDialog.modal);
     this.closeLoadPgnModal();
 
     // parse the PGN
     this.parsePgn(this.loadPgnDialog.pgnTextarea.value);
   }
 
+  // Close the pgn and restore the normal repertoire
   onClosePgn(event) {
     console.log("onClosePgn:");
 
@@ -586,19 +593,20 @@ class Repertoire extends MyChessBoard {
     return false;
   }
 
-  // fired once the remove repertoire button is clicked
+  // Show the remove repertoire modal
   onRemoveRepertoireClick(event) {
     // open the dialog
     this.showConfirmModal();
   }
 
-  // fired when the remove repertoire modal has been confirmed
+  // Remove the repertoire
   onRemoveLineConfirmed(event) {
     // close the modal
     this.closeConfirmModal();
 
     const url = "/api/repertoire";
 
+    // Get the current move
     const last = this.game.history({ verbose: true }).pop();
 
     const data = {
@@ -606,8 +614,6 @@ class Repertoire extends MyChessBoard {
       fen: this.getFen(),
       move: last.san,
     };
-
-    console.log(data);
 
     fetch(url, {
       method: "DELETE",
@@ -638,7 +644,7 @@ class Repertoire extends MyChessBoard {
       });
   }
 
-  // fetch the repertoire groups
+  // Fetch the repertoire groups
   getGroups() {
     const url = "/api/repertoire/groups";
 
@@ -650,8 +656,6 @@ class Repertoire extends MyChessBoard {
     })
       .then((res) => res.json())
       .then((response) => {
-        console.log(response);
-
         // store the groups
         this.groups = response.groups;
         this.groupsWithEco = response.groups;
@@ -665,7 +669,7 @@ class Repertoire extends MyChessBoard {
       });
   }
 
-  // load the groups
+  // Load the groups
   loadGroups(ecoCode = "") {
     // clear the groups
     while (this.elements.repertoireGroupDataList.firstChild) {
@@ -674,18 +678,22 @@ class Repertoire extends MyChessBoard {
       );
     }
 
+    // Check to see if we already have the current ECO as a group
     this.groupsWithEco = this.groups.slice(0);
     let add = true;
+    // TODO: change this to findIndex ?
     for (let i = 0; i < this.groupsWithEco.length; i++) {
       if (this.groupsWithEco[i].name == ecoCode) {
         add = false;
       }
     }
 
+    // Add the current ECO as a group, if needed
     if (add) {
       this.groupsWithEco.push({ id: 0, name: ecoCode });
     }
 
+    // Load the groups in the datalist
     for (let i = 0; i < this.groupsWithEco.length; i++) {
       const opt = document.createElement("option");
       opt.value = this.groupsWithEco[i].name;
@@ -695,7 +703,7 @@ class Repertoire extends MyChessBoard {
     }
   }
 
-  // reset the get api/moves cache
+  // Reset the get api/moves cache
   resetCache(current = false) {
     if (current) {
       for (let i = 0; i < this.cache.length; i++) {
@@ -709,11 +717,17 @@ class Repertoire extends MyChessBoard {
     }
   }
 
+  // Get the moves for the current position, from cache or the API
   getMoves() {
     // clear the moves table
     this.clearMovesTable();
 
-    console.info("find in cache");
+    // Toggle the engine container (if no game moves)
+    if (this.game.moveNumber() > 1) {
+      this.toggleEngineContainer(true);
+    } else {
+      this.toggleEngineContainer(false);
+    }
 
     // find the data in our cache
     for (let i = 0; i < this.cache.length; i++) {
@@ -730,7 +744,7 @@ class Repertoire extends MyChessBoard {
     this.getMovesFromApi();
   }
 
-  // fetch moves for current position
+  // Fetch moves for current position
   getMovesFromApi() {
     // show the page loader
     Utils.showLoading();
@@ -755,8 +769,6 @@ class Repertoire extends MyChessBoard {
     })
       .then((res) => res.json())
       .then((response) => {
-        console.log(response);
-
         // handle the response
         this.onGetMoves(response);
       })
@@ -771,25 +783,27 @@ class Repertoire extends MyChessBoard {
       });
   }
 
-  // show the moves, the groups
+  // Show the moves, the repertoire details, and load the groups
   onGetMoves(data, fromCache = false) {
-    // cache the data if needed
+    // Cache the data if needed
     if (!fromCache) {
       this.cache.push({ pgn: this.game.pgn(), data: data });
     }
 
-    // remember the current repertoire details
+    console.log('onGetMoves:', data);
+
+    // Remember the current repertoire details
     this.repertoireId = data["current"]["id"];
     this.repertoireAutoPlay = data["current"]["autoplay"];
     this.repertoireExclude = data["current"]["exclude"];
     this.repertoireIncluded = data["current"]["included"];
 
-    // toggle the buttons
+    // Toggle the buttons
     this.toggleButtons(this.repertoireId > 0);
 
-    // if we haven't loaded the initial fens yet
+    // If we haven't loaded the initial fens yet
     if (!this.initialFensLoaded) {
-      // if we have initial fens
+      // If we have initial fens
       if (data["initialFens"] && data["initialFens"].length > 0) {
         this.showInitialFens();
         this.loadInitialFens(data["initialFens"]);
@@ -800,51 +814,41 @@ class Repertoire extends MyChessBoard {
       this.initialFensLoaded = true;
     }
 
-    // set the current ECO code
+    // Set the current ECO code
     this.elements.ecoField.innerHTML =
       data.eco.current && data.eco.current.name ? data.eco.current.name : "";
 
-    // load the moves table
+    // Load the moves table
     this.loadMovesTable(data);
 
-    // 
-    console.log("moveNumber:", this.game.moveNumber());
-
-    // toggle the engine container (if no game moves)
-    //if (data.games.moves.length > 0) {
-    if (this.game.moveNumber() > 1) {
-      this.toggleEngineContainer(true);
-    } else {
-      this.toggleEngineContainer(false);
-    }
-
-    // set the autoplay & exclude checkboxes
+    // Set the autoplay & exclude checkboxes
     this.elements.repertoireAutoPlayCheckbox.checked = this.repertoireAutoPlay;
     this.elements.repertoireExcludeCheckbox.checked = this.repertoireExclude;
     this.elements.repertoireExcludeCheckbox.disabled = this.repertoireIncluded == false;
 
-    // store the groups for this move
+    // Store the groups for this move
     this.repertoireGroups = data.groups;
 
-    // reload the groups
+    // Reload the groups
     this.loadGroups(this.elements.ecoField.innerHTML);
 
-    // clear the group tags
+    // Clear the group tags
     this.clearGroupTags();
 
-    // if this repertoire is saved
+    // If this repertoire is saved
     if (this.repertoireId > 0) {
       // add the group tags
       this.addGroupTags();
     }
 
-    // toggle the analyse on lichess button
+    // Toggle the analyse on lichess button
     this.elements.analyseGameButton.disabled = this.game.moveNumber() < 2;
   }
 
+  // Open the current position in Lichess for analysis
   onAnalyseGame() {
     window.open(
-      "https://lichess.org/analysis?fen=" + encodeURIComponent(this.getFen()),
+      "https://lichess.org/analysis/standard/" + encodeURIComponent(this.getFen()),
       "_blank"
     );
   }
@@ -859,8 +863,6 @@ class Repertoire extends MyChessBoard {
 
     // turn off the engine by default
     this.elements.engineCheckbox.checked = false;
-    // interrupt the engine
-    this.engineInterrupt();
 
     if (show) {
       // clear the table
@@ -892,100 +894,35 @@ class Repertoire extends MyChessBoard {
     console.info("onEngineToggle:", this.elements.engineCheckbox.checked);
 
     if (this.elements.engineCheckbox.checked) {
-      // start the engine
-      this.engineStart();
+      // Remember the FEN we are calculating for
+      this.engineFen = this.currentFen;
+
+      // Start the search (will interrupt or start engine when needed)
+      this.engineHelper.startSearch({ 
+        moves: this.getUciMoves()
+      });
 
       // hide the start engine text
       this.elements.engineTable.parentNode.firstElementChild.classList.add("is-hidden");
     } else {
-      // stop the engine
-      this.engineStop();
-
-      // show the start engine text
-      //this.elements.engineTable.parentNode.firstElementChild.classList.remove("is-hidden");
+      // Stop the engine
+      this.engineHelper.stopEngine();
     }
   }
 
-  engineStart() {
-    console.info("Starting the engine.", this.uci);
+  // Get the current UCI moves for the engine
+  getUciMoves() {
+    console.info("Repertoire.js - getUciMoves");
 
-    if (this.uci == null) {
-      this.uci = new UCI();
+    let uciMoves = "";
 
-      this.uci.onReceive("uciok", this.onEngineOK.bind(this));
-
-      // start the engine
-      this.uci.startEngine();
-      this.uci.sendUCI();
-    } else {
-
-      console.log("Already active, calling onEngineReady..");
-
-      // restart a new evaluation
-      this.onEngineOK();
-    }
-  }
-
-  engineStop() {
-    console.info("Stopping the engine. (Clearing this.uci, new engine should be started after...)");
-
-    if (this.uci !== null) {
-      this.uci.stopEngine();
-      this.uci = null;
-    }
-  }
-
-  engineInterrupt() {
-    console.info("Interrupting the engine..");
-
-    // stop the current process
-    if (this.uci) this.uci.interrupt();
-  }
-
-  onEngineOK() {
-    console.info("onEngineOK");
-
-    if (!this.uci) return;
-
-    this.uci.setMultiPV(3);
-
-    this.uci.onReceive("readyok", this.onEngineReady.bind(this));
-
-    // stop just in case
-    this.uci.interrupt();
-    // start newgame
-    this.uci.newGame();
-    // wait for isRready
-    this.uci.isReady();
-
-    this.uci.onReceive("info", this.onEngineInfo.bind(this), false);
-    this.uci.onReceive("bestmove", this.onEngineBestMove.bind(this), false);
-  }
-
-  onEngineReady() {
-    console.info("onEngineReady");
-
-    //
-    const fen = "";
-    let moves = "";
-    //
     const history = this.game.historyWithCorrectFen();
+
     for (let i = 0; i < history.length; i++) {
-      //
-      moves =
-        moves + (moves !== "" ? " " : "") + history[i].from + history[i].to;
+      uciMoves = uciMoves + (uciMoves !== "" ? " " : "") + history[i].from + history[i].to;
     }
 
-    console.info("moves", moves);
-
-    // remember the FEN we are calculating for
-    this.engineFen = this.currentFen;
-
-    console.info("starting evaluation using settings:");
-    console.info(this.settings);
-
-    // start the evaluation
-    this.uci.evaluate(fen, moves, this.settings.repertoire_engine_time * 1000);
+    return uciMoves;
   }
 
   onEngineInfo(info) {
@@ -1041,15 +978,13 @@ class Repertoire extends MyChessBoard {
     } else {
       // add the row
       row = this.elements.engineTable.insertRow(-1);
-      row.className =
-        "overflow-hidden hover:cursor-pointer hover:bg-tacao-100 hover:dark:bg-slate-600";
+      row.className = "cursor-pointer";
 
-      const cell = row.insertCell(-1);
-      cell.className =
-        "p-2 whitespace-nowrap rounded-l-md";
+      let cell = row.insertCell(-1);
+      cell.className = "p-2 is-nowrap";
 
       cell = row.insertCell(-1);
-      cell.className = "w-full p-2 rounded-r-md";
+      cell.className = "w-full p-2";
 
       // add event listeners
       row.addEventListener("mouseover", (event) => {
@@ -1110,15 +1045,11 @@ class Repertoire extends MyChessBoard {
     row.cells[1].innerHTML = line;
   }
 
-  onEngineBestMove(bestMove) {
-    console.info("onEngineBestMove", bestMove);
-  }
-
   /**
    * Group (tags) functions.
    */
 
-  // remove the group tags
+  // Remove the group tags
   clearGroupTags() {
     while (this.elements.repertoireGroupTagsContainer.firstChild) {
       this.elements.repertoireGroupTagsContainer.removeChild(
@@ -1127,14 +1058,14 @@ class Repertoire extends MyChessBoard {
     }
   }
 
-  // add the group tags
+  // Add the group tags
   addGroupTags() {
     for (let i = 0; i < this.repertoireGroups.length; i++) {
       this.addGroupTag(this.repertoireGroups[i]);
     }
   }
 
-  //
+  // Add a group tag
   addGroupTag(group, save = false) {
     // see if the group is already added
     for (
@@ -1766,12 +1697,6 @@ class Repertoire extends MyChessBoard {
     }
     // update the status, get the ECO codes for next position.. etc
     this.updateStatus();
-
-    // update the pgn field
-    //this.pgnField.resetTo(moveNr);
-    //this.pgnField.gotoMove(moveNr);
-
-    //
   }
   /**
    * Called after a move was move. Update the status fields and fetch the moves.
@@ -1779,33 +1704,20 @@ class Repertoire extends MyChessBoard {
    * @memberof Repertoire
    */
   updateStatus() {
-
-    console.log('Repertoire.js - updateStatus');
-
     let status = "";
 
-    const moveColor = "White";
+    let moveColor = "White";
     if (this.game.turn() === "b") {
       moveColor = "Black";
     }
 
-    console.log(this.game);
-
-    // checkmate?
+    // Update the game status
     if (this.game.isCheckmate()) {
       status = "Game over, " + moveColor + " is in checkmate.";
-    }
-
-    // draw?
-    else if (this.game.isDraw()) {
+    } else if (this.game.isDraw()) {
       status = "Game over, drawn position";
-    }
-
-    // game still on
-    else {
+    } else {
       status = moveColor + " to move";
-
-      // check?
       if (this.game.isCheck()) {
         status += ", " + moveColor + " is in check";
       }
@@ -1813,22 +1725,22 @@ class Repertoire extends MyChessBoard {
 
     this.elements.statusField.innerHTML = status;
 
-    // remember the current FEN (without any preview moves, etc)
+    // Remember the current FEN (without any preview moves, etc)
     this.currentFen = this.getFen();
     this.currentTurn = this.game.turn();
-    // update the pgn field
+
+    // Update the pgn field
     this.updatePgnField();
 
-    // toggle the goto first move button
+    // Toggle the goto first move button
     this.elements.gotoFirstButton.disabled = this.isFirst();
 
-    // get the moves for the new position
+    // Get the moves for the new position
     this.getMoves();
   }
 }
 
-// initialise the Repertoire object once the page is loaded
+// Initialise the Repertoire object once the page is loaded
 document.addEventListener("DOMContentLoaded", (event) => {
-  // instantiate the repertoire class
   const repertoire = new Repertoire();
 });

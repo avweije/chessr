@@ -489,10 +489,9 @@ class OpponentController extends ChessrAbstractController
             $secs =  $now->getTimestamp() - $rec->getDateTime()->getTimestamp();
             $mins = floor($secs / 60);
 
-            // if 5 minutes ago or more
-            //if ($mins > 4) {
-            if (true) {
-                //if (true) {
+            // If more than 2 minutes ago, it's good
+            if ($mins > 2) {
+            //if (true) {
                 // update status for record
                 $rec->setStatus(DownloadStatus::Partial);
                 $rec->setDateTime(new DateTime());
@@ -1108,8 +1107,8 @@ class OpponentController extends ChessrAbstractController
 
                 $pctPlayed = $total == 0 ? 100 : ($sub / $total) * 100;
 
-                // if this move is played 25% of the time or more
-                if ($pctPlayed >= 30) {
+                // if this move is played 20% of the time or more
+                if ($pctPlayed >= 20) {
                     // see if we have other moves for this position
                     $res = $repo->findBy([
                         'User' => $this->getUser(),

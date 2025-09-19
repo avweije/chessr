@@ -18,30 +18,34 @@ $danger: #f44336;
 
 // Link variants
 $link-border: #fbd38d;
-$link-text: #af6b3f;
-$link-hover: #d4a017;
+$link-text: #7c2d12; // #535352; // #b88f3d; // #af6b3f;
+$link-hover: #0369a1; // #919295; // #d4a017; // #d4a017;
 
 // Text colors
-$text-default: #b45309;
-$text-title: #c05621;
-$text-faded: #ca854d;
+//$text-default: #b45309;
+//$text-title: #c05621;
+//$text-faded: #ca854d;
 $text-on-background: #d1d5db;
+$text-default: #9a3412;
+$text-title: #8f4c35; // #7c2d12;
+$text-faded: #a0582b;
 
 // Surfaces
 $background: #735751;
-$surface-main: #fef6e4;
+$surface-main: #f7eacc; // #fef6e4;
 $surface-alt: #fbd38d;
 $on-surface: #2c2c2c;
 
 // Custom Extras
-$surface-border: #f6ad55;
+$primary-lighter: #f6ad55;
+$surface-border: rgb(246, 173, 85);
 $input-background: #fcfcfc;
 $input-text: #a0674a;
 $input-background-disabled: #f0f0f0;
 $input-text-disabled: #B89E8A; // disabled input text color
 
 // Bulma color overrides and extensions - dark mode
-$primary-dark: #D18C2B;
+$primary-dark: hwb(35.06deg 16.86% 18.04%); //#D18C2B;
 $link-dark: #4c946a;
 $info-dark: #33cfe0;
 $success-dark: #4caf50;
@@ -66,6 +70,7 @@ $surface-alt-dark: #2a2a2a;    // alternate surfaces / highlights
 $on-surface-dark: #e0e0e0;     // text color on surfaces
 
 // Custom Extras
+$primary-lighter-dark: hwb(35.06deg 46.86% 18.04%);
 $surface-border-dark: #404040;
 $input-background-dark: #090909;
 $input-text-dark: #a8a8a8;

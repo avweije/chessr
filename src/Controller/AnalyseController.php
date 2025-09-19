@@ -152,8 +152,8 @@ class AnalyseController extends ChessrAbstractController
       $secs =  $now->getTimestamp() - $rec->getDateTime()->getTimestamp();
       $mins = floor($secs / 60);
 
-      // if 5 minutes ago or more
-      if ($mins > 4) {
+      // If more than 2 minutes ago, it's good
+      if ($mins > 2) {
         //if (true) {
         // update status for record
         $rec->setStatus(DownloadStatus::Partial);
@@ -236,6 +236,11 @@ class AnalyseController extends ChessrAbstractController
           for ($i = 0; $i < $cnt; $i++) {
             // process the game
             $evals = $this->getGameEvaluations($downloads[$i], $siteUsername);
+            
+            // Increase the downloaded counter before we possibly skip
+            $downloaded++;
+            // Skip if we have no game (no moves for instance)
+            if ($evals === null) continue;
 
             // add download info
             $evals["site"] = $settings->getSite();
@@ -246,8 +251,6 @@ class AnalyseController extends ChessrAbstractController
 
             // add to the downloaded games
             $games[] = $evals;
-
-            $downloaded++;
 
             // stop when we've reached the max
             if ($downloaded >= $maxGames) {
@@ -476,6 +479,9 @@ class AnalyseController extends ChessrAbstractController
 
     // create a new game
     $chess = new ChessJs($game->getFen());
+
+    // Skip if there are no moves
+    if (count($game->getMovesArray()) === 0) return null;
 
     // add te moves
     foreach ($game->getMovesArray() as $move) {
@@ -966,8 +972,21 @@ class AnalyseController extends ChessrAbstractController
     // Get the top evals for this position
     $topEvals = $repo->findTopEvaluationByFen($fen);
 
+    // Create a ChessJs instance
+    $chess = new ChessJs();
+
     $pvs = [];
     foreach ($topEvals as $eval) {
+      // If we don't have the SAN move yet, determine it now
+      if (empty($eval->getSan())) {
+        // Get the SAN notation
+        $san = $this->chessHelper->getFirstSanMoveFromLine($chess, $fen, $eval->getLine());
+        // Update the entity
+        $eval->setSan($san);
+        $this->em->persist($eval);
+        $this->em->flush();
+      }
+
       $pvs[] = [
         "depth" => $eval->getDepth(),
         "cp" => $eval->getCp(),

@@ -1,11 +1,5 @@
-import {
-  ARROW_TYPE,
-  Arrows,
-} from "../vendor/cm-chessboard/src/extensions/arrows/Arrows.js";
-
-//import {Extension, EXTENSION_POINT} from "../../model/Extension.js"
+import { Arrows } from "../vendor/cm-chessboard/src/extensions/arrows/Arrows.js";
 import { Svg } from "../vendor/cm-chessboard/src/lib/Svg.js";
-//import {Utils} from "../../lib/Utils.js"
 
 export const CUSTOM_ARROW_TYPE = {
   thin: {
@@ -39,6 +33,10 @@ export const CUSTOM_ARROW_TYPE = {
     strokeWidth: 12,
   },
 };
+
+/**
+ * Thicker arrows for the cm-chessboard.
+ */
 
 export class ThickerArrows extends Arrows {
   /** @constructor */

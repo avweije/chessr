@@ -1,16 +1,22 @@
-# Bugs / Todo
+# Todo
 
-- when adding to your repertoire from analysis (open in new tab), i go to practice, but dont see them as 'new'
-- opponent analysis - when you expand your repertoire, previously downloaded games are not checked anymore..? either make a fix or provide a reset or something?
-- modals
-- styling
-- clicking on links few times goes wrong, after opening in new window through button? localhost:8000/repertoire/practice ?
-
-- if repertoire updated, new items, do we need to recalculate recommended?? if we already have in session, it wont change until you play them all.. ?
-
-- make pgn field (opponents) a component, hover is nice, keys left right up down (optional), click = callback, etc.
-
+- make class to work with engine easier (for repertoire and analysis pages)
 - move api functions to appropriate controllers, remove api controller.
+
+- icons in navbar instead of text?
+- only recalculate recommended if user wants to? if it happens right away, its a bit weird - maybe refresh icon or button?
+
+# Logger class
+
+- logger class, default only logs for current page JS?
+- components log under certain name or level, debug, something we can turn on/off quickly when we need it
+- when we want to debug, option to turn on component debugs/infos
+- when we are just working on 1 page, option to turn all other debugs/infos off
+- can we use class or file to determine grouping?
+
+# Bugs
+
+-
 
 # Ideas for later:
 

@@ -1,13 +1,9 @@
 import { Utils } from "utils";
 
+/**
+ * Admin controller for the admin page.
+ */
 class Admin {
-  // the elements
-  maxLinesInput = null;
-  batchSizeInput = null;
-  importButton = null;
-
-  elapsedTimeField = null;
-
   importStarted = false;
   interruptImport = false;
 
@@ -20,45 +16,54 @@ class Admin {
   averageLatest = 0;
 
   constructor() {
-    // get the elements
-    this.maxLinesInput = document.getElementById("maxLinesInput");
-    this.batchSizeInput = document.getElementById("batchSizeInput");
-    this.importButton = document.getElementById(
-      "importButton"
-    );
-
-    this.linesImportedField = document.getElementById("linesImportedField");
-    this.elapsedTimeField = document.getElementById("elapsedTimeField");
+    // Get the elements
+    this.getElements();
 
     // attach event handlers
-    this.importButton.addEventListener(
+    this.elements.importTypeEvaluationsRadio.addEventListener(
+      "click", this.toggleImportType.bind(this)
+    );
+    this.elements.importTypeMoveStatsRadio.addEventListener(
+      "click", this.toggleImportType.bind(this)
+    );
+    this.elements.importButton.addEventListener(
       "click",
       this.onStartStop.bind(this)
     );
+
+    // Toggle import type
+    this.toggleImportType();
   }
 
+  // Uses the data-element attribute to gather all the elements needed for this JS file
   getElements() {
     // Get the data-elements for reference
-    this.elements = [];
+    this.elements = {};
     document.querySelectorAll("[data-element]").forEach(el => {
       if (el.dataset.element !== "yes") return;
       this.elements[el.id] = el;
     });
-
-    // get the elements
-    this.tabs.buttons = document.getElementById("settingsTabButtons");
-    this.tabs.account = document.getElementById("settingsTabAccount");
-    this.tabs.board = document.getElementById("settingsTabBoard");
-    this.tabs.engine = document.getElementById("settingsTabEngine");
-    this.tabs.practice = document.getElementById("settingsTabPractice");
-
-    console.log('getElements', this.elements);
   }
 
+  // Get the selected import type
   getSelectedImportType() {
     return document.querySelector('input[name="import_type"]:checked').value;
   }
 
+  // Toggle the import type
+  toggleImportType() {
+    if (this.elements.importTypeEvaluationsRadio.checked) {
+      this.elements.maxLinesField.classList.remove("is-hidden");
+      this.elements.linesImportedRow.classList.remove("is-hidden");
+      this.elements.gamesProcessedRow.classList.add("is-hidden");
+    } else {
+      this.elements.maxLinesField.classList.add("is-hidden");
+      this.elements.linesImportedRow.classList.add("is-hidden");
+      this.elements.gamesProcessedRow.classList.remove("is-hidden");
+    }
+  }
+
+  // Start or stop the import
   onStartStop() {
     console.log("onStartStop: " + (this.importStarted ? "stop" : "start"));
 
@@ -74,19 +79,19 @@ class Admin {
     this.importStarted = !this.importStarted;
   }
 
-  // stop the import
+  // Stop the import
   stopImport() {
     this.interruptImport = true;
-    this.importButton.disabled = true;
+    this.elements.importButton.disabled = true;
   }
 
-  //
+  // Start the import
   startImport() {
     // show the spinner
-    this.importButton.innerHTML = "Stop import";
-    //this.importButton.classList.add("is-loading");
+    this.elements.importButton.innerHTML = "Stop import";
 
-    this.linesImportedField.innerHTML = "0";
+    this.elements.linesImportedField.innerHTML = "0";
+    this.elements.gamesProcessedField.innerHTML = "0";
 
     this.processed = 0;
     this.average = 0;
@@ -107,7 +112,7 @@ class Admin {
     this.nextImport();
   }
 
-  // start the import
+  // Start the next AJAX import run
   nextImport() {
     console.log("nextImport:");
 
@@ -115,8 +120,8 @@ class Admin {
 
     const data = {
       type: this.getSelectedImportType(),
-      maxLines: this.maxLinesInput.value,
-      batchSize: this.batchSizeInput.value,
+      maxLines: this.elements.maxLinesInput.value,
+      batchSize: this.elements.batchSizeInput.value,
       processed: this.processed
     };
 
@@ -146,7 +151,7 @@ class Admin {
       });
   }
 
-  //
+  // Called after an import AJAX call is done
   onImportDone(data) {
     console.log("onImportDone:");
     console.log(data);
@@ -169,15 +174,15 @@ class Admin {
           ? Math.round((this.processed / seconds) * 10) / 10
           : 0;
 
+      const secondsLatest =
+        (new Date().getTime() - this.startTimeLatest) / 1000;
+      this.averageLatest =
+        data.processed > 0
+          ? Math.round((data.processed / secondsLatest) * 10) / 10
+          : 0;
+
       // if not the 1st call
       if (this.processed > data.processed) {
-        const secondsLatest =
-          (new Date().getTime() - this.startTimeLatest) / 1000;
-        this.averageLatest =
-          data.processed > 0
-            ? Math.round((data.processed / secondsLatest) * 10) / 10
-            : 0;
-
         averageLoss =
           this.averageLatest < this.average
             ? 100 - (this.averageLatest / this.average) * 100
@@ -186,11 +191,17 @@ class Admin {
         console.log("averageLoss: " + averageLoss + "%");
       }
 
-      this.linesImportedField.innerHTML =
-        this.processed +
-        ' <sup>(' +
-        data.percentageComplete +
-        "%)</sup>";
+      // Update the lines imported / games processed
+      this.elements.linesImportedField.innerHTML = this.processed;
+
+      this.elements.gamesProcessedField.innerHTML = this.processed;
+
+      // Update the last speed and average speeds
+      this.elements.lastSpeedField.innerHTML = this.averageLatest ? this.averageLatest + ' p/s' : 'n/a';
+      this.elements.averageSpeedField.innerHTML = this.average ? this.average + ' p/s' : 'n/a';
+
+      // Update the progress bar
+      this.elements.progressBar.value = data.percentageComplete;
 
       // update the elapsed time
       this.setElapsedTime();
@@ -199,9 +210,8 @@ class Admin {
     //
     if (this.interruptImport || data == null) {
       // hide the spinner, toggle button
-      this.importButton.innerHTML = "Start import";
-      //this.importButton.classList.remove("is-loading");
-      this.importButton.disabled = false;
+      this.elements.importButton.innerHTML = "Start import";
+      this.elements.importButton.disabled = false;
 
       this.importStarted = false;
       this.interruptImport = false;
@@ -216,38 +226,20 @@ class Admin {
 
       setTimeout(() => {
         this.nextImport();
-      }, 8000);
+      }, 3000);
     } else {
       this.nextImport();
     }
   }
 
-  //
+  // Update the elapsed time
   setElapsedTime() {
     const seconds = (new Date().getTime() - this.startTime) / 1000;
-
-    this.elapsedTimeField.innerHTML =
-      this.getDuration(seconds) +
-      (this.average > 0
-        ? ' <sup>(' +
-          this.average +
-          " p/s)" +
-          (this.averageLatest > 0 ? " [" + this.averageLatest + " p/s]" : "") +
-          "</sup>"
-        : "");
-  }
-
-  // get a printable duration for a number of seconds (2h 14m 32s)
-  getDuration(seconds) {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds - h * 3600) / 60);
-    const s = Math.floor(seconds - h * 3600 - m * 60);
-
-    return (h > 0 ? h + "h " : "") + (h > 0 || m > 0 ? m + "m " : "") + s + "s";
+    this.elements.elapsedTimeField.innerHTML = Utils.getDuration(seconds);
   }
 }
 
-// initialise the Practice object once the page is loaded
+// Initialise the Practice object once the page is loaded
 document.addEventListener("DOMContentLoaded", (event) => {
   const admin = new Admin();
 });

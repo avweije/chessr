@@ -1,9 +1,9 @@
-<div id="saveModal" class="modal is-large-rounded">
+<div id="saveModal" data-element="yes" class="modal is-large-rounded">
 	<div class="modal-background"></div>
 	<div class="modal-card">
 		<header class="modal-card-head">
 			<p class="modal-card-title">Save to repertoire</p>
-			<butto id="saveModalCloseButton" class="delete" aria-label="close"></button>
+			<butto id="saveModalCloseButton" data-element="yes" class="delete" aria-label="close"></button>
 		</header>
 		<section class="modal-card-body">
 			<p id="saveModalTextOneMove" class="is-hidden pr-6">
@@ -17,19 +17,19 @@
 			<div id="saveModalMovesList">
 				<div class="field">
 					<label class="radio">
-						<input id="saveModalRadioTopMove" type="radio" name="list-radio" checked>
+						<input id="saveModalRadioTopMove" data-element="yes" type="radio" name="list-radio" checked>
 						Top engine move
 					</label>
 				</div>
 				<div class="field">
 					<label class="radio">
-						<input id="saveModalRadioTop2" type="radio" name="list-radio">
+						<input id="saveModalRadioTop2" data-element="yes" type="radio" name="list-radio">
 						Top 2 moves
 					</label>
 				</div>
 				<div class="field">
 					<label class="radio">
-						<input id="saveModalRadioTop3" type="radio" name="list-radio">
+						<input id="saveModalRadioTop3" data-element="yes" type="radio" name="list-radio">
 						Top 3 moves
 					</label>
 				</div>
@@ -37,10 +37,10 @@
 		</section>
 		<footer class="modal-card-foot is-justify-content-flex-end">
 			<div class="buttons">
-				<button id="saveModalCancelButton" class="button">
+				<button id="saveModalCancelButton" data-element="yes" class="button">
 					Cancel
 				</button>
-				<button id="saveModalConfirmButton" class="button is-warning">
+				<button id="saveModalConfirmButton" data-element="yes" class="button is-warning">
 					Confirm
 				</button>
 			</div>

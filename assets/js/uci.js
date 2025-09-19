@@ -71,7 +71,18 @@ export class UCI {
   }
 
   // execute a function once a certain message is received (with time limit)
-  onReceive(msg, func, onceOnly = true) {
+  onReceive(msg, func, onceOnly = true, replace = false) {
+    // If we need to replace the current receiver, if any
+    if (replace) {
+      // Find the current receiver
+      const idx = this.queue.findIndex((q) => q.msg === msg);
+
+      console.log('onReceive replace:', idx);
+
+      // Remove the current receiver
+      if (idx !== -1) this.queue.splice(idx, 1);
+    }
+    // Add receiver to the queue
     this.queue.push({
       msg: msg,
       func: func,

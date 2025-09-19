@@ -112,7 +112,9 @@ class ApiController extends AbstractController
                 case "recommend_interval":
                     // If the interval has changed, reset the session recommended lines
                     if ($settings->getRecommendInterval() !== $value) {
-                        $_SESSION['recommendedLines'] = [];
+                        // Unset the session recommended lines so they will be recalculated
+                        $_SESSION['recommendedLines'] = null;
+                        unset($_SESSION['recommendedLines']);
                     }
                     $settings->setRecommendInterval($value);
                     break;

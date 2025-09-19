@@ -3,42 +3,45 @@
 {% block board_header %}
 	<div id="practiceRepertoireButtons" data-element="yes" class="boxed-radio-menu">
 		<div class="boxed-radio">
-			<input class="is-hidden" type="radio" name="repertoire_type" value="white" id="repertoireWhite" data-element="yes"/>
+			<input id="repertoireWhite" data-element="yes" class="is-hidden" type="radio" name="repertoire_type" value="white"/>
 			<label class="boxed-radio-label" for="repertoireWhite"></label>
 			<span class="boxed-radio-text">White</span>
 		</div>
 		<div class="boxed-radio">
-			<input class="is-hidden" type="radio" name="repertoire_type" value="black" id="repertoireBlack" data-element="yes"/>
+			<input id="repertoireBlack" data-element="yes" class="is-hidden" type="radio" name="repertoire_type" value="black"/>
 			<label class="boxed-radio-label" for="repertoireBlack"></label>
 			<span class="boxed-radio-text">Black</span>
 		</div>
 		<div class="boxed-radio is-hidden">
-			<input class="is-hidden" type="radio" name="repertoire_type" value="new" id="repertoireNew" data-element="yes"/>
+			<input id="repertoireNew" data-element="yes" class="is-hidden" type="radio" name="repertoire_type" value="new"/>
 			<label class="boxed-radio-label" for="repertoireNew"></label>
 			<span class="boxed-radio-text is-flex is-align-items-center">
 				New
-				<sup class="pl-1"></sup>
-			</span>
-		</div>
-		<div class="boxed-radio is-hidden">
-			<input class="is-hidden" type="radio" name="repertoire_type" value="recommended" id="repertoireRecommended" data-element="yes"/>
-			<label class="boxed-radio-label" for="repertoireRecommended"></label>
-			<span class="boxed-radio-text is-flex is-align-items-center">
-				Recommended
-				<sup class="pl-1"></sup>
+				<sup id="repertoireNewCount" data-element="yes" class="pl-1"></sup>
 			</span>
 		</div>
 		<div class="boxed-radio">
-			<input class="is-hidden" type="radio" name="repertoire_type" value="all" id="repertoireAll" data-element="yes" checked/>
+			<input id="repertoireRecommended" data-element="yes" class="is-hidden" type="radio" name="repertoire_type" value="recommended"/>
+			<label class="boxed-radio-label" for="repertoireRecommended"></label>
+			<span class="boxed-radio-text is-flex is-align-items-center">
+				Recommended
+				<span id="repertoireRecommendedRefresh" data-element="yes" class="is-hidden icon ml-1">
+					<i class="fa-solid fa-arrows-rotate"></i>
+				</span>
+				<sup id="repertoireRecommendedCount" data-element="yes" class="pl-1"></sup>
+			</span>
+		</div>
+		<div class="boxed-radio">
+			<input id="repertoireAll" data-element="yes" class="is-hidden" type="radio" name="repertoire_type" value="all" checked/>
 			<label class="boxed-radio-label" for="repertoireAll"></label>
 			<span class="boxed-radio-text">All</span>
 		</div>
 		<div class="boxed-radio">
-			<input class="is-hidden" type="radio" name="repertoire_type" value="analysis" id="repertoireAnalysis" data-element="yes"/>
+			<input id="repertoireAnalysis" data-element="yes" class="is-hidden" type="radio" name="repertoire_type" value="analysis"/>
 			<label class="boxed-radio-label" for="repertoireAnalysis"></label>
 			<span class="boxed-radio-text is-flex is-align-items-center">
 				Analysis
-				<sup class="pl-1"></sup>
+				<sup id="repertoireAnalysisCount" data-element="yes" class="pl-1"></sup>
 			</span>
 		</div>
 	</div>
@@ -141,8 +144,8 @@
 			<i class="fa-solid fa-forward-step"></i>
 		</button>
 		<div class="is-flex">
-			<input type="checkbox" id="showPracticeInfoButton" data-element="yes" value="1" class="is-hidden">
-			<label for="showPracticeInfoButton" title="Toggle info" class="is-hidden select-none button is-primary mr-1 peer-checked:btn-checked">
+			<input type="checkbox" class="is-hidden is-button-checkbox" id="showPracticeInfoButton" data-element="yes" value="1">
+			<label for="showPracticeInfoButton" title="Toggle info" class="is-hidden button is-primary mr-1">
 				<i class="fa-solid fa-circle-info"></i>
 			</label>
 		</div>

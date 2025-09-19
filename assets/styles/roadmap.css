@@ -1,10 +1,17 @@
-/* ...existing code... */
-.grid-row-hover:hover > div {
-  background-color: #fef6e4;
-  /* If you want dark mode, use a JS class toggle or prefers-color-scheme media query */
+.grid-row-hover {
+  transition: background-color ease-in 0.3s;
 }
-/* ...end of converted code... */
+
+.grid-row-hover:hover > div {
+  background-color: var(--color-surface-alt);
+}
 
 .roadmap-tree-item {
   width: 16rem;
+}
+
+.skeleton-block.skeleton-roadmap-tree-item {
+  width: 16rem;
+  height: 10rem;
+  border-radius: 0.5rem;
 }

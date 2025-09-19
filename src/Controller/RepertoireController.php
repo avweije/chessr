@@ -294,6 +294,8 @@ class RepertoireController extends ChessrAbstractController
 
         $repo = $this->em->getRepository(Repertoire::class);
 
+        $ids = [];
+
         // loop through the moves
         foreach ($data["moves"] as $move) {
 
@@ -306,6 +308,8 @@ class RepertoireController extends ChessrAbstractController
                 'FenBefore' => $move['fen'],
                 'Move' => $move['move']
             ]);
+
+            //dd($rec, $move);
 
             if ($rec) {
                 // update the counters
@@ -336,6 +340,9 @@ class RepertoireController extends ChessrAbstractController
 
                 // if this was a recommended move and we got it right
                 if (isset($move["correct"]) && $move["correct"] == 1 && isset($data["type"]) && $data["type"] == "recommended") {
+
+                    $ids[] = $rec->getId();
+
                     // update the session too
                     $this->repertoireService->updateSessionRecommended($rec->getId());
                 }
@@ -344,7 +351,11 @@ class RepertoireController extends ChessrAbstractController
 
         $this->em->flush();
 
-        return new JsonResponse(["message" => "Counters updated."]);
+        return new JsonResponse([
+            "message" => "Counters updated.",
+            "recommendedCount" => $this->repertoireService->countMoves($_SESSION['recommendedLines'], false),
+            "idsUpdated" => $ids
+        ]);
     }
 
     #[Route('/api/repertoire/moves', name: 'api_moves')]
@@ -394,22 +405,6 @@ class RepertoireController extends ChessrAbstractController
             //$chess = new ChessJs();
 
             $timers["evals-get-san"] = hrtime(true);
-
-            /*
-            $temp = json_decode($topEvals->getEvals(), true);
-
-            usort($temp, function ($a, $b) {
-                if ($a["depth"] > $b["depth"]) return -1;
-                if ($a["depth"] < $b["depth"]) return 1;
-                return 0;
-            });
-            */
-
-            // load the FEN (adding the move counters manually)
-            //$chess->load($fenWithout . " 0 1");
-            //
-            //foreach ($temp as $eval) {
-                //foreach ($eval["pvs"] as $pv) {
                 foreach ($topEvals as $eval) {
 
 
@@ -422,6 +417,16 @@ class RepertoireController extends ChessrAbstractController
                     // AND TO GET THE SAN NOTATION FOR THE MOVE (WHICH WE NEED)
                     // WE COULD NEED BOTH, IF WE DO GAME ANALYSIS??
                     //
+
+                    // If we don't have the SAN move yet, determine it now
+                    if (empty($eval->getSan())) {
+                        // Get the SAN notation
+                        $san = $this->chessHelper->getFirstSanMoveFromLine($chess, $data['fen'], $eval->getLine());
+                        // Update the entity
+                        $eval->setSan($san);
+                        $this->em->persist($eval);
+                        $this->em->flush();
+                    }
 
                     // add the evaluation
                     $evals[] = [
@@ -543,7 +548,8 @@ class RepertoireController extends ChessrAbstractController
             $res = $repository->findOneBy([
                 'User' => $this->getUser(),
                 'Color' => $data['color'],
-                'FenAfter' => $fenstr
+                'FenAfter' => $fenstr,
+                'Pgn' => $data['pgn'] // Add PGN for transpositions
             ]);
 
             if ($res) {
@@ -892,20 +898,20 @@ class RepertoireController extends ChessrAbstractController
             // the last array item could be an array of multiple moves (= engine moves, through analysis save)
             $temp = isset($m['moves']) ? $m['moves'] : [$m];
             foreach ($temp as $move) {
+                // Normalize the FEN strings
+                $before = $this->chessHelper->normalizeFenForRepertoire($move['before']);
+                $after = $this->chessHelper->normalizeFenForRepertoire($move['after']);
+
                 // check to see if we already saved this move
                 $data = $repository->findBy([
                     'User' => $this->getUser(),
                     'Color' => $color,
-                    'FenBefore' => $move['before'],
+                    'FenBefore' => $before,
                     'Move' => $move['san']
                 ]);
 
                 // skip this one if already saved
                 if (count($data) > 0) continue;
-
-                // Normalize the FEN strings
-                $before = $this->chessHelper->normalizeFenForRepertoire($move['before']);
-                $after = $this->chessHelper->normalizeFenForRepertoire($move['after']);
 
                 // save the move to the repertoire
                 $rep = new Repertoire();

@@ -1,3 +1,11 @@
+/* Skeleton Loader */
+.skeleton-block.skeleton-opponent-radio {
+  width: 13rem;
+  height: 5.3rem;
+  border-radius: 0.5rem;
+}
+
+
 /* */
 .opponent-move-holder {
   display: flex;

@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\Entity\MoveStats;
 use App\Entity\User;
+use App\Library\Debugger;
 use App\Repository\RepertoireRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -14,6 +15,7 @@ class RepertoireService
     private $settings = null;
     private $repo;
     private $chessHelper;
+    private $debugger;
 
     private array $candidates = [
         'must'   => [],
@@ -23,17 +25,19 @@ class RepertoireService
     ];
 
     public function __construct(
-        ManagerRegistry $registry, 
-        private Security $security, 
+        ManagerRegistry $registry,
+        private Security $security,
         RepertoireRepository $repository,
-        ChessHelper $chessHelper)
-    {
+        ChessHelper $chessHelper,
+        Debugger $debugger
+    ) {
         $this->user = $security->getUser();
         if ($this->user instanceof User) {
             $this->settings = $this->user->getSettings();
         }
         $this->repo = $repository;
         $this->chessHelper = $chessHelper;
+        $this->debugger = $debugger;
     }
 
     // get the roadmap (split by eco/moves??)
@@ -46,8 +50,13 @@ class RepertoireService
     public function getWhiteLines($lines)
     {
         // get the white lines
-        //$white = $this->findLines($lines, 'white', false, false);
         $white = $this->collectLinesUntil($lines, 'white');
+
+        // Remove the doubled lines (through transposition)
+        $white = $this->removeDoubledMoves($white);
+
+        //dd(count($test), count($white));
+
         // group by position and return
         return $this->groupByPosition($white, $lines);
     }
@@ -56,8 +65,11 @@ class RepertoireService
     public function getBlackLines($lines)
     {
         // get the black lines
-        //$black = $this->findLines($lines, 'black', false, false);
         $black = $this->collectLinesUntil($lines, 'black');
+
+        // Remove the doubled lines (through transposition)
+        $black = $this->removeDoubledMoves($black);
+
         // group by position and return
         return $this->groupByPosition($black, $lines);
     }
@@ -66,24 +78,30 @@ class RepertoireService
     public function getNewLines($lines)
     {
         // get the new lines
-        //$new = $this->findLines($lines, '', true, false, true);
-
         $new = $this->collectLinesUntil($lines, '', true);
+
+        // Remove the doubled lines (through transposition)
+        $new = $this->removeDoubledMoves($new);
 
         // group by position and return
         return $this->groupByPosition($new, $lines);
     }
 
     // gets the recommended lines in the lines returned from getLines()
-    public function getRecommendedLines(array $lines): array
+    public function getRecommendedLines(array $lines, bool $refresh = false): array
     {
         // see if we have recommended lines in our session
-        if (isset($_SESSION['recommendedLines']) && count($_SESSION['recommendedLines']) > 0) {
+        if (!$refresh && isset($_SESSION['recommendedLines'])) {
             return $_SESSION['recommendedLines'];
         }
 
+        // Update the recommended completed flag
+        $_SESSION['recommendedCompleted'] = false;
+
         // compute global stats
         $globalStats = $this->computeGlobalStats($lines);
+
+        $this->debugger::collect('globalStats', $globalStats);
 
         // reset candidates
         $this->candidates = [
@@ -93,11 +111,15 @@ class RepertoireService
             'low'    => [],
         ];
 
+        // Remove the doubled lines (through transposition)
+        $lines = $this->removeDoubledMoves($lines);
+
         // recursively assign recommendation
         $lines = $this->assignRecommendation($lines, $globalStats);
-        //$this->assignRecommendation($lines, $globalStats);
 
-        //dd($lines, $this->candidates);
+        $this->debugger::collect('high', count($this->candidates['high']));
+        $this->debugger::collect('medium', count($this->candidates['medium']));
+        $this->debugger::collect('low', count($this->candidates['low']));
 
         $targetSize = $this->determineTargetSize($globalStats);
         $totalMoves = 0;
@@ -111,7 +133,15 @@ class RepertoireService
             $candidates = $this->candidates[$level] ?? [];
 
             // sort candidates by factor descending
-            usort($candidates, fn($a, $b) => $b['recommendation']['factor'] <=> $a['recommendation']['factor']);
+            usort($candidates, function ($a, $b) {
+                // Sort by factor descending
+                $eq = $b['recommendation']['factor'] <=> $a['recommendation']['factor'];
+                if ($eq === 0) {
+                    // If equal, sort by PGN ascending
+                    $eq = join('', $a['line']) <=> join('', $b['line']);
+                }
+                return $eq;
+            });
 
             foreach ($candidates as $candidate) {
                 if ($totalMoves >= $targetSize) break;
@@ -119,11 +149,22 @@ class RepertoireService
                 $moveKey = $candidate['id'];
                 if (isset($usedMoves[$moveKey])) continue;
 
+                //
+                // Threshold: use recommend interval settings to set this dynamically
+                // Larger for more recommendations, more lenient
+                // 
+                $thresholds = [1.4, 1.8, 2.2, 2.6];
+
                 // test a bit with the threshold (to keep moves in a line together)
-                $threshold = 1;
+                $threshold = $thresholds[$this->settings->getRecommendInterval() ?? 0] ?? 1;
+                //$threshold = 0;
+
+                $this->debugger::collect('threshold', $threshold);
 
                 // Always start with -1, our own move is in the candidate
                 $baseScore = -1;
+
+                //dd($candidate);
 
                 // Collect line until recommendation drops
                 $lineUntil = $this->collectRecommendedUntil(['moves' => [$candidate]], $usedMoves, $baseScore, $threshold);
@@ -140,15 +181,21 @@ class RepertoireService
             }
         }
 
-        //dd($totalMoves);
+        //dd($result);
 
-        //dd($targetSize);
+        // Reattach earlier cut off moves to their parents
+        // We cut off moves based on the threshold, to ensure we get the highest recommended moves
+        // If there aren't many and a cut off moves is also added as recommended later on
+        // We reattach them to their parent so the lines are all consistent
+        $reattached = $this->reattachTopMoves($result);
 
-        // does group by position cause this?
+        // We need to remove the last opponent move that has no moves behind it
+        // We had to leave them in to be able to reattch
+        // We can now safely remove those last moves again to cleanup the lines
+        $cleanedUp = $this->removeLastOpponentMoves($reattached);
 
         // group by position and return
-        $recommended = $this->groupByPosition($result, $lines);
-        //$recommended = $result;
+        $recommended = $this->groupByPosition($cleanedUp, $lines);
 
         // store in session
         $_SESSION['recommendedLines'] = $recommended;
@@ -156,7 +203,182 @@ class RepertoireService
         return $recommended;
     }
 
-    private function countMoves(array $lines): int
+    // Remove doubles, moves that can be reached in several ways
+    function removeDoubledMoves($lines, &$usedMoves = null) {
+        if ($usedMoves === null) {
+            $usedMoves = [];
+        }
+        $result = [];
+        //$usedMoves = [];
+        foreach ($lines as $line) {
+            //
+            $isOurMove = $this->isOurMove($line['before'] ?? '', $line['color'] ?? '');
+
+            $line['doubled-our-move'] = $isOurMove;
+            $line['doubled-used-move-count'] = count($usedMoves);
+            //
+            if ($isOurMove) {
+                //
+                if (in_array($line['id'], $usedMoves)) {
+
+                    //dd("Found doubled:", $line);
+                    $this->debugger::collect("Doubled", [
+                        'move' => $line['move'],
+                        'before' => $line['before']
+                    ]);
+
+                    continue;
+                }
+                //
+                $usedMoves[] = $line['id'];
+            }
+
+            // If we need to traverse the child moves
+            if (count($line['moves']) > 0) {
+                // Check for doubled moves in the child moves of this line
+                $line['moves'] = $this->removeDoubledMoves($line['moves'], $usedMoves);
+            }
+            // Add the line
+            $result[] = $line;
+        }
+
+        return $result;
+    }
+
+    // Remove the last opponent moves that have no moves of ours anymore
+    function removeLastOpponentMoves($lines) {
+        $result = [];
+        foreach ($lines as $line) {
+            //
+            $isOurMove = $this->isOurMove($line['before'] ?? '', $line['color'] ?? '');
+            //
+            if (count($line['moves']) > 0) {
+                //
+                $line['moves'] = $this->removeLastOpponentMoves($line['moves']);
+                //
+                $result[] = $line;
+            } elseif ($isOurMove) {
+                //
+                $result[] = $line;
+            }
+        }
+
+        return $result;
+    }
+
+    function reattachTopMoves(array $topMoves): array
+    {
+        // Deep copy to avoid mutating original array
+        //$moves = json_decode(json_encode($topMoves), true);
+        $moves = $topMoves;
+
+
+        $result = [];
+
+        for ($i = 0; $i < count($moves); $i++) {
+            $move = $moves[$i];
+            $attached = false;
+
+            //dd($move, $move['color'], $move['line'], $move['move']);
+
+            // Try attaching to other top-level moves
+            for ($j = 0; $j < count($moves); $j++) {
+                if ($i === $j) continue;
+
+                //$parent = $this->findExactParent($moves[$j], $move['color'], array_merge($move['line'], [$move['move']]));
+                if ($this->findExactParent($moves[$j], $move['color'], $move['line'], $move)) {
+                    $attached = true;
+
+                    break;
+
+                    //dd($move, $moves[$j], $result);
+                }
+            }
+
+            if (!$attached) {
+                //$result[] = $move;
+                //$result[] = $moves[$i];
+            }
+
+            $moves[$i]["attached"] = $attached;
+        }
+
+        foreach ($moves as $move) {
+            if (!$move['attached']) {
+                $result[] = $move;
+            }
+        }
+
+        //dd($moves);
+
+        return $result;
+    }
+
+    // Recursive function to find exact parent
+    private function findExactParent(array &$node, string $color, array $lineToAttach, array $move, $parentMatch = false): bool
+    {
+
+        $nodeLinePlusMove = array_merge(
+            $node['line'] ?? [],
+            $node['move'] !== null ? [$node['move']] : []
+        );
+
+        // If the color is a mismatch, we can stop here
+        if ($color !== $node['color']) return false;
+
+        // If the line for the parent candidate is longer, it's not a match
+        if (count($nodeLinePlusMove) > count($lineToAttach)) return false;
+
+        // If the 1st line moves aren't a match, we can stop here
+        $first = array_slice($lineToAttach, 0, count($nodeLinePlusMove), true);
+
+        if ($first !== $nodeLinePlusMove) {
+            return false;
+        }
+
+        //if ($node['id'] == 291) {
+            //dd($lineToAttach, $nodeLinePlusMove, $node);
+        //}
+
+        //dd($nodeLinePlusMove, $first, $lineToAttach, $move);
+
+        $this->debugger::collect('NearMatch',[
+            'lineToAttach' => join(' ', $lineToAttach),
+            'nodeLinePlusMove' => join(' ', $nodeLinePlusMove)
+        ]);
+
+        //
+        $match = $lineToAttach === $nodeLinePlusMove;
+
+        // Exact match
+        if ($match) {
+            //return $node;
+            if (!isset($node['moves'])) $node['moves'] = [];
+            $node['moves'][] = $move;   // mutates the original
+
+            //dd("Found");
+
+            return true;
+        }
+
+        // Recurse through children
+        if (!empty($node['moves'])) {
+            foreach ($node['moves'] as &$child) {
+                
+                if ($match) {
+                   //dd("Checking children", $child, $color, $lineToAttach, $move);
+                }
+
+                if ($this->findExactParent($child, $color, $lineToAttach, $move, $match)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public function countMoves(array $lines, $includePlayed = true): int
     {
         $count = 0;
         foreach ($lines as $line) {
@@ -171,14 +393,18 @@ class RepertoireService
         return $count;
     }
 
-
+    // Update the session recommended lines, set move as played
     public function updateSessionRecommended(int $id): void
     {
         if (!isset($_SESSION['recommendedLines'])) {
+            //dd("updateSessionRecommended: No recommended lines, returning");
             return;
         }
-
+        // Update the session recommended lines
         $_SESSION['recommendedLines'] = $this->updateSessionRecommendedMove($id, $_SESSION['recommendedLines']);
+
+        // Update the recommended completed flag
+        $_SESSION['recommendedCompleted'] = count($_SESSION['recommendedLines']) === 0;
     }
 
     /**
@@ -212,17 +438,31 @@ class RepertoireService
      */
     private function markMovePlayed(array $line, int $id): array
     {
-        if (isset($line['id']) && $line['id'] === $id) {
+        if (isset($line['id']) && $line['id'] == $id) {
             $line['played'] = true;
+
+            // What if we just set autoplay here?
+            // If the line isn't completely done, the played moves will be auto-played..
+            // Should be a great fix ?
+            $line['autoplay'] = true;
         }
+
+        // We only want to keep the lines that arent completely played
+        $unplayed = $line;
+        $unplayed['moves'] = [];
 
         if (!empty($line['moves'])) {
             foreach ($line['moves'] as $i => $child) {
                 $line['moves'][$i] = $this->markMovePlayed($child, $id);
+                // Add if not all moves have been played (in practice, recommended)
+                if (!$this->allOurMovesPlayed($line['moves'][$i])) {
+                    $unplayed['moves'][] = $line['moves'][$i];
+                }
             }
         }
 
-        return $line;
+        //return $line;
+        return $unplayed;
     }
 
     /**
@@ -266,8 +506,21 @@ class RepertoireService
     {
         $result = [];
 
+        //dd($minThreshold);
+
         foreach ($line['moves'] as $move) {
             $moveId = $move['id'] ?? null;
+
+            /**
+             * We can have a situation where we have 3 moves that follow each other,
+             * but the last in the variation has the highest factor.
+             * So we 1st get the 3rd move, than the 2nd, than the 1st.
+             * In practice, you will have the moves in the wrong order.
+             * 
+             * Maybe if a move already exists, we can check if it's a 
+             * top level move. If it is, we can 'remove' that array item
+             * and replace it by the current. To which the other move will be added.
+             */
             if ($moveId === null || isset($usedMoves[$moveId])) {
                 continue;
             }
@@ -301,11 +554,16 @@ class RepertoireService
 
                 // stop if the drop exceeds the threshold
                 if ($drop > $minThreshold) {
+
+                    //dd("dropped", $drop, $compositeScore, $baseScore);
+
                     break;
                 }
+
+                //dd("We got 1", $baseScore, $compositeScore, $drop, $minThreshold);
             } else {
                 // Not our move, reset base
-                $thisBase = -1;
+                //$thisBase = -1;
             }
 
             $move['thisBase'] = $thisBase;
@@ -321,7 +579,23 @@ class RepertoireService
                 $move['ourMoveCount'] = 1 + $this->countMoves($move['moves']);
 
                 $result[] = $move;
+            } elseif (!$isOurMove && count($move['moves']) == 0) {
+                // We need to keep the last opponent move in there
+                // Otherwise we can't reattach earlier cut-off lines
+                // In practice.js, we need to skip the opponent moves that have no moves of its own
+                //
+                // Is there a nicer way of doing this?
+                // It's cleaner not to send the last opponent move
+                // As it's not being used for anything in practice
+                //
+                // We can make another function to clear the last opponent moves in each line
+                // Wouldnt be a lot of work...
+                $result[] = $move;
             }
+
+            //if ($moveId == 290) {
+                //dd($isOurMove, $move);
+            //}
         }
 
         return $result;
@@ -332,25 +606,12 @@ class RepertoireService
         // Get the recommend interval (0-3)
         $recommendInterval = 4 - ($this->settings->getRecommendInterval() ?? 1);
         // Set the threshold based on the interval
-        $threshold = 0.2 * $recommendInterval;
+        //$threshold = 0.2 * $recommendInterval;
+        //$threshold = 0.1 * $recommendInterval;
+        $threshold = 0.2;
 
         return (isset($move['recommendation']) && $move['recommendation']['level'] == 'low' && $move['recommendation']['factor'] < $threshold);
     }
-
-    /**
-     * Simple priority for levels
-     */
-    private function levelPriority(string $level): int
-    {
-        return match ($level) {
-            'must' => 4,
-            'high' => 3,
-            'medium' => 2,
-            'low' => 1,
-            default => 0,
-        };
-    }
-
 
 
     // get all lines, including the excluded ones
@@ -394,7 +655,7 @@ class RepertoireService
 
             // Start a new practice line if this move is new
             if ($isMatch && isset($move['move']) && $uniqueKey && !isset($seen[$uniqueKey])) {
-            //if ($isMatch && isset($move['move']) && $uniqueKey) {
+                //if ($isMatch && isset($move['move']) && $uniqueKey) {
                 $seen[$uniqueKey] = true;
 
                 // Increase our move count
@@ -478,7 +739,7 @@ class RepertoireService
 
             // Recursively include child moves
             [$subMoves, $subCount] = $this->collectLineUntil($move['moves'] ?? [], $color, $newOnly, $seen);
-            
+
             $ourMoveCount += $ourMove && !$autoplay ? 1 + $subCount : $subCount;
             // Only count this move if it's ours and new (and not autoplay)
             //$ourMoveCount += $ourMove && !$autoplay && (!$newOnly || $isNew) ? 1 + $subCount : $subCount;
@@ -561,20 +822,25 @@ class RepertoireService
     {
 
         // Use user settings to determine min/max targetSize (0-3)
-        $recommendInterval = ($this->settings->getRecommendInterval() ?? 1) + 1;
-        
-        $min = 20;
-        $max = 60;
+        $recommendInterval = $this->settings->getRecommendInterval() ?? 1;
+
+        // multiple factors based on user settings
+        $factors = [0.6, 1, 1.4, 1.8];
+
+        $min = 10;
+        $max = 30;
 
         if ($globalStats['frequency'] !== null && $globalStats['frequency'] > 10) {
             // user practices rarely → give them more
-            $min = 30;
-            $max = 90;
+            $min = 20;
+            $max = 60;
         }
 
         // Multiply to account for the interval
-        $min = $min * ($recommendInterval / 2);
-        $max = $min * ($recommendInterval / 2);
+        //$min = $min * ($recommendInterval / 2);
+        //$max = $max * ($recommendInterval / 2);
+        $min = $min * $factors[$recommendInterval];
+        $max = $max * $factors[$recommendInterval];
 
         $highCount = count($this->candidates['high']);
         $mediumCount = count($this->candidates['medium']);
@@ -584,8 +850,24 @@ class RepertoireService
         $score = $highCount * 3 + $mediumCount * 2 + $lowCount;
         $maxScore = ($highCount + $mediumCount + $lowCount) * 3;
 
+        // add or subtract a random number
+        $randomize = rand(-5, 5) * $factors[$recommendInterval];
+
         // scale linearly between min and max
-        $targetSize = $min + ($max - $min) * ($score / max(1, $maxScore));
+        $targetSize = round($min + $randomize + ($max - $min) * ($score / max(1, $maxScore)));
+
+        //dd($min,$max,$recommendInterval,$highCount,$mediumCount,$lowCount,$score,$maxScore,$targetSize);
+        $this->debugger::collect('targetSize', [
+            'min' => $min,
+            'max' => $max,
+            'highCount' => $highCount,
+            'mediumCount' => $mediumCount,
+            'lowCount' => $lowCount,
+            'score' => $score,
+            'maxScore' => $maxScore,
+            'randomize' => $randomize,
+            'targetSize' => $targetSize
+        ]);
 
         return $targetSize;
 
@@ -598,11 +880,18 @@ class RepertoireService
         $result = [];
 
         foreach ($lines as $line) {
+            // recurse into children first (so we have recommendation in the line)
+            if (!empty($line['moves'])) {
+                $line['moves'] = $this->assignRecommendation($line['moves'], $globalStats);
+            }
+
             // if this is a move and its not an autoplay move
             if (isset($line['move']) && $this->isOurMove($line['before'] ?? '', $line['color'] ?? '')) {
                 //  && !$line['autoplay']
                 // compute and assign recommendation
                 $line['recommendation'] = $this->computeRecommendationForLine($line, $globalStats);
+
+                $line['XX-ourmove-XX'] = true;
 
                 // skip if very low recommendation
                 //if ($line['recommendation']['level'] !== 'low' || $line['recommendation']['factor'] > 0.2) {
@@ -611,12 +900,17 @@ class RepertoireService
                     // note: no reference here, store a copy instead
                     $this->candidates[$line['recommendation']['level']][] = $line;
                 }
+            } else {
+                $line['XX-ourmove-XX'] = false;
             }
 
-            // recurse into children
-            if (!empty($line['moves'])) {
-                $line['moves'] = $this->assignRecommendation($line['moves'], $globalStats);
+            /*
+            if (isset($line['recommendation']) 
+                && $line['recommendation']['level'] == 'high'
+                && !empty($line['moves'])) {
+                dd('High', $line);
             }
+                */
 
             $result[] = $line;
         }
@@ -639,29 +933,55 @@ class RepertoireService
 
         $score = 0;
 
+        $debug = [
+            'count' => $count,
+            'failed' => $failed,
+            'successRate' => $successRate,
+            'streak',
+            $streak,
+            'frequency' => $frequency
+        ];
+
         // success factor
         //if ($successRate < 0.5) $score += 0.6;
         //elseif ($successRate < 0.8) $score += 0.3;
         //$maxSuccessScore = 0.8;
-        $maxSuccessScore = 2;
+        $maxSuccessScore = 3.4;
         $score += $maxSuccessScore * (1 - $successRate);
+
+        $debug['successScore'] = $score;
 
         // streak factor
         //if ($streak < 3) $score += 0.3;
-        if ($streak < 3) $score += 0.7;
+        if ($streak < 3) $score += 0.6;
+
+        $debug['streakScore'] = $score;
+
+        // Lower the score for a good streak
+        if ($streak > 3) $score = $score *= 0.9;
+        elseif ($streak > 5) $score = $score *= 0.8;
+
+        $debug['goodStreakScore'] = $score;
+
 
         // frequency factor
         if ($frequency !== null && $frequency > 0) {
             //$score += min($frequency, 7) / 7 * 0.4;
             $score += min($frequency, 7) / 7 * 0.8;
+
+            $debug['frequencyScore'] = $score;
         }
 
         // adjust with global stats
         if ($globalStats['successRate'] > 0.85) $score *= 0.9;
         elseif ($globalStats['successRate'] < 0.6) $score *= 1.2;
 
+        $debug['globalScore'] = $score;
+
         if ($globalStats['frequency'] !== null && $globalStats['frequency'] > 10) {
             $score *= 1.2;
+
+            $debug['globalFrequencyScore'] = $score;
         }
 
         // Get the recommend interval user setting
@@ -671,20 +991,259 @@ class RepertoireService
         // Adjust the score
         $score *= $prefFactors[$recommendInterval] ?? 1.0;
 
+        $debug['intervalScore'] = $score;
+
         // classify level
         return [
             'level'  => $score > 1 ? 'high' : ($score > 0.4 ? 'medium' : 'low'),
             'factor' => min(3, $score),
             'successRate' => $successRate,
             'streak' => $streak,
-            'frequency' => $frequency
+            'frequency' => $frequency,
+            'debug' => $debug
         ];
     }
 
 
 
+    private function getRepertoireByHalfMove(bool $includeAll = false): array 
+    {
+        // Filter on the current user and optionally exclude the moves marked as 'exclude'
+        $criteria = ['User' => $this->security->getUser()];
+        if (!$includeAll) {
+            $criteria["Exclude"] = false;
+        }
+        // Get the repository moves for this user
+        return $this->repo->findBy($criteria, ['HalfMove' => 'ASC']);
+    }
 
-    // get the repertoire lines
+    /**
+     * Returns the top level moves within this repertoire.
+     * 
+     * @param {array} $reps : the repertoire moves, they need to be sorted by halfmove
+     */
+    private function getRepertoireTopMoves($reps): array 
+    {
+        $lines = [];
+        // Find the top level moves
+        foreach ($reps as $rep) {
+            // if this is a 1st move
+            if ($rep->getHalfMove() == 1) {
+                // see if we have this color / starting position already
+                $idx = 0;
+                foreach ($lines as $line) {
+                    if ($line["color"] == $rep->getColor() && $line["before"] == $rep->getFenBefore()) {
+                        break;
+                    }
+                    $idx++;
+                }
+
+                if ($idx >= count($lines)) {
+                    // get the ECO code
+                    //$eco = $ecoRepo->findCode($rep->getPgn());
+
+                    $lines[] = [
+                        'id' => $rep->getId(),
+                        'color' => $rep->getColor(),
+                        'initialFen' => $rep->getInitialFen(),
+                        //'eco' => $eco,
+                        'before' => $rep->getFenBefore(),
+                        'after' => $rep->getFenBefore(),
+                        'new' => 1,
+                        'recommended' => 1,
+                        'moves' => []
+                    ];
+                }
+
+                // add the move
+                $lines[$idx]['moves'][] = $this->getMoveArray($rep, [], []);
+            }
+        }
+
+        return $lines;
+    }
+
+    /**
+     * Returns an array with the moves per FEN position.
+     */
+    private function getRepertoireMovesPerFen($reps): array
+    {
+        $fenBefore = [];
+        // find the 1st moves
+        foreach ($reps as $rep) {
+            // store the reps per fen before (for speed in getting the lines)
+            if (!isset($fenBefore[$rep->getFenBefore()])) {
+                $fenBefore[$rep->getFenBefore()] = [];
+            }
+            $fenBefore[$rep->getFenBefore()][] = $rep;
+        }
+
+        return $fenBefore;
+    }
+
+    /**
+     * Returns an array with the lines per group.
+     * If the user has certain repertoire moves added to a group, those lines will be returned.
+     */
+    private function getRepertoireGroupLines($reps): array
+    {
+        $groups = [];
+        // find the 1st moves
+        foreach ($reps as $rep) {
+            // if this move belongs to a group
+            foreach ($rep->getRepertoireGroups() as $grp) {
+                $idx = -1;
+                // find the group in our array
+                for ($i = 0; $i < count($groups); $i++) {
+                    if ($groups[$i]["id"] == $grp->getGrp()->getId()) {
+                        $idx = $i;
+                        break;
+                    }
+                }
+
+                // add the group if needed
+                if ($idx == -1) {
+                    $idx = count($groups);
+
+                    $groups[] = [
+                        "id" => $grp->getGrp()->getId(),
+                        "name" => $grp->getGrp()->getName(),
+                        "lines" => []
+                    ];
+                }
+
+                // Get the line leading up to this move
+                $lineTo = $this->getLineBefore($rep->getHalfMove(), $rep->getFenBefore(), $reps);
+                // store the group lines
+                $groups[$idx]["lines"][] = $this->getMoveArray($rep, $lineTo, []);
+            }
+        }
+
+        return $groups;
+    }
+
+    /**
+     * Get the complete lines for a selection of moves.
+     */
+    private function getRepertoireLines(array $moves, array $fenBefore): array
+    {
+        // now add the lines based off the 1st moves (so we can have transpositions)
+        for ($i = 0; $i < count($moves); $i++) {
+
+            $moves[$i]['moves'] = $this->getLinesFor($moves[$i]['color'], $moves[$i]['after'], $fenBefore, []);
+            $moves[$i]['multiple'] = [];
+
+            // if we have multiple moves here, add them to an array
+            if (count($moves[$i]['moves']) > 1) {
+                foreach ($moves[$i]['moves'] as $move) {
+                    //$lines[$i]['multiple'][] = $move['move'];
+                    $moves[$i]['multiple'][] = [
+                        "move" => $move['move'],
+                        "cp" => isset($move['cp']) ? $move['cp'] : null,
+                        "mate" => isset($move['mate']) ? $move['mate'] : null,
+                        "pv" => isset($move['line']) ? $move['line'] : null
+                    ];
+                }
+            }
+        }
+
+        return $moves;
+    }
+
+    /**
+     * Returns a move array from a repertoire entity record.
+     * The move array is used by the practice page.
+     */
+    private function getMoveArray($rep, $line, $moves): array
+    {
+        return [
+            'id' => $rep->getId(),
+            'color' => $rep->getColor(),
+            'initialFen' => $rep->getInitialFen(),
+            'move' => $rep->getMove(),
+            //'eco' => ['code' => 'A00', 'name' => 'The Cow System'],
+            'autoplay' => $rep->isAutoPlay(),
+            'halfmove' => $rep->getHalfMove(),
+            'before' => $rep->getFenBefore(),
+            'after' => $rep->getFenAfter(),
+            'new' => $rep->getPracticeCount() == 0 ? 1 : 0,
+            'practiceCount' => $rep->getPracticeCount(),
+            'practiceFailed' => $rep->getPracticeFailed(),
+            'practiceInARow' => $rep->getPracticeInARow(),
+            'lastUsed' => $rep->getLastUsed(),
+            'deltas' => $rep->getDeltas(),
+            'line' => $line ?? [],
+            'moves' => $moves ?? []
+        ];
+    }
+
+    /**
+     * Get the lines for a specific repertoire record.
+     */
+    public function getLinesForMove($repertoireId): array
+    {
+        // Find the repository move
+        $rep = $this->repo->findOneBy([
+            'id' => $repertoireId,
+            'User' => $this->security->getUser()
+        ]);
+
+        // If not found, return here
+        if (!$rep) return [];
+
+        // TODO: Leaving out failPercentage for now, don't think we use it anymore..
+
+        //$repertoireItem = [
+            // 'failPercentage' => $rep->getPracticeCount() < 5 ? 1 : $rep->getPracticeFailed() / $rep->getPracticeCount(),
+        //];
+
+        // Get all the repertoire moves
+        $reps = $this->getRepertoireByHalfMove(true);
+        // Get the moves per FEN position
+        $fenBefore = $this->getRepertoireMovesPerFen($reps);
+
+        // Get the line up to this move
+        $lineTo = $this->getLineBefore($rep->getHalfMove(), $rep->getFenBefore(), $reps);
+        // Get the moves following this move
+        $moves = $this->getLinesFor($rep->getColor(), $rep->getFenAfter(), $fenBefore, []);
+
+        // Get the move array
+        $moveArray = $this->getMoveArray($rep, $lineTo, $moves);
+
+        // TODO: Add the multiple - move this to getMoveArray ?
+        $moveArray['multiple'] = [];
+
+        // if we have multiple moves here, add them to an array
+        if (count($moveArray['moves']) > 1) {
+            foreach ($moveArray['moves'] as $move) {
+                //$lines[$i]['multiple'][] = $move['move'];
+                $moveArray['multiple'][] = [
+                    "move" => $move['move'],
+                    "cp" => isset($move['cp']) ? $move['cp'] : null,
+                    "mate" => isset($move['mate']) ? $move['mate'] : null,
+                    "pv" => isset($move['line']) ? $move['line'] : null
+                ];
+            }
+        }
+
+        // Get the top level lines
+        $topMoves = $this->getRepertoireTopMoves($reps);
+        // Get the complete lines
+        $lines = $this->getRepertoireLines($topMoves, $fenBefore);
+
+        // Group the lines by position
+        return $this->groupByPosition([$moveArray], $lines);
+    }
+
+    /**
+     * Gets the repertoire lines. Builds up the lines from the top level moves to the last move,
+     * resulting in a tree of moves for the entire repertoire.
+     * 
+     * TODO: Need to split this into separate functions.
+     * 
+     * - getLinesForRepertoire ? maybe.. we can combine parts or reuse sections
+     * - getRepertoireLines - get top level moves, moves per FEN position and moves per group
+     */
     public function getLines(int $repertoireId = null, bool $isRoadmap = false, bool $statisticsOnly = false, $includeAll = false): array
     {
         // get the saved repository moves for this user
@@ -1000,24 +1559,13 @@ class RepertoireService
         $reps = isset($repBefore[$fen]) ? $repBefore[$fen] : [];
 
         // find the follow up moves for a certain color and position
-        //foreach ($res as $rep) {
         foreach ($reps as $rep) {
-            //for ($resIdx = 0; $resIdx < count($res); $resIdx += 2) {
-
-            //$rep = $res[$resIdx];
-            //$repEco = $res[$resIdx + 1];
 
             /*
-
-            -
-            - we need to compare on 2 fens here.. for transposition
-            -
-
+             we need to compare on 2 fens here.. for transposition
             */
 
             // if not excluded and a match
-            //if ($rep->isExclude() == false && $rep->getColor() == $color && $rep->getFenBefore() == $fen) {
-            //if ($rep->getColor() == $color && $rep->getFenBefore() == $fen) {
             if ($rep->getColor() == $color && $this->chessHelper->fenCompare($rep->getFenBefore(), $fen) && !in_array($rep->getFenAfter(), $usedFenAfters)) {
                 // get the ECO code
                 //$eco = $ecoRepo->findCode($rep->getPgn());
@@ -1046,10 +1594,6 @@ class RepertoireService
                     // keep track of the FEN position to prevent doubles (in case of transposition)
                     $usedFenAfters[] = $rep->getFenAfter();
 
-                    $failPercentage = $rep->getPracticeCount() == 0 ? 0 : max($rep->getPracticeFailed() / $rep->getPracticeCount(), 0);
-                    $inARowNeeded = max(3, 3 + round($failPercentage / .5));
-                    $daysNeeded = 7 * max(4 - (4 * $failPercentage), 1);
-
                     $moves[] = [
                         'id' => $rep->getId(),
                         'color' => $color,
@@ -1077,8 +1621,14 @@ class RepertoireService
         return $moves;
     }
 
-    // get the line before a certain repertoire move
-    private function getLineBefore($halfMove, $fenBefore, $res)
+    /**
+     * Returns the line of moves to get to a certain position.
+     * 
+     * @param {int} $halfMove     : the halfmove of the position
+     * @param {string} $fenBefore : the FEN string of the before position
+     * @param {array} $allMoves   : the original array containing all the repertoire moves
+     */
+    private function getLineBefore($halfMove, $fenBefore, $allMoves)
     {
         // get the halfmove before this one
         $halfMove--;
@@ -1089,12 +1639,12 @@ class RepertoireService
 
         $line = [];
 
-        for ($i = 0; $i < count($res); $i++) {
-            if ($res[$i]->getHalfMove() == $halfMove && $res[$i]->getFenAfter() == $fenBefore) {
-                array_unshift($line, $res[$i]->getMove());
+        for ($i = 0; $i < count($allMoves); $i++) {
+            if ($allMoves[$i]->getHalfMove() == $halfMove && $allMoves[$i]->getFenAfter() == $fenBefore) {
+                array_unshift($line, $allMoves[$i]->getMove());
 
                 $halfMove--;
-                $fenBefore = $res[$i]->getFenBefore();
+                $fenBefore = $allMoves[$i]->getFenBefore();
 
                 if ($halfMove == 0) {
                     break;
@@ -1110,7 +1660,9 @@ class RepertoireService
         return $line;
     }
 
-    // find a position inside a line
+    /**
+     * Finds a position within a certain line.
+     */
     public function findPosition(string $fen, array $line): mixed
     {
         // if this is the top level line
@@ -1139,16 +1691,21 @@ class RepertoireService
         return false;
     }
 
-    //
-    private function findMultiple($line, $res)
+    /**
+     * Find and return the 'multiple' moves for a certain move.
+     * 
+     * @param array $move     : the move to find the multiples for
+     * @param array $allLines : the original array containing all the lines
+     */
+    private function findMultiple($move, $allLines)
     {
 
-        foreach ($res as $rec) {
-            if ($rec['color'] == $line['color'] && $rec['after'] == $line['before']) {
-                return $rec['multiple'];
+        foreach ($allLines as $line) {
+            if ($line['color'] == $move['color'] && $line['after'] == $move['before']) {
+                return $line['multiple'];
             }
 
-            $ret = $this->findMultiple($line, $rec['moves']);
+            $ret = $this->findMultiple($move, $line['moves']);
             if ($ret !== false) {
                 return $ret;
             }
@@ -1157,12 +1714,13 @@ class RepertoireService
         return false;
     }
 
-    //
+    /**
+     * Returns true if it's white's turn based on the FEN string.
+     */
     private function isWhiteMove(string $fen): bool
     {
         // Split FEN into its fields
         $parts = explode(' ', trim($fen));
-
         // FEN should always have at least 2 fields
         if (count($parts) < 2) {
             return false;
@@ -1172,355 +1730,30 @@ class RepertoireService
         return $parts[1] === 'w';
     }
 
-    // find the lines of a certain type
-    private function findLines(array $lines, string $color = "", bool $isNew = false, bool $isRecommended = false, bool $preventDoubles = false, array &$usedIds = [], string $rootColor = "", int $level = 1, $rootVariation = null): array
-    {
-        $res = [];
-
-        // find the starting points for the lines
-        foreach ($lines as $line) {
-            // set the color (from the root object)
-            if ($rootColor != "") {
-                $line['color'] = $rootColor;
-            }
-
-            // is this our move?
-            //$ourMove = ($line["color"] == "white" && $level % 2 == 1) || ($line["color"] == "black" && $level % 2 == 0);
-            //$ourMove = ($line["color"] == "white" && $level % 2 == 0) || ($line["color"] == "black" && $level % 2 == 1);
-            //$ourMove = isset($line['halfmove']) ? (($line['color'] == "white" && $line['halfmove'] % 2 == 1) || ($line['color'] == "black" && $line['halfmove'] % 2 == 0)) : $line['color'] == "white";
-
-            // Use the FEN to determine whose move it is
-            //$isWhiteToMove = $this->isWhiteMove($line['after']);
-            // Get the halfmove number from the FEN
-            //$halfmoveNumber = isset($line['halfmove']) ? $line['halfmove'] : null;
-            // Determine if it's our move based on color and turn
-            //$ourMove = $line['color'] == "white" && $isWhiteToMove || $line['color'] == "black" && !$isWhiteToMove;
-
-            // Determine if it's our move based on color and turn
-            $ourMove = $this->isOurMove($line['before'], $line['color']);
-
-            //dd($line);
-
-            // if we need a certain color and this is a match
-            if (($ourMove || $level == 1) && $color != "" && $line['color'] == $color) {
-                // prevent doubles
-                if (!isset($line["id"]) || !in_array($line["id"], $usedIds)) {
-                    // add to the lines
-                    $res[] = $line;
-                    //$res[] = $isRecommended && $rootVariation !== null ? $rootVariation : $line;
-
-                    // if we need to prevent doubles
-                    if ($preventDoubles && isset($line["id"])) {
-                        $usedIds[] = $line["id"];
-                    }
-                }
-
-                continue;
-            }
-            // if we need the new lines and this is a match
-            if (($ourMove || $level == 1) && $isNew && $line['new'] == 1 && (!isset($line['autoplay']) || !$line['autoplay'])) {
-                // prevent doubles
-                if (!isset($line["id"]) || !in_array($line["id"], $usedIds)) {
-                    // add to the lines
-                    $res[] = $line;
-                    //$res[] = $isRecommended && $rootVariation !== null ? $rootVariation : $line;
-
-                    // if we need to prevent doubles
-                    if ($preventDoubles && isset($line["id"])) {
-                        $usedIds[] = $line["id"];
-                    }
-                }
-
-                continue;
-            }
-            // if we need the recommended lines and this is a match
-            if (($ourMove || $level == 1) && $isRecommended && $line['recommended'] == 1 && (!isset($line['autoplay']) || !$line['autoplay'])) {
-                // prevent doubles
-                if (!isset($line["id"]) || !in_array($line["id"], $usedIds)) {
-                    // add to the lines
-                    $res[] = $line;
-                    //$res[] = $isRecommended && $rootVariation !== null ? $rootVariation : $line;
-
-                    // if we need to prevent doubles
-                    if ($preventDoubles && isset($line["id"])) {
-                        $usedIds[] = $line["id"];
-                    }
-                }
-
-                continue;
-            }
-
-            // set the root of the variation
-            $rootVariation = $rootVariation == null || count($line['moves']) > 1 ? $line : $rootVariation;
-
-            // check this line to see if any child moves match the criteria
-            $temp = $this->findLines($line['moves'], $color, $isNew, $isRecommended, $preventDoubles, $usedIds, $line['color'], $level + 1, $rootVariation);
-
-            //
-            // TEMP: testing for recommended - we need the move before in case of multiple!!
-            //
-
-            //if ($level == 1 && count($temp) > 0) {
-            // add this line also (the parent line of the line we actually want)
-            //$res[] = $line;
-            //}
-
-
-
-            foreach ($temp as $t) {
-                $res[] = $t;
-                //$res[] = $rootVariation;
-            }
-        }
-
-        // at top level of this function, return the lines until
-        if ($level == 1) {
-            // we need to split the lines into parts (that match the criteria)
-            $parts = [];
-            // split the lines at the part(s) where it stops matching (and later in the line matches again)
-            foreach ($res as $line) {
-                $temp = $this->splitLine($line, $color, $isNew, $isRecommended, $preventDoubles, $usedIds);
-
-                //if ($isNew) {
-                //dd($temp, $line);
-                //}
-
-                $parts[] = $line;
-                foreach ($temp as $t) {
-                    $parts[] = $t;
-                }
-            }
-
-            $linesUntil = [];
-
-            //if ($isNew) {
-            //  dd($parts);
-            //}
-
-            // only prevent doubles from here on.. needs more testing
-            //$preventDoubles = false;
-            $usedIds = [];
-
-            $ourMoveCount = 0;
-
-            // get the line until
-            for ($i = 0; $i < count($parts); $i++) {
-                [$parts[$i]['moves'], $lineMoveCount] = $this->getLineUntil($parts[$i]['moves'], $color, $isNew, $isRecommended, $preventDoubles, $usedIds);
-
-                //if ($isNew && $i == 1) {
-                //  dd($i, $parts[$i], $lineMoveCount, isset($parts[$i]["move"]), count($parts[$i]['moves']));
-                //}
-
-                if (isset($parts[$i]["move"]) || count($parts[$i]['moves']) > 0) {
-                    // if our move, add 1 ?
-                    $ourMove = $parts[$i]["before"] == $parts[$i]["after"] ? false : (explode(" ", $parts[$i]["before"])[1] == substr($parts[$i]['color'], 0, 1));
-                    //$ourMove = isset($parts[$i]['halfmove']) ? (($parts[$i]['color'] == "white" && $parts[$i]['halfmove'] % 2 == 1) || ($parts[$i]['color'] == "black" && $parts[$i]['halfmove'] % 2 == 0)) : $parts[$i]['color'] == $color;
-
-                    // Determine if it's our move based on color and turn
-                    $ourMove = $parts[$i]["before"] == $parts[$i]["after"] ? false : $this->isOurMove($parts[$i]['before'], $parts[$i]['color']);
-
-                    //dd($parts[$i], $ourMove);
-
-
-                    $autoplay = isset($move['autoplay']) ? $move['autoplay'] : false;
-                    if ($ourMove && !$autoplay) {
-                        $lineMoveCount++;
-                    }
-
-                    $parts[$i]["ourMoveCount"] = $lineMoveCount;
-
-                    $linesUntil[] = $parts[$i];
-
-                    $ourMoveCount = $ourMoveCount + $lineMoveCount;
-                }
-            }
-
-            return $linesUntil;
-        } else {
-            // return the line back to the findLines internal call
-            return $res;
-        }
-    }
-
-    // split the line into parts that match
-    private function splitLine($line, string $color = "", bool $isNew = false, bool $isRecommended = false, bool $preventDoubles = false, array &$usedIds = [], bool $match = true, $level = 1, $rootVariation = null, $lineBefore = []): array
-    {
-        $parts = [];
-
-        // is this our move?
-        $ourMove = ($line['color'] == "white" && $level % 2 == 1) || ($line['color'] == "black" && $level % 2 == 0);
-        //$ourMove = ($color == "white" && $level % 2 == 0) || ($color == "black" && $level % 2 == 1);
-
-        // Determine if it's our move based on color and turn
-        //$ourMove = $this->isOurMove($line['after'], $line['color']);
-
-        $ourMove = ($line["before"] == $line["after"]) ? false : $this->isOurMove($line['before'], $line['color']);
-
-        //$ourMove = $this->isOurMove($line['before'], $line['color']);
-
-        //dd($ourMove, $line);
-
-        $rootVariation = $rootVariation == null || count($line['moves']) > 1 ? $line : $rootVariation;
-
-        foreach ($line['moves'] as $move) {
-            $temp = [];
-
-            $autoplay = isset($move['autoplay']) ? $move['autoplay'] : false;
-
-            // if the last move was a match
-            if ($match) {
-                // if this move matches also
-                if (!$ourMove || ($color != '' && $move['color'] == $color) || ($isNew && $move['new'] == 1 && !$autoplay) || ($isRecommended && $move['recommended'] == 1 && !$autoplay)) {
-                    // prevent doubles
-                    if (!isset($move["id"]) || !in_array($move["id"], $usedIds)) {
-                        // check next move for a non-match
-                        $temp = $this->splitLine($move, $color, $isNew, $isRecommended, $preventDoubles, $usedIds, true, $level + 1, $rootVariation, [...$lineBefore, isset($move["move"]) ? $move["move"] : "xx"]);
-
-                        // if we need to prevent doubles
-                        if ($preventDoubles && isset($move["id"])) {
-                            $usedIds[] = $move["id"];
-                        }
-                    }
-                } else {
-                    // prevent doubles
-                    if (!isset($move["id"]) || !in_array($move["id"], $usedIds)) {
-                        // check next move for match
-                        $temp = $this->splitLine($move, $color, $isNew, $isRecommended, $preventDoubles, $usedIds, false, $level + 1, $rootVariation, [...$lineBefore, isset($move["move"]) ? $move["move"] : "xx"]);
-
-                        // if we need to prevent doubles
-                        if ($preventDoubles && isset($move["id"])) {
-                            $usedIds[] = $move["id"];
-                        }
-                    }
-                }
-            } else {
-                // if this move matches
-                if ($ourMove && (($color != '' && $move['color'] == $color) || ($isNew && $move['new'] == 1 && !$autoplay) || ($isRecommended && $move['recommended'] == 1 && !$autoplay))) {
-                    // prevent doubles
-                    if (!isset($move["id"]) || !in_array($move["id"], $usedIds)) {
-                        // add this this line as a part
-                        $parts[] = $move;
-                        //$parts[] = $isRecommended ? $rootVariation : $move;
-
-                        // if we need to prevent doubles
-                        if ($preventDoubles && isset($move["id"])) {
-                            $usedIds[] = $move["id"];
-                        }
-                    }
-                } else {
-                    // prevent doubles
-                    if (!isset($move["id"]) || !in_array($move["id"], $usedIds)) {
-                        // check next move for match
-                        $temp = $this->splitLine($move, $color, $isNew, $isRecommended, $preventDoubles, $usedIds, false, $level + 1, $rootVariation, [...$lineBefore, isset($move["move"]) ? $move["move"] : "xx"]);
-
-                        // if we need to prevent doubles
-                        if ($preventDoubles && isset($move["id"])) {
-                            $usedIds[] = $move["id"];
-                        }
-                    }
-                }
-            }
-
-            $parts = array_merge($parts, $temp);
-        }
-
-        return $parts;
-    }
-
+    /**
+     * Checks wether a move is our move or the opponent's move based on the FEN before and the color.
+     */
     private function isOurMove($fen, $color): bool
     {
-        if ($fen === '' || $color === '') {
-            return false;
-        }
-
+        // If no FEN or color, not our move
+        if ($fen === '' || $color === '') return false;
+        // Determine white or black move
         $isWhiteToMove = $this->isWhiteMove($fen);
 
         return ($color == "white" && $isWhiteToMove) || ($color == "black" && !$isWhiteToMove);
     }
 
-    // get the line until the criteria doesn't match anymore
-    private function getLineUntil(array $moves, string $color = '', bool $isNew = false, bool $isRecommended = false, bool $preventDoubles = false, array &$usedIds = [], $level = 1, $match = false): array
-    {
-        $line = [];
-        $ourMoveCount = 0;
-
-        // is this our move
-        //$ourMove = ($color == "white" && $level % 2 == 1) || ($color == "black" && $level % 2 == 0);
-
-        // check the line to see if it matches
-        foreach ($moves as $move) {
-
-            // is this our move
-            //$ourMove = ($move['color'] == "white" && $level % 2 == 1) || ($move['color'] == "black" && $level % 2 == 0);
-            //$ourMove = isset($move['halfmove']) ? (($move['color'] == "white" && $move['halfmove'] % 2 == 1) || ($move['color'] == "black" && $move['halfmove'] % 2 == 0)) : $move['color'] == $color;
-
-            //$ourMove = $move["before"] == $move["after"] ? false : (explode(" ", $move["before"])[1] == substr($move['color'], 0, 1));
-
-            // Use the FEN to determine whose move it is
-            //$isWhiteToMove = $this->isWhiteMove($move['after']);
-            // Determine if it's our move based on color and turn
-            //$ourMove = $move['color'] == "white" && $isWhiteToMove || $move['color'] == "black" && !$isWhiteToMove;
-
-            // Determine if it's our move based on color and turn
-            $ourMove = $move["before"] == $move["after"] ? false : $this->isOurMove($move['before'], $move['color']);
-            //$ourMove = $this->isOurMove($move['after'], $move['color']);
-
-            //dd($ourMove, $move);
-
-            $autoplay = isset($move['autoplay']) ? $move['autoplay'] : false;
-
-            $isMatch = (($color != '' && $move['color'] == $color) || ($isNew && $move['new'] == 1 && !$autoplay) || ($isRecommended && $move['recommended'] == 1 && !$autoplay));
-
-            // if this move matches the criteria
-            if (!$ourMove || $isMatch) {
-
-                $match = $isMatch;
-
-                if ($ourMove && !$autoplay) {
-                    $ourMoveCount++;
-                }
-
-                // get the rest of the line
-                [$temp, $lineMoveCount] = $this->getLineUntil($move['moves'], $color, $isNew, $isRecommended, $preventDoubles, $usedIds, $level + 1, $match);
-
-                $ourMoveCount = $ourMoveCount + $lineMoveCount;
-
-                // add this move if its our move or there are child moves
-                if ($ourMove || count($temp) > 0) {
-                    // prevent doubles
-                    if (!isset($move["id"]) || !in_array($move["id"], $usedIds)) {
-                        // add to the lines
-                        $line[] = [
-                            'id' => isset($move['id']) ? $move['id'] : 0,
-                            'initialFen' => isset($move['initialFen']) ? $move['initialFen'] : "",
-                            'before' => isset($move['before']) ? $move['before'] : "",
-                            'after' => isset($move['after']) ? $move['after'] : "",
-                            'move' => $move['move'],
-                            'ourMove' => $ourMove,
-                            'autoplay' => isset($move['autoplay']) ? $move['autoplay'] : false,
-                            'new' => isset($move['new']) ? $move['new'] : 0,
-                            'recommended' => isset($move['recommended']) ? $move['recommended'] : 0,
-                            'moves' => $temp,
-                            'multiple' => $move['multiple'],
-                            'practiceCount' => isset($move['practiceCount']) ? $move['practiceCount'] : 0,
-                            'practiceFailed' => isset($move['practiceFailed']) ? $move['practiceFailed'] : 0,
-                            'practiceInARow' => isset($move['practiceInARow']) ? $move['practiceInARow'] : 0
-                        ];
-
-                        // if we need to prevent doubles
-                        if ($preventDoubles && isset($move["id"])) {
-                            $usedIds[] = $move["id"];
-                        }
-                    }
-                }
-            }
-        }
-
-        return [$line, $ourMoveCount];
-    }
-
-    // group the lines per starting position/color
-    public function groupByPosition(array $lines, array $res = []): array
+    /**
+     * Group the lines by position. If there are multiple lines with the same starting position,
+     * they will be merged together into the moves array. So each starting position occurs only
+     * once in the resulting array.
+     * 
+     * @param {array} $lines    : the selection of lines to group together
+     * @param {array} $res      : the original array containing all the lines
+     * 
+     * @returns {array} $result : the lines grouped by position
+     */
+    public function groupByPosition(array $lines, array $allLines = []): array
     {
         $temp = [];
         foreach ($lines as $line) {
@@ -1535,7 +1768,7 @@ class RepertoireService
             // if we don't  have this FEN position yet
             if ($idx == -1) {
                 // find the multiple moves from the original lines (we need all multiple moves, not just the new/recommended ones)
-                $multiple = $this->findMultiple($line, $res);
+                $multiple = $this->findMultiple($line, $allLines);
 
                 // if this is not the starting position
                 $temp[] = [
@@ -1545,10 +1778,8 @@ class RepertoireService
                     'fen' => $line['before'],
                     'id' => isset($line['id']) ? $line['id'] : 0,
                     'line' => isset($line['line']) ? $line['line'] : [],
-                    //'moves' => $line['before'] == $line['after'] ? $line['moves'] : [$line],
                     'moves' => $line['before'] == $line['after'] ? $line['moves'] : [$line],
                     'multiple' => $multiple,
-                    'multiple_old' => $line['before'] == $line['after'] ? $line['multiple'] : [$line['move']],
                     'practiceCount' => isset($line['practiceCount']) ? $line['practiceCount'] : 0,
                     'practiceFailed' => isset($line['practiceFailed']) ? $line['practiceFailed'] : 0,
                     'practiceInARow' => isset($line['practiceInARow']) ? $line['practiceInARow'] : 0,
@@ -1567,17 +1798,19 @@ class RepertoireService
                 // add it if not found
                 if (!$found) {
                     $temp[$idx]['moves'][] = $line;
-                    $temp[$idx]['multiple_old'][] = $line['move'];
                     $temp[$idx]['ourMoveCount'] = $temp[$idx]['ourMoveCount'] ?? 0 + $line['ourMoveCount'] ?? 0;
                 }
-                //$temp[$idx]['multiple'] = $line['multiple'];
-                //$temp[$idx]['multiplex'] = $line['multiple'];
             }
         }
 
         return $temp;
     }
 
+    /**
+     * Gets the statistics for a group of lines.
+     * 
+     * TODO: Needs more explanation.
+     */
     public function addRoadmap(&$lines, $idx = 0, $pgn = "", $eco = [], $hasMore = true): array
     {
         $failPercentage = 0;
@@ -1693,22 +1926,6 @@ class RepertoireService
                 $lineFailCount = 1;
             }
 
-            // testing..
-            //if (substr($movePgn, 0, strlen("1. e4 c5 2. Nf3 d6")) == "1. e4 c5 2. Nf3 d6") {
-            //if (isset($lines[$i]["practiceCount"]) && $lines[$i]["practiceCount"] > 0) {
-            //$lineFailPercentage = 0.8;
-            //$lineFailCount = 1;
-            //$linePracticeCount = 10;
-            //$linePracticeFailed = 8;
-            //} else {
-            //  $lineFailPercentage = 0;
-            //                $lineFailCount = 0;
-            //              $linePracticeCount = 0;
-            //            $linePracticeFailed = 0;
-            //      }
-            //}
-
-
             // if we have child moves
             if (isset($lines[$i]["moves"]) && count($lines[$i]["moves"]) > 0) {
                 [$pct, $count, $pcount, $pfailed, $mcount, $vcount] = $this->addRoadmap($lines[$i]["moves"], $moveIdx, $movePgn, $moveEco, $hasMore);
@@ -1760,6 +1977,9 @@ class RepertoireService
         return [$failPercentage, $failCount, $parentEcoCount, $parentEcoFailed, $ourMoveCount, $variationCount];
     }
 
+    /**
+     * Returns the roadmap for a certain color.
+     */
     public function getRoadmapFor($color, $lines, $forEverySplit = false, $parentEco = null): array
     {
         $roadmap = [];

@@ -1,37 +1,49 @@
+/**
+ * Helper functions, utilities.
+ * 
+ * - showLoading, hideLoading - keeps track of show count
+ * - showError, hideError
+ * - getAbbreviatedNumber
+ * 
+ */
 export class Utils {
-  // the page loading overlay element
-  static pageLoadingOverlay = null;
+  // The page loading container
+  static pageLoader = null;
 
-  // overlay show counter
+  // Overlay show counter
   static showCounter = 0;
 
-  // the error icon element
+  // The error icon element
   static errorIconElement = null;
 
   static console = null;
 
   static {
-    this.pageLoadingOverlay = document.getElementById("pageLoadingOverlay");
+    // Get the elements
+    this.pageLoader = document.getElementById("pageLoader");
     this.errorIconElement = document.getElementById("errorIconElement");
   }
 
+  // Shows a loader
   static showLoading() {
     if (this.showCounter == 0) {
-      //this.pageLoadingOverlay.classList.remove("is-hidden");
+      this.pageLoader && this.pageLoader.classList.remove("is-hidden");
     }
 
     this.showCounter++;
   }
 
+  // Hides the loader
   static hideLoading(force = false) {
     this.showCounter--;
 
     if (this.showCounter <= 0 || force) {
-      //this.pageLoadingOverlay.classList.add("is-hidden");
+      this.pageLoader && this.pageLoader.classList.add("is-hidden");
       this.showCounter = 0;
     }
   }
 
+  // Fade the error icon to indicate something is wrong
   static showError() {
     // if already showing
     if (!this.errorIconElement.classList.contains("fade")) {
@@ -46,10 +58,12 @@ export class Utils {
     }, 5000);
   }
 
+  // Hide the error icon
   static hideError() {
     this.errorIconElement.classList.add("fade");
   }
 
+  // Get a number as B+ (billion), M+ (million) or k+ (thousand)
   static getAbbreviatedNumber(number, abbrev = "") {
     if (isNaN(number)) {
       return "";
@@ -71,49 +85,15 @@ export class Utils {
     }
   }
 
-  static overrideConsole() {
-    console.log("overrideConsole:");
+  // Get a human readable duration for a number of seconds (2h 14m 32s)
+  static getDuration(seconds) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds - h * 3600) / 60);
+    const s = Math.floor(seconds - h * 3600 - m * 60);
 
-    if (this.console !== null) {
-      return;
-    }
-
-    this.console = { log: console.log };
-
-    console.log = function () {
-      // 1. Convert args to a normal array
-      var args = Array.from(arguments);
-      // OR you can use: Array.prototype.slice.call( arguments );
-
-      // 2. Prepend log prefix log string
-      //args.unshift(LOG_PREFIX + ": ");
-
-      // add the group as 1st parameter
-      args.unshift("console");
-
-      // 3. Pass along arguments to console.log
-      //Utils.console.log.apply(console, args);
-      Utils.log.apply(Utils, args);
-    };
-  }
-
-  static log(group) {
-    //console.info("Utils.log:");
-    //console.info("Group: " + group);
-    //console.info(this);
-
-    var args = Array.from(arguments);
-
-    //this.console.log.apply(console, args);
-
-    args.splice(0, 1);
-
-    var groups = ["skip"];
-
-    //if (groups.includes(group)) {
-    this.console.log.apply(console, args);
-    //}
+    return (h > 0 ? h + "h " : "") + (h > 0 || m > 0 ? m + "m " : "") + s + "s";
   }
 }
 
+// TODO: Not happy with this, find or make something better..
 //Utils.overrideConsole();

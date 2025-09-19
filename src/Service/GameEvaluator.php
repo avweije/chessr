@@ -120,7 +120,7 @@ class GameEvaluator
         $cpLossLimit = $cpLossLimits[$this->settings->getMistakeTolerance() ?? 0];
         $cpLossTotal = 0;
 
-        $this->log('Initial cp: ' . $bestCp . ', mate: ' . ($bestMate ?? 'n/a') . ', win%: ' . round($prevWinPct, 2) . ', analyse for black: ' . ($analyseForBlack ? 'yes' : 'no')  );
+        $this->log('Initial cp: ' . $bestCp . ', mate: ' . ($bestMate ?? 'n/a') . ', win%: ' . round($prevWinPct, 2) . ', analyse for black: ' . ($analyseForBlack ? 'yes' : 'no'));
 
         // Loop through each move in the game
         foreach ($game["moves"] as $move) {
@@ -150,14 +150,14 @@ class GameEvaluator
             // skip first move to avoid false blunders
             //if ($halfMove > 1 && $this->shouldAnalyseMove($whiteToMove, $analyseForBlack)) {
             //if ($this->shouldAnalyseMove($whiteToMove, $analyseForBlack)) {
-                // Calculate the win percentage and accuracy
-                [$winPct, $acc] = $this->calculateWinPct($moveCp, $moveMate, $analyseForBlack, $prevWinPct);
-                $accuracy[] = $acc;
+            // Calculate the win percentage and accuracy
+            [$winPct, $acc] = $this->calculateWinPct($moveCp, $moveMate, $analyseForBlack, $prevWinPct);
+            $accuracy[] = $acc;
 
-                // Calculate the percentage loss in win probability
-                $pctLoss = $this->calculatePctLoss($prevWinPct, $winPct);
+            // Calculate the percentage loss in win probability
+            $pctLoss = $this->calculatePctLoss($prevWinPct, $winPct);
 
-                $this->log('Win%: ' . $winPct . ', acc: ' . $acc . ', %loss: ' . $pctLoss . ', ignore: ' . ($move["ignore"] ? 'yes' : 'no'));
+            $this->log('Win%: ' . $winPct . ', acc: ' . $acc . ', %loss: ' . $pctLoss . ', ignore: ' . ($move["ignore"] ? 'yes' : 'no'));
 
             //
             if ($this->shouldAnalyseMove($whiteToMove, $analyseForBlack)) {
@@ -186,7 +186,7 @@ class GameEvaluator
                 if ($mistake["type"] !== "" && !$move["ignore"]) {
 
                     $this->log('Mistake detected: ' . json_encode($mistake));
-                    
+
                     // Keep track of the total mistake points (for limiting)
                     //$mistakesTotal += $this->mistakesPoints[$mistake["type"]];
                     // Populate the best moves for the mistake
@@ -269,7 +269,7 @@ class GameEvaluator
     private function initialWinPct(int $cp, ?int $mate): float
     {
         if (!empty($mate) && $mate !== 0) {
-            
+
             $this->log('Initial mate detected, setting win% to 100');
 
             return 100;
@@ -333,6 +333,8 @@ class GameEvaluator
         $chess->undo();
         // make sure the best moves are sorted according to color
         $bestMovesBefore = $this->sortBestMoves($bestMovesBefore, $analyseForBlack);
+        // Keep track of the best moves used so we don't add doubles
+        $bestMovesUsed = [];
         // loop through the best moves and test them
         foreach ($bestMovesBefore as $bm) {
 
@@ -358,17 +360,19 @@ class GameEvaluator
 
                 // invalid move.. ? do something.. ?
 
-            } else {
-                // get the last move
-                $history = $chess->history(['verbose' => true]);
-                $last = array_pop($history);
+                continue;
+            }
 
-                //print "undo move(2)--";
+            // get the last move
+            $history = $chess->history(['verbose' => true]);
+            $last = array_pop($history);
 
-                // undo the last move
-                $chess->undo();
+            //print "undo move(2)--";
 
-                /*
+            // undo the last move
+            $chess->undo();
+
+            /*
 
                 For 2nd and 3rd best moves:
                             
@@ -378,67 +382,73 @@ class GameEvaluator
 
                 */
 
-                // if this is the move we made (2nd or 3rd best)
-                if ($moveSan == $last["san"]) {
-                    // we have all the better moves, exit foreach
-                    break;
+            // if this is the move we made (2nd or 3rd best)
+            if ($moveSan == $last["san"]) {
+                // we have all the better moves, exit foreach
+                break;
+            }
+
+            // add the move
+            $add = true;
+
+            // if this is not the 1st best move
+            if (count($mistake["bestmoves"]) > 0) {
+                // calculate the win percentage for this move
+                [$moveWinPct,] = $this->calculateWinPct($bm['cp'], $bm['mate'], $analyseForBlack, $prevWinPct);
+
+                // calculate the move percentage loss
+                $movePctLoss = $this->calculatePctLoss($prevWinPct, $moveWinPct);
+
+                // add if not an inaccuracy or worse
+                $add = $movePctLoss < .1;
+            }
+
+            // Skip if it's not a good move
+            if (!$add) continue;
+
+            // get the san moves from the uci moves..
+            foreach ($bm["line"] as $lmove) {
+                // get the move details
+                $fromSquare = substr($lmove, 0, 2);
+                $toSquare = substr($lmove, 2, 2);
+                $promotion = strlen($lmove == 5) ? substr($lmove, 5) : "";
+                // make the move
+                $ret = $chess->move(["from" => $fromSquare, "to" => $toSquare, "promotion" => $promotion]);
+                if ($ret == null) {
+                    print "move is null?<br>";
+                    dd($lmove, $chess->history(['verbose' => true]));
                 }
+            }
 
-                // add the move
-                $add = true;
+            $sanMoves = [];
+            foreach ($bm["line"] as $lmove) {
+                // get the last move
+                $history = $chess->history(['verbose' => true]);
+                $last = array_pop($history);
+                array_unshift($sanMoves, $last["san"]);
+                // undo the last move
+                $chess->undo();
+            }
 
-                // if this is not the 1st best move
-                if (count($mistake["bestmoves"]) > 0) {
-                    // calculate the win percentage for this move
-                    [$moveWinPct,] = $this->calculateWinPct($bm['cp'], $bm['mate'], $analyseForBlack, $prevWinPct);
+            // If we already have this move, continue
+            if (in_array($bm['move'], $bestMovesUsed)) continue;
 
-                    // calculate the move percentage loss
-                    $movePctLoss = $this->calculatePctLoss($prevWinPct, $moveWinPct);
+            // Add this move to the used ones
+            $bestMovesUsed[] = $bm['move'];
 
-                    // add if not an inaccuracy or worse
-                    $add = $movePctLoss < .1;
-                }
+            // Add the best move to the mistake
+            $mistake["bestmoves"][] = [
+                "move" => $bm["move"],
+                "san" => $last["san"],
+                "cp" => $bm["cp"],
+                "mate" => $bm["mate"],
+                //"line" => $bm["line"],
+                "line" => $sanMoves
+            ];
 
-                // add to the bestmoves
-                if ($add) {
-                    // get the san moves from the uci moves..
-                    foreach ($bm["line"] as $lmove) {
-                        // get the move details
-                        $fromSquare = substr($lmove, 0, 2);
-                        $toSquare = substr($lmove, 2, 2);
-                        $promotion = strlen($lmove == 5) ? substr($lmove, 5) : "";
-                        // make the move
-                        $ret = $chess->move(["from" => $fromSquare, "to" => $toSquare, "promotion" => $promotion]);
-                        if ($ret == null) {
-                            print "move is null?<br>";
-                            dd($lmove, $chess->history(['verbose' => true]));
-                        }
-                    }
-
-                    $sanMoves = [];
-                    foreach ($bm["line"] as $lmove) {
-                        // get the last move
-                        $history = $chess->history(['verbose' => true]);
-                        $last = array_pop($history);
-                        array_unshift($sanMoves, $last["san"]);
-                        // undo the last move
-                        $chess->undo();
-                    }
-
-                    $mistake["bestmoves"][] = [
-                        "move" => $bm["move"],
-                        "san" => $last["san"],
-                        "cp" => $bm["cp"],
-                        "mate" => $bm["mate"],
-                        //"line" => $bm["line"],
-                        "line" => $sanMoves
-                    ];
-
-                    // if we have 3 best moves, break the loop (lichess evals sometimes has more than 3)
-                    if (count($mistake["bestmoves"]) == 3) {
-                        break;
-                    }
-                }
+            // if we have 3 best moves, break the loop (lichess evals sometimes has more than 3)
+            if (count($mistake["bestmoves"]) == 3) {
+                break;
             }
         }
 

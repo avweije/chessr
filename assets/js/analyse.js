@@ -1,41 +1,17 @@
 import { Utils } from "utils";
-import { UCI } from "uci";
+import { EngineHelper } from "EngineHelper";
 
+/**
+ * Analyse controller for the analyse page.
+ */
 class Analyse {
-  // the elements
-  siteRadio = {
-    chesscom: null,
-    lichess: null,
-  };
-
-  siteUsername = null;
-
-  periodCheckbox = {
-    recent: null,
-    older: null,
-  };
-
-  typeCheckbox = {
-    daily: null,
-    rapid: null,
-    blitz: null,
-    bullet: null,
-  };
-
-  startButton = null;
-
   analyseDialog = {
-    modal: null,
-    fieldsContainer: null,
-    errorContainer: null,
     statusField: null,
     gameField: null,
     mistakesField: null,
     periodField: null,
     elapsedTimeField: null,
     errorField: null,
-    stopButton: null,
-    closeButton: null,
     startTime: null,
     intervalId: null,
     inProgress: false,
@@ -51,9 +27,10 @@ class Analyse {
   };
 
   // the settings
-  settings = [];
+  settings = null;
 
-  // the UCI controller
+  // the EngineHelper & UCI interface
+  engineHelper = null;
   uci = null;
 
   games = [];
@@ -62,144 +39,105 @@ class Analyse {
   engineMoveCount = 0;
 
   constructor() {
-    // get the elements
-    this.siteRadio.chesscom = document.getElementById("siteChessDotComRadio");
-    this.siteRadio.lichess = document.getElementById("siteLichessRadio");
-
-    this.siteUsername = document.getElementById("siteUsername");
-
-    this.periodCheckbox.recent = document.getElementById("periodRecentRadio");
-    this.periodCheckbox.older = document.getElementById("periodOlderRadio");
-
-    this.typeCheckbox.daily = document.getElementById("typeDailyCheckbox");
-    this.typeCheckbox.rapid = document.getElementById("typeRapidCheckbox");
-    this.typeCheckbox.blitz = document.getElementById("typeBlitzCheckbox");
-    this.typeCheckbox.bullet = document.getElementById("typeBulletCheckbox");
-
-    this.startButton = document.getElementById("startButton");
-
-    // attach event handlers
-    this.siteRadio.chesscom.addEventListener(
-      "change",
-      this.switchSite.bind(this)
-    );
-    this.siteRadio.lichess.addEventListener(
-      "change",
-      this.switchSite.bind(this)
-    );
-
-    this.siteUsername.addEventListener(
-      "input",
-      this.toggleStartButton.bind(this)
-    );
-    this.periodCheckbox.recent.addEventListener(
-      "click",
-      this.toggleStartButton.bind(this)
-    );
-    this.periodCheckbox.older.addEventListener(
-      "click",
-      this.toggleStartButton.bind(this)
-    );
-    this.typeCheckbox.daily.addEventListener(
-      "click",
-      this.toggleStartButton.bind(this)
-    );
-    this.typeCheckbox.rapid.addEventListener(
-      "click",
-      this.toggleStartButton.bind(this)
-    );
-    this.typeCheckbox.blitz.addEventListener(
-      "click",
-      this.toggleStartButton.bind(this)
-    );
-    this.typeCheckbox.bullet.addEventListener(
-      "click",
-      this.toggleStartButton.bind(this)
-    );
-
-    this.startButton.addEventListener("click", this.analyseGames.bind(this));
-
+    // Get the elements
+    this.getElements();
+    // Add listeners
+    this.addListeners();
+    // Initialize the modal
     this.initAnalyseModal();
-
     // get settings
     this.getSettings();
   }
 
+  // Get the data-elements
   getElements() {
     // Get the data-elements for reference
-    this.elements = [];
+    this.elements = {};
     document.querySelectorAll("[data-element]").forEach(el => {
       if (el.dataset.element !== "yes") return;
       this.elements[el.id] = el;
     });
-
-    // get the elements
-    this.tabs.buttons = document.getElementById("settingsTabButtons");
-    this.tabs.account = document.getElementById("settingsTabAccount");
-    this.tabs.board = document.getElementById("settingsTabBoard");
-    this.tabs.engine = document.getElementById("settingsTabEngine");
-    this.tabs.practice = document.getElementById("settingsTabPractice");
-
-    console.log('getElements', this.elements);
   }
 
-  initAnalyseModal() {
-    // Analyse Modal
-    const modal = document.getElementById("analyseModal");
-    const analyseModalBkgd = modal.getElementsByClassName("modal-background")[0];
-    const fieldsContainer = document.getElementById("analyseModalFields");
-    const errorContainer = document.getElementById("analyseModalError");
+  // Add event listeners
+  addListeners() {
+    // Site
+    this.elements.siteChessDotComRadio.addEventListener(
+      "change", this.switchSite.bind(this)
+    );
+    this.elements.siteLichessRadio.addEventListener(
+      "change", this.switchSite.bind(this)
+    );
+    // Username
+    this.elements.siteUsername.addEventListener(
+      "input", this.toggleStartButton.bind(this)
+    );
+    // Period radio
+    this.elements.periodRecentRadio.addEventListener(
+      "click", this.toggleStartButton.bind(this)
+    );
+    this.elements.periodOlderRadio.addEventListener(
+      "click", this.toggleStartButton.bind(this)
+    );
+    // Type of games checkboxes
+    this.elements.typeDailyCheckbox.addEventListener(
+      "click", this.toggleStartButton.bind(this)
+    );
+    this.elements.typeRapidCheckbox.addEventListener(
+      "click", this.toggleStartButton.bind(this)
+    );
+    this.elements.typeBlitzCheckbox.addEventListener(
+      "click", this.toggleStartButton.bind(this)
+    );
+    this.elements.typeBulletCheckbox.addEventListener(
+      "click", this.toggleStartButton.bind(this)
+    );
+    // Start button
+    this.elements.startButton.addEventListener("click", this.analyseGames.bind(this));
+  }
 
-    const fields = fieldsContainer.getElementsByTagName("p");
+  // Load the modals
+  initAnalyseModal() {
+    // Analyse modal
+    const analyseModalBkgd = this.elements.analyseModal.getElementsByClassName("modal-background")[0];
+
+    const fields = this.elements.analyseModalFields.getElementsByTagName("p");
     const statusField = fields[0];
     const gameField = fields[1];
     const periodField = fields[2];
     const mistakesField = fields[3];
     const elapsedTimeField = fields[4];
 
-    const errorFields = errorContainer.getElementsByTagName("p");
+    const errorFields = this.elements.analyseModalError.getElementsByTagName("p");
     const errorField = errorFields[0];
 
-    const stopButton = document.getElementById("analyseModalStopButton");
-    const closeButton = document.getElementById("analyseModalCloseButton");
-
-    const showModal = () => modal.classList.add("is-active");
+    const showModal = () => this.elements.analyseModal.classList.add("is-active");
     const closeModal = () => {
-      modal.classList.remove("is-active");
-      this.onCloseDialog(); // call the same close handler
+      this.elements.analyseModal.classList.remove("is-active");
+      this.onCloseDialog();
     };
 
     analyseModalBkgd.addEventListener("click", closeModal);
-    closeButton.addEventListener("click", closeModal);
-    stopButton.addEventListener("click", closeModal);
+    this.elements.analyseModalCloseButton.addEventListener("click", closeModal);
+    this.elements.analyseModalStopButton.addEventListener("click", closeModal);
 
     // Save references for later use
-    this.analyseDialog.modal = modal;
-    this.analyseDialog.fieldsContainer = fieldsContainer;
-    this.analyseDialog.errorContainer = errorContainer;
     this.analyseDialog.statusField = statusField;
     this.analyseDialog.gameField = gameField;
     this.analyseDialog.periodField = periodField;
     this.analyseDialog.mistakesField = mistakesField;
     this.analyseDialog.elapsedTimeField = elapsedTimeField;
     this.analyseDialog.errorField = errorField;
-    this.analyseDialog.stopButton = stopButton;
-    this.analyseDialog.closeButton = closeButton;
-    this.analyseDialog.showModal = showModal;
-    this.analyseDialog.closeModal = closeModal;
 
     this.showModal = showModal;
     this.closeModal = closeModal;
   }
 
-
-  // get the settings
+  // Get the settings
   getSettings() {
-    console.log("getSettings:");
-
     const url = "/api/download/settings";
 
-    // show the page loader
+    // Show the page loader
     Utils.showLoading();
 
     fetch(url, {
@@ -207,108 +145,114 @@ class Analyse {
     })
       .then((res) => res.json())
       .then((response) => {
-        console.log("Success:");
-        console.log(response);
-
-        // handle the response
+        // Handle the response
         this.onGetSettings(response["settings"]);
       })
       .catch((error) => {
         console.error("Error:", error);
       })
       .finally(() => {
-        // hide the page loader
+        // Hide the page loader
         Utils.hideLoading();
       });
   }
 
-  // restore the settings
+  // Restore the settings
   onGetSettings(settings) {
-    console.log("onGetSettings:");
-    console.log(settings);
 
-    // store the settings
+    console.log('Analyse.js - onGetSettings', settings);
+
+    // Store the settings
     this.settings = settings;
+    // Create the EngineHelper instance
+    this.engineHelper = new EngineHelper({ 
+      duration: settings.analyse_engine_time,
+      autoNewGame: false,
+      receiveOnce: true,
+      onReceive: this.onEngineInfo.bind(this)
+    });
+
+    console.log(this.engineHelper);
 
     // select the correct site
     if (this.settings.site == "Lichess") {
-      this.siteRadio.lichess.checked = true;
-
-      this.siteUsername.value = this.settings.lichess_username
+      this.elements.siteLichessRadio.checked = true;
+      // Set username
+      this.elements.siteUsername.value = this.settings.lichess_username
         ? this.settings.lichess_username
         : "";
     } else {
-      this.siteRadio.chesscom.checked = true;
-
-      this.siteUsername.value = this.settings.chess_username
+      this.elements.siteChessDotComRadio.checked = true;
+      // Set username
+      this.elements.siteUsername.value = this.settings.chess_username
         ? this.settings.chess_username
         : "";
     }
 
-    // toggle the start button
+    // Toggle the start button
     this.toggleStartButton();
   }
 
-  // switch sites
+  // Switch sites
   switchSite() {
     // get the selected site
-    this.settings.site = this.siteRadio.chesscom.checked
-      ? this.siteRadio.chesscom.value
-      : this.siteRadio.lichess.value;
+    this.settings.site = this.elements.siteChessDotComRadio.checked
+      ? this.elements.siteChessDotComRadio.value
+      : this.elements.siteLichessRadio.value;
 
-    // set the correct username
+    // Set the correct username
     if (this.settings.site == "Lichess") {
-      // store the current username
-      this.settings.chess_username = this.siteUsername.value;
-      // set the lichess username
-      this.siteUsername.value = this.settings.lichess_username
+      // Store the current username
+      this.settings.chess_username = this.elements.siteUsername.value;
+      // Set the lichess username
+      this.elements.siteUsername.value = this.settings.lichess_username
         ? this.settings.lichess_username
         : "";
     } else {
-      // store the current username
-      this.settings.lichess_username = this.siteUsername.value;
-      // set the chess.com username
-      this.siteUsername.value = this.settings.chess_username
+      // Store the current username
+      this.settings.lichess_username = this.elements.siteUsername.value;
+      // Set the chess.com username
+      this.elements.siteUsername.value = this.settings.chess_username
         ? this.settings.chess_username
         : "";
     }
 
-    // toggle the start button
+    // Toggle the start button
     this.toggleStartButton();
   }
 
-  // toggle the start button
+  // Toggle the start button
   toggleStartButton() {
-    this.startButton.disabled =
-      this.siteUsername.value == "" ||
-      (!this.periodCheckbox.recent.checked &&
-        !this.periodCheckbox.older.checked) ||
-      (!this.typeCheckbox.daily.checked &&
-        !this.typeCheckbox.rapid.checked &&
-        !this.typeCheckbox.blitz.checked &&
-        !this.typeCheckbox.bullet.checked);
+    const periodSelected = this.elements.periodRecentRadio.checked || this.elements.periodOlderRadio.checked;
+    const typeSelected = this.elements.typeDailyCheckbox.checked || this.elements.typeRapidCheckbox.checked
+      || this.elements.typeBlitzCheckbox.checked || this.elements.typeBulletCheckbox.checked;
+    
+    this.elements.startButton.disabled = this.settings === null
+      || this.elements.siteUsername.value === ''
+      || !periodSelected
+      || !typeSelected;
   }
 
-  // get the selected types array
+  // Get the selected types array
   getSelectedTypes() {
     const types = [];
-    if (this.typeCheckbox.daily.checked) {
+    if (this.elements.typeDailyCheckbox.checked) {
       types.push("daily");
     }
-    if (this.typeCheckbox.rapid.checked) {
+    if (this.elements.typeRapidCheckbox.checked) {
       types.push("rapid");
     }
-    if (this.typeCheckbox.blitz.checked) {
+    if (this.elements.typeBlitzCheckbox.checked) {
       types.push("blitz");
     }
-    if (this.typeCheckbox.bullet.checked) {
+    if (this.elements.typeBulletCheckbox.checked) {
       types.push("bullet");
     }
 
     return types;
   }
 
-  // start analysing the games
+  // Start analysing the games
   analyseGames() {
     console.log("analyseGames:");
 
@@ -317,8 +261,8 @@ class Analyse {
 
     // get the period
     const period = {
-      recent: this.periodCheckbox.recent.checked,
-      older: this.periodCheckbox.older.checked,
+      recent: this.elements.periodRecentRadio.checked,
+      older: this.elements.periodOlderRadio.checked,
     };
 
     // if the last run is still in progress
@@ -327,8 +271,8 @@ class Analyse {
     }
 
     // show the spinner
-    this.startButton.disabled = true;
-    this.startButton.classList.add("is-loading");
+    this.elements.startButton.disabled = true;
+    this.elements.startButton.classList.add("is-loading");
 
     // initialise the analyse process
     this.analyseDialog.inProgress = true;
@@ -346,10 +290,9 @@ class Analyse {
     this.analyseDialog.elapsedTimeField.innerHTML = "";
 
     // set the stop button text
-    this.analyseDialog.stopButton.innerHTML = "Stop analysing";
+    this.elements.analyseModalStopButton.innerHTML = "Stop analysing";
 
     // open the dialog
-    //Modal.open(this.analyseDialog.modal);
     this.showModal();
 
     // get the start time
@@ -360,25 +303,28 @@ class Analyse {
       const seconds =
         (new Date().getTime() - this.analyseDialog.startTime) / 1000;
 
-      this.analyseDialog.elapsedTimeField.innerHTML = this.getDuration(seconds);
+      this.analyseDialog.elapsedTimeField.innerHTML = Utils.getDuration(seconds);
     }, 1000);
+
+    // Start the engine
+    this.engineHelper.startEngine();
 
     // start analysing
     this.analyseNext();
   }
 
-  // update the dialog fields, toggle them in case of error
+  // Update the dialog fields, toggle them in case of error
   updateDialogFields(error = null) {
     // if we have an error
     if (error) {
       // show the error
-      this.analyseDialog.errorContainer.classList.remove("is-hidden");
+      this.elements.analyseModalError.classList.remove("is-hidden");
       this.analyseDialog.errorField.innerHTML = error;
       // hide the other fields
-      this.analyseDialog.fieldsContainer.classList.add("is-hidden");
+      this.elements.analyseModalFields.classList.add("is-hidden");
     } else {
       // show the fields
-      this.analyseDialog.fieldsContainer.classList.remove("is-hidden");
+      this.elements.analyseModalFields.classList.remove("is-hidden");
 
       // set the mistakes text
       let mistakes =
@@ -421,23 +367,16 @@ class Analyse {
           ")</span>";
       }
 
-      // update the values
-      //this.analyseDialog.statusField.innerHTML = "Downloading your games";
-      /*
-        this.analyseDialog.processed == 0
-          ? "In progress.."
-          : this.analyseDialog.processed + " games processed";
-          */
-      //this.analyseDialog.gameField.innerHTML = this.analyseDialog.processed > 0 ? "" : "";
+      // Update the values
       this.analyseDialog.mistakesField.innerHTML = mistakes;
       this.analyseDialog.periodField.innerHTML = this.analyseDialog.period;
-      // hide the error
-      this.analyseDialog.errorContainer.classList.add("is-hidden");
+      // Hide the error
+      this.elements.analyseModalError.classList.add("is-hidden");
       this.analyseDialog.errorField.innerHTML = "";
     }
   }
 
-  // called when the dialog gets closed (return false to cancel)
+  // Called when the dialog gets closed (return false to cancel)
   onCloseDialog() {
     // stop the interval timer
     if (this.analyseDialog.intervalId) {
@@ -450,7 +389,7 @@ class Analyse {
     return true;
   }
 
-  // analyse the next set of games
+  // Analyse the next set of games
   analyseNext() {
     console.log("analyseNext:");
 
@@ -476,9 +415,9 @@ class Analyse {
       }
 
       // update the stop button text
-      this.analyseDialog.stopButton.innerHTML = "Close";
-      this.analyseDialog.stopButton.classList.remove("is-warning");
-      this.analyseDialog.stopButton.classList.add("is-primary");
+      this.elements.analyseModalStopButton.innerHTML = "Close";
+      this.elements.analyseModalStopButton.classList.remove("is-warning");
+      this.elements.analyseModalStopButton.classList.add("is-primary");
       // end the progress
       this.analyseEndProgress();
 
@@ -491,20 +430,20 @@ class Analyse {
     // update the status fields
     this.analyseDialog.statusField.innerHTML =
       'Downloading from <span class="has-text-weight-medium">' +
-      (this.siteRadio.chesscom.checked
-        ? this.siteRadio.chesscom.value
-        : this.siteRadio.lichess.value) +
+      (this.elements.siteChessDotComRadio.checked
+        ? this.elements.siteChessDotComRadio.value
+        : this.elements.siteLichessRadio.value) +
       "</span>";
     this.analyseDialog.gameField.innerHTML = "";
 
     const url = "/api/analyse/download";
 
     const data = {
-      site: this.siteRadio.chesscom.checked ? "Chess.com" : "Lichess",
-      username: this.siteUsername.value,
+      site: this.elements.siteChessDotComRadio.checked ? "Chess.com" : "Lichess",
+      username: this.elements.siteUsername.value,
       period: {
-        recent: this.periodCheckbox.recent.checked,
-        older: this.periodCheckbox.older.checked,
+        recent: this.elements.periodRecentRadio.checked,
+        older: this.elements.periodOlderRadio.checked,
       },
       type: this.getSelectedTypes(),
     };
@@ -550,7 +489,7 @@ class Analyse {
       });
   }
 
-  // handle an API error
+  // Handle an API error
   onAnalyseError(error) {
     // update the dialog fields
     this.updateDialogFields("Something went wrong, please try again later.");
@@ -561,120 +500,95 @@ class Analyse {
     }
 
     // update the stop button text
-    this.analyseDialog.stopButton.innerHTML = "Close";
-    this.analyseDialog.stopButton.classList.remove("is-warning");
-    this.analyseDialog.stopButton.classList.add("is-primary");
+    this.elements.analyseModalStopButton.innerHTML = "Close";
+    this.elements.analyseModalStopButton.classList.remove("is-warning");
+    this.elements.analyseModalStopButton.classList.add("is-primary");
 
     // end the progress
     this.analyseEndProgress();
   }
 
-  // analyse end progress
+  // Analyse end progress
   analyseEndProgress() {
     // no longer in progress
     this.analyseDialog.inProgress = false;
     // hide the spinner
-    this.startButton.disabled = false;
-    this.startButton.classList.remove("is-loading");
+    this.elements.startButton.disabled = false;
+    this.elements.startButton.classList.remove("is-loading");
+    // Stop the engine
+    this.engineHelper.stopEngine();
   }
 
-  // get the engine moves
+  // Get the engine moves
   getEngineMoves(response) {
     this.games = response.games;
 
+    // Reset the current game
     this.currentGame = 0;
-    this.currentMove = 0;
-    this.engineMoveCount = 0;
-
-    // start the engine
-    this.engineStart();
-  }
-
-  engineStart() {
-
-    console.log("engine start", this.uci);
-
-    if (this.uci == null) {
-      this.uci = new UCI();
-
-      this.uci.onReceive("uciok", this.onEngineOK.bind(this));
-
-      this.uci.startEngine();
-      this.uci.sendUCI();
-
-      this.uci.onReceive("info", this.onEngineInfo.bind(this), false);
-      this.uci.onReceive("bestmove", this.onEngineBestMove.bind(this), false);
-    } else {
-      this.onEngineOK();
-    }
-  }
-
-  engineStop() {
-    if (this.uci !== null) {
-      this.uci.stopEngine();
-      this.uci = null;
-    }
-  }
-
-  engineInterrupt() {
-    console.info("Interrupting the engine..");
-
-    this.uci.interrupt();
-    //this.uci.isReady();
-
-    //this.uci.onReceive("readyok", stockfish.stopEngine.bind(stockfish));
-  }
-
-  onEngineOK() {
-    console.info("XX-onEngineOK");
-
-    this.uci.setMultiPV(3);
-
-    this.uci.onReceive("readyok", this.onEngineReady.bind(this));
-
-    this.uci.isReady();
-  }
-
-  onEngineReady() {
-    console.info("XX-onEngineReady");
-
-    //
+    // Analyse the next game
     this.engineNextGame();
   }
 
+  /**
+   * Analyse the next game. Downloads a game, gets the stockfish evaluations for
+   * moves that aren't in our evaluations database and sends it back to the backend
+   * for evaluation. Upon return, engineNextGame can be called for the next game.
+   */
   engineNextGame() {
+    // Reset the current move & engine move count
+    this.currentMove = 0;
+    this.engineMoveCount = 0;
 
     console.log("XX-engineNextGame:", this.currentGame, this.games.length);
 
-    // if we've analysed all games
+    // If we've analysed all games
     if (this.currentGame >= this.games.length) {
-      // download the next games
+      // Download the next games
       this.analyseNext();
 
       return true;
     }
 
-    //
+    // Get the next game
     const game = this.games[this.currentGame];
 
-    console.log(game);
+    // Skip this game if we don't have any moves
+    if (game.moves.length === 0) {
+      // Analyse the next game
+      this.currentGame++;
+      this.engineNextGame();
+
+      return;
+    }
 
     // get the color
     const color = game.color.charAt(0).toUpperCase() + game.color.slice(1);
 
-    //this.analyseDialog.statusField.innerHTML =
-    //'Evaluating with <span class="has-text-weight-medium">Stockfish</span> (0%)';
     this.analyseDialog.gameField.innerHTML =
       color + " vs " + game.opponent + " (" + game.type + ")";
 
     // send ucinewgame
-    this.uci.newGame();
+    //this.uci.newGame();
 
     // evaluate the next move once the new game command is finished
-    this.uci.onReceive("readyok", this.engineNextEval.bind(this));
-    this.uci.isReady();
+    //this.uci.onReceive("readyok", this.engineNextEval.bind(this));
+    //this.uci.isReady();
+
+    // Start a new game
+    this.engineHelper.startGame()
+    .then(() => {
+
+      console.log('Analyse.js - Engine game started, promise resolved.');
+
+      // Start the next engine search
+      this.engineNextEval();
+    });
   }
 
+  /**
+   * Gets the engine evaluations for moves that we don't have in our evaluations database.
+   * Calls the backend to evaluate the game once we have all engine evals.
+   */
   engineNextEval() {
     console.info("XX-engineNextEval", this.analyseDialog.isCancelled);
 
@@ -688,8 +602,6 @@ class Analyse {
 
     const game = this.games[this.currentGame];
 
-    console.info("Game:", this.currentGame, this.currentMove, game.moves.length, game.moves[this.currentMove]);
-
     while (this.currentMove < game.moves.length) {
 
       const needsEngine = !(game.moves[this.currentMove].bestmoves?.length);
@@ -700,19 +612,20 @@ class Analyse {
         // add the current move
         moves = moves + " " + game.moves[this.currentMove].uci;
 
-        //
         this.analyseDialog.statusField.innerHTML =
           'Evaluating with <span class="has-text-weight-medium">Stockfish</span> (' +
           Math.round((this.engineMoveCount / game.engine) * 100) +
           "%)";
 
-        //
         this.engineMoveCount++;
 
-        console.log("XX-Before evaluate (moves, engine time):", moves, this.settings.analyse_engine_time);
-
         // start the evaluation
-        this.uci.evaluate("", moves, this.settings.analyse_engine_time);
+        //this.uci.evaluate("", moves, this.settings.analyse_engine_time);
+
+        console.log('Analyse.js - engineNextEval: moves', moves);
+
+        // Start the search
+        this.engineHelper.startSearch({ moves: moves });
 
         return true;
       }
@@ -720,25 +633,22 @@ class Analyse {
       this.currentMove++;
     }
 
-    //
     this.analyseDialog.statusField.innerHTML = "Analysing game for mistakes";
 
-    //
+    // Evaluate the game
     this.evaluateGame(this.games[this.currentGame]);
 
     return true;
   }
 
+  // Evaluates a game at the backend
   evaluateGame(game) {
-
-    console.log("XX- calling API to evaluate, should have all engine evals here.. ?");
-
     const url = "/api/analyse/evaluate";
 
     const data = {
       game: game,
-      site: this.siteRadio.chesscom.checked ? "Chess.com" : "Lichess",
-      username: this.siteUsername.value,
+      site: this.elements.siteChessDotComRadio.checked ? "Chess.com" : "Lichess",
+      username: this.elements.siteUsername.value,
       year: game.year,
       month: game.month,
       type: game.type,
@@ -783,12 +693,8 @@ class Analyse {
         // update the mistakes field
         this.updateDialogFields();
 
-        // evaluate & analyse the next game
+        // Analyse the next game
         this.currentGame++;
-        this.currentMove = 0;
-        this.engineMoveCount = 0;
-
-        // get the next game evals
         this.engineNextGame();
       })
       .catch((error) => {
@@ -799,72 +705,52 @@ class Analyse {
       });
   }
 
+
   onEngineInfo(info) {
 
-    console.log("XX-onEngineInfo:");
-
+    console.log('Analyse.js - onEngineInfo', info);
+  
+    // Get the current game and turn
     const game = this.games[this.currentGame];
     const turn = this.currentMove % 2 == 0 ? "w" : "b";
-
+    // Get the current move
     const move = game.moves[this.currentMove];
 
+    // Initialize the bestmoves array
     if (move.bestmoves == null) {
       move.bestmoves = [null, null, null];
     }
 
-    // we need to invert the score if it's the opposite color move
+    // We need to invert the score if it's the opposite color move
     const invert =
       (game.color == "white" && turn == "b") ||
       (game.color == "black" && turn == "w");
-    const cp =
-      info.score.cp !== null && invert ? info.score.cp * -1 : info.score.cp;
-    const mate =
-      info.score.mate !== null && invert
-        ? info.score.mate * -1
-        : info.score.mate;
 
-    move.bestmoves[info.multipv - 1] = {
-      move: info.pv[0],
-      depth: info.depth,
-      cp: cp,
-      mate: mate,
-      inverted: invert,
-      line: info.pv,
-    };
-  }
-
-  onEngineBestMove(bestMove) {
-    console.info("XX-onEngineBestMove", bestMove);
-
-    const game = this.games[this.currentGame];
-
-    console.info(game.moves[this.currentMove]);
-
-    // remove null evals (in case of multipv)
-    for (
-      let i = game.moves[this.currentMove].bestmoves.length - 1; i >= 0; i--
-    ) {
-      if (game.moves[this.currentMove].bestmoves[i] == null) {
-        game.moves[this.currentMove].bestmoves.splice(i, 1);
-      }
+    // Go through all the multi pv's
+    for (let i=0;i<info.length;i++) {
+      // Get the score and mate, inverted or normal
+      const cp = info[i].score.cp !== null && invert ? info[i].score.cp * -1 : info[i].score.cp;
+      const mate = info[i].score.mate !== null && invert
+        ? info[i].score.mate * -1
+        : info[i].score.mate;
+      // Set the bestmoves array (bestmoves after this move)
+      move.bestmoves[info[i].multipv - 1] = {
+        move: info[i].pv[0],
+        depth: info[i].depth,
+        cp: cp,
+        mate: mate,
+        inverted: invert,
+        line: info[i].pv,
+      };
     }
 
     // get the next move eval
     this.currentMove++;
     this.engineNextEval();
   }
-
-  // get a printable duration for a number of seconds (2h 14m 32s)
-  getDuration(seconds) {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor((seconds - h * 3600) / 60);
-    const s = Math.floor(seconds - h * 3600 - m * 60);
-
-    return (h > 0 ? h + "h " : "") + (h > 0 || m > 0 ? m + "m " : "") + s + "s";
-  }
 }
 
-// initialise the Practice object once the page is loaded
+// Initialise the Practice object once the page is loaded
 document.addEventListener("DOMContentLoaded", (event) => {
   const analyse = new Analyse();
 });

@@ -2,31 +2,73 @@
 
 {% block body %}
 
-<div class="is-flex is-justify-content-space-around p-4">
-	<div class="box">
-		<div class="is-flex">
-			<div class="mr-2">
-				<label for="maxLinesInput" class="py-1 is-size-6 has-text-weight-medium text-gray-900 dark:text-gray-200">Max. lines:</label>
-				<input id="maxLinesInput" data-element="yes" type="number" value="5000" min="1000" max="10000" step="1000" class="is-medium-rounded border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600">
+	<div class="is-flex is-flex-direction-column is-align-items-center p-4">
+		<h2 class="title is-size-5 mb-4">Import</h2>
+
+		<div id="importTypeRadioGroup" data-element="yes" class="boxed-radio-group mt-4">
+			<div class="boxed-radio">
+				<input class="is-hidden" type="radio" name="import_type" value="evaluations" id="importTypeEvaluationsRadio" data-element="yes" checked/>
+				<label class="boxed-radio-label" for="importTypeEvaluationsRadio"></label>
+				<div class="boxed-radio-circle"></div>
+				<span class="boxed-radio-text">Evaluations</span>
 			</div>
-			<div>
-				<label for="batchSizeInput" class="py-1 is-size-6 has-text-weight-medium text-gray-900 dark:text-gray-200">Batch size:</label>
-				<input id="batchSizeInput" data-element="yes" type="number" value="100" min="10" max="5000" step="50" class="is-medium-rounded border-0 py-2 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600">
+			<div class="boxed-radio">
+				<input class="is-hidden" type="radio" name="import_type" value="move_stats" id="importTypeMoveStatsRadio" data-element="yes"/>
+				<label class="boxed-radio-label" for="importTypeMoveStatsRadio"></label>
+				<div class="boxed-radio-circle"></div>
+				<span class="boxed-radio-text">Statistics</span>
 			</div>
 		</div>
 
-		<div class="field">
-			<label class="label">Select import type</label>
-			<div class="control is-flex is-align-items-center gap-4">
-				<label class="radio">
-					<input type="radio" name="import_type" value="evaluations" checked>
-					Import evaluations
-				</label>
-				<label class="radio">
-					<input type="radio" name="import_type" value="move_statistics">
-					Import move statistics
-				</label>
+		<div class="box mt-6 w-small">
+			<div class="is-flex is-gap-2">
+				<div id="maxLinesField" data-element="yes" class="field is-flex-grow-1">
+					<label class="label">Max. Lines</label>
+					<div class="control">
+						<input id="maxLinesInput" class="input" data-element="yes" type="number" value="5000" min="1000" max="25000" step="1000">
+					</div>
+				</div>
+				<div class="field is-flex-grow-1">
+					<label class="label">Batch Size</label>
+					<div class="control is-flex-grow-1">
+						<input id="batchSizeInput" class="input" data-element="yes" type="number" value="250" min="50" max="5000" step="50">
+					</div>
+				</div>
 			</div>
+		</div>
+
+		<div class="box mt-6 w-small">
+			<div class="is-flex is-align-items-center is-justify-content-space-between">
+				<div class="grid-auto-1fr is-align-items-center is-gap-1">
+					<div id="linesImportedRow" data-element="yes" class="is-contents">
+						<label class="label m-0">Lines imported:</label>
+						<span id="linesImportedField" data-element="yes" class="">0</span>
+					</div>
+					<div id="gamesProcessedRow" data-element="yes" class="is-contents">
+						<label class="label m-0">Games processed:</label>
+						<span id="gamesProcessedField" data-element="yes" class="">0</span>
+					</div>
+					<label class="label m-0">Elapsed time:</label>
+					<span id="elapsedTimeField" data-element="yes" class="">0s</span>
+				</div>
+
+				<div class="is-flex is-flex-direction-column is-gap-1">
+					<span class="tag is-medium is-link is-light is-gap-1">
+						<span class="icon">
+							<i class="fa-solid fa-gauge"></i>
+						</span>
+						<span id="averageSpeedField" data-element="yes" class="is-flex-grow-1 has-text-centered is-size-7">n/a</span>
+					</span>
+					<span class="tag is-medium is-link is-light is-gap-1">
+						<span class="icon">
+							<i class="fa-solid fa-gauge-high"></i>
+						</span>
+						<span id="lastSpeedField" data-element="yes" class="is-flex-grow-1 has-text-centered is-size-7">n/a</span>
+					</span>
+				</div>
+			</div>
+
+			<progress id="progressBar" data-element="yes" class="progress is-link mt-5" value="0" max="100"></progress>
 		</div>
 
 		<div class="py-3">
@@ -34,18 +76,25 @@
 				Start import
 			</button>
 		</div>
+	</div>
 
-		<div class="py-3">
-			<label class="py-1 is-size-6 has-text-weight-medium text-gray-900 dark:text-gray-200">Lines imported:</label>
-			<span id="linesImportedField" data-element="yes" class="inline-block p-1 has-text-weight-medium text-gray-900 dark:text-gray-200">0</span>
-		</div>
-
-		<div class="py-3">
-			<label class="py-1 is-size-6 has-text-weight-medium text-gray-900 dark:text-gray-200">Elapsed time:</label>
-			<span id="elapsedTimeField" data-element="yes" class="p-1 has-text-weight-medium text-gray-900 dark:text-gray-200">0s</span>
+	<div class="is-fixed bottom-0 left-0 right-0 is-flex is-justify-content-center mx-6 mb-2 text-sm">
+		<div class="is-flex is-justify-content-space-around overflow-is-hidden rounded bg-white">
+			<div class="is-flex is-align-items-center whitespace-nowrap overflow-is-hidden px-2 py-2">
+				<span class="has-text-faded">
+					<i class="fa-solid fa-gauge"></i>
+				</span>
+				<span class="is-size-7 has-text-faded ml-2 mr-1 is-ellipsis">Average Speed</span>
+			</div>
+			<div class="is-flex is-align-items-center whitespace-nowrap overflow-is-hidden px-2 py-2">
+				<span class="has-text-faded">
+					<i class="fa-solid fa-gauge-high"></i>
+				</span>
+				<span class="is-size-7 has-text-faded ml-2 mr-1 is-ellipsis">Last Speed</span>
+			</div>
 		</div>
 	</div>
-</div>
+
 {% endblock %}
 {% block javascripts %}
 {{ parent() }}

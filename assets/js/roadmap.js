@@ -4,8 +4,6 @@ import { Utils } from "utils";
  * Controller class for the practice page.
  */
 class Roadmap {
-  roadmapTypeButtons = null;
-
   roadmapIntro = null;
   roadmapIntroText = null;
   roadmapDetails = null;
@@ -26,7 +24,6 @@ class Roadmap {
   roadmapTreePath = null;
   roadmapTreeCurrent = null;
   roadmapTreeCurrentField = null;
-  roadmapTreeMissingMoves = null;
   roadmapTreeContainer = null;
 
   // the roadmap data
@@ -36,95 +33,65 @@ class Roadmap {
   tree = [];
 
   constructor() {
-    // get the elements
-    this.roadmapTypeButtons = document.getElementById("roadmapTypeButtons");
+    // Get the elements
+    this.getElements();
+    // Add the listeners
+    this.addListeners();
+    // get the roadmap
+    this.getRoadmap();
+  }
 
-    this.roadmapIntro = document.getElementById("roadmapIntro");
-    this.roadmapIntroText = document.getElementById("roadmapIntroText");
-    this.roadmapDetails = document.getElementById("roadmapDetails");
-    this.roadmapDetailsEco = document.getElementById("roadmapDetailsEco");
-    this.roadmapDetailsPgn = document.getElementById("roadmapDetailsPgn");
-    this.roadmapDetailsAccuracy = document.getElementById(
-      "roadmapDetailsAccuracy"
-    );
+  // Get the data-elements
+  getElements() {
+    // Get the data-elements for reference
+    this.elements = {};
+    document.querySelectorAll("[data-element]").forEach(el => {
+      if (el.dataset.element !== "yes") return;
+      const elementId = el.getAttribute('id');
+      this.elements[elementId] = el;
+    });
 
-    this.openInRepertoireLink = document.getElementById("openInRepertoireLink");
-    this.openInPracticeLink = document.getElementById("openInPracticeLink");
+    console.log('Element:', this.elements);
+  }
 
-    this.roadmapTreePath = document.getElementById("roadmapTreePath");
-    this.roadmapTreeCurrent = document.getElementById("roadmapTreeCurrent");
-    this.roadmapTreeCurrentField = document.getElementById(
-      "roadmapTreeCurrentField"
-    );
-    this.roadmapTreeCurrentButtons = document.getElementById(
-      "roadmapTreeCurrentButtons"
-    );
-    this.roadmapTreeContainer = document.getElementById("roadmapTreeContainer");
-    this.roadmapTreeMissingMoves = document.getElementById(
-      "roadmapTreeMissingMoves"
-    );
-
-    this.roadmapForm.form = document.getElementById("roadmapForm");
-    this.roadmapForm.id = document.getElementById("roadmapIdInput");
-    this.roadmapForm.color = document.getElementById("roadmapColorInput");
-    this.roadmapForm.pgn = document.getElementById("roadmapPgnInput");
-    this.roadmapForm.fen = document.getElementById("roadmapFenInput");
-    this.roadmapForm.line = document.getElementById("roadmapLineInput");
-
-    // add event listeners
-    this.roadmapTypeButtons.children[0].children[0].addEventListener(
+  // Add event listeners
+  addListeners() {
+    // Add event listeners
+    this.elements.roadmapWhite.addEventListener(
       "click",
       (event) => {
         this.showRoadmapType("white");
       }
     );
-    this.roadmapTypeButtons.children[1].children[0].addEventListener(
+    this.elements.roadmapBlack.addEventListener(
       "click",
       (event) => {
         this.showRoadmapType("black");
       }
     );
 
-    this.openInRepertoireLink.addEventListener("click", () => {
+    this.elements.openInRepertoireLink.addEventListener("click", () => {
       document.forms["roadmapForm"].action = "./repertoire";
       document.forms["roadmapForm"].submit();
     });
-    this.openInPracticeLink.addEventListener("click", () => {
+    this.elements.openInPracticeLink.addEventListener("click", () => {
       document.forms["roadmapForm"].action = "./practice";
       document.forms["roadmapForm"].submit();
     });
-
-    // get the roadmap
-    this.getRoadmap();
-  }
-
-  getElements() {
-    // Get the data-elements for reference
-    this.elements = [];
-    document.querySelectorAll("[data-element]").forEach(el => {
-      if (el.dataset.element !== "yes") return;
-      this.elements[el.id] = el;
-    });
-
-    // get the elements
-    this.tabs.buttons = document.getElementById("settingsTabButtons");
-    this.tabs.account = document.getElementById("settingsTabAccount");
-    this.tabs.board = document.getElementById("settingsTabBoard");
-    this.tabs.engine = document.getElementById("settingsTabEngine");
-    this.tabs.practice = document.getElementById("settingsTabPractice");
-
-    console.log('getElements', this.elements);
   }
   
   // get the currently selected color
   getCurrentColor() {
-    return this.roadmapTypeButtons.children[0].children[0].checked
+    return this.elements.roadmapTypeButtons.children[0].children[0].checked
       ? "white"
       : "black";
   }
 
   // toggle white/black
   showRoadmapType(type) {
+
+    console.log('showRoadmapType');
+
     // show the roadmap intro
     this.showRoadmapIntro();
     // load the roadmap tree
@@ -133,29 +100,29 @@ class Roadmap {
 
   // show the roadmap intro text
   showRoadmapIntro() {
-    this.roadmapIntro.classList.remove("is-hidden");
-    this.roadmapDetails.classList.add("is-hidden");
+    this.elements.roadmapIntro.classList.remove("is-hidden");
+    this.elements.roadmapDetails.classList.add("is-hidden");
   }
 
   // show the roadmap details
   showRoadmapDetails(line) {
     // update the info
-    this.roadmapDetailsEco.innerHTML = line.eco.name;
-    this.roadmapDetailsPgn.innerHTML = line.pgn;
-    this.roadmapDetailsAccuracy.innerHTML =
+    this.elements.roadmapDetailsEco.innerHTML = line.eco.name;
+    this.elements.roadmapDetailsPgn.innerHTML = line.pgn;
+    this.elements.roadmapDetailsAccuracy.innerHTML =
       Math.round((1 - line.fail) * 100) + "%";
 
     // updat the info in the form
-    this.roadmapForm.id.value = line.id;
-    this.roadmapForm.color.value = line.color;
-    this.roadmapForm.pgn.value = line.pgn;
-    this.roadmapForm.fen.value = "";
+    this.elements.roadmapIdInput.value = line.id;
+    this.elements.roadmapColorInput.value = line.color;
+    this.elements.roadmapPgnInput.value = line.pgn;
+    this.elements.roadmapFenInput.value = "";
 
     // remove the existing line[] fields
-    var inps = Array.from(this.roadmapForm.form.getElementsByTagName("input"));
+    var inps = Array.from(this.elements.roadmapForm.getElementsByTagName("input"));
     for (var i = 0; i < inps.length; i++) {
       if (inps[i].name == "line[]") {
-        this.roadmapForm.form.removeChild(inps[i]);
+        this.elements.roadmapForm.removeChild(inps[i]);
       }
     }
 
@@ -166,12 +133,12 @@ class Roadmap {
       inp.name = "line[]";
       inp.value = line.line[i];
 
-      this.roadmapForm.form.appendChild(inp);
+      this.elements.roadmapForm.appendChild(inp);
     }
 
     // show the details
-    this.roadmapIntro.classList.add("is-hidden");
-    this.roadmapDetails.classList.remove("is-hidden");
+    this.elements.roadmapIntro.classList.add("is-hidden");
+    this.elements.roadmapDetails.classList.remove("is-hidden");
   }
 
   // get the roadmap
@@ -211,17 +178,14 @@ class Roadmap {
     this.loadRoadmapTree();
   }
 
-  //
+  // Load the roadmap tree
   loadRoadmapTree(tree = []) {
-    //
     var color = this.getCurrentColor();
-    //
-    var con = document.getElementById("roadmapTreeContainer");
 
-    // reset the tree
+    // Reset the tree
     this.tree = tree;
 
-    console.info("loadRoadmapTree:", color);
+    console.info("loadRoadmapTree:", color, this.elements);
 
     // get the data
     var data = this.roadmap[color];
@@ -230,21 +194,20 @@ class Roadmap {
     }
 
     // hide the missing moves
-    this.roadmapTreeMissingMoves.classList.add("is-hidden");
+    this.elements.roadmapTreeMissingMoves.classList.add("is-hidden");
 
     // load the tree current (ECO, PGN)
     this.loadTreeCurrent();
     // load the tree path
     this.loadTreePath();
     // load the tree
-    this.loadTree(data, con);
+    this.loadTree(data, this.elements.roadmapTreeContainer);
   }
 
-  //
   loadTreePath() {
     // clear the path container
-    while (this.roadmapTreePath.firstChild) {
-      this.roadmapTreePath.removeChild(this.roadmapTreePath.lastChild);
+    while (this.elements.roadmapTreePath.firstChild) {
+      this.elements.roadmapTreePath.removeChild(this.elements.roadmapTreePath.lastChild);
     }
 
     // get the data
@@ -253,45 +216,41 @@ class Roadmap {
 
     console.info("loadTreePath:", this.tree, this.tree.length);
 
-    //
     if (this.tree.length > 0) {
-      //
       var variation = this.createPathItem(null);
-      //
-      this.roadmapTreePath.appendChild(variation);
+      this.elements.roadmapTreePath.appendChild(variation);
     }
 
     // add the tree path
     for (var i = 0; i < this.tree.length; i++) {
-      //
+
       data = i == 0 ? data[this.tree[i]] : data.lines[this.tree[i]];
 
       console.info("treePath:", i, this.tree[i], data);
 
       var variation = this.createPathItem(data, i);
 
-      this.roadmapTreePath.appendChild(variation);
+      this.elements.roadmapTreePath.appendChild(variation);
     }
   }
 
-  //
   loadTreeCurrent() {
     console.info("loadTreeCurrent:", this.tree, this.tree.length);
 
     // if we have no tree
     if (this.tree.length == 0) {
       // hide the tree current
-      this.roadmapTreeCurrent.classList.add("is-hidden");
+      this.elements.roadmapTreeCurrent.classList.add("is-hidden");
       // show the intro text
-      this.roadmapIntroText.classList.remove("is-hidden");
+      this.elements.roadmapIntroText.classList.remove("is-hidden");
 
       return true;
     }
 
     // hide the intro text
-    this.roadmapIntroText.classList.add("is-hidden");
+    this.elements.roadmapIntroText.classList.add("is-hidden");
     // show the tree current
-    this.roadmapTreeCurrent.classList.remove("is-hidden");
+    this.elements.roadmapTreeCurrent.classList.remove("is-hidden");
 
     // get the color
     var color = this.getCurrentColor();
@@ -305,50 +264,26 @@ class Roadmap {
     console.info("data:", data);
 
     // show the current ECO and PGN
-    this.roadmapTreeCurrentField.innerHTML = data.eco
+    this.elements.roadmapTreeCurrentField.innerHTML = data.eco
       ? data.eco.name +
         ' (<span>' +
         data.pgn +
         "</span>)"
       : data.pgn;
-
-    return;
-
-    // clear the buttons
-    while (this.roadmapTreeCurrentButtons.firstChild) {
-      this.roadmapTreeCurrentButtons.removeChild(
-        roadmapTreeCurrentButtons.lastChild
-      );
-    }
-
-    // add the buttons
-    var sp = document.createElement("span");
-    sp.innerHTML = '<i class="fa-solid fa-chess-board"></i>';
-
-    sp.addEventListener("click", this.onOpenInRepertoire.bind(this, data));
-
-    this.roadmapTreeCurrentButtons.appendChild(sp);
-
-    sp = document.createElement("span");
-    sp.innerHTML = '<i class="fa-solid fa-gamepad"></i>';
-
-    sp.addEventListener("click", this.onOpenInPractice.bind(this, data));
-
-    this.roadmapTreeCurrentButtons.appendChild(sp);
   }
 
   // load the missing moves container and show it
   loadMissingMoves(missing, event) {
     console.info("loadMissingMoves", missing, event);
     console.info(
-      this.roadmapTreeMissingMoves,
-      this.roadmapTreeMissingMoves.firstElementChild
+      this.elements.roadmapTreeMissingMoves,
+      this.elements.roadmapTreeMissingMoves.firstElementChild
     );
 
     // clear current rows
-    while (this.roadmapTreeMissingMoves.firstElementChild.firstChild) {
-      this.roadmapTreeMissingMoves.firstElementChild.removeChild(
-        this.roadmapTreeMissingMoves.firstElementChild.lastChild
+    while (this.elements.roadmapTreeMissingMoves.firstElementChild.firstChild) {
+      this.elements.roadmapTreeMissingMoves.firstElementChild.removeChild(
+        this.elements.roadmapTreeMissingMoves.firstElementChild.lastChild
       );
     }
 
@@ -364,28 +299,25 @@ class Roadmap {
 
     div.appendChild(sp);
 
-    this.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
+    this.elements.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
 
     div = document.createElement("div");
-    div.className =
-      "rounded bg-tacao-100 dark:bg-slate-700 is-size-6 has-text-weight-medium tc-sharp p-2";
+    div.className = "is-size-6 has-text-weight-medium p-2";
     div.innerHTML = "ECO";
 
-    this.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
+    this.elements.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
 
     div = document.createElement("div");
-    div.className =
-      "rounded bg-tacao-100 dark:bg-slate-700 is-size-6 has-text-weight-medium tc-sharp p-2";
+    div.className = "is-size-6 has-text-weight-medium p-2";
     div.innerHTML = "PGN";
 
-    this.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
+    this.elements.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
 
     div = document.createElement("div");
-    div.className =
-      "rounded bg-tacao-100 dark:bg-slate-700 is-size-6 has-text-weight-medium text-center tc-sharp p-2";
+    div.className = "is-size-6 has-text-weight-medium has-text-centered p-2 pr-4";
     div.innerHTML = "Response";
 
-    this.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
+    this.elements.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
 
     // get the missing moves
     var moves = [];
@@ -413,11 +345,11 @@ class Roadmap {
     for (var i = 0; i < moves.length; i++) {
       //
       var row = document.createElement("div");
-      row.className = "grid-row-hover contents cursor-pointer";
+      row.className = "grid-row-hover is-contents cursor-pointer";
 
       // add the percentage played
       div = document.createElement("div");
-      div.className = "rounded is-size-6 text-center p-2";
+      div.className = "is-rounded is-size-6 has-text-centered p-2";
       div.innerHTML = moves[i].percentage + "%";
       div.addEventListener(
         "click",
@@ -425,11 +357,11 @@ class Roadmap {
       );
 
       row.appendChild(div);
-      //this.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
+      //this.elements.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
 
       // add the ECO
       div = document.createElement("div");
-      div.className = "rounded is-size-6 p-2";
+      div.className = "is-rounded is-size-6 p-2";
       div.innerHTML = moves[i].eco.name;
       div.addEventListener(
         "click",
@@ -437,11 +369,11 @@ class Roadmap {
       );
 
       row.appendChild(div);
-      //this.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
+      //this.elements.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
 
       // add the PGN
       div = document.createElement("div");
-      div.className = "rounded is-size-6 p-2";
+      div.className = "is-rounded is-size-6 p-2";
       div.innerHTML = moves[i].pgn;
       div.addEventListener(
         "click",
@@ -449,11 +381,11 @@ class Roadmap {
       );
 
       row.appendChild(div);
-      //this.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
+      //this.elements.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
 
       // add the move
       div = document.createElement("div");
-      div.className = "rounded is-size-6 text-center p-2";
+      div.className = "is-rounded is-size-6 text-center p-2";
       div.innerHTML = moves[i].move;
       div.addEventListener(
         "click",
@@ -461,13 +393,12 @@ class Roadmap {
       );
 
       row.appendChild(div);
-      //this.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
 
-      this.roadmapTreeMissingMoves.firstElementChild.appendChild(row);
+      this.elements.roadmapTreeMissingMoves.firstElementChild.appendChild(row);
     }
 
     // show the missing moves
-    this.roadmapTreeMissingMoves.classList.remove("is-hidden");
+    this.elements.roadmapTreeMissingMoves.classList.remove("is-hidden");
   }
 
   //
@@ -492,7 +423,7 @@ class Roadmap {
     var variation = document.createElement("div");
     variation.id = "roadmapTreeItem_" + (data !== null ? data.id : "root");
     variation.className =
-      "box p-1 m-0 is-relative is-flex is-flex-direction-column is-flex-shrink-0 is-flex-grow-0 is-justify-content-center gap-y-px rounded-lg overflow-hidden border border-tacao-200 dark:border-slate-600 shadow";
+      "box is-rounded is-hoverable p-1 m-0 is-relative is-flex is-flex-direction-column is-flex-shrink-0 is-flex-grow-0 is-justify-content-center gap-y-px";
     if (data !== null) {
       variation.setAttribute("data-id", data.id);
       variation.setAttribute("data-level", index);
@@ -500,7 +431,7 @@ class Roadmap {
     //
     var clickable = document.createElement("label");
     clickable.className =
-      "is-flex is-justify-content-space-between  is-align-items-center is-flex-grow-1 cursor-pointer tc-sharp hover:text-marigold-600 dark:hover:text-marigold-500 bg-tacao-50/50 dark:bg-slate-800 hover:bg-tacao-100 dark:hover:bg-slate-700";
+      "is-flex is-justify-content-space-between is-align-items-center is-flex-grow-1 cursor-pointer";
     //
     if (data !== null) {
       //
@@ -571,9 +502,9 @@ class Roadmap {
     ];
 
     // clear the tree container
-    while (this.roadmapTreeContainer.firstChild) {
-      this.roadmapTreeContainer.removeChild(
-        this.roadmapTreeContainer.lastChild
+    while (this.elements.roadmapTreeContainer.firstChild) {
+      this.elements.roadmapTreeContainer.removeChild(
+        this.elements.roadmapTreeContainer.lastChild
       );
     }
 
@@ -600,7 +531,7 @@ class Roadmap {
       var variation = document.createElement("div");
       variation.id = "roadmapTreeItem_" + data[i].id;
       variation.className =
-        "box roadmap-tree-item p-2 m-0 is-relative is-flex is-flex-direction-column is-flex-shrink-0 is-flex-grow-0 is-justify-content-center w-56 rounded-lg overflow-hidden border border-tacao-200 dark:border-slate-600 shadow";
+        "box is-hoverable roadmap-tree-item p-2 m-0 is-relative is-flex is-flex-direction-column is-flex-shrink-0 is-flex-grow-0 is-justify-content-center";
       variation.setAttribute("data-id", data[i].id);
       variation.setAttribute("data-level", level);
       //
@@ -892,17 +823,19 @@ class Roadmap {
 
   openIn(line, action = "./repertoire") {
     // updat the info in the form
-    this.roadmapForm.id.value = line.id;
-    this.roadmapForm.color.value = this.getCurrentColor();
-    this.roadmapForm.pgn.value = line.pgn;
-    this.roadmapForm.pgn.value = "";
-    this.roadmapForm.fen.value = "";
+    this.elements.roadmapIdInput.value = line.id;
+    this.elements.roadmapColorInput.value = this.getCurrentColor();
+    this.elements.roadmapPgnInput.value = line.pgn;
+    this.elements.roadmapPgnInput.value = "";
+    this.elements.roadmapFenInput.value = "";
+
+    console.log(this, this.elements, this.elements.roadmapForm);
 
     // remove the existing line[] fields
-    var inps = Array.from(this.roadmapForm.form.getElementsByTagName("input"));
+    var inps = Array.from(this.elements.roadmapForm.getElementsByTagName("input"));
     for (var i = 0; i < inps.length; i++) {
       if (inps[i].name == "line[]") {
-        this.roadmapForm.form.removeChild(inps[i]);
+        this.elements.roadmapForm.removeChild(inps[i]);
       }
     }
 
@@ -913,7 +846,7 @@ class Roadmap {
       inp.name = "line[]";
       inp.value = line.line[i];
 
-      this.roadmapForm.form.appendChild(inp);
+      this.elements.roadmapForm.appendChild(inp);
     }
 
     // submit the form
@@ -995,7 +928,7 @@ class Roadmap {
     this.loadTreeCurrent();
 
     // hide the missing moves
-    this.roadmapTreeMissingMoves.classList.add("is-hidden");
+    this.elements.roadmapTreeMissingMoves.classList.add("is-hidden");
 
     // get the color
     var color = this.getCurrentColor();
@@ -1018,178 +951,9 @@ class Roadmap {
     // load the children for this item
     this.loadTree(
       data,
-      this.roadmapTreeContainer,
+      this.elements.roadmapTreeContainer,
       index !== null ? level + 1 : 0
     );
-  }
-
-  //
-  loadRoadmap(roadmap, depth = 0, hidden = false) {
-    var colors = [
-      "text-white has-background-danger",
-      "text-white has-background-warning",
-      "text-white has-background-success",
-    ];
-
-    //
-    var div = document.createElement("div");
-    div.className = "is-flex items-start is-justify-content-center";
-    // do we need to hide it?
-    if (depth >= 3 && hidden == false && roadmap.length > 2) {
-      div.className += " is-hidden";
-
-      hidden = true;
-    }
-
-    //
-    for (var i = 0; i < roadmap.length; i++) {
-      //
-      var sp = document.createElement("div");
-      sp.className =
-        "is-flex is-flex-direction-column is-align-items-stretch" +
-        (depth > 0 && roadmap.length > 1 && i > 0 && i < roadmap.length - 1
-          ? " border-t border-gray-700 dark:border-gray-100"
-          : "");
-
-      //
-      var moveCon = document.createElement("div");
-      moveCon.className = "is-flex is-flex-direction-column is-justify-content-stretch is-align-items-flex-start";
-
-      //
-      if (depth > 0 && roadmap.length > 1 && i == 0) {
-        //
-        var topLine = document.createElement("div");
-        topLine.className =
-          "is-align-self-flex-end rounded-tl border-l border-t border-gray-700 dark:border-gray-100";
-        topLine.style = "width: 50%; height: 16px;";
-        //
-        moveCon.appendChild(topLine);
-      } else if (depth > 0 && roadmap.length > 1 && i == roadmap.length - 1) {
-        //
-        var topLine = document.createElement("div");
-        topLine.className =
-          "rounded-tr border-r border-t border-gray-700 dark:border-gray-100";
-        topLine.style = "width: 50%; height: 16px;";
-        //
-        moveCon.appendChild(topLine);
-      } else if (depth > 0 && roadmap.length > 1) {
-        //
-        var topLine = document.createElement("div");
-        topLine.className = "border-r border-gray-700 dark:border-gray-100";
-        topLine.style = "width: 50%; height: 15px;";
-        //
-        moveCon.appendChild(topLine);
-      }
-
-      // get the accuracy index for the colors
-      var accuracyIdx = Math.max(0, Math.ceil((1 - roadmap[i].fail) * 3) - 1);
-
-      var hdr = document.createElement("span");
-      hdr.className =
-        "is-align-self-center cursor-pointer is-size-6 py-1 px-2 mx-1 whitespace-nowrap rounded border border-gray-700 dark:border-gray-100 " +
-        colors[accuracyIdx];
-      hdr.title =
-        (roadmap[i].eco && roadmap[i].eco.name ? roadmap[i].eco.name : "") +
-        " (" +
-        Math.round((1 - roadmap[i].fail) * 100) +
-        "%)";
-      //
-      //hdr.innerHTML = roadmap[i].eco.name;
-      hdr.innerHTML =
-        roadmap[i].move && roadmap[i].move != ""
-          ? roadmap[i].move
-          : roadmap[i].line[roadmap[i].line.length - 1];
-      //
-      moveCon.appendChild(hdr);
-
-      hdr.addEventListener(
-        "click",
-        (function (_this, line) {
-          return function () {
-            _this.showRoadmapDetails(line);
-          };
-        })(this, roadmap[i])
-      );
-
-      // if this move has lines, add a vertical line in the middle (connector)
-      if (roadmap[i].lines.length > 0) {
-        //
-        var line = document.createElement("div");
-        line.style =
-          "width: 50%; height: " +
-          (roadmap[i].lines.length > 1 ? "8" : "15") +
-          "px;";
-        line.className = "border-r border-gray-700 dark:border-gray-100";
-
-        moveCon.appendChild(line);
-
-        //
-        if (roadmap[i].lines.length > 1) {
-          //
-          var invisible =
-            depth >= 2 && hidden == false && roadmap[i].lines.length > 2;
-          var icon = invisible
-            ? '<i class="fa-solid fa-eye"></i>'
-            : '<i class="fa-solid fa-eye-slash"></i>';
-          //
-          var toggle = document.createElement("span");
-          toggle.className =
-            "text-gray-600 dark:text-gray-200 cursor-pointer self-center w-5 h-5 ";
-          toggle.style = "margin-top: -4px; margin-bottom: -4px;";
-          toggle.title = invisible ? "Show this line" : "Hide this line";
-          toggle.innerHTML = icon;
-          toggle.setAttribute("data-visible", invisible ? "no" : "yes");
-
-          toggle.addEventListener(
-            "click",
-            ((toggle) => {
-              return function (event) {
-                // toggle the container for the child moves
-                if (toggle.getAttribute("data-visible") == "yes") {
-                  toggle.setAttribute("data-visible", "no");
-                  toggle.innerHTML = '<i class="fa-solid fa-eye"></i>'
-                  toggle.title = "Show this line";
-                  toggle.nextElementSibling.classList.add("is-hidden");
-                  toggle.parentNode.nextElementSibling.classList.add("is-hidden");
-                } else {
-                  toggle.setAttribute("data-visible", "yes");
-                  toggle.innerHTML = '<i class="fa-solid fa-eye-slash"></i>';
-                  toggle.title = "Hide this line";
-                  toggle.nextElementSibling.classList.remove("is-hidden");
-                  toggle.parentNode.nextElementSibling.classList.remove(
-                    "is-hidden"
-                  );
-                  // scroll into view
-                  toggle.parentNode.nextElementSibling.scrollIntoView();
-                }
-              };
-            })(toggle)
-          );
-          //
-          moveCon.appendChild(toggle);
-
-          //
-          line = document.createElement("div");
-          line.style = "width: 50%; height: 8px;";
-          line.className =
-            "border-r border-gray-700 dark:border-gray-100" +
-            (invisible ? " is-hidden" : "");
-
-          moveCon.appendChild(line);
-        }
-
-        sp.appendChild(moveCon);
-
-        var ftr = this.loadRoadmap(roadmap[i].lines, depth + 1, hidden);
-        sp.appendChild(ftr);
-      } else {
-        sp.appendChild(moveCon);
-      }
-
-      div.appendChild(sp);
-    }
-
-    return div;
   }
 }
 

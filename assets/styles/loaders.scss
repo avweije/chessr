@@ -1,0 +1,234 @@
+/* Page Loader */
+#pageLoader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* Dots rotating in a circle */
+.loader-dots-rotate-in-circle {
+  font-size: 10px;
+  width: 1em;
+  height: 1em;
+  border-radius: 50%;
+  position: relative;
+  text-indent: -9999em;
+  animation: mulShdSpin 1.1s infinite ease;
+  transform: translateZ(0);
+}
+@keyframes mulShdSpin {
+  0%,
+  100% {
+    box-shadow: 0em -2.6em 0em 0em #ffffff, 1.8em -1.8em 0 0em rgba(255,255,255, 0.2), 2.5em 0em 0 0em rgba(255,255,255, 0.2), 1.75em 1.75em 0 0em rgba(255,255,255, 0.2), 0em 2.5em 0 0em rgba(255,255,255, 0.2), -1.8em 1.8em 0 0em rgba(255,255,255, 0.2), -2.6em 0em 0 0em rgba(255,255,255, 0.5), -1.8em -1.8em 0 0em rgba(255,255,255, 0.7);
+  }
+  12.5% {
+    box-shadow: 0em -2.6em 0em 0em rgba(255,255,255, 0.7), 1.8em -1.8em 0 0em #ffffff, 2.5em 0em 0 0em rgba(255,255,255, 0.2), 1.75em 1.75em 0 0em rgba(255,255,255, 0.2), 0em 2.5em 0 0em rgba(255,255,255, 0.2), -1.8em 1.8em 0 0em rgba(255,255,255, 0.2), -2.6em 0em 0 0em rgba(255,255,255, 0.2), -1.8em -1.8em 0 0em rgba(255,255,255, 0.5);
+  }
+  25% {
+    box-shadow: 0em -2.6em 0em 0em rgba(255,255,255, 0.5), 1.8em -1.8em 0 0em rgba(255,255,255, 0.7), 2.5em 0em 0 0em #ffffff, 1.75em 1.75em 0 0em rgba(255,255,255, 0.2), 0em 2.5em 0 0em rgba(255,255,255, 0.2), -1.8em 1.8em 0 0em rgba(255,255,255, 0.2), -2.6em 0em 0 0em rgba(255,255,255, 0.2), -1.8em -1.8em 0 0em rgba(255,255,255, 0.2);
+  }
+  37.5% {
+    box-shadow: 0em -2.6em 0em 0em rgba(255,255,255, 0.2), 1.8em -1.8em 0 0em rgba(255,255,255, 0.5), 2.5em 0em 0 0em rgba(255,255,255, 0.7), 1.75em 1.75em 0 0em #ffffff, 0em 2.5em 0 0em rgba(255,255,255, 0.2), -1.8em 1.8em 0 0em rgba(255,255,255, 0.2), -2.6em 0em 0 0em rgba(255,255,255, 0.2), -1.8em -1.8em 0 0em rgba(255,255,255, 0.2);
+  }
+  50% {
+    box-shadow: 0em -2.6em 0em 0em rgba(255,255,255, 0.2), 1.8em -1.8em 0 0em rgba(255,255,255, 0.2), 2.5em 0em 0 0em rgba(255,255,255, 0.5), 1.75em 1.75em 0 0em rgba(255,255,255, 0.7), 0em 2.5em 0 0em #ffffff, -1.8em 1.8em 0 0em rgba(255,255,255, 0.2), -2.6em 0em 0 0em rgba(255,255,255, 0.2), -1.8em -1.8em 0 0em rgba(255,255,255, 0.2);
+  }
+  62.5% {
+    box-shadow: 0em -2.6em 0em 0em rgba(255,255,255, 0.2), 1.8em -1.8em 0 0em rgba(255,255,255, 0.2), 2.5em 0em 0 0em rgba(255,255,255, 0.2), 1.75em 1.75em 0 0em rgba(255,255,255, 0.5), 0em 2.5em 0 0em rgba(255,255,255, 0.7), -1.8em 1.8em 0 0em #ffffff, -2.6em 0em 0 0em rgba(255,255,255, 0.2), -1.8em -1.8em 0 0em rgba(255,255,255, 0.2);
+  }
+  75% {
+    box-shadow: 0em -2.6em 0em 0em rgba(255,255,255, 0.2), 1.8em -1.8em 0 0em rgba(255,255,255, 0.2), 2.5em 0em 0 0em rgba(255,255,255, 0.2), 1.75em 1.75em 0 0em rgba(255,255,255, 0.2), 0em 2.5em 0 0em rgba(255,255,255, 0.5), -1.8em 1.8em 0 0em rgba(255,255,255, 0.7), -2.6em 0em 0 0em #ffffff, -1.8em -1.8em 0 0em rgba(255,255,255, 0.2);
+  }
+  87.5% {
+    box-shadow: 0em -2.6em 0em 0em rgba(255,255,255, 0.2), 1.8em -1.8em 0 0em rgba(255,255,255, 0.2), 2.5em 0em 0 0em rgba(255,255,255, 0.2), 1.75em 1.75em 0 0em rgba(255,255,255, 0.2), 0em 2.5em 0 0em rgba(255,255,255, 0.2), -1.8em 1.8em 0 0em rgba(255,255,255, 0.5), -2.6em 0em 0 0em rgba(255,255,255, 0.7), -1.8em -1.8em 0 0em #ffffff;
+  }
+}
+
+
+/* Bars in a circle */
+.loader-bars-in-circle {
+  /* change color here */
+  color: #1c4c5b
+}
+.loader-bars-in-circle,
+.loader-bars-in-circle div,
+.loader-bars-in-circle div:after {
+  box-sizing: border-box;
+}
+.loader-bars-in-circle {
+  color: currentColor;
+  display: inline-block;
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+.loader-bars-in-circle div {
+  transform-origin: 40px 40px;
+  animation: loader-bars-in-circle 1.2s linear infinite;
+}
+.loader-bars-in-circle div:after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 3.2px;
+  left: 36.8px;
+  width: 6.4px;
+  height: 17.6px;
+  border-radius: 20%;
+  background: currentColor;
+}
+.loader-bars-in-circle div:nth-child(1) {
+  transform: rotate(0deg);
+  animation-delay: -1.1s;
+}
+.loader-bars-in-circle div:nth-child(2) {
+  transform: rotate(30deg);
+  animation-delay: -1s;
+}
+.loader-bars-in-circle div:nth-child(3) {
+  transform: rotate(60deg);
+  animation-delay: -0.9s;
+}
+.loader-bars-in-circle div:nth-child(4) {
+  transform: rotate(90deg);
+  animation-delay: -0.8s;
+}
+.loader-bars-in-circle div:nth-child(5) {
+  transform: rotate(120deg);
+  animation-delay: -0.7s;
+}
+.loader-bars-in-circle div:nth-child(6) {
+  transform: rotate(150deg);
+  animation-delay: -0.6s;
+}
+.loader-bars-in-circle div:nth-child(7) {
+  transform: rotate(180deg);
+  animation-delay: -0.5s;
+}
+.loader-bars-in-circle div:nth-child(8) {
+  transform: rotate(210deg);
+  animation-delay: -0.4s;
+}
+.loader-bars-in-circle div:nth-child(9) {
+  transform: rotate(240deg);
+  animation-delay: -0.3s;
+}
+.loader-bars-in-circle div:nth-child(10) {
+  transform: rotate(270deg);
+  animation-delay: -0.2s;
+}
+.loader-bars-in-circle div:nth-child(11) {
+  transform: rotate(300deg);
+  animation-delay: -0.1s;
+}
+.loader-bars-in-circle div:nth-child(12) {
+  transform: rotate(330deg);
+  animation-delay: 0s;
+}
+@keyframes loader-bars-in-circle {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+
+/* Pulsing dots in circle */
+.loader-dots-pulse-in-circle {
+  /* change color here */
+  color: var(--color-link);
+}
+.loader-dots-pulse-in-circle,
+.loader-dots-pulse-in-circle div {
+  box-sizing: border-box;
+}
+.loader-dots-pulse-in-circle {
+  display: inline-block;
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+.loader-dots-pulse-in-circle div {
+  position: absolute;
+  width: 8.4px; // 6.4px;
+  height: 8.4px; // 6.4px;
+  background: currentColor;
+  border-radius: 50%;
+  animation: loader-dots-pulse-in-circle 1.2s linear infinite;
+}
+.loader-dots-pulse-in-circle div:nth-child(1) {
+  animation-delay: 0s;
+  top: 36.8px;
+  left: 66.24px;
+}
+.loader-dots-pulse-in-circle div:nth-child(2) {
+  animation-delay: -0.1s;
+  top: 22.08px;
+  left: 62.29579px;
+}
+.loader-dots-pulse-in-circle div:nth-child(3) {
+  animation-delay: -0.2s;
+  top: 11.30421px;
+  left: 51.52px;
+}
+.loader-dots-pulse-in-circle div:nth-child(4) {
+  animation-delay: -0.3s;
+  top: 7.36px;
+  left: 36.8px;
+}
+.loader-dots-pulse-in-circle div:nth-child(5) {
+  animation-delay: -0.4s;
+  top: 11.30421px;
+  left: 22.08px;
+}
+.loader-dots-pulse-in-circle div:nth-child(6) {
+  animation-delay: -0.5s;
+  top: 22.08px;
+  left: 11.30421px;
+}
+.loader-dots-pulse-in-circle div:nth-child(7) {
+  animation-delay: -0.6s;
+  top: 36.8px;
+  left: 7.36px;
+}
+.loader-dots-pulse-in-circle div:nth-child(8) {
+  animation-delay: -0.7s;
+  top: 51.52px;
+  left: 11.30421px;
+}
+.loader-dots-pulse-in-circle div:nth-child(9) {
+  animation-delay: -0.8s;
+  top: 62.29579px;
+  left: 22.08px;
+}
+.loader-dots-pulse-in-circle div:nth-child(10) {
+  animation-delay: -0.9s;
+  top: 66.24px;
+  left: 36.8px;
+}
+.loader-dots-pulse-in-circle div:nth-child(11) {
+  animation-delay: -1s;
+  top: 62.29579px;
+  left: 51.52px;
+}
+.loader-dots-pulse-in-circle div:nth-child(12) {
+  animation-delay: -1.1s;
+  top: 51.52px;
+  left: 62.29579px;
+}
+@keyframes loader-dots-pulse-in-circle {
+  0%, 20%, 80%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.5);
+  }
+}

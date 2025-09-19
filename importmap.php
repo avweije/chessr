@@ -20,8 +20,16 @@ return [
         'path' => './assets/js/utils.js',
         'entrypoint' => true,
     ],
+    'logger' => [
+        'path' => './assets/js/logger.js',
+        'entrypoint' => true,
+    ],
     'uci' => [
         'path' => './assets/js/uci.js',
+        'entrypoint' => true,
+    ],
+    'EngineHelper' => [
+        'path' => './assets/js/engine-helper.js',
         'entrypoint' => true,
     ],
     'chess' => [

@@ -2,76 +2,73 @@
 
 {% block body %}
 	{% if app.user %}
-		<div id="boxedCardContainer" class="mt-lg w-full is-flex is-flex-wrap-wrap is-justify-content-center is-gap-2">
+		<div id="boxedCardContainer" data-element="yes" class="mt-lg w-full is-flex is-flex-wrap-wrap is-justify-content-center is-gap-2">
 			<div class="boxed-card-grid is-gap-2">
 				{# if template.hasGames() #}
-				<div class="box boxed-card">
+				<div id="boxedCardRepertoire" data-element="yes" class="box boxed-card">
 					<h2 class="title is-5 mb-0 p-1">Your repertoire</h2>
-					<p class="p-1 mt-3">Keep building your repertoire or review your lines.</p>
+					<p class="p-1 mt-3">Build your opening repertoire, review your lines.</p>
 					<div class="is-flex is-flex-direction-column is-flex-grow-1 is-justify-content-center is-align-items-flex-start is-gap-half p-2">
 						<div class="skeleton-container is-flex is-gap-1">
 							<div class="skeleton-block skeleton-full"></div>
-							<p id="statsWhiteField" class="has-text-weight-semibold has-text-faded">White:</p>
+							<p id="statsWhiteField" data-element="yes" class="has-text-weight-semibold has-text-faded">White:</p>
 							<span class="has-text-weight-semibold">99</span>
 						</div>
 						<div class="skeleton-container is-flex is-gap-1">
 							<div class="skeleton-block skeleton-full"></div>
-							<p id="statsBlackField" class="has-text-weight-semibold has-text-faded">Black:</p>
+							<p id="statsBlackField" data-element="yes" class="has-text-weight-semibold has-text-faded">Black:</p>
 							<span class="has-text-weight-semibold">99</span>
 						</div>
 					</div>
 				</div>
 
-				<div class="box boxed-card">
+				<div id="boxedCardPractice" data-element="yes" class="box boxed-card">
 					<h2 class="title is-5 mb-0 p-1">Practice</h2>
-					<p class="p-1 mt-3">Practice your repertoire and review your analysis.</p>
+					<p class="p-1 mt-3">Use your repertoire and analysis to practice moves and to keep improving.</p>
 					<div class="is-flex is-flex-direction-column is-flex-grow-1 is-justify-content-center is-align-items-flex-start is-gap-half p-2">
 						<div class="skeleton-container is-flex is-gap-1">
 							<div class="skeleton-block skeleton-full"></div>
-							<p id="statsNewField" class="has-text-weight-semibold has-text-faded">New:</p>
+							<p id="statsNewField" data-element="yes" class="has-text-weight-semibold has-text-faded">New:</p>
 							<span class="has-text-weight-semibold">99</span>
 						</div>
 						<div class="skeleton-container is-flex is-gap-1">
 							<div class="skeleton-block skeleton-full"></div>
-							<p id="statsRecommendedField" class="has-text-weight-semibold has-text-faded">Recommended:</p>
+							<p id="statsRecommendedField" data-element="yes" class="has-text-weight-semibold has-text-faded">Recommended:</p>
 							<span class="has-text-weight-semibold">99</span>
 						</div>
 					</div>
 				</div>
 
-				<div class="box boxed-card">
+				<div id="boxedCardAnalysis" data-element="yes" class="box boxed-card">
 					<h2 class="title is-5 mb-0 p-1">Analysis</h2>
 					<p class="p-1 mt-3">Analyse your games from
-						<span class="has-text-weight-semibold has-text-faded">chess.com</span>
+						<a href="https://www.chess.com" target="blank">chess.com</a>
 						and
-						<span class="has-text-weight-semibold has-text-faded">Lichess</span>
-						for opening mistakes. You can then practice these moves and add them to your repertoire if you want.
+						<a href="https://www.lichess.org" target="blank">Lichess</a>
+						for opening mistakes. You can then practice these moves and add them to your repertoire.
 					</p>
 					<div class="is-flex is-flex-direction-column is-flex-grow-1 is-justify-content-center is-align-items-flex-start is-gap-half p-2">
 						<div class="skeleton-container is-flex is-gap-1">
 							<div class="skeleton-block skeleton-full"></div>
-							<p id="statsAnalysisField" class="has-text-weight-semibold has-text-faded">Analysis:</p>
+							<p id="statsAnalysisField" data-element="yes" class="has-text-weight-semibold has-text-faded">Analysis:</p>
 							<span class="has-text-weight-semibold">99 lines</span>
 						</div>
 					</div>
 				</div>
 
-				<div class="box boxed-card">
+				<div id="boxedCardRoadmap" data-element="yes" class="box boxed-card">
 					<h2 class="title is-5 mb-0 p-1">The Roadmap</h2>
-					<p class="p-1 mt-3">Use the roadmap to get an overview of your opening repertoire and see your accuracy for each line and variation.</p>
-					<span class="boxed-card-arrow">
-						<i class="fa-solid fa-arrow-right-to-bracket"></i>
-					</span>
+					<p class="p-1 mt-3">Use the roadmap to get an overview of your repertoire and see the accuracy for each line and variation.</p>
 				</div>
 
-				<div class="box boxed-card">
+				<div id="boxedCardOpponents" data-element="yes" class="box boxed-card">
 					<h2 class="title is-5 mb-0 p-1">Opponents</h2>
-					<p class="p-1 mt-3">Download your opponent's games and analyse them against your opening repertoire. Find their most played moves and see their win percentages for different moves.</p>
+					<p class="p-1 mt-3">Download games from other players to see what they play against your repertoire. See their most played moves and win percentages.</p>
 				</div>
 
-				<div class="box boxed-card">
+				<div id="boxedCardSettings" data-element="yes" class="box boxed-card">
 					<h2 class="title is-5 mb-0 p-1">Settings</h2>
-					<p class="p-1 mt-3">Change the settings for the chess board, the piece animations and for analysing your games.</p>
+					<p class="p-1 mt-3">Change the settings for the chess board, the engine and your practice runs.</p>
 				</div>
 			</div>
 		</div>

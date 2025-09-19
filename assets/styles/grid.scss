@@ -7,3 +7,8 @@
     display: grid;
     grid-template-columns: 1fr auto auto 1fr;
 }
+
+.grid-4auto {
+    display: grid;
+    grid-template-columns: repeat(4, auto);
+}

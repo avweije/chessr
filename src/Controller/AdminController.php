@@ -6,11 +6,16 @@ use App\Entity\Evaluation;
 use App\Entity\Fen;
 use App\Entity\ImportLog;
 use App\Library\ChessJs;
+use App\Library\FastChessJs;
+use App\Library\FastSanParser;
+use App\Library\FastFen\FEN as FastFen;
 use App\Service\ChessHelper;
 use App\Service\MyPgnParser\MyPgnParser;
+use App\Library\Timer;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
+use Exception;
 use Onspli\Chess\FEN as ChessFEN;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -57,10 +62,12 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class AdminController extends AbstractController
 {
+    private $doctrine;
     private $em;
     private $conn;
     private $myPgnParser;
     private $chessHelper;
+    private $timer;
 
     private array $fenDict = [];
     private int $nextFenId = 1;
@@ -70,12 +77,15 @@ class AdminController extends AbstractController
         EntityManagerInterface $em,
         MyPgnParser $myPgnParser,
         ManagerRegistry $doctrine,
-        ChessHelper $chessHelper
+        ChessHelper $chessHelper,
+        Timer $timer
     ) {
+        $this->doctrine = $doctrine;
         $this->em = $em;
         $this->myPgnParser = $myPgnParser;
         $this->conn = $conn;
         $this->chessHelper = $chessHelper;
+        $this->timer = $timer;
     }
 
     #[Route('/admin', name: 'admin')]
@@ -104,6 +114,9 @@ class AdminController extends AbstractController
 
     private function importEvaluations($maxLines, $batchSize): JsonResponse
     {
+        // start the timer
+        $this->timer->startProcess();
+
         $time = time();
 
         $processed = 0;
@@ -111,20 +124,39 @@ class AdminController extends AbstractController
         $lastFidx = 0;
         $lastPct = 0;
 
+        $totProcessed = 0;
+        $totSkipped = 0;
+        //$commitTotal = 0;
+        $commitTotal = [];
+
         for ($i = 0; $i < 1; $i++) {
-            [$lines, $bytes, $lastFidx, $lastPct] = $this->parseEvals($maxLines, $batchSize);
+            [$lines, $bytes, $lastFidx, $lastPct, $commitCount, $totalProcessed, $totalSkipped] = 
+                $this->parseEvals($maxLines, $batchSize);
 
             $processed += $lines;
+            
+            //$commitTotal += $commitCount;
+            $commitTotal = [...$commitTotal, ...$commitCount];
+
+            $totProcessed += $totalProcessed;
+            $totSkipped += $totalSkipped;
         }
 
         $seconds = time() - $time;
 
         $duration = $this->getDuration($seconds);
 
+        // end the timer
+        $this->timer->endProcess();
+
         return new JsonResponse([
             "processed" => $processed,
             "percentageComplete" => $lastPct,
-            "fileIndex" => $lastFidx
+            "fileIndex" => $lastFidx,
+            "commitCount" => $commitTotal,
+            "totProcessed" => $totProcessed,
+            "totSkipped" => $totSkipped,
+            "timer" => $this->timer->getReport()
         ]);
     }
 
@@ -195,25 +227,35 @@ class AdminController extends AbstractController
     //
     private function parseEvals($maxLines = 5000, $batchSize = 1000)
     {
-        $file = './lichess_db_eval-1.jsonl';
+        // Get the current file index and bytes where we last left off
+        [$fidx, $bytes] = $this->getCurrentEvaluationsFile();
+
+        // Get the filename
+        $filePath = './lichess_db_eval-' . $fidx . '.jsonl';
+
+        // Make sure the file exists
+        if (!file_exists($filePath)) {
+            throw new Exception(`Evaluations file does not exist: {$filePath}`);
+        }
 
         $processed = 0;
-        $lastBytes = 0;
+        $commitCount = [];
+
+        $lastFidx = $fidx;
+        $lastBytes = $bytes;
         $lastPct = 0;
-        $lastFidx = 0;
-
-        $this->conn->setAutoCommit(false);
-        $this->conn->beginTransaction();
-
-        $sql = 'INSERT INTO evaluations.evaluation 
-        (fen_id, uci, san, cp, mate, rank, line, depth, knodes, fidx, bytes)
-        VALUES (:fen_id, :uci, :san, :cp, :mate, :rank, :line, :depth, :knodes, :fidx, :bytes)';
-        $stmtInsert = $this->conn->prepare($sql);
 
         // Create once, pass in function call
         $chess = new ChessJs();
 
-        foreach ($this->parseEvalsJson($file, $maxLines) as [$fidx, $line, $bytes, $fsize]) {
+        // arrays to keep FENs and moves until batch flush
+        $fensToFlush = [];       // array of FEN strings
+        $batchMoves = [];        // array of moves per FEN index
+
+        $totalProcessed = 0;
+        $totalSkipped = 0;
+
+        foreach ($this->parseEvalsJson($filePath, $lastBytes, $maxLines) as [$line, $bytes, $fsize]) {
             set_time_limit(300);
 
             $lastBytes = $bytes;
@@ -227,20 +269,73 @@ class AdminController extends AbstractController
                 continue;
             }
 
+            // start the sub timer
+            $this->timer->startSub('normalizeForEvaluation');
+
             // Normalize FEN for evaluation
             $fenString = $this->chessHelper->normalizeFenForEvaluation($json["fen"]);
 
-            // Get or create Fen ID
-            $fenRepo = $this->em->getRepository(Fen::class);
+            // end the sub timer
+            $this->timer->stopSub('normalizeForEvaluation');
 
-            $fenEntity = $fenRepo->findOneBy(['fen' => $fenString]);
-            if (!$fenEntity) {
+
+            /*
+
+            As for FEN.. it shouldnt exist, skip the check part and just insert.
+            If we do get a unique key error, we can either skip it or get the FEN
+            record and use that. Again, it shouldnt exist. If it does we actually
+            need to check which evals are in there and if the new (current ones read)
+            are actually better.. Catch error for now and throw to stop ..
+            Can check when it happens what do do.
+
+            try {
                 $fenEntity = new Fen();
                 $fenEntity->setFen($fenString);
                 $this->em->persist($fenEntity);
                 $this->em->flush();
+            } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $e) {
+                // skip, already exists
             }
+
+            */
+
+
+            //$fenEntity = $fenRepo->findOneBy(['fen' => $fenString]);
+            //if (!$fenEntity) {
+
+            /*
+            try {
+                $fenEntity = new Fen();
+                $fenEntity->setFen($fenString);
+                $this->em->persist($fenEntity);
+                $this->em->flush();
+            } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $e) {
+                // Just throw for now, I want to see when it happens..
+                throw $e;
+            }
+            //}
             $fenId = $fenEntity->getId();
+            */
+
+            /*
+
+            // Only create new entity if not already in this batch
+            if (!isset($fenEntitiesByString[$fenString])) {
+                $fenEntity = new Fen();
+                $fenEntity->setFen($fenString);
+                $this->em->persist($fenEntity);
+
+                $newFens[] = $fenEntity;
+                $fenEntitiesByString[$fenString] = $fenEntity;
+            }
+
+            // We'll flush all new FENs later, before inserting moves
+            */
+
+            // Store FEN in array and get its index
+            $currentFenIdx = count($fensToFlush);
+            $fensToFlush[] = $fenString;
+
 
             // Determine top moves (1-5) from deepest PVs
             $evalsArray = $json["evals"] ?? [];
@@ -248,9 +343,18 @@ class AdminController extends AbstractController
                 continue;
             }
 
+            // start the sub timer
+            $this->timer->startSub('Sort Evals');
+
             usort($evalsArray, fn($a, $b) => $b['depth'] <=> $a['depth']);
             $movesToInsert = [];
             $uciAlready = [];
+
+            // end the sub timer
+            $this->timer->startSub('Sort Evals');
+
+            // start the sub timer
+            $this->timer->startSub('Filter Evals');
 
             // Top depth first
             $topEval = $evalsArray[0];
@@ -260,6 +364,10 @@ class AdminController extends AbstractController
                     // merge depth and knodes into pv array
                     $pv['depth'] = $topEval['depth'] ?? null;
                     $pv['knodes'] = $topEval['knodes'] ?? null;
+
+                    // Add the fidx and bytes
+                    $pv['fidx'] = $lastFidx;
+                    $pv['bytes'] = $lastBytes;
 
                     $movesToInsert[] = $pv;
                     $uciAlready[] = $uci;
@@ -276,12 +384,58 @@ class AdminController extends AbstractController
                         $pv['depth'] = $evalsArray[1]['depth'] ?? null;
                         $pv['knodes'] = $evalsArray[1]['knodes'] ?? null;
 
+                        // Add the fidx and bytes
+                        $pv['fidx'] = $lastFidx;
+                        $pv['bytes'] = $lastBytes;
+
                         $movesToInsert[] = $pv;
                         $uciAlready[] = $uci;
                     }
                     if (count($movesToInsert) >= 5) break;
                 }
             }
+
+            // end the sub timer
+            $this->timer->stopSub('Filter Evals');
+
+            
+            // Store moves keyed by FEN index
+            $batchMoves[$currentFenIdx] = $movesToInsert;
+            $processed++;
+
+            if ($processed % $batchSize == 0) {
+
+                //dd($processed, $batchSize, $fensToFlush, $batchMoves);
+                //
+                [$batchProcessed,$batchSkipped] = $this->processEvalsBatch($fensToFlush, $batchMoves, $chess, $processed);
+
+                //$this->conn->commit();
+                //$this->conn->beginTransaction();
+
+                //$commitCount++;
+                $commitCount[] = [
+                    "processed" => $processed,
+                    "fidx" => $fidx,
+                    "bytes" => $bytes,
+                    "batchProcessed" => $batchProcessed,
+                    "batchSkipped" => $batchSkipped
+                ];
+
+                $totalProcessed += $batchProcessed;
+                $totalSkipped += $batchSkipped;
+
+                // Reset batch arrays
+                $fensToFlush = [];
+                $batchMoves = [];
+            }
+
+            // testing new setup, FEN in batches
+            continue;
+
+
+
+            // start the sub timer
+            $this->timer->startSub('Add Evals Loop');
 
             // Insert each move
             $rank = 1;
@@ -309,8 +463,14 @@ class AdminController extends AbstractController
                     }
                 }
 
+                // start the sub timer
+                $this->timer->startSub('GetFirstSanMove');
+
                 // Get the SAN notation
                 $san = $this->chessHelper->getFirstSanMoveFromLine($chess, $json["fen"], $pv['line']);
+
+                // end the sub timer
+                $this->timer->stopSub('GetFirstSanMove');
 
                 //
                 // Appearantly there are some chess960 evaluations in here..
@@ -351,16 +511,272 @@ class AdminController extends AbstractController
                 $this->conn->commit();
                 $this->conn->beginTransaction();
             }
+
+            // end the sub timer
+            $this->timer->stopSub('Add Evals Loop');
+}
+
+        if ($processed > 0) {
+            //
+            [$batchProcessed, $batchSkipped] = $this->processEvalsBatch($fensToFlush, $batchMoves, $chess, $processed);
+
+            //$this->conn->commit();
+
+            $totalProcessed += $batchProcessed;
+            $totalSkipped += $batchSkipped;
+            
+            //$commitCount++;
+            $commitCount[] = [
+                "processed" => $processed,
+                "fidx" => $fidx,
+                "bytes" => $bytes,
+                "batchProcessed" => $batchProcessed,
+                "batchSkipped" => $batchSkipped
+                ];
         }
 
-        $this->conn->commit();
+        //$commitCount++;
+        //$this->conn->commit();
 
-        return [$processed, $lastBytes, $lastFidx, $lastPct];
+        return [$processed, $lastBytes, $lastFidx, $lastPct, $commitCount, $totalProcessed, $totalSkipped];
     }
 
-    public function parseEvalsJson($filePath, $maxLines = 5000)
+    private function processEvalsBatch($fensToFlush, $batchMoves, $chess, $processed) 
     {
+        $fenEntities = [];
+        $fenIds = [];
+        $processed = 0;
+        $skipped = 0;
+        $uniqueErrors = 0;
 
+        // start the sub timer
+        $this->timer->startSub('InsertFens');
+
+        // Process the FEN strings
+        foreach ($fensToFlush as $fenString) {
+            try {
+
+
+                $sql = "INSERT INTO fen (fen)
+                    VALUES (:fen)
+                    ON CONFLICT (fen) DO NOTHING
+                    RETURNING id";
+
+                $stmt = $this->conn->prepare($sql);
+                $stmt->bindValue('fen', $fenString);
+                $result = $stmt->executeQuery();
+                $fenId = $result->fetchOne(); // ID of inserted or existing row
+
+                // If null, the FEN string already existed
+                // We need to check if there are evaluations for this position or not
+                if ($fenId == null) {
+                    // Get the FEN string ID
+                    $sql = "SELECT id FROM fen WHERE fen = :fen";
+
+                    $stmt = $this->conn->prepare($sql);
+                    $stmt->bindValue('fen', $fenString);
+                    $result = $stmt->executeQuery();
+
+                    $existingId = $result->fetchOne();
+
+                    // Find evaluations for this FEN string
+                    $sql = "SELECT 1 FROM evaluations.evaluation WHERE fen_id = :fen_id LIMIT 1";
+
+                    $stmt = $this->conn->prepare($sql);
+                    $stmt->bindValue('fen_id', $existingId);
+                    $exists = $stmt->executeQuery()->fetchOne();
+
+                    if (!$exists) {
+                        $fenId = $existingId;
+                    }
+                }
+
+                $fenIds[] = $fenId;
+
+                //dd($fenId, $fenString);
+
+                /*
+                // Create the entity
+                $fenEntity = new Fen();
+                $fenEntity->setFen($fenString);
+                $this->em->persist($fenEntity);
+                // Flush to get the IDs
+                $this->em->flush();                
+                // Keep reference for the evals
+                $fenEntities[] = $fenEntity;
+                */
+            } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $e) {
+                //dd($processed, $fenString, $e->getMessage());
+                // Just throw for now, I want to see when it happens..
+                //throw $e;
+                $uniqueErrors++;
+                //dd("test");
+                // Reset the EM safely
+                //$this->em->getConnection()->rollBack(); // rollback failed transaction
+                $this->em->close();                     // close the broken EM
+                $this->em = $this->doctrine->resetManager(); // get a fresh, usable EM
+                continue;
+            } catch (\Doctrine\DBAL\Exception\ConnectionException $e) {
+                dd($uniqueErrors, $e);
+            }
+        }
+
+        //return [count($fensToFlush),$uniqueErrors];
+
+        // stop the sub timer
+        $this->timer->stopSub('InsertFens');
+
+        // start the sub timer
+        $this->timer->startSub('InsertEvals');
+
+        //$this->conn->setAutoCommit(false);
+        $this->conn->beginTransaction();
+
+        $rolledBack = false;
+
+        try {
+
+        // Prepare the insert statement
+        $sql = 'INSERT INTO evaluations.evaluation 
+        (fen_id, uci, san, cp, mate, rank, line, depth, knodes, fidx, bytes)
+        VALUES (:fen_id, :uci, :san, :cp, :mate, :rank, :line, :depth, :knodes, :fidx, :bytes)';
+        $stmtInsert = $this->conn->prepare($sql);
+
+        // Loop through batchMoves
+        foreach ($batchMoves as $key => $movesToInsert) {
+
+            // Get the FEN id
+            
+            //$fenId = $fenEntities[$key]->getId();
+            $fenId = $fenIds[$key];
+
+            if ($fenId == null) {
+                $skipped++;
+                continue;
+            }
+
+            $fenString = $fensToFlush[$key];
+
+            //dd($fenId, $key, $movesToInsert, $json);
+
+            // Insert each move
+            $rank = 1;
+            foreach ($movesToInsert as $pv) {
+
+                try {
+
+                $moves = explode(" ", $pv['line']);
+
+                $uci = count($moves) > 0 ? $moves[0] : '';
+                $san = ''; // convert to SAN if needed
+                $scoreCp = $pv['cp'] ?? null;
+                $scoreMate = $pv['mate'] ?? null;
+                $line = $pv['line'] ?? '';
+                $depth = $pv['depth'] ?? null;
+                $knodes = $pv['knodes'] ?? null;
+
+                $fidx = $pv['fidx'] ?? null;
+                $bytes = $pv['bytes'] ?? null;
+
+                // We need to make sure line isn't longer than 255 chars
+                if (strlen($line) > 255) {
+                    // cut at the last space before the limit
+                    $truncated = substr($line, 0, 255);
+                    $lastSpace = strrpos($truncated, ' ');
+                    if ($lastSpace !== false) {
+                        $line = substr($truncated, 0, $lastSpace);
+                    } else {
+                        // fallback if no space found: just take the substring
+                        $line = $truncated;
+                    }
+                }
+
+                // start the sub timer
+                //$this->timer->startSub('GetFirstSanMove');
+
+                // Get the SAN notation
+                //$san = $this->chessHelper->getFirstSanMoveFromLine($chess, $fenString, $pv['line']);
+
+                // end the sub timer
+                //$this->timer->stopSub('GetFirstSanMove');
+
+                //
+                // Appearantly there are some chess960 evaluations in here..
+                // If $san == null, we have an invalid move because of castling not possible..
+                //
+                //if ($uci == '' || $san == null || count($moves) == 0) {
+                if ($uci == '' || count($moves) == 0) {
+                    $skipped++;
+                    continue;
+                }
+
+                // start the sub timer
+                $this->timer->startSub('isLikelyStandard');
+
+                // Attempt to filter out other variants
+                if (!$this->chessHelper->isLikelyStandardChessFEN($fenString)) {
+
+                    //dd("Not a standard chess game.", $json);
+        
+                    // stop the sub timer
+                    $this->timer->stopSub('isLikelyStandard');
+
+                    $skipped++;
+
+                    continue;
+                }
+
+                // stop the sub timer
+                $this->timer->stopSub('isLikelyStandard');
+
+                //dd($uci,$san,$scoreCp,$scoreMate,$rank,$depth,$knodes,$fidx,$bytes);
+
+                $stmtInsert->bindValue('fen_id', $fenId);
+                $stmtInsert->bindValue('uci', $uci);
+                //$stmtInsert->bindValue('san', $san);
+                $stmtInsert->bindValue('san', '');
+                $stmtInsert->bindValue('cp', $scoreCp);
+                $stmtInsert->bindValue('mate', $scoreMate);
+                $stmtInsert->bindValue('rank', $rank);
+                $stmtInsert->bindValue('line', $line);
+                $stmtInsert->bindValue('depth', $depth);
+                $stmtInsert->bindValue('knodes', $knodes);
+                $stmtInsert->bindValue('fidx', $fidx);
+                $stmtInsert->bindValue('bytes', $bytes);
+
+                $stmtInsert->executeStatement();
+                $rank++;
+
+            } catch (\Throwable $e) {
+                dd($e, $fenId, $key, $movesToInsert);
+            }
+            }
+
+            
+
+            $processed++;
+        }
+    } catch (\Throwable $e) {
+        $rolledBack = true;
+        $this->conn->rollback();
+
+        dd("rolled back", $e);
+    }
+
+        if (!$rolledBack) {
+            $this->conn->commit();
+        }
+        // stop the sub timer
+        $this->timer->stopSub('InsertEvals');
+
+        // temp..
+        $processed = count($fensToFlush);
+
+        return [$processed,$skipped];
+    }
+
+    private function getCurrentEvaluationsFile()
+    {
         $bytes = 0;
         $fidx = 1;
 
@@ -377,30 +793,25 @@ class AdminController extends AbstractController
             $fidx = $item['fidx'];
         }
 
-        if ($fidx == null || $fidx == -1) {
-            print "All files read.<br>";
-            exit;
-        }
+        return [$fidx, $bytes];
+    }
 
+    public function parseEvalsJson($filePath, $bytesToSkip = 0, $maxLines = 5000)
+    {
         $i = 0;
-        $maxLines = $maxLines;
 
-        //$fileName = basename($filePath);
-
-        $filePath = './lichess_db_eval-' . $fidx . '.jsonl';
-
-        while (file_exists($filePath)) {
+        if (file_exists($filePath)) {
 
             //print "File open: " . $filePath . " ($bytes)<br>";
 
             $handle = fopen($filePath, "r");
-            fseek($handle, $bytes, SEEK_SET);
+            fseek($handle, $bytesToSkip, SEEK_SET);
 
             $fsize = filesize($filePath);
 
             while (($line = fgets($handle, 8192)) !== false) {
 
-                $bytes += strlen($line);
+                $bytesToSkip += strlen($line);
 
                 // When reading files line-by-line, there is a \n at the end, so remove it.
                 $line = trim($line);
@@ -409,21 +820,16 @@ class AdminController extends AbstractController
                     continue;
                 }
 
-                yield [$fidx, $line, $bytes, $fsize];
+                yield [$line, $bytesToSkip, $fsize];
 
                 $i++;
 
                 if ($i >= $maxLines) {
-                    break 2;
+                    break;
                 }
             }
 
             fclose($handle);
-
-            $fidx++;
-
-            $filePath = './lichess_db_eval-' . $fidx . '.jsonl';
-            $bytes = 0;
         }
     }
 
@@ -521,6 +927,9 @@ class AdminController extends AbstractController
 
     public function importPgnFiles(int $limit, int $skip): JsonResponse
     {
+        // start the timer
+        $this->timer->startProcess();
+
         ini_set('memory_limit', '2G');
 
         $files = ['./lichess_elite_2025-05.pgn'];
@@ -532,18 +941,22 @@ class AdminController extends AbstractController
         $processCount = 0;
         $queryCount = 0;
         $bytesReadTotal = 0;
+
+        $movesNotToMakeTotal = 0;
+        $fensNotExportedTotal = 0;
         
         $batchSize = $limit;
 
         // Get the import log repo
         $importLogRepo = $this->em->getRepository(ImportLog::class);
 
-        // prepare FEN insert statement once
-        $stmtInsertFen = $this->conn->prepare(
-            'INSERT INTO fen (fen) VALUES (:fen)'
-        );
+        // Create the FastChessJs instance
+        $fastChessJs = new FastChessJs();
 
         foreach ($files as $file) {
+            
+            // start the sub
+            $this->timer->startSub('ImportLog');
 
             // Check to see if we already partially imported this file
             $log = $importLogRepo->findOneBy(['filename' => $file]);
@@ -561,6 +974,9 @@ class AdminController extends AbstractController
 
             //dd($file, $skip, $log);
 
+            // stop the sub
+            $this->timer->stopSub('ImportLog');
+
             // If this file is finished, continue to the next
             if ($log->isFinished()) {
                 continue;
@@ -570,21 +986,50 @@ class AdminController extends AbstractController
             $fileGameCount = 0;
             $gamesRead = $log->getGamesRead();
 
+            //
+            $this->timer->startSub('parsePgn');
+
+            $items = [];
+
             // Parse the PGN files
-            foreach ($this->myPgnParser->parsePgn($file, false, $limit, $skip) as $item) {
+            foreach ($this->myPgnParser->parsePgn($file, false, $limit, $skip, $this->timer) as $item) {
+
+                $items[] = $item;
+
+                //
+                $this->timer->stopSub('parsePgn');
+
                 set_time_limit(300);
 
                 $game = $item['game'];
                 $bytesReadTotal = $item['bytesRead'];
 
-                $this->processGame($game, $totals, $moveCount, $stmtInsertFen);
+                // start the sub
+                $this->timer->startSub('processGame');
+
+                [$movesNotToMake, $fensNotExported] = $this->processGame($game, $fastChessJs, $totals, $moveCount);
+                
+                $movesNotToMakeTotal += $movesNotToMake;
+                $fensNotExportedTotal += $fensNotExported;
+
+                // stop the sub
+                $this->timer->stopSub('processGame');
 
                 $gameCount++;
                 $fileGameCount++;
 
                 if ($gameCount % $batchSize === 0) {
+                    // start the sub
+                    $this->timer->startSub('processMoves');
+
                     $queryCount += $this->processMoves($totals);
                     $processCount++;
+
+                    // stop the sub
+                    $this->timer->stopSub('processMoves');
+
+                    //
+                    $this->timer->startSub('PersistFlush');
 
                     // Update import log
                     $log->setGamesRead($gamesRead + $gameCount);
@@ -593,20 +1038,56 @@ class AdminController extends AbstractController
                     $this->em->persist($log);
                     $this->em->flush();
 
+                    //
+                    $this->timer->stopSub('PersistFlush');
+
                     $totals = [];
                     gc_collect_cycles();
                 }
 
+                //
+                $this->timer->startSub('UnsetGame');
+
                 unset($game);
+
+                //
+                $this->timer->stopSub('UnsetGame');
+
+                //
+                $this->timer->startSub('parsePgn');
             }
+
+            //dd($items);
+
+            //
+            $this->timer->stopSub('parsePgn');
 
             // flush leftover totals
             if (!empty($totals)) {
+                // start the sub
+                $this->timer->startSub('processMoves');
+
                 $queryCount += $this->processMoves($totals);
                 $processCount++;
+
+                // stop the sub
+                $this->timer->stopSub('processMoves');
+
+                //
+                $this->timer->startSub('UnsetTotalsCollect');
+                $this->timer->startSub('UnsetCollect');
+
                 $totals = [];
                 gc_collect_cycles();
+
+                //
+                $this->timer->stopSub('UnsetTotalsCollect');
+                $this->timer->stopSub('UnsetCollect');
+
             }
+
+            //
+            $this->timer->startSub('PersistFlush');
 
             // Update the import log
             $log->setGamesRead($gamesRead + $gameCount);
@@ -615,10 +1096,16 @@ class AdminController extends AbstractController
             // Persist and flush
             $this->em->persist($log);
             $this->em->flush();
+
+            //
+            $this->timer->stopSub('PersistFlush');
         }
 
         $fileSize = filesize($filePath);
         $percentageComplete = round(($bytesReadTotal / $fileSize) * 100, 2);
+
+        // end the timer
+        $this->timer->endProcess();
 
         return new JsonResponse([
             "processed" => $gameCount,
@@ -629,33 +1116,221 @@ class AdminController extends AbstractController
             "bytesRead" => $bytesReadTotal,
             "skip" => $skip,
             "percentageComplete" => $percentageComplete,
-            "fileIndex" => 0
+            "fileIndex" => 0,
+            "movesNotToMake" => $movesNotToMakeTotal,
+            "fensNotExportedTotal" => $fensNotExportedTotal,
+            "fenDict" => $this->fenDict,
+            "timer" => $this->timer->getReport()
         ]);
     }
 
-    private function processGame($game, array &$totals, int &$moveCount, $stmtInsertFen): void
+    private function processGame($game, $fastChessJs, array &$totals, int &$moveCount): array
     {
-        $fen = new ChessFEN();
-        $moves = $game->getMovesArray();
-        $maxMoves = min(20, count($moves));
+
+        // start the sub
+        //$this->timer->startSub('ChessFen');
+
+        //$fen = new ChessFEN();
+        //$fastFen = new FastFen();
+
+        // stop the sub
+        //$this->timer->stopSub('ChessFen');
+
+        //
+        $this->timer->startSub('getMovesArray');
+
+        //$moves = $game->getMovesArray();
+        $moves = $game["moves"];
+
+        // total moves? 30 = 15 moves deep only..
+        $maxMoves = min(30, count($moves));
+
+        /*
+
+        What do we need the game for?
+
+        - moves array - check for san or whatever?
+        - result - win/draw/loss
+        - ??
+
+        That's it, we get the FEN from ChessFEN and making the moves.
+
+        So if we get the moves straight from the PGN (SAN moves, which is fine, 
+        no need to use a game object to get the SAN moves)
+
+        We just need the result, which I think we can get quite easily.. ?
+
+        */
+
+        // TESTING
+        //$this->timer->debugVar("movesArray", $moves);
+
+        //
+        $this->timer->stopSub('getMovesArray');
+
+        //
+        $this->timer->startSub('PrepareInsert');
 
         // normalize result
         $map = ['1-0' => 'w', '0-1' => 'b', '1/2-1/2' => 'd'];
-        $result = $map[$game->getResult()] ?? '';
+        
+        //$result = $map[$game->getResult()] ?? '';
+        $result = $map[$game['result']] ?? '';
+
+        // prepare FEN insert statement once
+        $stmtInsertFen = $this->conn->prepare(
+            'INSERT INTO fen (fen) VALUES (:fen)'
+        );
+
+        $chessJs = new ChessJs();
+
+        // Reset the FastChessJs instance
+        $fastChessJs->reset();
+
+        //
+        $fenBefore = $chessJs->fen();
+        // Normalize the FEN string for move stats
+        $fenBefore = $this->chessHelper->normalizeFenForMoveStats($fenBefore);
+
+        $movesNotToMake = 0;
+        $fensNotExported = 0;
+        $lastMove = "";
+        $lastMoveMade = false;
+
+        // Prepare the find FEN
+        $stmtFindFen = $this->conn->prepare('SELECT id FROM fen WHERE fen = :fen');
+
+        
+        $updater = new FastSanParser();
+
+
+        $fens = [
+            'ChessJs' => [],
+            'FastSan' => [],
+            'FastFen' => [],
+            'FEN' => []
+        ];
+
+        $lastFromTo = [];
+
+        //
+        $this->timer->startSub('PrepareInsert');
 
         for ($i = 0; $i < $maxMoves; $i++) {
             $move = $moves[$i] ?? '';
             if ($move === '') continue;
 
-            $fenstr = $fen->export();
+            // start the sub
+            //$this->timer->startSub('FenExport');
+
+            /*
+            //
+            if ($fenBefore !== '' && isset($this->fenDict[$fenBefore])) {
+                //
+                if (false && isset($this->fenDict[$fenBefore][$move]) && $this->fenDict[$fenBefore][$move] !== '') {
+                    $this->timer->startSub('FenGetDict');
+                    $fenstr = $this->fenDict[$fenBefore][$move];
+                    $this->timer->stopSub('FenGetDict');
+
+                    //dd($move, $fenBefore, $this->fenDict);
+
+                    $fensNotExported++;
+
+                    //dd("FenFromDict", $fenstr, $this->fenDict);
+                } else {
+                    //$this->timer->startSub('FenExportAndMove');
+                    //$fenstr = $fen->export();
+                    //$this->timer->stopSub('FenExportAndMove');
+
+                    $this->timer->startSub('ChessJsGetFen');
+                    $fenstr = $chessJs->fen();
+                    $this->timer->stopSub('ChessJsGetFen');
+
+                    //if ($fenstr != $fenstr2) {
+                      //  dd($fenstr, $fenstr2, $fen, $chessJs);
+                    //}
+
+                    //$this->fenDict[$fenBefore][$move] = $fenstr;
+
+                    //dd($fenDict);
+                }
+            } else {
+                //$this->timer->startSub('FenExportAndMove');
+                //$fenstr = $fen->export();
+                //$this->timer->stopSub('FenExportAndMove');
+
+                $this->timer->startSub('ChessJsGetFen');
+                $fenstr = $chessJs->fen();
+                $this->timer->stopSub('ChessJsGetFen');
+
+                //if ($fenstr != $fenstr2) {
+                  //  dd($fenstr, $fenstr2, $fen, $chessJs);
+                //}
+            }
+                */
+
+            $this->timer->startSub('FastChessJsGetFen');
+            $fenstr = $fastChessJs->fen();
+            //$fenstr5 = $this->chessHelper->normalizeFenForMoveStats($fenstr5);
+            $this->timer->stopSub('FastChessJsGetFen');
+
+
+            //$fenstr = $fen->export();
+            
+            //
+            //$this->timer->stopSub('FenExport');
+
+            //
+            $this->timer->startSub('normalizeForMoveStats');
 
             // Normalize the FEN string for move stats
             $fenstr = $this->chessHelper->normalizeFenForMoveStats($fenstr);
 
+            //$fenstr2 = $updater->getFen();
+            //$fenstr2 = $this->chessHelper->normalizeFenForMoveStats($fenstr2);
+
+            //
+            $this->timer->stopSub('normalizeForMoveStats');
+
+            /*
+            $this->timer->startSub('FEN-export');
+            $fenstr4 = $fen->export();
+            $this->timer->stopSub('FEN-export');
+
+            $this->timer->startSub('FastFen-export');
+            $fenstr3 = $fastFen->export();
+            $this->timer->stopSub('FastFen-export');
+
+            $fenstr3 = $this->chessHelper->normalizeFenForMoveStats($fenstr3);
+            $fenstr4 = $this->chessHelper->normalizeFenForMoveStats($fenstr4);
+            */
+
+
+            //$fens['ChessJs'][] = $fenstr;
+            //$fens['FastChessJs'][] = $fenstr;
+
+            //$fens['FastSan'][] = $fenstr2;
+
+            //$fens['FastFen'][] = $fenstr3;
+            //$fens['FEN'][] = $fenstr4;
+
+           // if ($fenstr5 != $fenstr) {
+                //dd("DIFFER", $fenBefore, $fenstr, $fenstr5, $fastFen->export(), $i, $lastFromTo, $move, $moves);
+           // }
+
+
+            //
+            if ($fenBefore != '' && $lastMove != '') {
+                $this->fenDict[$fenBefore][$lastMove] = $fenstr;
+            }
+
+            //
+            $this->timer->startSub('FindFen');
+
             // assign or retrieve FEN ID
             if (!isset($this->fenDict[$fenstr])) {
+
                 // check database first
-                $stmtFindFen = $this->conn->prepare('SELECT id FROM fen WHERE fen = :fen');
                 $stmtFindFen->bindValue('fen', $fenstr);
                 $item = $stmtFindFen->executeQuery()->fetchAssociative();
 
@@ -668,11 +1343,23 @@ class AdminController extends AbstractController
                     $fenId = (int) $this->conn->lastInsertId();
                 }
 
+
                 // cache it
-                $this->fenDict[$fenstr] = $fenId;
+                //$this->fenDict[$fenstr] = $fenId;
+                $this->fenDict[$fenstr] = [
+                    'id' => $fenId,
+                    $move => ''
+                ];
             } else {
-                $fenId = $this->fenDict[$fenstr];
+                //$fenId = $this->fenDict[$fenstr];
+                $fenId = $this->fenDict[$fenstr]['id'];
             }
+
+            //
+            $this->timer->stopSub('FindFen');
+
+            //
+            $this->timer->startSub('StoreTotals');
 
             $key = $fenId . '|' . $move;
 
@@ -692,12 +1379,89 @@ class AdminController extends AbstractController
                     break;
             }
 
-            $fen->move($move);
+            //
+            $this->timer->stopSub('StoreTotals');
+
+            // Remember fen before this move so we can look it up
+            $fenBefore = $fenstr;
+
+            //
+            //$this->timer->startSub('FenExportAndMove');
+            //$fen->move($move);
+            //$this->timer->stopSub('FenExportAndMove');
+
+            // If we already have the FEN after this move
+            if (isset($this->fenDict[$fenstr][$move]) && $this->fenDict[$fenstr][$move] != "") {
+                $movesNotToMake++;
+
+                //$this->timer->startSub('ChessJsLoadFen');
+                //$chessJs->load($this->fenDict[$fenstr][$move]." - 0 1");
+                //$this->timer->stopSub('ChessJsLoadFen');
+
+                $this->timer->startSub('FastChessJsLoadFen');
+                $fastChessJs->load($this->fenDict[$fenstr][$move]." - 0 1");
+                $this->timer->stopSub('FastChessJsLoadFen');
+            } else {
+            
+                //$this->timer->startSub('ChessJsMakeMove');
+                //$chessJs->move($move);
+                //$this->timer->stopSub('ChessJsMakeMove');
+
+                $this->timer->startSub('FastChessJsMakeMove');
+                $fastChessJs->move($move);
+                $this->timer->stopSub('FastChessJsMakeMove');
+           
+                $lastMoveMade = true;
+            }
+
+
+            /*
+            //$this->timer->startSub('FastSanMove');
+            $this->timer->startSub('FastFen-move');
+            try {
+                //$lastFromTo = $updater->getFromTo($move);
+                $fastFen->move($move);
+            } catch (\Throwable $e) {
+                dd("Exception-1", $e, $moves, $fenstr, $move);
+            }
+            //$this->timer->stopSub('FastSanMove');
+            $this->timer->stopSub('FastFen-move');
+
+            $this->timer->startSub('FEN-move');
+            try {
+                //$lastFromTo = $updater->getFromTo($move);
+                $fen->move($move);
+            } catch (\Throwable $e) {
+                dd("Exception-2", $e, $moves, $fenstr, $move);
+            }
+            //$this->timer->stopSub('FastSanMove');
+            $this->timer->stopSub('FEN-move');
+            */
+
+
+            $lastMove = $move;
+
             $moveCount++;
         }
 
-        unset($fen, $moves);
-        gc_collect_cycles();
+        //if (count($moves) > 0) {
+            //dd($moves, $this->fenDict);
+        //}
+
+        //if ($movesNotToMake > 0) {
+            //dd("MovesNotToMake", $movesNotToMake, $this->fenDict);
+        //}
+
+        //
+        //$this->timer->startSub('UnsetCollect');
+
+        //unset($fen, $moves);
+        //gc_collect_cycles();
+
+        //
+        //$this->timer->stopSub('UnsetCollect');
+
+        return [$movesNotToMake, $fensNotExported];
     }
 
     private function processMoves(array $moves): int

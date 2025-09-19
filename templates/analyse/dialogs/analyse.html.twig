@@ -1,12 +1,12 @@
-<div id="analyseModal" class="modal is-large-rounded">
+<div id="analyseModal" data-element="yes" class="modal is-large-rounded">
 	<div class="modal-background"></div>
 	<div class="modal-card">
 		<header class="modal-card-head">
 			<p class="modal-card-title">Analysing your games</p>
-			<button id="analyseModalCloseButton" class="delete" aria-label="close"></button>
+			<button id="analyseModalCloseButton" data-element="yes" class="delete" aria-label="close"></button>
 		</header>
 		<section class="modal-card-body">
-			<div id="analyseModalFields" class="grid-auto-1fr is-gap-1">
+			<div id="analyseModalFields" data-element="yes" class="grid-auto-1fr is-gap-1">
 				<label class="has-text-faded whitespace-nowrap">Status:</label>
 				<p class="w-full"></p>
 				<label class="has-text-faded whitespace-nowrap">Game:</label>
@@ -18,13 +18,13 @@
 				<label class="has-text-faded whitespace-nowrap">Elapsed time:</label>
 				<p class="w-full"></p>
 			</div>
-			<div id="analyseModalError" class="is-hidden pb-4">
+			<div id="analyseModalError" data-element="yes" class="is-hidden pb-4">
 				<p class="w-full"></p>
 			</div>
 		</section>
 		<footer class="modal-card-foot is-justify-content-flex-end">
 			<div class="buttons">
-				<button id="analyseModalStopButton" class="button is-warning">Stop analysing</button>
+				<button id="analyseModalStopButton" data-element="yes" class="button is-warning">Stop analysing</button>
 			</div>
 		</footer>
 	</div>

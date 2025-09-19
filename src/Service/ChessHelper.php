@@ -66,21 +66,19 @@ class ChessHelper
         $toSquare = substr($uciMove, 2, 2);
         $promotion = strlen($uciMove) == 5 ? substr($uciMove, 4, 1) : "";
 
-        $ret = $chess->move([
+        try {
+        // Make the move
+        $move = $chess->move([
             "from" => $fromSquare,
             "to" => $toSquare,
             "promotion" => $promotion
         ]);
+    } catch (\Throwable $e) {
+        dd("getFirstSanMove", $uciMove, $moves, $fenWithout, $fen, $chess, $e);
+    }
 
-        if ($ret !== null) {
-            $history = $chess->history(['verbose' => true]);
-            $last = array_pop($history);
-            //$chess->undo(); // not really needed anymore, we load fen everytime..
-
-            return $last['san'] ?? null;
-        }
-
-        return null;
+        // Return the SAN notation
+        return $move ? $move['san'] : null;
     }
 
     public function fenCompare($fenSource, $fenTarget): string

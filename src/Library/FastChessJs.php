@@ -2,7 +2,9 @@
 
 namespace App\Library;
 
-class ChessJs
+use Exception;
+
+class FastChessJs
 {
     const BLACK = 'b';
     const WHITE = 'w';
@@ -636,7 +638,6 @@ class ChessJs
         ]
     ];
 
-
     protected $board;
     protected $kings;
     protected $turn;
@@ -693,7 +694,9 @@ class ChessJs
 
     public function load($fen)
     {
-        if (!self::validateFen($fen)['valid']) return false;
+        if (!self::validateFen($fen)['valid']) {
+            throw new Exception('Not a valid FEN string.');
+        }
         $tokens = explode(' ', $fen);
         $this->clear();
 
@@ -870,109 +873,6 @@ class ChessJs
         return ['valid' => true, 'error_number' => 0, 'error' => 'No errors.'];
     }
 
-    /* using the specification from http://www.chessclub.com/help/PGN-spec
-	 * example for html usage: $chess->pgn({ 'max_width' => 72, 'newline_char' => "<br />" ]);
-	 *
-	 * this is a custom implementation, not really a port from chess.js
-	 */
-    public function pgn($options = [])
-    {
-        $newline = !empty($options['newline_char']) ? $options['newline_char'] : "\n";
-        $maxWidth = !empty($options['max_width']) ? $options['max_width'] : 0;
-
-        // process header
-        $o = '';
-        foreach ($this->header as $k => $v) {
-            $v = addslashes($v);
-            $o .= "[{$k} \"{$v}\"]" . $newline;
-        }
-
-        if (strlen($o) > 0) $o .= $newline; // if header presented, add new empty line
-
-        // process movements
-        $currentWidth = 0;
-        $i = 1;
-        foreach ($this->history(['verbose' => true]) as $history) {
-            if ($i === 1 && $history['turn'] === self::BLACK) {
-                $tmp = $i . '. ... ';
-                $i++;
-            } else {
-                $tmp = ($i % 2 === 1 ? ceil($i / 2) . '. ' : '');
-            }
-            $tmp .= $history['san'] . ' ';
-
-            $currentWidth += strlen($tmp);
-            if ($currentWidth > $maxWidth && $maxWidth > 0) {
-                $tmp = $newline . $tmp;
-                $currentWidth = 0;
-            }
-
-            $o .= $tmp;
-            $i++;
-        }
-        if ($i > 1) $o = substr($o, 0, -1); // remove last space
-
-        return $o;
-    }
-
-    public static function parsePgn($pgn)
-    {
-        $header = [];
-        $moves = [];
-
-        // separate lines
-        $lines = str_replace("\r", "\n", $pgn);
-        while (strpos($lines, "\n\n") !== FALSE) $lines = str_replace("\n\n", "\n", $lines);
-        $lines = explode("\n", $lines);
-
-        $parseHeader = true;
-        foreach ($lines as $line) {
-
-            // parse header
-            if ($parseHeader) {
-                preg_match('/^\[(\S+) \"(.*)\"\]$/', $line, $matches);
-                if (count($matches) >= 3) {
-                    $header[$matches[1]] = $matches[2];
-                    continue;
-                }
-            }
-            $parseHeader = false;
-
-            // parse movements
-            $movesTmp = explode(' ', $line);
-            foreach ($movesTmp as $moveTmp) {
-                $moveTmp = trim($moveTmp);
-                $moveTmp = preg_replace("/^(\d+)\.\s?/", "", $moveTmp);
-
-                if (!in_array($moveTmp, ['', '*', '1-0', '1/2-1/2', '0-1']))
-                    $moves[] = $moveTmp;
-            }
-        }
-
-        return compact('header', 'moves');
-    }
-
-    /* return TRUE or FALSE
-	 * but, if ($options['verbose'] == true), return compact('header', 'moves', 'game') or FALSE
-	 */
-    public static function validatePgn($pgn, $options = [])
-    {
-        $parsedPgn = self::parsePgn($pgn);
-        $verbose = !empty($options['verbose']) ? $options['verbose'] : false;
-
-        $chess = new self;
-        // validate move first before header for quick check invalid move
-        foreach ($parsedPgn['moves'] as $k => $v) {
-            if ($chess->move($v) === null) return false; // quick get out if move invalid
-        }
-        foreach ($parsedPgn['header'] as $k => $v) {
-            $chess->header($k, $v);
-        }
-        $parsedPgn['game'] = $chess;
-
-        return $verbose ? $parsedPgn : true;
-    }
-
     public function export()
     {
         return (object) [
@@ -1009,18 +909,6 @@ class ChessJs
         return true;
     }
 
-    /* this function is not really port from chess.js
-	 * its just because i want to make a new logic, but interface almost the same
-	 */
-    public function loadPgn($pgn)
-    {
-        $parsedPgn = self::validatePgn($pgn, ['verbose' => true]);
-        if ($parsedPgn === false) return false;
-
-        $this->import($parsedPgn['game']);
-        return $this;
-    }
-
     public function history($options = [])
     {
         $moveHistory = [];
@@ -1046,20 +934,8 @@ class ChessJs
             $moveTmp = [];
         }
 
-
-        //~ $move['flags'] |= self::BITS['PROMOTION'];
-        //~ $move['promotion'] = $promotion;
         return $moveHistory;
     }
-
-
-
-
-
-
-
-
-
 
     // this one from chess.js changed to return boolean (remove, true or false)
     public function remove($square)
@@ -1123,11 +999,6 @@ class ChessJs
         $this->updateSetup($this->generateFen());
         return true;
     }
-
-
-
-
-
 
 
     // here, we add first parameter turn, to make this really static method
@@ -1342,7 +1213,7 @@ class ChessJs
     public function undo()
     {
         $move = $this->undoMove();
-        return $move !== null ? self::makePretty($move) : null; // make pretty
+        return $move !== null ? $move : null; // make pretty
     }
 
     protected function generateMoves($options = [])
@@ -1493,14 +1364,93 @@ class ChessJs
         // filter out illegal moves
         $legalMoves = [];
         foreach ($moves as $i => $move) { // in php we have foreach :-p
-            $this->makeMove($move);
-            if (!$this->kingAttacked($us)) $legalMoves[] = $move;
-            $this->undoMove();
+
+            //$this->makeMove($move);
+            //if (!$this->kingAttacked($us)) $legalMoves[] = $move;
+            //$this->undoMove();
+
+            if ($this->isMoveKingSafe($move)) $legalMoves[] = $move;
         }
 
         $this->generateMovesCache[$cacheKey] = $legalMoves;
         return $legalMoves;
     }
+
+
+    protected function isMoveKingSafe($move)
+    {
+        // Make a shallow copy of the board
+        $tempBoard = $this->board;
+        $tempKings = $this->kings;
+
+        // Move the piece
+        $tempBoard[$move['to']] = $tempBoard[$move['from']];
+        $tempBoard[$move['from']] = null;
+
+        // Update king position if needed
+        if ($tempBoard[$move['to']]['type'] === self::KING) {
+            $tempKings[$move['color']] = $move['to'];
+        }
+
+        // Handle promotion
+        if (isset($move['promotion'])) {
+            $tempBoard[$move['to']] = ['type' => $move['promotion'], 'color' => $move['color']];
+        }
+
+        // Handle en passant (if needed for king safety)
+        // Handle castling (if needed for king safety)
+
+        // Now check if king is attacked
+        return !$this->isAttacked($tempBoard, self::swap_color($move['color']), $tempKings[$move['color']]);
+    }
+
+    // You'd need a version of attacked() that takes a board as argument:
+    protected function isAttacked($board, $color, $square)
+    {
+        for ($i = self::SQUARES['a8']; $i <= self::SQUARES['h1']; $i++) {
+            if ($i & 0x88) {
+                $i += 7;
+                continue;
+            } // check edge of board
+
+            if ($board[$i] == null) continue; // check empty square
+            if ($board[$i]['color'] !== $color) continue; // check color
+
+            $piece = $board[$i];
+            $difference = $i - $square;
+            $index = $difference + 119;
+
+            if (self::ATTACKS[$index] & (1 << self::SHIFTS[$piece['type']])) {
+                if ($piece['type'] === self::PAWN) {
+                    if ($difference > 0) {
+                        if ($piece['color'] === self::WHITE) return true;
+                    } else {
+                        if ($piece['color'] === self::BLACK) return true;
+                    }
+                    continue;
+                }
+
+                if ($piece['type'] === self::KNIGHT || $piece['type'] === self::KING) return true;
+
+                $offset = self::RAYS[$index];
+                $j = $i + $offset;
+                $blocked = false;
+                while ($j !== $square) {
+                    if ($board[$j] !== null) {
+                        $blocked = true;
+                        break;
+                    }
+                    $j += $offset;
+                }
+
+                if (!$blocked) return true;
+            }
+        }
+
+        return false;
+    }
+
+
 
     /* The move function can be called with in the following parameters:
 	 *
@@ -1575,9 +1525,8 @@ class ChessJs
 
         if ($moveArray === null) return null;
 
-        $movePretty = $this->makePretty($moveArray);
         $this->makeMove($moveArray);
-        return $movePretty;
+        return $moveArray;
     }
 
     /* The internal representation of a chess move is in 0x88 format, and
@@ -1589,15 +1538,10 @@ class ChessJs
     {
         $moves = $this->generateMoves();
         array_walk($moves, function (&$move) use ($options) {
-            $move = !empty($options['verbose']) ? $this->makePretty($move) : $this->moveToSAN($move);
+            $move = !empty($options['verbose']) ? $move : $this->moveToSAN($move);
         });
         return $moves;
     }
-
-
-
-
-
 
 
     public function turn()
@@ -1740,40 +1684,6 @@ class ChessJs
         return false;
     }
 
-    public function halfMovesExceeded()
-    {
-        return $this->halfMoves >= 100;
-    }
-
-    // alias in*()
-    public function inHalfMovesExceeded()
-    {
-        return $this->halfMovesExceeded();
-    }
-
-    public function inDraw()
-    {
-        return
-            $this->halfMovesExceeded() ||
-            //~ $this->inCheckmate() ||
-            $this->inStalemate() ||
-            $this->insufficientMaterial() ||
-            $this->inThreefoldRepetition();
-    }
-
-    public function gameOver()
-    {
-        return $this->inDraw() || $this->inCheckmate();
-    }
-
-
-
-
-
-
-
-
-
     static protected function rank($i)
     {
         return $i >> 4;
@@ -1889,32 +1799,6 @@ class ChessJs
 
         return $output;
     }
-
-    protected function makePretty($uglyMove)
-    {
-        $move = $uglyMove;
-        $move['san'] = $this->moveToSAN($move);
-        $move['to'] = self::algebraic($move['to']);
-        $move['from'] = self::algebraic($move['from']);
-
-        $flags = '';
-        foreach (self::BITS as $k => $v) {
-            if (self::BITS[$k] & $move['flags']) {
-                $flags .= self::FLAGS[$k];
-            }
-        }
-        $move['flags'] = $flags;
-
-        return $move;
-    }
-
-
-
-
-
-
-
-
 
     public function __toString()
     {

@@ -1,9 +1,9 @@
-<div id="confirmModal" class="modal is-large-rounded">
+<div id="confirmModal" data-element="yes" class="modal is-large-rounded">
 	<div class="modal-background"></div>
 	<div class="modal-card">
 		<header class="modal-card-head">
 			<p class="modal-card-title">Please confirm</p>
-			<button id="confirmModalCloseButton" class="delete" aria-label="close"></button>
+			<button id="confirmModalCloseButton" data-element="yes" class="delete" aria-label="close"></button>
 		</header>
 		<section class="modal-card-body">
 			<p class="w-full">Are you sure you want to remove this opponent?</p>
@@ -11,10 +11,10 @@
 		</section>
 		<footer class="modal-card-foot is-justify-content-flex-end">
 			<div class="buttons">
-				<button id="confirmModalCancelButton" class="button">
+				<button id="confirmModalCancelButton" data-element="yes" class="button">
 					Cancel
 				</button>
-				<button id="confirmModalConfirmButton" class="button is-warning">
+				<button id="confirmModalConfirmButton" data-element="yes" class="button is-warning">
 					Confirm
 				</button>
 			</div>

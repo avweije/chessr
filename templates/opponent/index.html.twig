@@ -1,17 +1,21 @@
 {% extends 'base.html.twig' %}
 
 {% block body %}
-	<div class="is-flex is-justify-content-space-around p-4">
-		<div id="opponentTabButtons" data-element="yes" class="boxed-radio-menu">
-			<div class="boxed-radio">
-				<input class="is-hidden" type="radio" name="opponent_page" value="download" id="opponentDownloadRadio" data-element="yes" checked/>
-				<label class="boxed-radio-label" for="opponentDownloadRadio"></label>
-				<span class="boxed-radio-text">Download</span>
-			</div>
-			<div class="boxed-radio">
-				<input class="is-hidden" type="radio" name="opponent_page" value="analysis" id="opponentAnalysisRadio" data-element="yes"/>
-				<label class="boxed-radio-label" for="opponentAnalysisRadio"></label>
-				<span class="boxed-radio-text">Analysis</span>
+	<div class="is-flex is-flex-direction-column is-align-items-center p-4">
+		<h2 class="title is-size-4 mt-2">Opponents</h2>
+	
+		<div class="is-flex is-justify-content-space-around">
+			<div id="opponentTabButtons" data-element="yes" class="boxed-radio-menu mt-5">
+				<div class="boxed-radio">
+					<input class="is-hidden" type="radio" name="opponent_page" value="download" id="opponentDownloadRadio" data-element="yes" checked/>
+					<label class="boxed-radio-label" for="opponentDownloadRadio"></label>
+					<span class="boxed-radio-text">Download</span>
+				</div>
+				<div class="boxed-radio">
+					<input class="is-hidden" type="radio" name="opponent_page" value="analysis" id="opponentAnalysisRadio" data-element="yes"/>
+					<label class="boxed-radio-label" for="opponentAnalysisRadio"></label>
+					<span class="boxed-radio-text">Analysis</span>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -149,7 +153,7 @@
 					</div>
 					<div id="opponentMovesRepertoire" data-element="yes" class="is-hidden box-footer is-gap-2 px-3 pb-3 pt-1">
 						<div class="is-size-6 pl-1 has-text-faded"></div>
-						<button id="opponentMoveSubmitButton" type="button" class="button is-small">
+						<button id="opponentMoveSubmitButton" data-element="yes" type="button" class="button is-small">
 							<span class="icon">
 								<i class="fa-solid fa-up-right-from-square"></i>
 							</span>
@@ -158,7 +162,7 @@
 					<form id="opponentMoveForm" data-element="yes" method="post" action="{{ path('repertoire') }}" target="_blank"></form>
 					<div id="opponentMoveSuggestions" data-element="yes" class="is-hidden is-flex is-justify-content-space-between is-align-items-center is-gap-2 p-3">
 						<div class="is-size-6 pl-1 has-text-faded"></div>
-						<button id="opponentMoveSuggestionsButton" type="button" class="button is-small">
+						<button id="opponentMoveSuggestionsButton" data-element="yes" type="button" class="button is-small">
 							<span class="icon">
 								<i class="fa-solid fa-eye"></i>
 							</span>

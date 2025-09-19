@@ -23,65 +23,54 @@ class Home {
     this.abortController = new AbortController();
     this.abortSignal = this.abortController.signal;
 
-    // get the elements
-    this.boxedCardContainer = document.getElementById("boxedCardContainer");
+    // Get the elements
+    this.getElements();
 
-    if (!this.boxedCardContainer) { return; }
-
-    this.fields.white = document.getElementById("statsWhiteField");
-    this.fields.black = document.getElementById("statsBlackField");
-    this.fields.new = document.getElementById("statsNewField");
-    this.fields.recommended = document.getElementById("statsRecommendedField");
-    this.fields.analysis = document.getElementById("statsAnalysisField");
-
-    // Get the boxed cards
-    const boxedCards = this.boxedCardContainer.getElementsByClassName("boxed-card");
-    // add event listeners
-    boxedCards[0].addEventListener("click", () => {
-      this.abortController.abort();
-      window.location.href = "./repertoire";
-    });
-    boxedCards[1].addEventListener("click", () => {
-      this.abortController.abort();
-      window.location.href = "./practice";
-    });
-    boxedCards[2].addEventListener("click", () => {
-      this.abortController.abort();
-      window.location.href = "./analyse";
-    });
-    boxedCards[3].addEventListener("click", () => {
-      this.abortController.abort();
-      window.location.href = "./roadmap";
-    });
-    boxedCards[4].addEventListener("click", () => {
-      this.abortController.abort();
-      window.location.href = "./opponent";
-    });
-    boxedCards[5].addEventListener("click", () => {
-      this.abortController.abort();
-      window.location.href = "./settings";
-    });
+    // Add event listeners
+    this.addListeners();
 
     // get the repertoire statistics
     this.getStatistics();
   }
 
+  // Uses the data-element attribute to gather all the elements needed for this JS file
   getElements() {
     // Get the data-elements for reference
-    this.elements = [];
+    this.elements = {};
     document.querySelectorAll("[data-element]").forEach(el => {
       if (el.dataset.element !== "yes") return;
       this.elements[el.id] = el;
     });
+  }
 
-    // get the elements
-    this.tabs.buttons = document.getElementById("settingsTabButtons");
-    this.tabs.account = document.getElementById("settingsTabAccount");
-    this.tabs.board = document.getElementById("settingsTabBoard");
-    this.tabs.engine = document.getElementById("settingsTabEngine");
-    this.tabs.practice = document.getElementById("settingsTabPractice");
-
-    console.log('getElements', this.elements);
+  // Add event listeners
+  addListeners() {
+        // Add event listeners
+    this.elements.boxedCardRepertoire.addEventListener("click", () => {
+      this.abortController.abort();
+      window.location.href = "./repertoire";
+    });
+    this.elements.boxedCardPractice.addEventListener("click", () => {
+      this.abortController.abort();
+      window.location.href = "./practice";
+    });
+    this.elements.boxedCardAnalysis.addEventListener("click", () => {
+      if (event.target.closest("a")) return;
+      this.abortController.abort();
+      window.location.href = "./analyse";
+    });
+    this.elements.boxedCardRoadmap.addEventListener("click", () => {
+      this.abortController.abort();
+      window.location.href = "./roadmap";
+    });
+    this.elements.boxedCardOpponents.addEventListener("click", () => {
+      this.abortController.abort();
+      window.location.href = "./opponent";
+    });
+    this.elements.boxedCardSettings.addEventListener("click", () => {
+      this.abortController.abort();
+      window.location.href = "./settings";
+    });
   }
   
   // get the repertoire statistics
@@ -95,9 +84,6 @@ class Home {
     })
       .then((res) => res.json())
       .then((response) => {
-        console.log("Success:");
-        console.log(response);
-
         // show the statistics
         this.onGetStatistics(response);
       })
@@ -115,50 +101,44 @@ class Home {
     // store the repertoire
     this.statistics = stats;
 
-    console.log(this.fields.white, this.fields.white.nextElementSibling);
-
     // update the statistics fields
     if (stats.white > 0) {
-      //this.fields.white.nextElementSibling.innerHTML = stats.white + " move" + (stats.white === 1 ? "" : "s");
-      this.fields.white.nextElementSibling.innerHTML = stats.white;
+      this.elements.statsWhiteField.nextElementSibling.innerHTML = stats.white;
     } else {
-      this.fields.white.nextElementSibling.innerHTML = "";
-      this.fields.white.innerHTML = "No white moves yet";
+      this.elements.statsWhiteField.nextElementSibling.innerHTML = "";
+      this.elements.statsWhiteField.innerHTML = "No white moves yet";
     }
     if (stats.black > 0) {
-      //this.fields.black.nextElementSibling.innerHTML = stats.black + " move" + (stats.black === 1 ? "" : "s");
-      this.fields.black.nextElementSibling.innerHTML = stats.black;
+      this.elements.statsBlackField.nextElementSibling.innerHTML = stats.black;
     } else {
-      this.fields.black.nextElementSibling.innerHTML = "";
-      this.fields.black.innerHTML = "No black moves yet";
+      this.elements.statsBlackField.nextElementSibling.innerHTML = "";
+      this.elements.statsBlackField.innerHTML = "No black moves yet";
     }
     if (stats.new > 0) {
-      //this.fields.new.nextElementSibling.innerHTML = stats.new + " move" + (stats.new === 1 ? "" : "s");
-      this.fields.new.nextElementSibling.innerHTML = stats.new;
+      this.elements.statsNewField.nextElementSibling.innerHTML = stats.new;
     } else {
-      this.fields.new.nextElementSibling.innerHTML = "";
-      this.fields.new.innerHTML = "No new moves";
+      this.elements.statsNewField.nextElementSibling.innerHTML = "";
+      this.elements.statsNewField.innerHTML = "No new moves";
     }
     if (stats.recommended > 0) {
-      //this.fields.recommended.nextElementSibling.innerHTML = stats.recommended + " move" + (stats.recommended === 1 ? "" : "s");
-      this.fields.recommended.nextElementSibling.innerHTML = stats.recommended;
+      this.elements.statsRecommendedField.nextElementSibling.innerHTML = stats.recommended;
     } else {
-      this.fields.recommended.nextElementSibling.innerHTML = "";
-      this.fields.recommended.innerHTML = "No recommended moves";
+      this.elements.statsRecommendedField.nextElementSibling.innerHTML = "";
+      this.elements.statsRecommendedField.innerHTML = "No recommended moves";
     }
     if (stats.analysis > 0) {
-      this.fields.analysis.nextElementSibling.innerHTML = stats.analysis + " line" + (stats.analysis === 1 ? "" : "s");
+      this.elements.statsAnalysisField.nextElementSibling.innerHTML = stats.analysis + " line" + (stats.analysis === 1 ? "" : "s");
     } else {
-      this.fields.analysis.nextElementSibling.innerHTML = "";
-      this.fields.analysis.innerHTML = "No analysed games at the moment";
+      this.elements.statsAnalysisField.nextElementSibling.innerHTML = "";
+      this.elements.statsAnalysisField.innerHTML = "No analysed games at the moment";
     }
 
     // remove the skeleton blocks, show the fields
-    this.fields.white.parentNode.removeChild(this.fields.white.previousElementSibling);
-    this.fields.black.parentNode.removeChild(this.fields.black.previousElementSibling);
-    this.fields.new.parentNode.removeChild(this.fields.new.previousElementSibling);
-    this.fields.recommended.parentNode.removeChild(this.fields.recommended.previousElementSibling);
-    this.fields.analysis.parentNode.removeChild(this.fields.analysis.previousElementSibling);
+    this.elements.statsWhiteField.parentNode.removeChild(this.elements.statsWhiteField.previousElementSibling);
+    this.elements.statsBlackField.parentNode.removeChild(this.elements.statsBlackField.previousElementSibling);
+    this.elements.statsNewField.parentNode.removeChild(this.elements.statsNewField.previousElementSibling);
+    this.elements.statsRecommendedField.parentNode.removeChild(this.elements.statsRecommendedField.previousElementSibling);
+    this.elements.statsAnalysisField.parentNode.removeChild(this.elements.statsAnalysisField.previousElementSibling);
   }
 }
 

@@ -140,7 +140,7 @@ export class MyChessBoard {
       handlers: {
         onGotoMove: (moveNr, variationIdx, moves) => {
           
-          console.log("-- Repertoire.js - onGotoMove:", moveNr, variationIdx, moves);
+          console.log("Chessboard.js - onGotoMove:", moveNr, variationIdx, moves);
 
           this.gotoMove(moveNr, variationIdx, moves);
         }
@@ -335,7 +335,7 @@ export class MyChessBoard {
    */
   async resetToPosition(initialFen, moves, resetMoves = false, updateBoard = true) {
 
-    console.log('Chessboard.js - resetToPosition', moves, resetMoves, updateBoard);
+    //console.log('Chessboard.js - resetToPosition', moves, resetMoves, updateBoard);
 
     // get the current moves
     var history = this.game.history({ verbose: true });
@@ -366,6 +366,8 @@ export class MyChessBoard {
     if (match && history.length > moves.length) {
       match = false;
     }
+
+    console.log('resetToPosition: match?', match, movesThatMatch);
 
     // reset the game & board
     if (!match) {
@@ -414,7 +416,7 @@ export class MyChessBoard {
   makeMove(move) {
     try {
 
-      console.log('Chessboard.js - makeMove', move);
+      //console.log('Chessboard.js - makeMove', move);
 
       // make the move
       this.game.move(move);
@@ -501,7 +503,7 @@ export class MyChessBoard {
   resetToCurrent(fen = "") {
     this.initialFen = fen;
 
-    console.log('Chessboard.js - resetToCurrent', fen);
+    //console.log('Chessboard.js - resetToCurrent', fen);
     
     // reset the pgn field to this the current history
     this.pgnField.resetToCurrent(fen, this.game.history({ verbose: true }));
@@ -544,6 +546,8 @@ export class MyChessBoard {
     // get the moves from pgn-field ??
     //
 
+    console.log('Chessboard.js - gotoMove', moveNr, variationIdx, moves);
+
     // reset to position (need to use diff function for this later..)
     this.resetToPosition(this.initialFen, moves, false, false);
     // update the board
@@ -584,8 +588,6 @@ export class MyChessBoard {
    * @returns {bool}
    */
   gotoFirst() {
-    console.log('Chessboard.js - gotoFirst', this.pgnField);
-
     this.pgnField.gotoFirst()
   }
 
@@ -760,6 +762,9 @@ export class MyChessBoard {
 
     // if this is a premove
     if (this.status !== BOARD_STATUS.waitingOnMove) {
+
+      //console.log('Chessboard.js - moveInputStarted: premove', this.status);
+
       // add a marker
       this.board.addMarker(CUSTOM_MARKER_TYPE.squareRed, event.squareFrom);
 
@@ -848,6 +853,8 @@ export class MyChessBoard {
         return false;
       }
 
+      //console.log('Chessboard.js - validateMoveInput, premove?', this.status, this.status !== BOARD_STATUS.waitingOnMove);
+
       // if this is a premove
       if (this.status !== BOARD_STATUS.waitingOnMove) {
         this.premoves.push(event);
@@ -875,7 +882,7 @@ export class MyChessBoard {
         // add the move to our history with variations
         this.pgnField.addMoveToHistory(this.game.history({ verbose: true }).pop());
 
-        console.log('Chessboard.js - added move to pgnfield history, after..', this.game.history());
+        //console.log('Chessboard.js - added move to pgnfield history, after..', this.game.history());
 
         return true;
       } else {

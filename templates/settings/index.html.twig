@@ -70,8 +70,8 @@
 						<div class="field">
 							<label class="label mb-1">Animation Duration</label>
 							<div class="control">
-								<div class="is-relative pb-4">
-									<div class="is-absolute left-0 right-0 bottom-0 is-flex is-justify-content-space-between">
+								<div class="range-container-text-below mt-2">
+									<div class="range-text">
 										<span class="is-size-7">0ms</span>
 										<span class="is-size-7">500ms</span>
 									</div>
@@ -92,12 +92,12 @@
 
 		<div id="settingsTabEngine" class="is-hidden box p-5">
 			<h2 class="title is-size-5 mb-4">Repertoire</h2>
-			<div id="animationSettingsContainer" class="is-flex is-flex-direction-column is-align-items-flex-start">
+			<div id="animationSettingsContainer" class="is-flex is-flex-direction-column is-align-items-stretch">
 				<div>
 					<div class="is-flex is-flex-direction-row is-justify-content-space-between is-align-items-flex-end">
 						<label class="label">Max. Search Time</label>
-						<span class="is-relative is-flex-shrink-0">
-							<div class="is-absolute left-0 right-0 top-0 is-flex is-justify-content-space-between" style="top: -1rem;">
+						<span class="range-container-text-above">
+							<div class="range-text">
 								<span class="is-size-7">10s</span>
 								<span class="is-size-7">2m</span>
 							</div>
@@ -109,27 +109,35 @@
 					</div>
 				</div>
 				<h2 class="title is-size-5 mt-5 mb-4">Analysis</h2>
-				<div class="mb-5">
-					<label class="label is-flex is-align-items-flex-start">Search Time / Move</label>
-					<p class="p-1 mb-1">The amount of time the engine will use for each move that needs to be evaluated when analysing your games.</p>
-					<span class="is-relative pb-5">
-						<div class="is-absolute left-0 right-0 bottom-0 is-flex is-justify-content-space-between">
-							<span class="is-size-7">500ms</span>
-							<span class="is-size-7">5s</span>
-						</div>
-						<input id="analyseEngineTime" data-element="yes" type="range" min="500" max="5000" step="500" value="1000" class="">
-					</span>
+				<div>
+					<div class="is-flex is-flex-direction-row is-justify-content-space-between is-align-items-flex-end">
+						<label class="label">Search Time / Move</label>
+						<span class="range-container-text-above">
+							<div class="range-text">
+								<span class="is-size-7">500ms</span>
+								<span class="is-size-7">5s</span>
+							</div>
+							<input id="analyseEngineTime" data-element="yes" type="range" min="500" max="5000" step="500" value="1000" style="width: 12rem;">
+						</span>
+					</div>
+					<div class="is-flex is-flex-direction-row is-flex-wrap-nowrap is-align-items-flex-end">
+						<p class="p-1 mb-1">The amount of time the engine will use for each move that needs to be evaluated when analysing your games.</p>
+					</div>
 				</div>
-				<div class="mt-4 mb-5">
-					<label class="label is-flex is-align-items-flex-start">Mistake Tolerance</label>
-					<p class="p-1 mb-1">Determines when to stop analysing your games based on the centipawn loss.</p>
-					<span class="is-relative pb-5 mb-5">
-						<div class="is-absolute left-0 right-0 bottom-0 is-flex is-justify-content-space-between">
-							<span class="is-size-7">Strict</span>
-							<span class="is-size-7">Lenient</span>
-						</div>
-						<input id="analyseMistakeTolerance" data-element="yes" type="range" min="0" max="2" step="1" value="0" class="">
-					</span>
+				<div class="mt-4">
+					<div class="is-flex is-flex-direction-row is-justify-content-space-between is-align-items-flex-end">
+						<label class="label">Mistake Tolerance</label>
+						<span class="range-container-text-above">
+							<div class="range-text">
+								<span class="is-size-7">Strict</span>
+								<span class="is-size-7">Lenient</span>
+							</div>
+							<input id="analyseMistakeTolerance" data-element="yes" type="range" min="0" max="2" step="1" value="0" style="width: 12rem;">
+						</span>
+					</div>
+					<div class="is-flex is-flex-direction-row is-flex-wrap-nowrap is-align-items-flex-end">
+						<p class="p-1 mb-1">Determines when to stop analysing your games based on the centipawn loss.</p>
+					</div>
 				</div>
 				<div class="mt-4">
 					<label class="label is-flex is-align-items-flex-start">Inaccuracies</label>
@@ -149,16 +157,20 @@
 		<div id="settingsTabPractice" class="is-hidden box p-5">
 			<h2 class="title is-size-5 mb-4">Practice Settings</h2>
 			<div id="variationSettingsContainer" class="is-flex is-flex-direction-column is-align-items-flex-start">
-				<div class="mb-5">
-					<label class="label">Recommend Moves</label>
-					<p class="p-1 mb-1">The amount of moves that will be recommended based on accuracy and the last time you practiced a move.</p>
-					<span class="is-relative pb-5">
-						<div class="is-absolute left-0 right-0 bottom-0 is-flex is-justify-content-space-between">
-							<span class="is-size-7">Less</span>
-							<span class="is-size-7">More</span>
-						</div>
-						<input id="recommendInterval" data-element="yes" type="range" min="0" max="3" step="1" value="0" class="">
-					</span>
+				<div>
+					<div class="is-flex is-flex-direction-row is-justify-content-space-between is-align-items-flex-end">
+						<label class="label">Recommend Moves</label>
+						<span class="range-container-text-above">
+							<div class="range-text">
+								<span class="is-size-7">Less</span>
+								<span class="is-size-7">More</span>
+							</div>
+							<input id="recommendInterval" data-element="yes" type="range" min="0" max="3" step="1" value="0" style="width: 12rem;">
+						</span>
+					</div>
+					<div class="is-flex is-flex-direction-row is-flex-wrap-nowrap is-align-items-flex-end">
+						<p class="p-1 mb-1">The amount of moves that will be recommended based on accuracy and the last time you practiced a move.</p>
+					</div>
 				</div>
 				<div class="mt-4">
 					<label class="label">Animate Variations</label>
@@ -177,8 +189,8 @@
 
 		<div id="settingsTabAccount" class="is-hidden box w-full p-5">
 			<h2 class="title is-size-5 mb-4">User Account</h2>
-			<div class="field">
-				<label class="label">Email address</label>
+			<div class="field mb-0">
+				<label class="label mb-2">Email address</label>
 				<div class="control">
 					<div class="is-flex is-align-items-center is-gap-1">
 						<input id="accountEmailAddress" data-element="yes" disabled type="email" value="" class="input">
@@ -194,13 +206,10 @@
 				</div>
 			</div>
 				
-			<div id="accountConfirmContainer" class="is-hidden mt-5">
+			<div id="accountConfirmContainer" data-element="yes" class="is-hidden mt-5">
 				<article class="message is-info">
 					<div class="message-body">
-						<span class="icon is-small">
-							<i class="fa-solid fa-circle-info"></i>
-						</span>
-						<span class="ml-1">Your new email address needs to be verified. Click on the link below to send a verification email and follow the instructions to confirm your changes.</span>
+						Your new email address needs to be verified. Click on the link below to send a verification email and follow the instructions to confirm your changes.
 					</div>
 				</article>
 				<button id="sendVerificationEmailButton" data-element="yes" type="button" class="button is-primary">Send the verification email</button>

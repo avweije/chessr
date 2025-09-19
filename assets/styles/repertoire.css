@@ -1,3 +1,19 @@
+/* Skeleton Loaders */
+.skeleton-moves-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.skeleton-block.skeleton-moves-table-rows {
+  height: 12rem;
+  min-height: 12rem;
+  max-height: 12rem;
+  margin: 0 !important;
+}
+
+
+/* */
 table.moves-table {
     width: 100%;
     border-collapse: collapse;

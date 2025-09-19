@@ -1,23 +1,23 @@
-<div id="disconnectModal" class="modal is-large-rounded">
+<div id="disconnectModal" data-element="yes" class="modal is-large-rounded">
 	<div class="modal-background"></div>
 	<div class="modal-card">
 		<header class="modal-card-head">
 			<p class="modal-card-title">Disconnect from main account</p>
-			<button id="disconnectModalCloseButton" class="delete" aria-label="close"></button>
+			<button id="disconnectModalCloseButton" data-element="yes" class="delete" aria-label="close"></button>
 		</header>
 		<section class="modal-card-body">
 			<p>
 				Uncheck the account(s) you want to disconnect from
-				<span id="disconnectModalOpponentUsername" class="has-text-weight-semibold">Opponent</span>:
+				<span id="disconnectModalOpponentUsername" data-element="yes" class="has-text-weight-semibold">Opponent</span>:
 			</p>
 
-			<div id="disconnectModalChildAccountContainer" class="boxed-checkbox-group is-justify-content-flex-start mt-5">
+			<div id="disconnectModalChildAccountContainer" data-element="yes" class="boxed-checkbox-group is-justify-content-flex-start mt-5">
 			</div>
 		</section>
 		<footer class="modal-card-foot is-justify-content-flex-end">
 			<div class="buttons">
-				<button id="disconnectModalCancelButton" type="button" class="button">Cancel</button>
-				<button id="disconnectModalConfirmButton" type="button" class="button is-warning">Confirm</button>
+				<button id="disconnectModalCancelButton" data-element="yes" type="button" class="button">Cancel</button>
+				<button id="disconnectModalConfirmButton" data-element="yes" type="button" class="button is-warning">Confirm</button>
 			</div>
 		</footer>
 	</div>

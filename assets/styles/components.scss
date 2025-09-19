@@ -166,7 +166,7 @@
 }
 
 .boxed-radio-menu > .boxed-radio {
-  color: #6b7280;
+  color: var(--color-text-faded);
 }
 .boxed-radio-menu > .boxed-radio {
   min-width: 7rem;
@@ -361,25 +361,6 @@ div:not(.boxed-radio-menu) > .boxed-radio input:not(:disabled):checked ~ .boxed-
   background-color: var(--color-surface-alt);
 }
 
-.boxed-card .boxed-card-arrow {
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  right: 0;
-  bottom: 0;
-  font-size: 1.3rem;
-  width: 2rem;
-  height: 2rem;
-  margin: 0.5rem;
-  opacity: 0;
-  color: var(--color-surface-alt);
-}
-
-.boxed-card:hover .boxed-card-arrow {
-  opacity: .75;
-}
-
 
 /* Pgn Moves Container */
 .pgn-moves-container {
@@ -396,23 +377,22 @@ div:not(.boxed-radio-menu) > .boxed-radio input:not(:disabled):checked ~ .boxed-
 }
 
 .pgn-moves-container .pgn-move-group > .pgn-text:last-child {
-  padding-right: 0.25em;
+  /* padding-right: 0.25em; */
 }
 
 .pgn-moves-container .pgn-text + .pgn-text {
-  padding-left: 0.25em;
+  /* padding-left: 0.25em; */
 }
 
-.pgn-moves-container .pgn-text.move-number + .pgn-text,
-.pgn-moves-container .pgn-text.move-number + .pgn-move {
-  x-margin-left: -0.15em;
-}
-
+.pgn-moves-container .pgn-text,
 .pgn-moves-container .pgn-move {
   padding: 0.125em;
-  //margin: -0.125em;
   border-radius: 0.375em;
   border: 1px solid transparent;
+}
+
+.pgn-moves-container .pgn-text.move-number {
+  padding-right: 0 !important;
 }
 
 .pgn-moves-container .pgn-move-group > .pgn-move,
@@ -487,25 +467,34 @@ table.is-spacing-1 {
   width: 100%;
 }
 
-.skeleton-block.skeleton-opponent-radio {
-  width: 13rem;
-  height: 5.3rem;
-  border-radius: 0.5rem;
-}
 
-.skeleton-moves-table {
+/* Input Range Container, Labels Above */
+.range-container-text-above,
+.range-container-text-below {
+  position: relative;
   display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
+  flex-shrink: 0;
 }
 
-.skeleton-block.skeleton-moves-table-rows {
-  height: 12rem;
-  min-height: 12rem;
-  max-height: 12rem;
-  margin: 0 !important;
+.range-container-text-above > .range-text,
+.range-container-text-below > .range-text {
+  position: absolute;
+  top: -1.6rem;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  pointer-events: none;
 }
 
+.range-container-text-below > .range-text {
+  top: 0.9rem;
+}
+
+.range-container-text-above > input[type="range"] {
+  width: 12rem;
+}
 
 /* Input Range - Track & Thumb */
 
