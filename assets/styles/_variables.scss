@@ -18,27 +18,45 @@ $danger: #f44336;
 
 // Link variants
 $link-border: #fbd38d;
-$link-text: #7c2d12; // #535352; // #b88f3d; // #af6b3f;
-$link-hover: #0369a1; // #919295; // #d4a017; // #d4a017;
+
+// green-variant
+//$link: #0f766e; // #0369a1; // #22c55e;
+//$info: #4dd0e1;
+//$link-text: #38a169;
+//$link-hover: #48bb78;
+
+// blue-variant
+$link: #1f7f8b; // same as text-title
+$info: #4dd0e1;
+$link-text: #957f49; // #1f7f8b;
+$link-hover: #ad9863; // #52afbb;
+
+// teal-variant
+//$link: #0891b2; // #0369a1;
+//$info: #5eead4; // #4dd0e1;
+//$link-text: #0d9488; // #38a169;
+//$link-hover: #14b8a6; // #48bb78;
 
 // Text colors
 //$text-default: #b45309;
 //$text-title: #c05621;
 //$text-faded: #ca854d;
 $text-on-background: #d1d5db;
-$text-default: #9a3412;
-$text-title: #8f4c35; // #7c2d12;
-$text-faded: #a0582b;
+$text-default: #241a09; // #855408; // #9d472a;
+//$text-title: #0f766e; // #2f855a;
+$text-title: #D18C2B; // #22a7b5; // blue-variant
+$text-faded: #6e452b; // #a0582b;
 
 // Surfaces
 $background: #735751;
-$surface-main: #f7eacc; // #fef6e4;
-$surface-alt: #fbd38d;
+$surface-main: #efe9d9;
+$surface-alt: #f0d58c;
 $on-surface: #2c2c2c;
+$surface-mixed: mix($surface-alt, $surface-main, 20%);
 
 // Custom Extras
-$primary-lighter: #f6ad55;
-$surface-border: rgb(246, 173, 85);
+$primary-lighter: #f5daba;
+$surface-border: #dbbc68; // rgb(246, 173, 85);
 $input-background: #fcfcfc;
 $input-text: #a0674a;
 $input-background-disabled: #f0f0f0;
@@ -68,6 +86,7 @@ $background-dark: #121212;     // almost black, main background
 $surface-main-dark: #1e1e1e;   // card / box main background
 $surface-alt-dark: #2a2a2a;    // alternate surfaces / highlights
 $on-surface-dark: #e0e0e0;     // text color on surfaces
+$surface-mixed-dark: mix($surface-alt-dark, $surface-main-dark, 20%);
 
 // Custom Extras
 $primary-lighter-dark: hwb(35.06deg 46.86% 18.04%);

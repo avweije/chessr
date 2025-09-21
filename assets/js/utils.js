@@ -9,19 +9,57 @@
 export class Utils {
   // The page loading container
   static pageLoader = null;
+  // The Notyf container
+  static notyf = null;
 
   // Overlay show counter
   static showCounter = 0;
 
-  // The error icon element
-  static errorIconElement = null;
-
-  static console = null;
-
   static {
     // Get the elements
     this.pageLoader = document.getElementById("pageLoader");
-    this.errorIconElement = document.getElementById("errorIconElement");
+    // Create an instance of Notyf
+    this.notyf = new Notyf({
+      duration: 2000,
+      position: {
+        x: 'right',
+        y: 'bottom',
+      },
+      types: [
+        {
+          type: 'success',
+          className: 'notyf-success-toast',
+          icon: {
+            className: 'fas fa-check-circle'
+          }
+        },
+        {
+          type: 'info',
+          className: 'notyf-info-toast',
+          icon: {
+            className: 'fas fa-info-circle'
+          }
+        },
+        {
+          type: 'warning',
+          className: 'notify-warning-toast',
+          icon: {
+            className: 'fas fa-exclamation-triangle'
+          }
+        },
+        {
+          type: 'error',
+          className: 'notify-error-toast',
+          duration: 2500,
+          dismissible: true,
+          icon: {
+            className: 'fas fa-times-circle'
+          }
+        }
+      ]
+    });
+
+    console.log('Notyf', this.notyf);
   }
 
   // Shows a loader
@@ -43,24 +81,68 @@ export class Utils {
     }
   }
 
-  // Fade the error icon to indicate something is wrong
-  static showError() {
-    // if already showing
-    if (!this.errorIconElement.classList.contains("fade")) {
-      return false;
+  // Show a success toast
+  static showSuccess(msg) {
+    // Get the error object message or just return the original variable
+    msg = this.parseErrorMessage(msg);
+    // Get the options object
+    const opts = this.getNotyfOptions(msg);
+    // Display an info notification 
+    this.notyf.success(opts);
+  }
+
+  // Show an info toast
+  static showInfo(msg) {
+    // Get the error object message or just return the original variable
+    msg = this.parseErrorMessage(msg);
+    // Get the options object
+    const opts = this.getNotyfOptions(msg, 'info');
+    // Display an info notification 
+    this.notyf.open(opts);
+  }
+
+  // Show an info toast
+  static showWarning(msg) {
+    // Get the error object message or just return the original variable
+    msg = this.parseErrorMessage(msg);
+    // Get the options object
+    const opts = this.getNotyfOptions(msg, 'info');
+    // Display an info notification 
+    this.notyf.open(opts);
+  }
+
+  // Show an error toast
+  static showError(msg) {
+    console.log('Utils.showError', msg);
+    // Get the error object message or just return the original variable
+    msg = this.parseErrorMessage(msg);
+    // Get the options object
+    const opts = this.getNotyfOptions(msg);
+    // Display an error notification 
+    this.notyf.error(opts);
+  }
+
+  static parseErrorMessage(msg) {
+    // Check to see if this is an error object
+    if (msg && typeof msg === 'object' && msg.name && typeof msg.name === 'string') {
+      return msg.message ?? msg.error ?? '';
     }
+    return msg;
+  }
 
-    // start fade-in and call fade-out after 5 seconds
-    this.errorIconElement.classList.remove("fade");
-
-    setTimeout(() => {
-      this.hideError();
-    }, 5000);
+  static getNotyfOptions(msg, type) {
+    if (msg && typeof msg === 'string') {
+      msg = { message: msg };
+      if (type) msg.type = type;
+    } else if (msg && typeof msg === 'object') {
+      if (msg.duration === 'short') msg.duration = 1250;
+      if (msg.duration === 'long') msg.duration = 3000;
+    }
+    return msg;
   }
 
   // Hide the error icon
   static hideError() {
-    this.errorIconElement.classList.add("fade");
   }
 
   // Get a number as B+ (billion), M+ (million) or k+ (thousand)
@@ -94,6 +176,3 @@ export class Utils {
     return (h > 0 ? h + "h " : "") + (h > 0 || m > 0 ? m + "m " : "") + s + "s";
   }
 }
-
-// TODO: Not happy with this, find or make something better..
-//Utils.overrideConsole();

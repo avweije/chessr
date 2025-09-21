@@ -162,7 +162,9 @@ class GameEvaluator
             //
             if ($this->shouldAnalyseMove($whiteToMove, $analyseForBlack)) {
                 // The centipawn loss for this move
-                $cpLoss = max(0, $bestCp - $moveCp);
+                $cpLoss = $bestCp - $moveCp;
+                if ($analyseForBlack) $cpLoss = abs($cpLoss);
+                $cpLoss = max(0, $cpLoss);
                 // Keep track of total centipawn loss for mistakes
                 if ($cpLoss > 0) {
                     $cpLossTotal += $bestCp - $moveCp;
@@ -174,6 +176,7 @@ class GameEvaluator
                 $mistake = [
                     "move" => $move["san"],
                     "moveCp" => $moveCp,
+                    "bestCp" => $bestCp,
                     "cpLoss" => $cpLoss,
                     "type" => $this->determineMistakeType($pctLoss, $this->settings),
                     "bestmoves" => [],

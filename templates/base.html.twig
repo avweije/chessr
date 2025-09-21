@@ -11,15 +11,20 @@
 		</title>
 		<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text></svg>">
 		{% block stylesheets %}
-			<link
-			rel="stylesheet" href="{{ asset('styles/app.scss') }}">
-			<!-- font awesome solid icons -->
+			<!-- Font awesome solid icons -->
 			<link rel="stylesheet" href="{{ asset('vendor/fontawesome/css/all.min.css') }}">
+			<!-- Notyf toasts -->
+			<link rel="stylesheet" href="{{ asset('vendor/notyf/notyf.min.css') }}">
+			<!-- Our stylesheet -->
+			<link rel="stylesheet" href="{{ asset('styles/app.scss') }}">
 		{% endblock %}
 		{% block importmap %}
 			{{ importmap('app') }}
 		{% endblock %}
-		{% block javascripts %}{% endblock %}
+		{% block javascripts %}
+			<!-- Notyf toasts -->
+			<script src="{{ asset('vendor/notyf/notyf.min.js') }}"></script>
+		{% endblock %}
 	</head>
 	<body style="--bg-image: url('{{ asset('images/pexels-seraphim-tsounis-283679744-14409978.jpg') }}');">
 		<div class="body-background"></div>
@@ -109,26 +114,12 @@
 			</div>
 
 			{% block footer %}
-				<footer class="is-hidden fixed bottom-0 w-full rounded bg-white dark:bg-slate-900 border-t border-zinc-300 dark:border-slate-700 shadow-dark-mild dark:text-white/70">
-					<div id="pageFooterBackground" class="is-absolute w-full h-full" style="opacity: .1; background-image: url('{{ asset('images/smokey-chess-background.webp') }}');"></div>
-					<p class="m-0 text-center is-size-7 py-1 md:py-2">
-						Copyright 2024 AvWeije. All Rights Reserved.
-					</p>
-				</footer>
 			{% endblock %}
 
 			<div id="pageLoader" class="is-hidden">
 				<div class="is-hidden loader-dots-rotate-in-circle"></div>
 				<div class="loader-bars-in-circle"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
 				<div class="is-hidden loader-dots-pulse-in-circle"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
-			</div>
-
-			<div id="errorIconElement" class="fade-element fade fixed bottom-3 left-3">
-				<div class="is-flex bg-white is-rounded">
-					<span class="is-danger">
-						<i class="fa-solid fa-triangle-exclamation"></i>
-					</span>
-				</div>
 			</div>
 		</body>
 	</html>

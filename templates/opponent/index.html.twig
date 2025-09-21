@@ -107,15 +107,15 @@
 	</div>
 
 	<div id="opponentAnalysisTab" data-element="yes" class="is-hidden is-flex is-flex-direction-column is-align-items-center is-justify-content-space-around">
-		<div class="is-flex is-flex-direction-column is-align-items-center is-justify-content-center p-4">
-			<div id="opponentTextAndContainer" class="p-6">
-				<p id="chooseOpponentText" data-element="yes" class="has-text-weight-medium has-text-on-background has-text-centered">Choose your opponent:</p>
-				<div id="opponentContainer" data-element="yes" class="boxed-radio-group m-2 mt-6"></div>
+		<div class="is-flex is-flex-direction-column is-align-items-center is-justify-content-center">
+			<div id="opponentTextAndContainer" class="is-flex is-flex-direction-column is-align-items-center">
+				<p id="chooseOpponentText" data-element="yes" class="has-text-weight-medium has-text-on-background is-size-5 mt-6 mb-5">Choose your opponent:</p>
+				<div id="opponentContainer" data-element="yes" class="boxed-radio-group"></div>
 			</div>
 
-			<p class="has-text-weight-medium has-text-on-background mt-6 mb-4">Which side of your opponent do you want to see?</p>
+			<p class="has-text-weight-medium has-text-on-background is-size-5 mt-6 mb-5">Which side of your opponent do you want to see?</p>
 
-			<div id="opponentColorButtons" data-element="yes" class="boxed-radio-group m-2">
+			<div id="opponentColorButtons" data-element="yes" class="boxed-radio-group">
 				<div class="boxed-radio">
 					<input class="is-hidden" type="radio" name="opponent_color" value="white" id="opponentColorWhiteRadio" data-element="yes" checked/>
 					<label class="boxed-radio-label" for="opponentColorWhiteRadio"></label>
@@ -178,11 +178,13 @@
 				<div id="opponentMovesTable" data-element="yes" class="is-flex is-flex-wrap-wrap is-gap-1 is-justify-content-center mx-6 mb-2"></div>
 			</div>
 
-			<div class="is-fixed right-0 bottom-0 p-2 dialog-open-hide">
-				<button id="opponentRemoveButton" data-element="yes" type="button" title="Remove this opponent" class="button is-hidden is-danger is-small">
+			<div class="is-flex pt-6">
+				<button id="opponentRemoveButton" data-element="yes" type="button" title="Remove this opponent" 
+					class="button is-hidden is-danger is-small">
 					<span class="icon">
 						<i class="fa-solid fa-trash"></i>
 					</span>
+					<span>Remove opponent</span>
 				</button>	
 			</div>
 		</div>

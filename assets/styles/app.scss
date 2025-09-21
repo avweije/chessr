@@ -81,6 +81,7 @@ $custom-colors: map.merge($bulma-colors, (
 @use "./components.scss" as *;
 @use "./grid.scss" as *;
 @use "./loaders.scss" as *;
+@use "./notyf.scss" as *;
 
 
 /* light/dark theme toggle */
@@ -91,6 +92,10 @@ html, html.theme-light {
 
 html.dark, html.theme-dark {
   color-scheme: dark;
+}
+
+html {
+  overflow-y: visible;
 }
 
 body {

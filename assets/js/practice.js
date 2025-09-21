@@ -41,7 +41,7 @@ const log = new Logger("Practice");
 class Practice extends MyChessBoard {
   // the current practice type & the available types
   type = "all";
-  types = ["white", "black", "new", "recommended", "all", "analysis"];
+  types = ["white", "black", "new", "recommended", "focused", "all", "analysis"];
 
   repertoireId = null;
   customRepertoireField = null;
@@ -100,7 +100,7 @@ class Practice extends MyChessBoard {
 
   constructor() {
     super();
-
+    
     // show the page loader
     Utils.showLoading();
 
@@ -210,11 +210,31 @@ class Practice extends MyChessBoard {
     this.elements.skipMoveButton.addEventListener("click", () => {
       this.skipMove();
     });
+    // Focus move button
+    this.elements.focusMoveButton.addEventListener("click", () => {
+      this.focusMove();
+    });
 
     this.elements.analyseGameButton.addEventListener(
       "click",
       this.onAnalyseGame.bind(this)
     );
+
+    // Copy FEN string
+    this.elements.analysisGameFenFieldCopy.addEventListener("click", (event) => {
+      const fen = this.elements.analysisGameFenField.innerText;
+      navigator.clipboard.writeText(fen).then(() => {
+        // Show a toast
+        Utils.showInfo('Copied!');
+      });
+    });
+    this.elements.practiceInfoFenFieldCopy.addEventListener("click", (event) => {
+      const fen = this.elements.practiceInfoFenField.innerText;
+      navigator.clipboard.writeText(fen).then(() => {
+        // Show a toast
+        Utils.showInfo('Copied!');
+      });
+    });
   }
 
   createChessboard() {
@@ -268,10 +288,10 @@ class Practice extends MyChessBoard {
         // store the settings
         this.onGetSettings(response.settings);
       })
-      .catch((error) => {
-        log.warn("Error:", error);
+      .catch((err) => {
+        log.warn("Error:", err);
         // show the error icon
-        Utils.showError();
+        Utils.showError(err);
       })
       .finally(() => {
         // hide the page loader
@@ -381,11 +401,27 @@ class Practice extends MyChessBoard {
       closeIgnoreModal();
     });
 
+    // Focus modal
+    const showFocusModal = () => this.elements.focusModal.classList.add("is-active");
+    const closeFocusModal = () => this.elements.focusModal.classList.remove("is-active");
+
+    const focusModalBkgd = this.elements.focusModal.getElementsByClassName("modal-background")[0];
+
+    focusModalBkgd.addEventListener("click", closeFocusModal);
+    this.elements.focusModalCloseButton.addEventListener("click", closeFocusModal);
+    this.elements.focusModalCancelButton.addEventListener("click", closeFocusModal);
+    this.elements.focusModalConfirmButton.addEventListener("click", () => {
+      // Handle the confirmation
+      this.onFocusModalConfirm();
+    });
+
     // You can expose show functions if needed elsewhere
     this.showSaveModal = showSaveModal;
     this.closeSaveModal = closeSaveModal;
     this.showIgnoreModal = showIgnoreModal;
     this.closeIgnoreModal = closeIgnoreModal;
+    this.showFocusModal = showFocusModal;
+    this.closeFocusModal = closeFocusModal;
   }
 
 
@@ -396,8 +432,6 @@ class Practice extends MyChessBoard {
    * @memberof Practice
    */
   onWorkerMessage(e) {
-    log.info("onWorkerMessage", e);
-
     switch (e.data[0]) {
       case "getEco":
         if (e.data[3] == "custom") {
@@ -576,6 +610,7 @@ class Practice extends MyChessBoard {
                 )
               ) {
                 failed.push({
+                  id: this.practice.id,
                   color: this.practice.lineColor,
                   fen: this.lastMove.before,
                   move: this.practice.lineMoves[i],
@@ -586,6 +621,7 @@ class Practice extends MyChessBoard {
           } else {
             // add the move
             failed.push({
+              id: this.practice.id,
               color: this.practice.lineColor,
               fen: this.lastMove.before,
               move: this.practice.lineMoves[0],
@@ -765,8 +801,6 @@ class Practice extends MyChessBoard {
   togglePracticeInfo(eventObject) {
     // blur the button
     this.elements.showPracticeInfoButton.blur();
-
-    log.info("togglePracticeInfo", eventObject);
 
     if (
       !this.elements.showPracticeInfoButton.disabled &&
@@ -953,10 +987,10 @@ class Practice extends MyChessBoard {
     })
       .then((res) => res.json())
       .then((response) => { })
-      .catch((error) => {
-        log.warn("Error:", error);
+      .catch((err) => {
+        log.warn("Error:", err);
         // show the error icon
-        Utils.showError();
+        Utils.showError(err);
       });
 
     // remove from the current practice lines
@@ -1021,10 +1055,10 @@ class Practice extends MyChessBoard {
     })
       .then((res) => res.json())
       .then((response) => { })
-      .catch((error) => {
-        log.warn("Error:", error);
+      .catch((err) => {
+        log.warn("Error:", err);
         // show the error icon
-        Utils.showError();
+        Utils.showError(err);
       });
 
     // remove from the current practice lines
@@ -1061,10 +1095,10 @@ class Practice extends MyChessBoard {
       })
         .then((res) => res.json())
         .then((response) => { })
-        .catch((error) => {
-          log.warn("Error:", error);
+        .catch((err) => {
+          log.warn("Error:", err);
           // show the error icon
-          Utils.showError();
+          Utils.showError(err);
         });
     }
 
@@ -1112,13 +1146,6 @@ class Practice extends MyChessBoard {
 
     // update the move counter
     if (reduceBy > 0) {
-      log.info(
-        "-- REDUCEBY",
-        reduceBy,
-        reduceTotal,
-        this.practice.lineMovesPlayed
-      );
-
       this.reduceMoveCount(reduceBy);
     }
     if (reduceTotal > 0) {
@@ -1165,8 +1192,18 @@ class Practice extends MyChessBoard {
       " (" +
       this.practice.lines[this.practice.lineIdx].type +
       ")";
-    // set the fen
-    this.analysis.fields.children[5].innerHTML = this.getFen();
+
+    // Get the FEN string
+    const fen = this.getFen() ?? '';
+    // Set the fen
+    this.elements.analysisGameFenField.innerHTML = fen;
+    // Toggle the copy icon
+    if (fen) {
+      this.elements.analysisGameFenFieldCopy.classList.remove("is-hidden");
+    } else {
+      this.elements.analysisGameFenFieldCopy.classList.add("is-hidden");
+    }
+
     // set the game link
     this.analysis.fields.children[7].href =
       this.practice.lines[this.practice.lineIdx].link;
@@ -1334,7 +1371,7 @@ class Practice extends MyChessBoard {
 
       // Find the move
       let temp = this.practice.lines[lineIdx];
-      for (let i=0;i<moveIdx;i++) {
+      for (let i = 0; i < moveIdx; i++) {
         if (temp.moves && temp.moves[0]) {
           temp = temp.moves[0];
           if ((temp.moves?.length ?? 0) > 1) {
@@ -1357,7 +1394,7 @@ class Practice extends MyChessBoard {
       // If not our move and not autoplay
       if (!ourMove && temp.moves && temp.moves[0] && !temp.moves[0].autoplay) {
         log.log('First found:', lineIdx, moveIdx);
-        
+
         return { line: lineIdx, move: moveIdx };
       }
 
@@ -1394,7 +1431,7 @@ class Practice extends MyChessBoard {
 
       // Find the move
       let temp = this.practice.lines[lineIdx];
-      for (let i=0;i<moveIdx;i++) {
+      for (let i = 0; i < moveIdx; i++) {
         if (temp.moves && temp.moves[0]) {
           temp = temp.moves[0];
           continue;
@@ -1421,7 +1458,7 @@ class Practice extends MyChessBoard {
       // If not our move and not autoplay
       if (isMatch) {
         log.log('Last found:', lineIdx, moveIdx);
-        
+
         return { line: lineIdx, move: moveIdx };
       }
 
@@ -1556,16 +1593,16 @@ class Practice extends MyChessBoard {
       })
         .then((res) => res.json())
         .then((response) => {
-          
+
           console.log(response);
 
           // Enable the practice
           this.onGetRepertoire(response);
         })
-        .catch((error) => {
-          log.warn("Error:", error);
+        .catch((err) => {
+          log.warn("Error:", err);
           // Show the error icon
-          Utils.showError();
+          Utils.showError(err);
         })
         .finally(() => {
           // Hide the page loader
@@ -1586,24 +1623,29 @@ class Practice extends MyChessBoard {
     this.elements.startPracticeButton.disabled = false;
 
     // pass the ECO data to the worker
-    log.info("-- ECO data set in worker", this.repertoire.eco);
     this.worker.postMessage(["setData", this.repertoire.eco]);
 
     // get the number of moves (ours) for the different repertoires
     if (this.type != "custom") {
-      const moveCounts = ["", "", 0, 0, "", 0];
+      // Get the move counts
       this.practice.lines = [];
-      moveCounts[2] = this.getPracticeLines("new", this.repertoire["new"]);
+      const newCnt = this.getPracticeLines("new", this.repertoire["new"]);
       this.practice.lines = [];
-      moveCounts[3] = this.getPracticeLines(
-        "recommended",
-        this.repertoire["recommended"]
-      );
+      const recommendedCnt = this.getPracticeLines("recommended", this.repertoire["recommended"]);
       this.practice.lines = [];
-      moveCounts[5] = this.getPracticeLines(
-        "analysis",
-        this.repertoire["analysis"]
-      );
+      const focusedCnt = this.getPracticeLines("focused", this.repertoire["focused"]);
+      this.practice.lines = [];
+      const analysisCnt = this.getPracticeLines("analysis", this.repertoire["analysis"]);
+      this.practice.lines = [];
+
+      const moveCounts = {
+        new: newCnt,
+        recommended: recommendedCnt,
+        focused: focusedCnt,
+        analysis: analysisCnt
+      };
+
+      console.log('moveCounts', moveCounts, this.repertoire);
 
       // toggle the repertoire type buttons
       this.toggleRepertoireButtons(moveCounts);
@@ -1629,7 +1671,6 @@ class Practice extends MyChessBoard {
       // set the custom repertoire field
       this.elements.practiceCustomRepertoireField.children[0].children[0].innerHTML = pgn;
       // get the ECO code
-      log.info("-- get ECO data for custom repertoire");
       this.worker.postMessage(["getEco", pgn, "custom"]);
 
       // hide the repertoire type buttons
@@ -1693,39 +1734,37 @@ class Practice extends MyChessBoard {
 
   // add event listeners to the repertoire type buttons
   initRepertoireButtons() {
-    this.elements.practiceRepertoireButtons.children[0].children[0].addEventListener(
-      "click",
+    this.elements.repertoireWhite.addEventListener("click",
       (event) => {
         this.showRepertoireType("white");
       }
     );
-    this.elements.practiceRepertoireButtons.children[1].children[0].addEventListener(
-      "click",
+    this.elements.repertoireBlack.addEventListener("click",
       (event) => {
         this.showRepertoireType("black");
       }
     );
-    this.elements.practiceRepertoireButtons.children[2].children[0].addEventListener(
-      "click",
+    this.elements.repertoireNew.addEventListener("click",
       (event) => {
         this.showRepertoireType("new");
       }
     );
-    this.elements.practiceRepertoireButtons.children[3].children[0].addEventListener(
-      "click",
+    this.elements.repertoireRecommended.addEventListener("click",
       (event) => {
-        log.log('onRecommendedClick', event, this.needsRefresh, !this.elements.repertoireRecommendedRefresh.classList.contains('is-hidden'));
         this.showRepertoireType("recommended", this.needsRefresh, !this.elements.repertoireRecommendedRefresh.classList.contains('is-hidden'));
       }
     );
-    this.elements.practiceRepertoireButtons.children[4].children[0].addEventListener(
-      "click",
+    this.elements.repertoireFocused.addEventListener("click",
+      (event) => {
+        this.showRepertoireType("focused");
+      }
+    );
+    this.elements.repertoireAll.addEventListener("click",
       (event) => {
         this.showRepertoireType("all");
       }
     );
-    this.elements.practiceRepertoireButtons.children[5].children[0].addEventListener(
-      "click",
+    this.elements.repertoireAnalysis.addEventListener("click",
       (event) => {
         this.showRepertoireType("analysis");
       }
@@ -1745,61 +1784,62 @@ class Practice extends MyChessBoard {
 
   // toggle the repertoire type buttons
   toggleRepertoireButtons(moveCounts) {
-    const noRepertoire = this.repertoire.white.length == 0 && this.repertoire.black.length == 0;
-    // toggle the repertoire type buttons
-    this.elements.practiceRepertoireButtons.children[0].children[0].disabled =
-      this.repertoire.white.length == 0;
-    this.elements.practiceRepertoireButtons.children[1].children[0].disabled =
-      this.repertoire.black.length == 0;
-    this.elements.practiceRepertoireButtons.children[2].children[0].disabled =
-      this.repertoire.new.length == 0;
-    // Toggle new repertoire
-    if (this.repertoire.new.length == 0) {
-      this.elements.practiceRepertoireButtons.children[2].classList.add("is-hidden");
-    } else {
-      this.elements.practiceRepertoireButtons.children[2].classList.remove("is-hidden");
-    }
-    this.elements.practiceRepertoireButtons.children[3].children[0].disabled =
-      this.repertoire.recommended.length == 0;
-    // Toggle recommended repertoire
-    this.elements.practiceRepertoireButtons.children[3].children[0].disabled = noRepertoire;
-    //if (this.repertoire.recommended.length == 0) {
-    //this.elements.practiceRepertoireButtons.children[3].classList.add("is-hidden");
-    //} else {
-    //this.elements.practiceRepertoireButtons.children[3].classList.remove("is-hidden");
-    //}
+    // No repertoire moves at all
+    const hasRepertoire = this.repertoire.white.length > 0 || this.repertoire.black.length > 0;
+    // Toggle the repertoire type buttons
+    this.elements.repertoireWhite.disabled = this.repertoire.white.length == 0;
+    this.elements.repertoireBlack.disabled = this.repertoire.black.length == 0;
+    this.elements.repertoireNew.disabled = this.repertoire.new.length == 0;
+    this.elements.repertoireRecommended.disabled = this.repertoire.recommended.length == 0;
+    this.elements.repertoireAll.disabled = !hasRepertoire;
+    this.elements.repertoireAnalysis.disabled = this.repertoire.analysis.length == 0;
 
+    // Show/hide new
+    if (this.repertoire.new.length == 0) {
+      this.elements.repertoireNew.parentNode.classList.add("is-hidden");
+    } else {
+      this.elements.repertoireNew.parentNode.classList.remove("is-hidden");
+    }
+
+    // Toggle recommended
+    this.elements.repertoireRecommended.disabled = this.repertoire.recommended.length == 0;
+    // Toggle recommended repertoire
+    this.elements.practiceRepertoireButtons.children[3].children[0].disabled = !hasRepertoire;
     // Toggle the recommended refresh icon
-    this.toggleRecommendedRefresh(moveCounts[3]);
+    this.toggleRecommendedRefresh(moveCounts.recommended);
+
+    // Show/hide focused
+    if (this.repertoire.focused.length == 0) {
+      this.elements.repertoireFocused.parentNode.classList.add("is-hidden");
+    } else {
+      this.elements.repertoireFocused.parentNode.classList.remove("is-hidden");
+    }
 
     // Toggle repertoire all
-    this.elements.practiceRepertoireButtons.children[4].children[0].disabled =
-      this.repertoire.white.length == 0 && this.repertoire.black.length == 0;
-    this.elements.practiceRepertoireButtons.children[5].children[0].disabled =
-      this.repertoire.analysis.length == 0;
-    // Update the counts
-    this.elements.repertoireNewCount.innerHTML =
-      moveCounts[2];
-    this.elements.repertoireRecommendedCount.innerHTML =
-      moveCounts[3];
-    this.elements.repertoireAnalysisCount.innerHTML =
-      moveCounts[5];
+    this.elements.repertoireAll.disabled = !hasRepertoire;
 
-    // select the right type
+    // Toggle analysis
+    this.elements.repertoireAnalysis.disabled = this.repertoire.analysis.length == 0;
+
+    // Update the counts
+    this.elements.repertoireNewCount.innerHTML = moveCounts.new;
+    this.elements.repertoireRecommendedCount.innerHTML = moveCounts.recommended;
+    this.elements.repertoireFocusedCount.innerHTML = moveCounts.focused;
+    this.elements.repertoireAnalysisCount.innerHTML = moveCounts.analysis;
+
+    // Select the right type
     const idx = this.types.indexOf(this.type);
-    // set to "all" if there are no practice lines for this type
-    if (
-      idx == -1 ||
-      this.elements.practiceRepertoireButtons.children[idx].children[0].disabled
+    // Set to "all" if there are no practice lines for this type
+    if (idx == -1 
+        || this.elements.practiceRepertoireButtons.children[idx].children[0].disabled
     ) {
       // check the checkbox
-      this.elements.practiceRepertoireButtons.children[4].children[0].checked = true;
+      this.elements.repertoireAll.checked = true;
     }
 
-    // toggle the group select container
-    if (
-      this.elements.practiceRepertoireButtons.children[4].children[0].checked &&
-      this.repertoire.groups.length > 0
+    // Toggle the group select container
+    if (this.elements.practiceRepertoireButtons.children[4].children[0].checked 
+        && this.repertoire.groups.length > 0
     ) {
       this.showGroups();
     } else {
@@ -1895,22 +1935,14 @@ class Practice extends MyChessBoard {
   }
 
   // split the repertoire into practice lines
-  getPracticeLines(
-    type,
-    lines,
-    color = "",
-    ourMove = false,
-    lineMoves = [],
-    add = true,
-    isVariation = false,
-    depth = 0,
-    ourMoveTotalSoFar = 0
+  getPracticeLines(type, lines, color = "", ourMove = false, lineMoves = [], 
+    add = true, isVariation = false, depth = 0, ourMoveTotalSoFar = 0
   ) {
     // keep track of how many moves there are for us
     let ourMoveTotal = 0;
 
     for (let i = 0; i < lines.length; i++) {
-      // if a color is given
+      // If a color is given, make sure the child moves have that color too
       if (color != "") {
         lines[i].color = color;
         lines[i].line = lineMoves;
@@ -1918,15 +1950,18 @@ class Practice extends MyChessBoard {
         lineMoves = [...lines[i].line];
       }
 
-      //
+      /*
       if (depth == 0) {
         ourMove =
           (lines[i].color == "white" && lines[i].line.length % 2 == 0) ||
           (lines[i].color == "black" && lines[i].line.length % 2 == 1);
-      }
+      }*/
+
+      // Determine if it's our move or not
+      const ourMoves = type === 'analysis' || !this.isOurMove(lines[i]);
 
       let playableCnt = 0;
-      if (ourMove) {
+      if (ourMoves) {
         for (let x = 0; x < lines[i].moves.length; x++) {
           if (!lines[i].moves[x].autoplay) {
             playableCnt++;
@@ -1935,7 +1970,7 @@ class Practice extends MyChessBoard {
       }
 
       // the total moves for this line
-      let lineMoveTotal = ourMove ? playableCnt : 0;
+      let lineMoveTotal = ourMoves ? playableCnt : 0;
 
       // make a copy of the line
       const copy = lines.slice(i, i + 1)[0];
@@ -1967,14 +2002,8 @@ class Practice extends MyChessBoard {
 
         // get the practice lines
         const sub = this.getPracticeLines(
-          type,
-          lines[i].moves,
-          lines[i].color != "" ? lines[i].color : color,
-          !ourMove,
-          line,
-          lines[i].moves.length > 1,
-          true,
-          depth + 1,
+          type, lines[i].moves, lines[i].color != "" ? lines[i].color : color,
+          ourMoves, line, lines[i].moves.length > 1, true, depth + 1,
           ourMoveTotalSoFar + ourMoveTotal + lineMoveTotal
         );
 
@@ -2050,6 +2079,10 @@ class Practice extends MyChessBoard {
 
       this.elements.practiceInfoContainer.classList.add("is-hidden");
     } else {
+      // Focus button
+      this.elements.focusMoveButton.disabled = false;
+      this.elements.focusMoveButton.classList.remove("is-hidden");
+      // Show practice info button
       this.elements.showPracticeInfoButton.disabled = false;
       this.elements.showPracticeInfoButton.nextElementSibling.classList.remove(
         "is-hidden"
@@ -2107,6 +2140,8 @@ class Practice extends MyChessBoard {
     this.elements.prevMoveButton.classList.add("is-hidden");
     this.elements.skipMoveButton.disabled = true;
     this.elements.skipMoveButton.classList.add("is-hidden");
+    this.elements.focusMoveButton.disabled = true;
+    this.elements.focusMoveButton.classList.add("is-hidden");
     this.elements.showPracticeInfoButton.disabled = true;
     this.elements.showPracticeInfoButton.nextElementSibling.classList.add("is-hidden");
 
@@ -2122,7 +2157,11 @@ class Practice extends MyChessBoard {
       this.board.setPosition(this.game.fen());
     }
 
-    // hide the played moves container
+    // Hide the hint message container
+    this.hideHint();
+    // Hide the focus move container
+    this.hideFocusMove();
+    // Hide the played moves container
     this.hidePlayedMoves();
 
     // toggle the analysis container
@@ -2173,10 +2212,18 @@ class Practice extends MyChessBoard {
       return false;
     }
 
-    // update the info fields
+    // Update the info fields
     this.elements.practiceInfoFields.children[1].innerHTML = "";
     this.elements.practiceInfoFields.children[3].innerHTML = pgn;
-    this.elements.practiceInfoFields.children[5].innerHTML = fen;
+
+    // Update the FEN
+    this.elements.practiceInfoFenField.innerHTML = fen;
+    // Toggle the copy icon
+    if (fen) {
+      this.elements.practiceInfoFenFieldCopy.classList.remove("is-hidden");
+    } else {
+      this.elements.practiceInfoFenFieldCopy.classList.add("is-hidden");
+    }
 
     // update the stats
     this.updatePracticeInfoStats();
@@ -2262,14 +2309,14 @@ class Practice extends MyChessBoard {
 
     // Trying something else.. not happy with the look
     stats = '<span>' + (practiceCount == 0
-        ? "First attempt"
-        : pct +
-        "% over " +
-        Utils.getAbbreviatedNumber(practiceCount) +
-        " attempt" +
-        (practiceCount > 1 ? "s" : ""))
-        + '</span>';
-    
+      ? "First attempt"
+      : pct +
+      "% over " +
+      Utils.getAbbreviatedNumber(practiceCount) +
+      " attempt" +
+      (practiceCount > 1 ? "s" : ""))
+      + '</span>';
+
     // The icons based on success rate
     const spanClass = [
       'icon is-rounded has-background-danger is-small ml-2',
@@ -2295,7 +2342,7 @@ class Practice extends MyChessBoard {
     // If we have enough practice runs and the inARow is better (user is improving at this move)
     if (practiceCount > 10 && inARowIdx > idx) {
       // Show the accuracy in a row
-      stats += `<span class="ml-2">${practiceInARow} in a row</span>` 
+      stats += `<span class="ml-2">${practiceInARow} in a row</span>`
         + `<span class="${spanClass[inARowIdx]}"><i class="fa-solid fa-arrow-trend-up"></i></span>`;
     }
 
@@ -2319,10 +2366,21 @@ class Practice extends MyChessBoard {
     return pgn;
   }
 
-  // show the balloons
+  // Show the balloons
   showBalloons() {
-    // with default settings
-    balloons();
+    // Get the amount to show
+    const amount = this.settings?.balloons_amount ?? 1;
+
+    console.log('showBalloons', amount, this.settings);
+
+    // The amounts
+    const amounts = [1, 2, 5, 10];
+
+    // Repeat balloons for more effect
+    for (let i=0;i<amounts[amount];i++) {
+      const delay = i * 100;
+      setTimeout(balloons, delay);
+    }
   }
 
   /**
@@ -2434,9 +2492,9 @@ class Practice extends MyChessBoard {
      */
 
     // If it's our move, skip to the next move
-    if ((isOurMove && this.type !== 'analysis') 
-        || (!isOurMove && next.playable.length == 0 && this.type !== 'analysis') 
-        || noMovesOrAutoplay) {
+    if ((isOurMove && this.type !== 'analysis')
+      || (!isOurMove && next.playable.length == 0 && this.type !== 'analysis')
+      || noMovesOrAutoplay) {
 
       log.log('Our move or no more moves (or autoplay), skip to next move.', isOurMove, noMovesOrAutoplay);
 
@@ -2491,6 +2549,9 @@ class Practice extends MyChessBoard {
       this.practice.lines[this.practice.lineIdx].color;
 
     // Set the current practice vars
+    this.practice.id = next?.original?.id;
+    this.practice.focused = next?.original?.focused;
+    this.practice.notes = next?.original?.notes;
     this.practice.lineColor = this.practice.lines[this.practice.lineIdx].color;
     this.practice.isMultiple = next.moves.length > 1;
     this.practice.lineMoves = next.moves;
@@ -2525,6 +2586,9 @@ class Practice extends MyChessBoard {
 
     // disallow navigation by arrow left/right
     this.setOption(BOARD_SETTINGS.navigation, false);
+
+    // Toggle the focus move button
+    this.toggleFocusMoveButton(this.practice.focused, this.practice.notes);
 
     // recalibrate the move counter (in case of fast skipping errors)
     //if (this.practice.moveIdx == 0) {
@@ -3361,6 +3425,7 @@ class Practice extends MyChessBoard {
       // update the counters for this move
       this.saveMoveCounters([
         {
+          id: this.practice.id,
           color: this.practice.lineColor,
           fen: this.lastMove.before,
           move: this.lastMove.san,
@@ -3435,6 +3500,7 @@ class Practice extends MyChessBoard {
       // update the counters for this move
       this.saveMoveCounters([
         {
+          id: this.practice.id,
           color: this.practice.lineColor,
           fen: this.lastMove.before,
           move: this.lastMove.san,
@@ -3499,9 +3565,6 @@ class Practice extends MyChessBoard {
 
   // show the counters
   showCounters(moveCount) {
-
-    log.log('showCounters', moveCount, this.elements);
-
     this.elements.practiceCountersContainer.classList.remove("is-hidden");
 
     this.elements.practiceMoveCounter.innerHTML = moveCount;
@@ -3578,10 +3641,10 @@ class Practice extends MyChessBoard {
         log.log("Success:");
         log.log(response);
       })
-      .catch((error) => {
-        log.warn("Error:", error);
+      .catch((err) => {
+        log.warn("Error:", err);
         // show the error icon
-        Utils.showError();
+        Utils.showError(err);
       });
   }
 
@@ -3877,13 +3940,13 @@ class Practice extends MyChessBoard {
     let playable = [];
 
     // Get the color
-    const color = curr_lineIdx >= 0  && curr_lineIdx < this.practice.lines.length
-        ? this.practice.lines[curr_lineIdx].color
-        : "";
+    const color = curr_lineIdx >= 0 && curr_lineIdx < this.practice.lines.length
+      ? this.practice.lines[curr_lineIdx].color
+      : "";
 
     log.log('getNextMove, color: ', color);
 
-    var looped = false;
+    let looped = false;
 
     // find the previous playable move
     while (playableCnt == 0) {
@@ -4103,6 +4166,88 @@ class Practice extends MyChessBoard {
 
     // Enqueue the practice run
     this.enqueueRun(nextLine, nextMove, true);
+  }
+
+  /**
+   * Toggle the focus move button. Show as checked if this is a focused move.
+   * Update the button title.
+   */
+  toggleFocusMoveButton(focused, notes) {
+    
+    console.log('toggleFocusMoveButton', focused, notes);
+
+    // Toggle the button
+    this.elements.focusMoveButton.disabled = focused;
+    // Update the notes textarea
+    this.elements.focusMoveNotesTextarea.value = notes ?? '';
+    // Toggle the focus move container
+    if (this.elements.focusMoveButton.disabled) {
+      this.elements.focusMoveContainer.classList.remove("is-hidden");
+    } else {
+      this.elements.focusMoveContainer.classList.add("is-hidden");
+    }
+  }
+
+  /**
+   * Hides the focus move container.
+   */
+  hideFocusMove() {
+    this.elements.focusMoveContainer.classList.add("is-hidden");
+  }
+
+  /**
+   * Add a move to the focus moves. Shows a modal to ask for confirmation first.
+   */
+  focusMove() {
+
+    console.log('focusMove', this.practice.id, this.practice.focused);
+
+    // Set the notes if we have them
+    this.elements.focusModalNotesTextarea.value = this.practice.notes ?? '';
+    // Show the focus modal
+    this.showFocusModal();
+  }
+
+  /**
+   * Called when the user confirms adding the current position as focus move through the modal.
+   * Update the focused flag and the notes. Closes the modal once the AJAX call is done.
+   */
+  onFocusModalConfirm() {
+    const url = "/api/repertoire/focus";
+    const data = {
+      id: this.practice.id,
+      notes: this.elements.focusModalNotesTextarea.value
+    };
+
+    // Show is-loading
+    this.elements.focusModalConfirmButton.classList.add("is-loading");
+
+    // Call the backend to mark this move as focused
+    fetch(url, {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((res) => res.json())
+      .then((response) => {
+        // Store the notes
+        this.practice.notes = this.elements.focusModalNotesTextarea.value;
+        // Set the button checked status
+        this.toggleFocusMoveButton(this.practice.focused, this.practice.notes);
+      })
+      .catch((err) => {
+        log.warn("Error:", err);
+        // show the error icon
+        Utils.showError(err);
+      })
+      .finally(() => {
+        // Hide is-loading
+        this.elements.focusModalConfirmButton.classList.remove("is-loading");
+        // Close the modal after
+        this.closeFocusModal();
+      });
   }
 
   onAnalyseGame() {

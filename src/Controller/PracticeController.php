@@ -8,6 +8,7 @@ use App\Entity\IgnoreList;
 use App\Entity\Repertoire;
 use App\Controller\ChessrAbstractController;
 use App\Library\Debugger;
+use App\Service\AnalysisService;
 use App\Service\RepertoireService;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\DBAL\Connection;
@@ -29,6 +30,7 @@ class PracticeController extends ChessrAbstractController
         private ManagerRegistry $doctrine, 
         private RepertoireController $repertoire,
         private RepertoireService $repertoireService,
+        private AnalysisService $analysisService,
         private Debugger $debugger
         ) {}
 
@@ -111,6 +113,9 @@ class PracticeController extends ChessrAbstractController
         // get the repertoire lines and the group lines
         [$lines, $groups] = $this->repertoireService->getLines(null, $isRoadmap, $statisticsOnly);
 
+        // Get the focus moves
+        $focusMoves = $this->repertoireService->getFocusMoves();
+
         //return new JsonResponse(["test" => true]);
 
         // the response
@@ -119,6 +124,7 @@ class PracticeController extends ChessrAbstractController
             'black' => [],
             'new' => [],
             'recommended' => [],
+            'focused' => $focusMoves,
             "analysis" => [],
             "groups" => $groups,
             "eco" => json_decode($jsonEco)
@@ -170,143 +176,8 @@ class PracticeController extends ChessrAbstractController
             return new JsonResponse($roadmap);
         }
 
-        // get the analysis repository
-        $repository = $this->em->getRepository(Analysis::class);
-        // get the mistakes for this user
-        $res = $repository->findBy(['User' => $this->getUser()], ['Link' => 'ASC', 'Pgn' => 'ASC']);
-        // add them
-        foreach ($res as $rec) {
-            $moves = [];
-            $multiple = [];
-            // get the best moves json (new)
-            $json = json_decode($rec->getBestMoves(), true);
-            if ($json == null) {
-                // get the best moves array (old)
-                $bm = explode(" ", $rec->getBestMoves());
-                //dd($rec->getBestMoves());
-                foreach ($bm as $move) {
-                    $moves[] = ["move" => $move];
-                    $multiple[] = [
-                        "move" => $move,
-                        "cp" => null,
-                        "mate" => null,
-                        "pv" => null
-                    ];
-                }
-            } else {
-                foreach ($json as $move) {
-                    $moves[] = [
-                        "move" => $move["san"],
-                        "cp" => isset($move['cp']) ? $move['cp'] : null,
-                        "mate" => isset($move['mate']) ? $move['mate'] : null,
-                        "pv" => $move["line"]
-                    ];
-                    $multiple[] = [
-                        "move" => $move['san'],
-                        "cp" => isset($move['cp']) ? $move['cp'] : null,
-                        "mate" => isset($move['mate']) ? $move['mate'] : null,
-                        "pv" => isset($move['line']) ? $move['line'] : null
-                    ];
-                }
-            }
-
-
-            // get the line up to this move
-            $line = [];
-            // get the suggestion, based off our repertoire (1st move not in our repertoire)
-            $suggestion = null;
-            $fenBefore = $rec->getInitialFen();
-            $temp = explode(" ", $rec->getPgn());
-            for ($i = 0; $i < count($temp); $i++) {
-                // if this is not a move number
-                if (preg_match('/^\\d+\\./', $temp[$i]) !== 1) {
-                    if (trim($temp[$i]) != "") {
-                        $line[] = $temp[$i];
-
-                        // if no suggestion yet
-                        if ($suggestion == null) {
-                            // find this move in our repertoire
-                            $vars = [
-                                'User' => $this->getUser(),
-                                'Color' => $rec->getColor(),
-                                'Move' => $temp[$i]
-                            ];
-
-                            if ($fenBefore != "") {
-                                //$parts = explode(" ", $fenBefore);
-                                //$fenBefore2 = implode(" ", array_slice($parts, 0, 3)) . " - " . $parts[4];
-                                //$vars['FenBefore'] = [$fenBefore, $fenBefore2];
-                                $vars['FenBefore'] = $fenBefore;
-                            } else {
-                                $vars['HalfMove'] = 1;
-                            }
-
-                            $rs = $repoRep->findOneBy($vars);
-
-                            // if found, get the FEN, otherwise add as suggestion
-                            if ($rs) {
-                                $fenBefore = $rs->getFenAfter();
-                            } else {
-
-                                //
-                                // if opponent move, make move in Chess() object to get fen after
-                                // then get the eval from db
-                                // add to the suggestion (= cp)
-                                //
-
-                                // add the suggestion
-                                $suggestion = [
-                                    'move' => $temp[$i],
-                                    'display' => ceil(count($line) / 2) . (count($line) % 2 == 0 ? ".." : "") . ". " . $temp[$i],
-                                    'before' => $fenBefore,
-                                    'cp' => 0,
-                                    'line' => $line
-                                ];
-                            }
-                        }
-                    }
-                }
-            }
-
-            // the analysis record
-            $analysis = [
-                "color" => $rec->getColor(),
-                "white" => $rec->getWhite(),
-                "black" => $rec->getBlack(),
-                "link" => $rec->getLink(),
-                "type" => $rec->getType(),
-                "initialFen" => $rec->getInitialFen(),
-                "fen" => $rec->getFen(),
-                "pgn" => $rec->getPgn(),
-                "move" => $rec->getMove(),
-                "line" => $line,
-                "moves" => $moves,
-                "multiple" => $multiple,
-                "suggestion" => $suggestion
-            ];
-
-            // check to see if this position is in our repertoire
-            $move = $this->repertoireService->findPosition($rec->getFen(), $resp[$rec->getColor()]);
-            if ($move !== false) {
-                $analysis["repertoire"] = $move["multiple"];
-            }
-
-            // add the analysis record
-            $resp["analysis"][] = $analysis;
-        }
-
-        // sort by color, link, pgn
-        usort($resp["analysis"], function ($a, $b) {
-            $ret = $b['color'] <=> $a['color'];
-            if ($ret == 0) {
-                $ret = $a['link'] <=> $b['link'];
-            }
-            if ($ret == 0) {
-                $ret = $a['pgn'] <=> $b['pgn'];
-            }
-
-            return $ret;
-        });
+        // Get the analysis lines
+        $resp['analysis'] = $this->analysisService->getAnalysislines($lines);
 
         // if we need the statistics only
         if ($statisticsOnly) {

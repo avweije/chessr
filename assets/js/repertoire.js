@@ -23,10 +23,16 @@ class Repertoire extends MyChessBoard {
 
   cache = [];
 
-  repertoireId = 0;
-  repertoireAutoPlay = false;
-  repertoireExclude = false;
-  repertoireIncluded = true;
+  // The current repertoire object
+  repertoire = {
+    id: null,
+    autoPlay: false,
+    exclude: false,
+    focused: false,
+    included: true,
+    notes: ''
+  };
+
   groups = [];
   repertoireGroups = [];
 
@@ -114,13 +120,20 @@ class Repertoire extends MyChessBoard {
       "click", this.onAnalyseGame.bind(this));
 
     // Repertoire details
-    this.elements.repertoireAutoPlayCheckbox.addEventListener(
-      "change", this.onRepertoireAutoPlayChange.bind(this));
-
-    this.elements.repertoireExcludeCheckbox.addEventListener(
-      "change",
+    this.elements.repertoireAutoPlayCheckbox.addEventListener("change", 
+      this.onRepertoireAutoPlayChange.bind(this));
+    this.elements.repertoireExcludeCheckbox.addEventListener("change",
       this.onRepertoireExcludeChange.bind(this)
     );
+    this.elements.repertoireFocusedCheckbox.addEventListener("change", () => {
+      // Update the details
+      this.onRepertoireDetailsChange({ focused: this.elements.repertoireFocusedCheckbox.checked });
+    });
+    // Repertoire details: notes
+    this.elements.repertoireNotesTextarea.addEventListener("change", () => {
+      // Update the details
+      this.onRepertoireDetailsChange({ notes: this.elements.repertoireNotesTextarea.value });
+    });
 
     // Repertoire group
     this.elements.repertoireGroupInput.addEventListener(
@@ -173,14 +186,28 @@ class Repertoire extends MyChessBoard {
     const confirmCancel = document.getElementById("confirmModalCancelButton");
     const confirmButton = document.getElementById("confirmModalConfirmButton");
 
-    const showConfirmModal = () => confirmModal.classList.add("is-active");
+    const showConfirmModal = () => {
+      // Reset the confirm checkbox and button
+      this.elements.confirmModalConfirmCheckbox.checked = false;
+      this.elements.confirmModalConfirmButton.disabled = true;
+      // Show the modal
+      confirmModal.classList.add("is-active");
+    };
     const closeConfirmModal = () => confirmModal.classList.remove("is-active");
 
     confirmModalBkgd.addEventListener("click", closeConfirmModal);
     confirmClose.addEventListener("click", closeConfirmModal);
     confirmCancel.addEventListener("click", closeConfirmModal);
+
+    // Confirm checkbox, enable confirm button
+    this.elements.confirmModalConfirmCheckbox.addEventListener("click", () => {
+      this.elements.confirmModalConfirmButton.disabled = !this.elements.confirmModalConfirmCheckbox.checked;
+    });
+    // Confirm button
     confirmButton.addEventListener("click", () => {
+      // Remove this move and the lines that follow from our repertoire
       this.onRemoveLineConfirmed();
+      // Close the confirm modal
       closeConfirmModal();
     });
 
@@ -246,7 +273,7 @@ class Repertoire extends MyChessBoard {
       .catch((error) => {
         console.error("Error:", error);
         // show the error icon
-        Utils.showError();
+        Utils.showError(error);
       })
       .finally(() => {
         // hide the page loader
@@ -283,11 +310,14 @@ class Repertoire extends MyChessBoard {
         for (let i = 0; i < line.length; i++) {
           // make the move
           this.game.move(line[i]);
+          //this.makeMove(line[i]);
         }
         // update the board
         this.board.setPosition(this.game.fen());
         // set the new position
         this.resetToCurrent(fen);
+        // Add the last move marker
+        this.afterMakeMove();
       } catch (err) {
         console.log(err);
         // reset the game
@@ -626,10 +656,12 @@ class Repertoire extends MyChessBoard {
       .then((response) => {
         console.log(response);
 
-        // remove the repertoireId
-        this.repertoireId = 0;
-        this.repertoireAutoPlay = false;
-        this.repertoireExclude = false;
+        // remove the repertoire
+        this.repertoire.id = 0;
+        this.repertoire.autoPlay = false;
+        this.repertoire.exclude = false;
+        this.repertoire.focused = false;
+        this.repertoire.notes = '';
         // reset the cache
         this.resetCache();
         // toggle the buttons
@@ -640,7 +672,7 @@ class Repertoire extends MyChessBoard {
       .catch((error) => {
         console.error("Error:", error);
         // show the error icon
-        Utils.showError();
+        Utils.showError(error);
       });
   }
 
@@ -665,7 +697,7 @@ class Repertoire extends MyChessBoard {
       .catch((error) => {
         console.error("Error:", error);
         // show the error icon
-        Utils.showError();
+        Utils.showError(error);
       });
   }
 
@@ -775,7 +807,7 @@ class Repertoire extends MyChessBoard {
       .catch((error) => {
         console.error("Error:", error);
         // show the error icon
-        Utils.showError();
+        Utils.showError(error);
       })
       .finally(() => {
         // hide the page loader
@@ -793,13 +825,15 @@ class Repertoire extends MyChessBoard {
     console.log('onGetMoves:', data);
 
     // Remember the current repertoire details
-    this.repertoireId = data["current"]["id"];
-    this.repertoireAutoPlay = data["current"]["autoplay"];
-    this.repertoireExclude = data["current"]["exclude"];
-    this.repertoireIncluded = data["current"]["included"];
+    this.repertoire.id = data["current"]["id"];
+    this.repertoire.autoPlay = data["current"]["autoplay"];
+    this.repertoire.exclude = data["current"]["exclude"];
+    this.repertoire.focused = data["current"]["focused"];
+    this.repertoire.included = data["current"]["included"];
+    this.repertoire.notes = data["current"]["notes"];
 
     // Toggle the buttons
-    this.toggleButtons(this.repertoireId > 0);
+    this.toggleButtons(this.repertoire.id > 0);
 
     // If we haven't loaded the initial fens yet
     if (!this.initialFensLoaded) {
@@ -822,9 +856,12 @@ class Repertoire extends MyChessBoard {
     this.loadMovesTable(data);
 
     // Set the autoplay & exclude checkboxes
-    this.elements.repertoireAutoPlayCheckbox.checked = this.repertoireAutoPlay;
-    this.elements.repertoireExcludeCheckbox.checked = this.repertoireExclude;
-    this.elements.repertoireExcludeCheckbox.disabled = this.repertoireIncluded == false;
+    this.elements.repertoireAutoPlayCheckbox.checked = this.repertoire.autoPlay;
+    this.elements.repertoireExcludeCheckbox.checked = this.repertoire.exclude;
+    this.elements.repertoireFocusedCheckbox.checked = this.repertoire.focused;
+    this.elements.repertoireExcludeCheckbox.disabled = this.repertoire.included == false;
+    // Set the notes
+    this.elements.repertoireNotesTextarea.value = this.repertoire.notes;
 
     // Store the groups for this move
     this.repertoireGroups = data.groups;
@@ -836,7 +873,7 @@ class Repertoire extends MyChessBoard {
     this.clearGroupTags();
 
     // If this repertoire is saved
-    if (this.repertoireId > 0) {
+    if (this.repertoire.id > 0) {
       // add the group tags
       this.addGroupTags();
     }
@@ -1126,7 +1163,7 @@ class Repertoire extends MyChessBoard {
   onRepertoireAutoPlayChange(event) {
     // set the data object
     const data = {
-      repertoire: this.repertoireId,
+      repertoire: this.repertoire.id,
       autoplay: this.elements.repertoireAutoPlayCheckbox.checked,
     };
 
@@ -1149,7 +1186,7 @@ class Repertoire extends MyChessBoard {
       .catch((error) => {
         console.error("Error:", error);
         // show the error icon
-        Utils.showError();
+        Utils.showError(error);
       });
   }
 
@@ -1157,7 +1194,7 @@ class Repertoire extends MyChessBoard {
   onRepertoireExcludeChange(event) {
     // set the data object
     const data = {
-      repertoire: this.repertoireId,
+      repertoire: this.repertoire.id,
       exclude: this.elements.repertoireExcludeCheckbox.checked,
     };
 
@@ -1180,7 +1217,38 @@ class Repertoire extends MyChessBoard {
       .catch((error) => {
         console.error("Error:", error);
         // show the error icon
-        Utils.showError();
+        Utils.showError(error);
+      });
+  }
+
+  // onChange event for repertoire details
+  onRepertoireDetailsChange(data) {
+
+    console.log('onRepertoireDetailsChange', data);
+    
+    // Set the repertoire id
+    data.repertoire = this.repertoire.id;
+
+    // Update the repertoire details
+    const url = "/api/repertoire/details";
+    fetch(url, {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((res) => res.json())
+      .then((response) => {
+        console.log("Success:", JSON.stringify(response));
+
+        // reset the cache
+        this.resetCache(true);
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        // show the error icon
+        Utils.showError(error);
       });
   }
 
@@ -1250,7 +1318,7 @@ class Repertoire extends MyChessBoard {
   saveRepertoireGroup(group) {
     // set the data object
     const data = {
-      repertoire: this.repertoireId,
+      repertoire: this.repertoire.id,
       group: group.name,
     };
 
@@ -1273,7 +1341,7 @@ class Repertoire extends MyChessBoard {
       .catch((error) => {
         console.error("Error:", error);
         // show the error icon
-        Utils.showError();
+        Utils.showError(error);
       });
   }
 
@@ -1281,7 +1349,7 @@ class Repertoire extends MyChessBoard {
   removeRepertoireGroup(groupName) {
     // set the data object
     const data = {
-      repertoire: this.repertoireId,
+      repertoire: this.repertoire.id,
       group: groupName,
     };
 
@@ -1304,7 +1372,7 @@ class Repertoire extends MyChessBoard {
       .catch((error) => {
         console.error("Error:", error);
         // show the error icon
-        Utils.showError();
+        Utils.showError(error);
       });
   }
 
@@ -1376,7 +1444,7 @@ class Repertoire extends MyChessBoard {
       .catch((error) => {
         console.error("Error:", error);
         // show the error icon
-        Utils.showError();
+        Utils.showError(error);
       });
   }
 

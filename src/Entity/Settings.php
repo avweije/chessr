@@ -55,6 +55,9 @@ class Settings
     #[ORM\Column(type: Types::SMALLINT)]
     private ?int $RecommendInterval = null;
 
+    #[ORM\Column(type: Types::SMALLINT, options: ["default" => 0])]
+    private ?int $BalloonsAmount = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -212,6 +215,18 @@ class Settings
     public function setRecommendInterval(int $RecommendInterval): static
     {
         $this->RecommendInterval = $RecommendInterval;
+
+        return $this;
+    }
+
+    public function getBalloonsAmount(): ?int
+    {
+        return $this->BalloonsAmount;
+    }
+
+    public function setBalloonsAmount(int $BalloonsAmount): static
+    {
+        $this->BalloonsAmount = $BalloonsAmount;
 
         return $this;
     }

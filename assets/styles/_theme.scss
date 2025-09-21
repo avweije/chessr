@@ -26,6 +26,7 @@
   --color-surface-main: #{variables.$surface-main};
   --color-surface-alt: #{variables.$surface-alt};
   --color-on-surface: #{variables.$on-surface};
+  --color-surface-mixed: #{variables.$surface-mixed};
 
   // Custom Extras
   --color-text-on-primary: #{fn.bulmaDarken(variables.$primary,50%)};
@@ -78,6 +79,7 @@
   --color-surface-main: #{variables.$surface-main-dark};
   --color-surface-alt: #{variables.$surface-alt-dark};
   --color-on-surface: #{variables.$on-surface-dark};
+  --color-surface-mixed: #{variables.$surface-mixed-dark};
 
   // Custom Extras
   --color-text-on-primary: #{fn.bulmaDarken(variables.$primary-dark,50%)};
@@ -161,7 +163,7 @@
 
 .tag.is-success {
   background-color: var(--color-success) !important;
-  color: #{fn.bulmaDarken(variables.$success,45%)} !important;
+  color: #{fn.bulmaDarken(variables.$success,40%)} !important;
 }
 .tag.is-success.is-light {
   background-color: #{fn.bulmaLighten(variables.$success,25%)} !important;
@@ -228,11 +230,11 @@
   }
 
   .tag.is-info {
-    color: #{fn.bulmaDarken(variables.$info-dark,45%)} !important;
+    color: #{fn.bulmaDarken(variables.$info-dark,40%)} !important;
   }
 
   .tag.is-success {
-    color: #{fn.bulmaDarken(variables.$success-dark,45%)} !important;
+    color: #{fn.bulmaDarken(variables.$success-dark,35%)} !important;
   }
   .tag.is-success.is-light {
     background-color: #{fn.bulmaLighten(variables.$success-dark,40%)} !important;

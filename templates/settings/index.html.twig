@@ -65,21 +65,20 @@
 						</div>
 					</div>
 				</div>
-
-					<div class="">
-						<div class="field">
-							<label class="label mb-1">Animation Duration</label>
-							<div class="control">
-								<div class="range-container-text-below mt-2">
-									<div class="range-text">
-										<span class="is-size-7">0ms</span>
-										<span class="is-size-7">500ms</span>
-									</div>
-									<input id="animationDuration" data-element="yes" type="range" min="0" max="500" step="50" value="300" style="width: 12rem;">
+				<div class="">
+					<div class="field">
+						<label class="label mb-1">Animation Duration</label>
+						<div class="control">
+							<div class="range-container-text-below mt-2">
+								<div class="range-text">
+									<span class="is-size-7">0ms</span>
+									<span class="is-size-7">500ms</span>
 								</div>
+								<input id="animationDuration" data-element="yes" type="range" min="0" max="500" step="50" value="300" style="width: 12rem;">
 							</div>
 						</div>
 					</div>
+				</div>
 			</div>
 
 			<div class="is-flex mt-4">
@@ -93,9 +92,9 @@
 		<div id="settingsTabEngine" class="is-hidden box p-5">
 			<h2 class="title is-size-5 mb-4">Repertoire</h2>
 			<div id="animationSettingsContainer" class="is-flex is-flex-direction-column is-align-items-stretch">
-				<div>
+				<div class="w-full">
 					<div class="is-flex is-flex-direction-row is-justify-content-space-between is-align-items-flex-end">
-						<label class="label">Max. Search Time</label>
+						<label class="label mb-0">Max. Search Time</label>
 						<span class="range-container-text-above">
 							<div class="range-text">
 								<span class="is-size-7">10s</span>
@@ -105,13 +104,13 @@
 						</span>
 					</div>
 					<div class="is-flex is-flex-direction-row is-flex-wrap-nowrap is-align-items-flex-end">
-						<p class="p-1 mb-1">The maximum amount of time the engine can search a position when being used in the repertoire.</p>
+						<p class="p-1 my-1">The maximum amount of time the engine can search a position when being used in the repertoire.</p>
 					</div>
 				</div>
 				<h2 class="title is-size-5 mt-5 mb-4">Analysis</h2>
-				<div>
+				<div class="w-full">
 					<div class="is-flex is-flex-direction-row is-justify-content-space-between is-align-items-flex-end">
-						<label class="label">Search Time / Move</label>
+						<label class="label mb-0">Search Time / Move</label>
 						<span class="range-container-text-above">
 							<div class="range-text">
 								<span class="is-size-7">500ms</span>
@@ -121,12 +120,12 @@
 						</span>
 					</div>
 					<div class="is-flex is-flex-direction-row is-flex-wrap-nowrap is-align-items-flex-end">
-						<p class="p-1 mb-1">The amount of time the engine will use for each move that needs to be evaluated when analysing your games.</p>
+						<p class="p-1 my-1">The amount of time the engine will use for each move that needs to be evaluated when analysing your games.</p>
 					</div>
 				</div>
-				<div class="mt-4">
+				<div class="w-full mt-4">
 					<div class="is-flex is-flex-direction-row is-justify-content-space-between is-align-items-flex-end">
-						<label class="label">Mistake Tolerance</label>
+						<label class="label mb-0">Mistake Tolerance</label>
 						<span class="range-container-text-above">
 							<div class="range-text">
 								<span class="is-size-7">Strict</span>
@@ -136,10 +135,10 @@
 						</span>
 					</div>
 					<div class="is-flex is-flex-direction-row is-flex-wrap-nowrap is-align-items-flex-end">
-						<p class="p-1 mb-1">Determines when to stop analysing your games based on the centipawn loss.</p>
+						<p class="p-1 my-1">Determines when to stop analysing your games based on the centipawn loss.</p>
 					</div>
 				</div>
-				<div class="mt-4">
+				<div class="w-full mt-4">
 					<label class="label is-flex is-align-items-flex-start">Inaccuracies</label>
 					<p class="p-1 mb-2">When analysing your games, you can choose to ignore the inaccuracies. Only mistakes and blunders will be added to your analysis practice run.</p>
 					<label class="toggle">
@@ -157,9 +156,9 @@
 		<div id="settingsTabPractice" class="is-hidden box p-5">
 			<h2 class="title is-size-5 mb-4">Practice Settings</h2>
 			<div id="variationSettingsContainer" class="is-flex is-flex-direction-column is-align-items-flex-start">
-				<div>
+				<div class="w-full">
 					<div class="is-flex is-flex-direction-row is-justify-content-space-between is-align-items-flex-end">
-						<label class="label">Recommend Moves</label>
+						<label class="label mb-0">Recommend Moves</label>
 						<span class="range-container-text-above">
 							<div class="range-text">
 								<span class="is-size-7">Less</span>
@@ -169,10 +168,25 @@
 						</span>
 					</div>
 					<div class="is-flex is-flex-direction-row is-flex-wrap-nowrap is-align-items-flex-end">
-						<p class="p-1 mb-1">The amount of moves that will be recommended based on accuracy and the last time you practiced a move.</p>
+						<p class="p-1 my-1">The amount of moves that will be recommended based on success rate and frequency.</p>
 					</div>
 				</div>
-				<div class="mt-4">
+				<div class="w-full mt-4">
+					<div class="is-flex is-flex-direction-row is-justify-content-space-between is-align-items-flex-end">
+						<label class="label mb-0">Balloons</label>
+						<span class="range-container-text-above">
+							<div class="range-text">
+								<span class="is-size-7">I feel no joy</span>
+								<span class="is-size-7">Yay</span>
+							</div>
+							<input id="balloonsAmount" data-element="yes" type="range" min="0" max="3" step="1" value="0" style="width: 12rem;">
+						</span>
+					</div>
+					<div class="is-flex is-flex-direction-row is-flex-wrap-nowrap is-align-items-flex-end">
+						<p class="p-1 my-1">The amount of balloons that will be flown in celebration of a perfect practice score.</p>
+					</div>
+				</div>
+				<div class="w-full mt-4">
 					<label class="label">Animate Variations</label>
 					<p class="p-1 mb-2">Each line is animated from the beginning of that line. Any variations that follow can be animated from the start of the variation or from the beginning of the line.</p>
 					<label class="toggle">

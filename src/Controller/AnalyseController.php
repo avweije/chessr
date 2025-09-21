@@ -113,12 +113,16 @@ class AnalyseController extends ChessrAbstractController
       // create the settings
       $settings = new Settings();
       $settings->setUser($this->getUser());
+      // Board settings
       $settings->setAnimationDuration(300);
+      // Engine settings
       $settings->setRepertoireEngineTime(30);
-      $settings->setAnimateVariation(0);
-      $settings->setRecommendInterval(0);
       $settings->setAnalyseEngineTime(1000);
       $settings->setAnalyseIgnoreInaccuracy(false);
+      // Practice settings
+      $settings->setRecommendInterval(0);
+      $settings->setBalloonsAmount(1);
+      $settings->setAnimateVariation(0);
     }
 
     // update the settings

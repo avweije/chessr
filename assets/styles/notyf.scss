@@ -1,0 +1,31 @@
+.notyf {
+    padding: 20px 30px 20px 20px; // +10px for the scrollbar width
+}
+
+.notyf .notyf__toast {
+    padding: 0 1em;
+}
+
+.notyf-success-toast {
+  background-color: var(--bulma-success);
+  color: var(--bulma-success-invert);
+}
+
+.notyf-info-toast {
+  background-color: var(--bulma-info);
+  color: var(--bulma-info-invert);
+}
+
+.notyf-warning-toast {
+  background-color: var(--bulma-warning);
+  color: var(--bulma-warning-invert);
+}
+
+.notyf-error-toast {
+  background-color: var(--bulma-danger);
+  color: var(--bulma-danger-invert);
+}
+
+.notyf .notyf__wrapper {
+    padding: 0.75em 0.5em 0.75em 0;
+}

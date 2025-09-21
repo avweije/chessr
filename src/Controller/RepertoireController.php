@@ -116,6 +116,69 @@ class RepertoireController extends ChessrAbstractController
         return new JsonResponse(["message" => $message]);
     }
 
+    #[Route('/api/repertoire/details', methods: ['POST'], name: 'api_repertoire_details')]
+    /**
+     * Updates the repertoire details for a certain repertoire move.
+     *
+     * @param  mixed $request
+     * @return JsonResponse
+     */
+    public function apiRepertoireDetails(Request $request): JsonResponse
+    {
+        $data = $request->getPayload()->all();
+
+        $message = "";
+
+        $repo = $this->em->getRepository(Repertoire::class);
+        $rep = $repo->findOneBy(['id' => $data["repertoire"]]);
+        if ($rep) {
+            // Update the details that are provided
+            if (isset($data['autoplay'])) $rep->setAutoPlay($data['autoplay']);
+            if (isset($data['exclude'])) $rep->setExclude($data['exclude']);
+            if (isset($data['focused'])) $rep->setFocused($data['focused']);
+            if (isset($data['notes'])) $rep->setNotes($data['notes']);
+            // Save the details
+            $this->em->persist($rep);
+            $this->em->flush();
+
+            $message = "Repertoire updated.";
+        } else {
+            $message = "Repertoire not found.";
+        }
+
+        return new JsonResponse(["message" => $message]);
+    }
+
+    #[Route('/api/repertoire/focus', methods: ['POST'], name: 'api_repertoire_focus')]
+    /**
+     * Updates the 'focused' flag & the notes for a certain repertoire move.
+     *
+     * @param  mixed $request
+     * @return JsonResponse
+     */
+    public function apiRepertoireFocus(Request $request): JsonResponse
+    {
+        $data = $request->getPayload()->all();
+        $message = "";
+        // Get the repertoire
+        $repo = $this->em->getRepository(Repertoire::class);
+        $rep = $repo->findOneBy(['id' => $data["id"]]);
+        if ($rep) {
+            // Update the repertoire
+            $rep->setFocused(true);
+            $rep->setNotes($data['notes']);
+            // Save it
+            $this->em->persist($rep);
+            $this->em->flush();
+
+            $message = "Added to focus moves.";
+        } else {
+            $message = "Repertoire not found.";
+        }
+
+        return new JsonResponse(["message" => $message]);
+    }
+
     #[Route('/api/repertoire/groups', name: 'api_get_repertoire_groups')]
     /**
      * Gets the repertoire groups for a certain user.
@@ -301,15 +364,18 @@ class RepertoireController extends ChessrAbstractController
 
             //dd($move);
 
+            // Normalize the FEN for our repertoire
+            $fen = $this->chessHelper->normalizeFenForRepertoire($move['fen']);
+
             // find this move
             $rec = $repo->findOneBy([
                 'User' => $this->getUser(),
                 'Color' => $move['color'],
-                'FenBefore' => $move['fen'],
+                'FenBefore' => $fen,
                 'Move' => $move['move']
             ]);
 
-            //dd($rec, $move);
+            //dd($rec, $move, $fen);
 
             if ($rec) {
                 // update the counters
@@ -542,21 +608,25 @@ class RepertoireController extends ChessrAbstractController
         $repertoireId = 0;
         $repertoireAutoPlay = false;
         $repertoireExclude = false;
+        $repertoireFocused = false;
         $repertoireIncluded = true;
+        $repertoireNotes = '';
 
         if ($data['pgn'] != '') {
             $res = $repository->findOneBy([
                 'User' => $this->getUser(),
                 'Color' => $data['color'],
                 'FenAfter' => $fenstr,
-                'Pgn' => $data['pgn'] // Add PGN for transpositions
+                //'Pgn' => $data['pgn'] // Add PGN for transpositions
             ]);
 
             if ($res) {
                 $repertoireId = $res->getId();
                 $repertoireAutoPlay = $res->isAutoPlay();
                 $repertoireExclude = $res->isExclude();
+                $repertoireFocused = $res->isFocused();
                 $repertoireIncluded = $repository->isIncluded($res->getFenBefore());
+                $repertoireNotes = $res->getNotes();
                 foreach ($res->getRepertoireGroups() as $grp) {
                     $groups[] = ["id" => $grp->getGrp()->getId(), "name" => $grp->getGrp()->getName()];
                 }
@@ -799,7 +869,9 @@ class RepertoireController extends ChessrAbstractController
                 'id' => $repertoireId,
                 'autoplay' => $repertoireAutoPlay,
                 'exclude' => $repertoireExclude,
-                'included' => $repertoireIncluded
+                'focused' => $repertoireFocused,
+                'included' => $repertoireIncluded,
+                'notes' => $repertoireNotes
             ],
             'initialFens' => $initialFens,
             'groups' => $groups,
@@ -893,6 +965,9 @@ class RepertoireController extends ChessrAbstractController
         $saved = false;
         $halfMove = 1;
 
+        // Create a chess game
+        $chessJs = new ChessJs();
+
         // loop through the moves
         foreach ($moves as $m) {
             // the last array item could be an array of multiple moves (= engine moves, through analysis save)
@@ -902,16 +977,27 @@ class RepertoireController extends ChessrAbstractController
                 $before = $this->chessHelper->normalizeFenForRepertoire($move['before']);
                 $after = $this->chessHelper->normalizeFenForRepertoire($move['after']);
 
+                // Make the move and get the PGN
+                $pgn = '';
+                try {
+                    $chessJs->move($move['san']);
+                    $pgn = $chessJs->pgn();
+                } catch (\Throwable $e) {
+                }
+
                 // check to see if we already saved this move
                 $data = $repository->findBy([
                     'User' => $this->getUser(),
                     'Color' => $color,
                     'FenBefore' => $before,
+                    //'Pgn' => $pgn,
                     'Move' => $move['san']
                 ]);
 
                 // skip this one if already saved
                 if (count($data) > 0) continue;
+
+                //dd("Adding move", $move);
 
                 // save the move to the repertoire
                 $rep = new Repertoire();
@@ -924,6 +1010,8 @@ class RepertoireController extends ChessrAbstractController
                 $rep->setMove($move['san']);
                 $rep->setAutoPlay(isset($move['autoplay']) ? $move['autoplay'] : false);
                 $rep->setExclude(isset($move['exclude']) ? $move['exclude'] : false);
+                $rep->setFocused(isset($move['focused']) ? $move['focused'] : false);
+                $rep->setNotes(isset($move['notes']) ? $move['notes'] : '');
                 $rep->setHalfMove($halfMove);
                 $rep->setPracticeCount(0);
                 $rep->setPracticeFailed(0);

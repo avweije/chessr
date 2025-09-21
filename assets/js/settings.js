@@ -87,6 +87,7 @@ class Settings {
     this.elements.repertoireEngineTime.addEventListener("change", this.updateSettings.bind(this));
     this.elements.animateVariation.addEventListener("change", this.updateSettings.bind(this));
     this.elements.recommendInterval.addEventListener("change", this.updateSettings.bind(this));
+    this.elements.balloonsAmount.addEventListener("change", this.updateSettings.bind(this));
     this.elements.analyseEngineTime.addEventListener("change", this.updateSettings.bind(this));
     this.elements.analyseIgnoreInaccuracy.addEventListener("change", this.updateSettings.bind(this));
     this.elements.analyseMistakeTolerance.addEventListener("change", this.updateSettings.bind(this));
@@ -245,7 +246,7 @@ class Settings {
       .catch((error) => {
         console.error("Error:", error);
         // show the error icon
-        Utils.showError();
+        Utils.showError(error);
       })
       .finally(() => {
         // hide the page loader
@@ -266,13 +267,16 @@ class Settings {
       this.elements.boardPiecesSelect.value = settings.pieces;
     }
     this.elements.animationDuration.value = settings.animation_duration;
+    // Engine settings
     this.elements.repertoireEngineTime.value = settings.repertoire_engine_time;
-    this.elements.animateVariation.checked = settings.animate_variation;
-    this.elements.recommendInterval.value = settings.recommend_interval;
     this.elements.analyseEngineTime.value = settings.analyse_engine_time;
     this.elements.analyseIgnoreInaccuracy.checked =
       settings.analyse_ignore_inaccuracy;
     this.elements.analyseMistakeTolerance.value = settings.analyse_mistake_tolerance;
+    // Practice settings
+    this.elements.recommendInterval.value = settings.recommend_interval;
+    this.elements.balloonsAmount.value = settings.balloons_amount;
+    this.elements.animateVariation.checked = settings.animate_variation;
 
     // update the range input titles
     this.updateRangeInputTitles();
@@ -317,11 +321,12 @@ class Settings {
         pieces: this.elements.boardPiecesSelect.value,
         animation_duration: this.elements.animationDuration.value,
         repertoire_engine_time: this.elements.repertoireEngineTime.value,
-        animate_variation: this.elements.animateVariation.checked,
-        recommend_interval: this.elements.recommendInterval.value,
         analyse_engine_time: this.elements.analyseEngineTime.value,
         analyse_ignore_inaccuracy: this.elements.analyseIgnoreInaccuracy.checked,
-        analyse_mistake_tolerance: this.elements.analyseMistakeTolerance.value
+        analyse_mistake_tolerance: this.elements.analyseMistakeTolerance.value,
+        recommend_interval: this.elements.recommendInterval.value,
+        balloons_amount: this.elements.balloonsAmount.value,
+        animate_variation: this.elements.animateVariation.checked,
       },
     };
 
@@ -340,7 +345,7 @@ class Settings {
       .catch((error) => {
         console.error("Error:", error);
         // show the error icon
-        Utils.showError();
+        Utils.showError(error);
       });
   }
 
@@ -386,8 +391,11 @@ class Settings {
         ],
       });
 
-      // Remove the skeleton loaded
-      this.elements.board.parentNode.removeChild(this.elements.board.previousElementSibling);
+      // Remove the skeleton block
+      if (this.elements.board.previousElementSibling 
+          && this.elements.board.previousElementSibling.classList.contains('skeleton-block')) {
+        this.elements.board.parentNode.removeChild(this.elements.board.previousElementSibling);
+      }
     } catch (err) {
       console.error(err);
     }

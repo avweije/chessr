@@ -1,3 +1,14 @@
+/* Grid Class */
+.grid {
+    display: grid;
+    gap: 0;
+}
+
+.box.grid {
+    padding: 0.75rem !important;
+}
+
+/* Template Columns */
 .grid-auto-1fr {
     display: grid;
     grid-template-columns: auto 1fr;
@@ -11,4 +22,49 @@
 .grid-4auto {
     display: grid;
     grid-template-columns: repeat(4, auto);
+}
+
+/* Rows */
+.grid .grid-header-row {
+    display: contents;
+}
+
+.grid .grid-header-row > * {
+    padding: 0.25rem 0.5rem;
+    color: var(--color-text-title);
+    font-weight: 600;
+    border-bottom: solid 1px var(--color-surface-alt);
+    margin-bottom: 0.5rem;
+}
+
+.grid .grid-row {
+    display: contents;
+}
+
+/* Cells */
+.grid > *:not(.grid-row):not(.grid-header-row) {
+    min-width: 0;
+}
+
+.grid .grid-row > * {
+    min-width: 0;
+    padding: 0.25rem 0.5rem;
+}
+
+.grid .grid-row > *:first-child {
+    border-radius: 0.5rem 0 0 0.5rem;
+}
+
+.grid .grid-row > *:last-child {
+    border-radius: 0 0.25rem 0.25rem 0;
+}
+
+/* Hover */
+.grid.is-hoverable .grid-row > * {
+    cursor: pointer;
+    transition: background-color ease-in 0.3s;
+}
+
+.grid.is-hoverable .grid-row:hover > * {
+  background-color: var(--color-surface-alt);
 }

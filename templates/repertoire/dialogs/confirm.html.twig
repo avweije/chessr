@@ -12,13 +12,20 @@
 			<p class="w-full my-4">
 				All the lines that follow this move will be deleted also.
 			</p>
+			<div class="py-1">
+				<label class="toggle">
+					<input id="confirmModalConfirmCheckbox" data-element="yes" type="checkbox" class="sr-only peer">
+					<div class="knob"></div>
+					<div class="toggle-label">I understand that this move and all the lines that follow it will be deleted</div>
+				</label>
+			</div>
 		</section>
 		<footer class="modal-card-foot is-justify-content-flex-end">
 			<div class="buttons">
 				<button id="confirmModalCancelButton" data-element="yes" class="button">
 					Cancel
 				</button>
-				<button id="confirmModalConfirmButton" data-element="yes" class="button is-warning">
+				<button id="confirmModalConfirmButton" data-element="yes" disabled class="button is-warning">
 					Confirm
 				</button>
 			</div>

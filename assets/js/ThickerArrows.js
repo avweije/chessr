@@ -81,7 +81,7 @@ export class ThickerArrows extends Arrows {
     const y1 = sqfrom.y.baseVal.value + sqfrom.height.baseVal.value / 2;
     const y2 = sqto.y.baseVal.value + sqto.height.baseVal.value / 2;
 
-    var strokeWidth = arrow.type.strokeWidth ? arrow.type.strokeWidth : 4;
+    let strokeWidth = arrow.type.strokeWidth ? arrow.type.strokeWidth : 4;
 
     const width = ((view.scalingX + view.scalingY) / 2) * strokeWidth;
 

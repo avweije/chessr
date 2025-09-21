@@ -39,13 +39,28 @@ class Repertoire
     #[ORM\Column]
     private ?int $HalfMove = null;
 
-    #[ORM\Column]
+    #[ORM\Column(length: 255)]
+    private ?string $InitialFen = null;
+
+    #[ORM\Column(options: ['default' => false])]
+    private ?bool $AutoPlay = null;
+
+    #[ORM\Column(options: ['default' => false])]
+    private ?bool $Exclude = null;
+
+    #[ORM\Column(options: ['default' => false])]
+    private ?bool $Focused = null;
+
+    #[ORM\Column(length: 1024, nullable: true)]
+    private ?string $Notes = null;
+
+    #[ORM\Column(options: ['default' => 0])]
     private ?int $PracticeCount = null;
 
-    #[ORM\Column]
+    #[ORM\Column(options: ['default' => 0])]
     private ?int $PracticeFailed = null;
 
-    #[ORM\Column]
+    #[ORM\Column(options: ['default' => 0])]
     private ?int $PracticeInARow = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
@@ -59,15 +74,6 @@ class Repertoire
      */
     #[ORM\OneToMany(targetEntity: RepertoireGroup::class, mappedBy: 'Repertoire', orphanRemoval: true)]
     private Collection $repertoireGroups;
-
-    #[ORM\Column(length: 255)]
-    private ?string $InitialFen = null;
-
-    #[ORM\Column]
-    private ?bool $AutoPlay = null;
-
-    #[ORM\Column]
-    private ?bool $Exclude = null;
 
     public function __construct()
     {
@@ -159,6 +165,66 @@ class Repertoire
     public function setHalfMove(int $HalfMove): static
     {
         $this->HalfMove = $HalfMove;
+
+        return $this;
+    }
+
+    public function getInitialFen(): ?string
+    {
+        return $this->InitialFen;
+    }
+
+    public function setInitialFen(string $InitialFen): static
+    {
+        $this->InitialFen = $InitialFen;
+
+        return $this;
+    }
+
+    public function isAutoPlay(): ?bool
+    {
+        return $this->AutoPlay;
+    }
+
+    public function setAutoPlay(bool $AutoPlay): static
+    {
+        $this->AutoPlay = $AutoPlay;
+
+        return $this;
+    }
+
+    public function isExclude(): ?bool
+    {
+        return $this->Exclude;
+    }
+
+    public function setExclude(bool $Exclude): static
+    {
+        $this->Exclude = $Exclude;
+
+        return $this;
+    }
+
+    public function isFocused(): ?bool
+    {
+        return $this->Focused;
+    }
+
+    public function setFocused(bool $Focused): static
+    {
+        $this->Focused = $Focused;
+
+        return $this;
+    }
+
+    public function getNotes(): ?string
+    {
+        return $this->Notes;
+    }
+
+    public function setNotes(string $Notes): static
+    {
+        $this->Notes = $Notes;
 
         return $this;
     }
@@ -263,42 +329,6 @@ class Repertoire
                 $repertoireGroup->setRepertoire(null);
             }
         }
-
-        return $this;
-    }
-
-    public function getInitialFen(): ?string
-    {
-        return $this->InitialFen;
-    }
-
-    public function setInitialFen(string $InitialFen): static
-    {
-        $this->InitialFen = $InitialFen;
-
-        return $this;
-    }
-
-    public function isAutoPlay(): ?bool
-    {
-        return $this->AutoPlay;
-    }
-
-    public function setAutoPlay(bool $AutoPlay): static
-    {
-        $this->AutoPlay = $AutoPlay;
-
-        return $this;
-    }
-
-    public function isExclude(): ?bool
-    {
-        return $this->Exclude;
-    }
-
-    public function setExclude(bool $Exclude): static
-    {
-        $this->Exclude = $Exclude;
 
         return $this;
     }

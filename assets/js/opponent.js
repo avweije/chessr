@@ -261,6 +261,8 @@ class Opponent {
       })
       .catch((error) => {
         console.error("Error:", error);
+        // show the error message
+        Utils.showError(error);
       })
       .finally(() => {
         // hide the page loader
@@ -309,6 +311,8 @@ class Opponent {
       })
       .catch((error) => {
         console.error("Error:", error);
+        // show the error message
+        Utils.showError(error);
       })
       .finally(() => {
         // hide the page loader
@@ -396,6 +400,8 @@ class Opponent {
       })
       .catch((error) => {
         console.error("Error:", error);
+        // show the error message
+        Utils.showError(error);
       })
       .finally(() => {
         // hide the page loader
@@ -709,7 +715,6 @@ class Opponent {
       })
       .catch((error) => {
         console.error("Error:", error);
-
         // handle the error
         this.onAnalyseError(error);
       });
@@ -857,8 +862,8 @@ class Opponent {
       })
       .catch((error) => {
         console.error("Error:", error);
-        // show the error icon
-        Utils.showError();
+        // show the error message
+        Utils.showError(error);
       });
   }
 
@@ -1045,7 +1050,7 @@ class Opponent {
       .catch((error) => {
         console.error("Error:", error);
         // show the error icon
-        Utils.showError();
+        Utils.showError(error);
       });
   }
 
@@ -1177,7 +1182,7 @@ class Opponent {
       .catch((error) => {
         console.error("Error:", error);
         // show the error icon
-        Utils.showError();
+        Utils.showError(error);
       });
   }
 
@@ -1276,13 +1281,13 @@ class Opponent {
       "boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500 peer-checked:text-gray-700";
 
     var p1 = document.createElement("p");
-    p1.className = "has-text-left mb-1 pr-3";
+    p1.className = "has-text-left pr-3";
     p1.innerHTML = opponent.username;
 
     sp.appendChild(p1);
 
     var p2 = document.createElement("p");
-    p2.className = "has-text-left is-size-6 pr-4 opacity-70";
+    p2.className = "has-text-left is-size-7 pr-4 has-text-faded";
     p2.innerHTML = opponent.site;
 
     sp.appendChild(p2);
@@ -1991,6 +1996,8 @@ class Opponent {
       })
       .catch((error) => {
         console.error("Error:", error);
+        // show the error message
+        Utils.showError(error);
       })
       .finally(() => {
         // hide the page loader

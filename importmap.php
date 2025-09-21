@@ -48,6 +48,10 @@ return [
         'path' => './assets/js/ThickerArrows.js',
         'entrypoint' => true,
     ],
+    'notyf' => [
+        'path' => './assets/vendor/notyf/notyf.min.js',
+        'entrypoint' => true,
+    ],
     'balloons' => [
         'path' => './assets/vendor/balloons/balloons.js',
         'entrypoint' => true,

@@ -17,6 +17,11 @@ class RepertoireService
     private $chessHelper;
     private $debugger;
 
+    // Lines
+    private $_allReps = null;
+    private $_movesPerFen = null;
+    private $_focusMoves = null;
+
     private array $candidates = [
         'must'   => [],
         'high'   => [],
@@ -81,7 +86,7 @@ class RepertoireService
         $new = $this->collectLinesUntil($lines, '', true);
 
         // Remove the doubled lines (through transposition)
-        $new = $this->removeDoubledMoves($new);
+        //$new = $this->removeDoubledMoves($new);
 
         // group by position and return
         return $this->groupByPosition($new, $lines);
@@ -676,6 +681,8 @@ class RepertoireService
                     'new' => $move['new'] ?? 0,
                     'recommended' => $move['recommended'] ?? 0,
                     'autoplay' => $move['autoplay'] ?? false,
+                    'focused' => $move['focused'] ?? false,
+                    'notes' => $move['notes'] ?? '',
                     'ourMoveCount' => $ourMoveCount,
                     'moves' => $subMoves,
                     'id' => $move['id'] ?? 0,
@@ -752,6 +759,8 @@ class RepertoireService
                 'new' => $move['new'] ?? 0,
                 'recommended' => $move['recommended'] ?? 0,
                 'autoplay' => $autoplay,
+                'focused' => $move['focused'] ?? false,
+                'notes' => $move['notes'] ?? '',
                 'moves' => $subMoves,
                 'id' => $move['id'] ?? 0,
                 'initialFen' => $move['initialFen'] ?? '',
@@ -825,16 +834,18 @@ class RepertoireService
         $recommendInterval = $this->settings->getRecommendInterval() ?? 1;
 
         // multiple factors based on user settings
-        $factors = [0.6, 1, 1.4, 1.8];
+        $factors = [0.6, 1, 1.5, 2.0];
 
         $min = 10;
-        $max = 30;
+        $max = 40;
 
         if ($globalStats['frequency'] !== null && $globalStats['frequency'] > 10) {
             // user practices rarely → give them more
             $min = 20;
-            $max = 60;
+            $max = 50;
         }
+
+        $this->debugger::collect('globalStats', $globalStats);
 
         // Multiply to account for the interval
         //$min = $min * ($recommendInterval / 2);
@@ -880,37 +891,24 @@ class RepertoireService
         $result = [];
 
         foreach ($lines as $line) {
-            // recurse into children first (so we have recommendation in the line)
+            // Rcurse into children first (so we have recommendation in the line)
             if (!empty($line['moves'])) {
                 $line['moves'] = $this->assignRecommendation($line['moves'], $globalStats);
             }
 
-            // if this is a move and its not an autoplay move
+            // If this is a move and its not an autoplay move
             if (isset($line['move']) && $this->isOurMove($line['before'] ?? '', $line['color'] ?? '')) {
-                //  && !$line['autoplay']
-                // compute and assign recommendation
+                // Compute and assign recommendation
                 $line['recommendation'] = $this->computeRecommendationForLine($line, $globalStats);
-
-                $line['XX-ourmove-XX'] = true;
-
-                // skip if very low recommendation
-                //if ($line['recommendation']['level'] !== 'low' || $line['recommendation']['factor'] > 0.2) {
-                if (!$this->isUnderRecommendationThreshold($line)) {
+                // We don't want to recommend new moves, they are in their own category
+                $isNew = isset($line['new']) && $line['new'] == 1;
+                // Skip if new or very low recommendation
+                if (!$isNew && !$this->isUnderRecommendationThreshold($line)) {
                     // store candidates by level for potential further processing
                     // note: no reference here, store a copy instead
                     $this->candidates[$line['recommendation']['level']][] = $line;
                 }
-            } else {
-                $line['XX-ourmove-XX'] = false;
             }
-
-            /*
-            if (isset($line['recommendation']) 
-                && $line['recommendation']['level'] == 'high'
-                && !empty($line['moves'])) {
-                dd('High', $line);
-            }
-                */
 
             $result[] = $line;
         }
@@ -930,6 +928,24 @@ class RepertoireService
         $frequency   = !empty($line['deltas'])
             ? array_sum($line['deltas']) / count($line['deltas'])
             : null;
+        
+        $daysSince = null;
+        //if (!empty($line['lastPracticedAt'])) {
+        if (!empty($line['deltas']) && count($line['deltas']) > 0) {
+            //$daysSince = (time() - strtotime($line['lastPracticedAt'])) / 86400;
+            $daysSince = $line['deltas'][count($line['deltas'])-1];
+        } else {
+            // If never practiced, make it appear somewhat stale but also show high priority via success logic:
+            // choose to treat as 14 days (or another value) so brand-new doesn't automatically dominate
+            $daysSince = 14;
+        }
+        
+        // Weights
+        $successWeight = 2.0;
+        $staleWeight   = 2.0;
+        $streakBoost   = 0.5;
+        $maxStaleDays  = 60;
+        $frequencyWeight = 0.7;
 
         $score = 0;
 
@@ -937,65 +953,76 @@ class RepertoireService
             'count' => $count,
             'failed' => $failed,
             'successRate' => $successRate,
-            'streak',
-            $streak,
+            'streak', $streak,
             'frequency' => $frequency
         ];
 
         // success factor
-        //if ($successRate < 0.5) $score += 0.6;
-        //elseif ($successRate < 0.8) $score += 0.3;
-        //$maxSuccessScore = 0.8;
-        $maxSuccessScore = 3.4;
-        $score += $maxSuccessScore * (1 - $successRate);
+        $score += $successWeight * (1 - $successRate);
 
         $debug['successScore'] = $score;
 
+        // Staleness: normalize days (cap at maxStaleDays)
+        $staleFactor = min($daysSince / max(1, $maxStaleDays), 1.0); // 0..1
+        $staleScore = $staleWeight * $staleFactor; // up to staleWeight
+        $score += $staleScore;
+        
+        $debug['staleScore'] = $staleScore;
+
         // streak factor
         //if ($streak < 3) $score += 0.3;
-        if ($streak < 3) $score += 0.6;
+        if ($streak < 3) $score += $streakBoost;
 
         $debug['streakScore'] = $score;
 
         // Lower the score for a good streak
-        if ($streak > 3) $score = $score *= 0.9;
-        elseif ($streak > 5) $score = $score *= 0.8;
+        if ($streak > 5) $score = $score *= 0.75;
+        elseif ($streak > 3) $score = $score *= 0.85;
 
         $debug['goodStreakScore'] = $score;
 
 
         // frequency factor
         if ($frequency !== null && $frequency > 0) {
-            //$score += min($frequency, 7) / 7 * 0.4;
-            $score += min($frequency, 7) / 7 * 0.8;
+            //$score += min($frequency, 7) / 7 * 0.8;
+
+            //$debug['frequencyScore'] = $score;
+
+            $frequencyScore = 1 - exp(-$frequency / 15); // gentler slope
+            $frequencyScore *= $frequencyWeight;
 
             $debug['frequencyScore'] = $score;
         }
 
         // adjust with global stats
         if ($globalStats['successRate'] > 0.85) $score *= 0.9;
-        elseif ($globalStats['successRate'] < 0.6) $score *= 1.2;
+        elseif ($globalStats['successRate'] < 0.6) $score *= 1.1;
 
         $debug['globalScore'] = $score;
 
-        if ($globalStats['frequency'] !== null && $globalStats['frequency'] > 10) {
-            $score *= 1.2;
-
-            $debug['globalFrequencyScore'] = $score;
+        // Optional small tie-breaker from frequency (if you keep it)
+        if ($frequency !== null) {
+            // here frequency is average gap; larger gap -> larger score (but capped small)
+            $freqScore = min($frequency, 14) / 14 * 0.4; // up to +0.4
+            $score += $freqScore;
+            $debug['freqScore'] = $freqScore;
         }
 
         // Get the recommend interval user setting
         $recommendInterval = $this->settings->getRecommendInterval() ?? 1;
         // Adjust the score based on the preference
-        $prefFactors = [0 => 0.8, 1 => 1.0, 2 => 1.2, 3 => 1.4];
+        $prefFactors = [0 => 0.9, 1 => 1.0, 2 => 1.1, 3 => 1.25];
         // Adjust the score
         $score *= $prefFactors[$recommendInterval] ?? 1.0;
 
         $debug['intervalScore'] = $score;
 
+        // classification thresholds (tuneable)
+        $level = $score > 1.25 ? 'high' : ($score > 0.6 ? 'medium' : 'low');
+
         // classify level
         return [
-            'level'  => $score > 1 ? 'high' : ($score > 0.4 ? 'medium' : 'low'),
+            'level'  => $level,
             'factor' => min(3, $score),
             'successRate' => $successRate,
             'streak' => $streak,
@@ -1154,7 +1181,7 @@ class RepertoireService
      * Returns a move array from a repertoire entity record.
      * The move array is used by the practice page.
      */
-    private function getMoveArray($rep, $line, $moves): array
+    private function getMoveArray($rep, array $line = [], array $moves = []): array
     {
         return [
             'id' => $rep->getId(),
@@ -1163,6 +1190,8 @@ class RepertoireService
             'move' => $rep->getMove(),
             //'eco' => ['code' => 'A00', 'name' => 'The Cow System'],
             'autoplay' => $rep->isAutoPlay(),
+            'focused' => $rep->isFocused(),
+            'notes' => $rep->getNotes(),
             'halfmove' => $rep->getHalfMove(),
             'before' => $rep->getFenBefore(),
             'after' => $rep->getFenAfter(),
@@ -1173,7 +1202,8 @@ class RepertoireService
             'lastUsed' => $rep->getLastUsed(),
             'deltas' => $rep->getDeltas(),
             'line' => $line ?? [],
-            'moves' => $moves ?? []
+            'moves' => $moves ?? [],
+            'multiple' => []
         ];
     }
 
@@ -1236,6 +1266,30 @@ class RepertoireService
     }
 
     /**
+     * Get the focus moves.
+     */
+    public function getFocusMoves() {
+        // If we don't have the focus moves yet
+        if ($this->_focusMoves == null) {
+            // Get the lines (which will also get the focus moves array)
+            $this->getLines();
+        }
+
+        // Get the line to and the move arrays
+        $result = [];
+        foreach ($this->_focusMoves as $move) {
+            // Get the line up to this move
+            $lineTo = $this->getLineBefore($move->getHalfMove(), $move->getFenBefore(), $this->_allReps);
+            // Get the moves following this move (only 1 level deep)
+            $moves = $this->getLinesFor($move->getColor(), $move->getFenAfter(), $this->_movesPerFen, [], 1);
+            // Add it
+            $result[] = $this->getMoveArray($move, $lineTo, $moves);
+        }
+
+        return $result;
+    }
+
+    /**
      * Gets the repertoire lines. Builds up the lines from the top level moves to the last move,
      * resulting in a tree of moves for the entire repertoire.
      * 
@@ -1252,7 +1306,12 @@ class RepertoireService
             $criteria["Exclude"] = false;
         }
 
-        $res = $this->repo->findBy($criteria, ['HalfMove' => 'ASC']);
+        // Get the entire repertoire, sorted by halfmove
+        $this->_allReps = $this->repo->findBy($criteria, ['HalfMove' => 'ASC']);
+
+        // Reset the arrays
+        $this->_movesPerFen = [];
+        $this->_focusMoves = [];
 
         $lines = [];
 
@@ -1266,7 +1325,7 @@ class RepertoireService
         $repertoireItem = null;
 
         // find the 1st moves
-        foreach ($res as $rep) {
+        foreach ($this->_allReps as $rep) {
             // if this is a 1st move
             if ($rep->getHalfMove() == 1) {
                 // see if we have this color / starting position already
@@ -1304,6 +1363,8 @@ class RepertoireService
                     'move' => $rep->getMove(),
                     //'eco' => $eco,
                     'autoplay' => $rep->isAutoPlay(),
+                    'focused' => $rep->isFocused(),
+                    'notes' => $rep->getNotes(),
                     'halfmove' => $rep->getHalfMove(),
                     'before' => $rep->getFenBefore(),
                     'after' => $rep->getFenAfter(),
@@ -1319,10 +1380,10 @@ class RepertoireService
             }
 
             // store the reps per fen before (for speed in getting the lines)
-            if (!isset($repBefore[$rep->getFenBefore()])) {
-                $repBefore[$rep->getFenBefore()] = [];
+            if (!isset($this->_movesPerFen[$rep->getFenBefore()])) {
+                $this->_movesPerFen[$rep->getFenBefore()] = [];
             }
-            $repBefore[$rep->getFenBefore()][] = $rep;
+            $this->_movesPerFen[$rep->getFenBefore()][] = $rep;
 
             // if we need a specific repertoire line and we found it
             if ($repertoireId !== null && $rep->getId() == $repertoireId) {
@@ -1333,6 +1394,8 @@ class RepertoireService
                     'move' => $rep->getMove(),
                     //'eco' => ['code' => 'A00', 'name' => 'The Cow System'],
                     'autoplay' => $rep->isAutoPlay(),
+                    'focused' => $rep->isFocused(),
+                    'notes' => $rep->getNotes(),
                     'halfmove' => $rep->getHalfMove(),
                     'before' => $rep->getFenBefore(),
                     'after' => $rep->getFenAfter(),
@@ -1343,9 +1406,14 @@ class RepertoireService
                     'practiceInARow' => $rep->getPracticeInARow(),
                     'lastUsed' => $rep->getLastUsed(),
                     'deltas' => $rep->getDeltas(),
-                    'line' => $this->getLineBefore($rep->getHalfMove(), $rep->getFenBefore(), $res),
+                    'line' => $this->getLineBefore($rep->getHalfMove(), $rep->getFenBefore(), $this->_allReps),
                     'moves' => []
                 ];
+            }
+
+            // If this is a focused move, add it
+            if ($rep->isFocused()) {
+                $this->_focusMoves[] = $rep;
             }
 
             // next part is not needed for the roadmap or specific repertoire line
@@ -1383,6 +1451,8 @@ class RepertoireService
                     'move' => $rep->getMove(),
                     //'eco' => ['code' => 'A00', 'name' => 'The Cow System'],
                     'autoplay' => $rep->isAutoPlay(),
+                    'focused' => $rep->isFocused(),
+                    'notes' => $rep->getNotes(),
                     'halfmove' => $rep->getHalfMove(),
                     'before' => $rep->getFenBefore(),
                     'after' => $rep->getFenAfter(),
@@ -1392,7 +1462,7 @@ class RepertoireService
                     'practiceInARow' => $rep->getPracticeInARow(),
                     'lastUsed' => $rep->getLastUsed(),
                     'deltas' => $rep->getDeltas(),
-                    'line' => $this->getLineBefore($rep->getHalfMove(), $rep->getFenBefore(), $res),
+                    'line' => $this->getLineBefore($rep->getHalfMove(), $rep->getFenBefore(), $this->_allReps),
                     'moves' => []
                 ];
             }
@@ -1401,7 +1471,7 @@ class RepertoireService
         // now add the lines based off the 1st moves (so we can have transpositions)
         for ($i = 0; $i < count($lines); $i++) {
 
-            $lines[$i]['moves'] = $this->getLinesFor($lines[$i]['color'], $lines[$i]['after'], $repBefore, []);
+            $lines[$i]['moves'] = $this->getLinesFor($lines[$i]['color'], $lines[$i]['after'], $this->_movesPerFen, []);
             $lines[$i]['multiple'] = [];
 
             // if we have multiple moves here, add them to an array
@@ -1423,7 +1493,7 @@ class RepertoireService
             // if we found it
             if ($repertoireItem !== null) {
                 // get the lines
-                $repertoireItem['moves'] = $this->getLinesFor($repertoireItem['color'], $repertoireItem['after'], $repBefore, []);
+                $repertoireItem['moves'] = $this->getLinesFor($repertoireItem['color'], $repertoireItem['after'], $this->_movesPerFen, []);
                 $repertoireItem['multiple'] = [];
 
                 // if we have multiple moves here, add them to an array
@@ -1452,7 +1522,7 @@ class RepertoireService
             for ($i = 0; $i < count($groups); $i++) {
                 for ($x = 0; $x < count($groups[$i]["lines"]); $x++) {
 
-                    $groups[$i]["lines"][$x]['moves'] = $this->getLinesFor($groups[$i]["lines"][$x]['color'], $groups[$i]["lines"][$x]['after'], $repBefore, []);
+                    $groups[$i]["lines"][$x]['moves'] = $this->getLinesFor($groups[$i]["lines"][$x]['color'], $groups[$i]["lines"][$x]['after'], $this->_movesPerFen, []);
                     $groups[$i]["lines"][$x]['multiple'] = [];
 
                     // if we have multiple moves here, add them to an array
@@ -1525,6 +1595,8 @@ class RepertoireService
                 'move' => $rep["move"],
                 //'eco' => ['code' => 'A00', 'name' => 'The Cow System'],
                 'autoplay' => $rep["auto_play"],
+                'focused' => $rep["focused"] ?? false,
+                'notes' => $rep["notes"] ?? '',
                 'halfmove' => $rep["half_move"],
                 'before' => $rep["fen_before"],
                 'after' => $rep["fen_after"],
@@ -1544,7 +1616,7 @@ class RepertoireService
     }
 
     // get the complete lines for a certain color and starting position
-    private function getLinesFor(string $color, string $fen, array $repBefore, $lineMoves = [], int $step = 1): array
+    private function getLinesFor(string $color, string $fen, array $repBefore, $lineMoves = [], int $maxDepth = 999, int $parentId = null, int $step = 1): array
     {
         //$ecoRepo = $this->getEntityManager()->getRepository(ECO::class);
 
@@ -1573,18 +1645,23 @@ class RepertoireService
                 // get the line moves for the child moves
                 $temp = array_merge($lineMoves, [$rep->getMove()]);
 
-                $childMoves = $this->getLinesFor($color, $rep->getFenAfter(), $repBefore, $temp, $step + 1);
+                $childMoves = [];
                 $multiple = [];
 
-                // if we have multiple moves here, add them to an array
-                if (count($childMoves) > 1) {
-                    foreach ($childMoves as $move) {
-                        $multiple[] = [
-                            "move" => $move['move'],
-                            "cp" => isset($move['cp']) ? $move['cp'] : null,
-                            "mate" => isset($move['mate']) ? $move['mate'] : null,
-                            "line" => isset($move['line']) ? $move['line'] : null
-                        ];
+                // If we can go deeper
+                if ($step < $maxDepth) {
+                    // Get the child moves
+                    $childMoves = $this->getLinesFor($color, $rep->getFenAfter(), $repBefore, $temp, $maxDepth, $rep->getId(), $step + 1);
+                    // if we have multiple moves here, add them to an array
+                    if (count($childMoves) > 1) {
+                        foreach ($childMoves as $move) {
+                            $multiple[] = [
+                                "move" => $move['move'],
+                                "cp" => isset($move['cp']) ? $move['cp'] : null,
+                                "mate" => isset($move['mate']) ? $move['mate'] : null,
+                                "line" => isset($move['line']) ? $move['line'] : null
+                            ];
+                        }
                     }
                 }
 
@@ -1596,11 +1673,14 @@ class RepertoireService
 
                     $moves[] = [
                         'id' => $rep->getId(),
+                        'parent' => $parentId,
                         'color' => $color,
                         'initialFen' => $rep->getInitialFen(),
                         'move' => $rep->getMove(),
                         //'eco' => $eco,
                         'autoplay' => $rep->isAutoPlay(),
+                        'focused' => $rep->isFocused(),
+                        'notes' => $rep->getNotes(),
                         'halfmove' => $rep->getHalfMove(),
                         'before' => $rep->getFenBefore(),
                         'after' => $rep->getFenAfter(),
@@ -1776,7 +1856,7 @@ class RepertoireService
                     'initialFen' => isset($line['initialFen']) ? $line['initialFen'] : '',
                     //'eco' => isset($line['eco']) ? $line['eco'] : null,
                     'fen' => $line['before'],
-                    'id' => isset($line['id']) ? $line['id'] : 0,
+                    'id' => isset($line['parent']) ? $line['parent'] : 0,
                     'line' => isset($line['line']) ? $line['line'] : [],
                     'moves' => $line['before'] == $line['after'] ? $line['moves'] : [$line],
                     'multiple' => $multiple,

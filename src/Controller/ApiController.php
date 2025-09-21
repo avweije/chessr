@@ -37,11 +37,12 @@ class ApiController extends AbstractController
             $settings->setUser($this->getUser());
             $settings->setAnimationDuration(300);
             $settings->setRepertoireEngineTime(30);
-            $settings->setAnimateVariation(0);
-            $settings->setRecommendInterval(0);
             $settings->setAnalyseEngineTime(1000);
             $settings->setAnalyseIgnoreInaccuracy(false);
             $settings->setMistakeTolerance(0);
+            $settings->setRecommendInterval(0);
+            $settings->setBalloonsAmount(1);
+            $settings->setAnimateVariation(0);
 
             // save the settings
             $this->em->persist($settings);
@@ -54,11 +55,12 @@ class ApiController extends AbstractController
             "pieces" => $settings->getPieces(),
             "animation_duration" => $settings->getAnimationDuration(),
             "repertoire_engine_time" => $settings->getRepertoireEngineTime(),
-            "animate_variation" => $settings->getAnimateVariation(),
-            "recommend_interval" => $settings->getRecommendInterval(),
             "analyse_engine_time" => $settings->getAnalyseEngineTime(),
             "analyse_ignore_inaccuracy" => $settings->isAnalyseIgnoreInaccuracy(),
-            "analyse_mistake_tolerance" => $settings->getMistakeTolerance()
+            "analyse_mistake_tolerance" => $settings->getMistakeTolerance(),
+            "recommend_interval" => $settings->getRecommendInterval(),
+            "balloons_amount" => $settings->getBalloonsAmount(),
+            "animate_variation" => $settings->getAnimateVariation(),
         ]]);
     }
 
@@ -84,11 +86,12 @@ class ApiController extends AbstractController
             $settings->setUser($this->getUser());
             $settings->setAnimationDuration(300);
             $settings->setRepertoireEngineTime(30);
-            $settings->setAnimateVariation(0);
-            $settings->setRecommendInterval(0);
             $settings->setAnalyseEngineTime(1000);
             $settings->setAnalyseIgnoreInaccuracy(false);
             $settings->setMistakeTolerance(0);
+            $settings->setRecommendInterval(0);
+            $settings->setBalloonsAmount(1);
+            $settings->setAnimateVariation(0);
         }
 
         // update all the settings
@@ -106,8 +109,14 @@ class ApiController extends AbstractController
                 case "repertoire_engine_time":
                     $settings->setRepertoireEngineTime($value);
                     break;
-                case "animate_variation":
-                    $settings->setAnimateVariation($value);
+                case "analyse_engine_time":
+                    $settings->setAnalyseEngineTime($value);
+                    break;
+                case "analyse_ignore_inaccuracy":
+                    $settings->setAnalyseIgnoreInaccuracy($value);
+                    break;
+                case "analyse_mistake_tolerance":
+                    $settings->setMistakeTolerance($value);
                     break;
                 case "recommend_interval":
                     // If the interval has changed, reset the session recommended lines
@@ -118,14 +127,11 @@ class ApiController extends AbstractController
                     }
                     $settings->setRecommendInterval($value);
                     break;
-                case "analyse_engine_time":
-                    $settings->setAnalyseEngineTime($value);
+                case "balloons_amount":
+                    $settings->setBalloonsAmount($value);
                     break;
-                case "analyse_ignore_inaccuracy":
-                    $settings->setAnalyseIgnoreInaccuracy($value);
-                    break;
-                case "analyse_mistake_tolerance":
-                    $settings->setMistakeTolerance($value);
+                case "animate_variation":
+                    $settings->setAnimateVariation($value);
                     break;
             }
         }
@@ -156,10 +162,11 @@ class ApiController extends AbstractController
             $settings->setUser($this->getUser());
             $settings->setAnimationDuration(300);
             $settings->setRepertoireEngineTime(30);
-            $settings->setAnimateVariation(0);
-            $settings->setRecommendInterval(0);
             $settings->setAnalyseEngineTime(1000);
             $settings->setAnalyseIgnoreInaccuracy(false);
+            $settings->setRecommendInterval(0);
+            $settings->setBalloonsAmount(1);
+            $settings->setAnimateVariation(0);
 
             // save the settings
             $this->em->persist($settings);

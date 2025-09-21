@@ -31,6 +31,14 @@
 				<sup id="repertoireRecommendedCount" data-element="yes" class="pl-1"></sup>
 			</span>
 		</div>
+		<div class="boxed-radio is-hidden">
+			<input id="repertoireFocused" data-element="yes" class="is-hidden" type="radio" name="repertoire_type" value="focused"/>
+			<label class="boxed-radio-label" for="repertoireFocused"></label>
+			<span class="boxed-radio-text is-flex is-align-items-center">
+				Focused
+				<sup id="repertoireFocusedCount" data-element="yes" class="pl-1"></sup>
+			</span>
+		</div>
 		<div class="boxed-radio">
 			<input id="repertoireAll" data-element="yes" class="is-hidden" type="radio" name="repertoire_type" value="all" checked/>
 			<label class="boxed-radio-label" for="repertoireAll"></label>
@@ -73,13 +81,13 @@
 			</div>
 			<div class="tag is-medium is-success mr-1">
 				<div class="icon">
-					<i class="fa-solid fa-check"></i>
+					<i class="fa-solid fa-circle-check"></i>
 				</div>
 				<span id="practiceCorrectCounter" data-element="yes"></span>
 			</div>
 			<div class="tag is-medium is-danger">
 				<div class="icon">
-					<i class="fa-solid fa-xmark"></i>
+					<i class="fa-solid fa-circle-xmark"></i>
 				</div>
 				<span id="practiceFailedCounter" data-element="yes"></span>
 			</div>
@@ -132,24 +140,27 @@
 		<button type="button" id="startPracticeButton" data-element="yes" disabled class="button is-primary">
 			Start your practice
 		</button>
-		<button type="button" id="giveHintButton" data-element="yes" title="Hint" disabled class="is-hidden button is-primary mr-1">
+		<button type="button" id="giveHintButton" data-element="yes" title="Hint" disabled class="is-hidden button is-primary">
 			<icon>
 				<i class="fa-solid fa-lightbulb"></i>
 			</icon>
 		</button>
-		<button type="button" id="prevMoveButton" data-element="yes" title="Previous move" disabled class="is-hidden button is-primary mr-1">
-			<i class="fa-solid fa-backward-step"></i>
-		</button>
-		<button type="button" id="skipMoveButton" data-element="yes" title="Skip this move" disabled class="is-hidden button is-primary mr-1">
-			<i class="fa-solid fa-forward-step"></i>
-		</button>
 		<div class="is-flex">
 			<input type="checkbox" class="is-hidden is-button-checkbox" id="showPracticeInfoButton" data-element="yes" value="1">
-			<label for="showPracticeInfoButton" title="Toggle info" class="is-hidden button is-primary mr-1">
+			<label for="showPracticeInfoButton" title="Toggle info" class="is-hidden button is-primary ml-1">
 				<i class="fa-solid fa-circle-info"></i>
 			</label>
 		</div>
-		<div id="analysisGameButtons" class="is-hidden is-flex">
+		<button type="button" id="prevMoveButton" data-element="yes" title="Previous move" disabled class="is-hidden button is-primary ml-1">
+			<i class="fa-solid fa-backward-step"></i>
+		</button>
+		<button type="button" id="skipMoveButton" data-element="yes" title="Skip this move" disabled class="is-hidden button is-primary ml-1">
+			<i class="fa-solid fa-forward-step"></i>
+		</button>
+		<button type="button" id="focusMoveButton" data-element="yes" title="Focus move" disabled class="is-hidden button is-primary ml-1">
+			<i class="fa-solid fa-thumbtack"></i>
+		</button>
+		<div id="analysisGameButtons" class="is-hidden is-flex ml-1">
 			<button type="button" id="analysisSaveButton" data-element="yes" title="Save to repertoire" disabled class="button is-primary">
 				<i class="fa-solid fa-floppy-disk"></i>
 			</button>
@@ -213,17 +224,29 @@
 
 	<form id="repertoireForm" data-element="yes" method="post" target="_blank" action=""></form>
 
+	<div id="focusMoveContainer" data-element="yes" class="is-hidden box p-0">
+		<p class="box-header has-text-weight-semibold">Focused</p>
+		<div class="p-3">
+			<textarea id="focusMoveNotesTextarea" data-element="yes" class="textarea" placeholder="Enter your notes here..."></textarea>
+		</div>
+	</div>
+
 	<div id="analysisGameContainer" data-element="yes" class="is-hidden box p-0">
 		<p class="box-header has-text-weight-semibold">Game</p>
-		<div id="analysisGameFields" data-element="yes" class="grid-auto-1fr is-align-items-center p-2">
+		<div id="analysisGameFields" data-element="yes" class="grid grid-auto-1fr is-align-items-center p-2">
 			<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">Opponent:</label>
 			<p class="p-2 is-size-6 w-full is-ellipsis"></p>
 			<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">Move:</label>
 			<p class="p-2 is-size-6 w-full is-ellipsis"></p>
 			<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">FEN:</label>
-			<p class="p-2 is-size-6 w-full is-ellipsis"></p>
+			<div class="is-flex is-align-items-center is-justify-content-space-between">
+    			<span id="analysisGameFenField" data-element="yes" class="p-2 is-size-6 w-full is-ellipsis"></span>
+      			<span id="analysisGameFenFieldCopy" data-element="yes" class="is-hidden icon link-with-hover">
+        			<i class="fas fa-copy"></i>
+      			</span>
+			</div>
 			<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">Link:</label>
-			<a href="#" target="_blank" class="p-2 is-size-6 w-full is-ellipsis"></a>
+			<a href="#" target="_blank" class="p-2 is-size-7 has-text-weight-normal w-full is-ellipsis"></a>
 		</div>
 	</div>
 
@@ -237,20 +260,25 @@
 					</span>
 				</button>
 			</div>
-			<div id="practiceInfoFields" data-element="yes" class="grid-auto-1fr is-align-items-center p-2">
+			<div id="practiceInfoFields" data-element="yes" class="grid grid-auto-1fr is-align-items-center p-2">
 				<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">ECO:</label>
 				<p class="p-2 is-ellipsis"></p>
 				<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">PGN:</label>
 				<p class="p-2 is-ellipsis"></p>
 				<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">FEN:</label>
-				<p class="p-2 is-ellipsis"></p>
+				<div class="is-flex is-align-items-center is-justify-content-space-between">
+    				<span id="practiceInfoFenField" data-element="yes" class="p-2 is-size-6 w-full is-ellipsis"></span>
+      				<span id="practiceInfoFenFieldCopy" data-element="yes" class="is-hidden icon link-with-hover">
+        				<i class="fas fa-copy"></i>
+    	  			</span>
+				</div>
 				<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">Stats:</label>
 				<p class="p-2 is-ellipsis"></p>
 			</div>
 		</div>
 
 		<div class="is-flex is-justify-content-flex-end mt-2">
-			<button type="button" id="analyseGameButton" data-element="yes" class="button is-primary">
+			<button type="button" id="analyseGameButton" data-element="yes" class="button is-link">
 				Analyse on Lichess
 			</button>
 		</div>
@@ -261,6 +289,7 @@
 {% block body_end %}
 	{{ include('practice/dialogs/save.html.twig') }}
 	{{ include('practice/dialogs/ignore.html.twig') }}
+	{{ include('practice/dialogs/focus.html.twig') }}
 {% endblock %}
 
 {% block stylesheets %}

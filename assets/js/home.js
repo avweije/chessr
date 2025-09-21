@@ -75,7 +75,7 @@ class Home {
   
   // get the repertoire statistics
   getStatistics() {
-    var url = "/api/statistics";
+    const url = "/api/statistics";
 
     //fetch(url, {..., signal: signal}).then(response => ...);
     fetch(url, {
@@ -91,7 +91,7 @@ class Home {
         if (error.name !== "AbortError") {
           console.error("Error:", error);
           // show the error icon
-          Utils.showError();
+          Utils.showError(error);
         }
       });
   }
@@ -143,5 +143,5 @@ class Home {
 }
 
 document.addEventListener("DOMContentLoaded", (event) => {
-  var home = new Home();
+  const home = new Home();
 });
