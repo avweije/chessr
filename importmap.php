@@ -44,6 +44,18 @@ return [
         'path' => './assets/js/chessboard.js',
         'entrypoint' => true,
     ],
+    'focus-board' => [
+        'path' => './assets/js/practice/focus-board.js',
+        'entrypoint' => true,
+    ],
+    'focus-group' => [
+        'path' => './assets/js/practice/focus-group.js',
+        'entrypoint' => true,
+    ],
+    'focus-manager' => [
+        'path' => './assets/js/practice/focus-manager.js',
+        'entrypoint' => true,
+    ],
     'ThickerArrows' => [
         'path' => './assets/js/ThickerArrows.js',
         'entrypoint' => true,

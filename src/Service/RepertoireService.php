@@ -682,6 +682,7 @@ class RepertoireService
                     'recommended' => $move['recommended'] ?? 0,
                     'autoplay' => $move['autoplay'] ?? false,
                     'focused' => $move['focused'] ?? false,
+                    'focusedParent' => $move['focusedParent'] ?? false,
                     'notes' => $move['notes'] ?? '',
                     'ourMoveCount' => $ourMoveCount,
                     'moves' => $subMoves,
@@ -760,6 +761,7 @@ class RepertoireService
                 'recommended' => $move['recommended'] ?? 0,
                 'autoplay' => $autoplay,
                 'focused' => $move['focused'] ?? false,
+                'focusedParent' => $move['focusedParent'] ?? false,
                 'notes' => $move['notes'] ?? '',
                 'moves' => $subMoves,
                 'id' => $move['id'] ?? 0,
@@ -1191,6 +1193,7 @@ class RepertoireService
             //'eco' => ['code' => 'A00', 'name' => 'The Cow System'],
             'autoplay' => $rep->isAutoPlay(),
             'focused' => $rep->isFocused(),
+            'focusedParent' => $rep->getFocusedParent()?->getId(),
             'notes' => $rep->getNotes(),
             'halfmove' => $rep->getHalfMove(),
             'before' => $rep->getFenBefore(),
@@ -1356,27 +1359,7 @@ class RepertoireService
 
                 // add the move
                 //$lines[($rep->getColor() == 'white' ? 0 : 1)]['moves'][] = [
-                $lines[$idx]['moves'][] = [
-                    'id' => $rep->getId(),
-                    'color' => $rep->getColor(),
-                    'initialFen' => $rep->getInitialFen(),
-                    'move' => $rep->getMove(),
-                    //'eco' => $eco,
-                    'autoplay' => $rep->isAutoPlay(),
-                    'focused' => $rep->isFocused(),
-                    'notes' => $rep->getNotes(),
-                    'halfmove' => $rep->getHalfMove(),
-                    'before' => $rep->getFenBefore(),
-                    'after' => $rep->getFenAfter(),
-                    'new' => $rep->getPracticeCount() == 0 ? 1 : 0,
-                    'practiceCount' => $rep->getPracticeCount(),
-                    'practiceFailed' => $rep->getPracticeFailed(),
-                    'practiceInARow' => $rep->getPracticeInARow(),
-                    'lastUsed' => $rep->getLastUsed(),
-                    'deltas' => $rep->getDeltas(),
-                    'line' => [],
-                    'moves' => []
-                ];
+                $lines[$idx]['moves'][] = $this->getMoveArray($rep);
             }
 
             // store the reps per fen before (for speed in getting the lines)
@@ -1387,28 +1370,11 @@ class RepertoireService
 
             // if we need a specific repertoire line and we found it
             if ($repertoireId !== null && $rep->getId() == $repertoireId) {
-                $repertoireItem = [
-                    'id' => $rep->getId(),
-                    'color' => $rep->getColor(),
-                    'initialFen' => $rep->getInitialFen(),
-                    'move' => $rep->getMove(),
-                    //'eco' => ['code' => 'A00', 'name' => 'The Cow System'],
-                    'autoplay' => $rep->isAutoPlay(),
-                    'focused' => $rep->isFocused(),
-                    'notes' => $rep->getNotes(),
-                    'halfmove' => $rep->getHalfMove(),
-                    'before' => $rep->getFenBefore(),
-                    'after' => $rep->getFenAfter(),
-                    'new' => $rep->getPracticeCount() == 0 ? 1 : 0,
-                    'failPercentage' => $rep->getPracticeCount() < 5 ? 1 : $rep->getPracticeFailed() / $rep->getPracticeCount(),
-                    'practiceCount' => $rep->getPracticeCount(),
-                    'practiceFailed' => $rep->getPracticeFailed(),
-                    'practiceInARow' => $rep->getPracticeInARow(),
-                    'lastUsed' => $rep->getLastUsed(),
-                    'deltas' => $rep->getDeltas(),
-                    'line' => $this->getLineBefore($rep->getHalfMove(), $rep->getFenBefore(), $this->_allReps),
-                    'moves' => []
-                ];
+                // Get the move array
+                $repertoireItem = $this->getMoveArray($rep, $this->getLineBefore($rep->getHalfMove(), $rep->getFenBefore(), $this->_allReps));
+
+                // 'failPercentage' => $rep->getPracticeCount() < 5 ? 1 : $rep->getPracticeFailed() / $rep->getPracticeCount(),
+
             }
 
             // If this is a focused move, add it
@@ -1444,27 +1410,7 @@ class RepertoireService
                 }
 
                 // store the group lines
-                $groups[$idx]["lines"][] = [
-                    'id' => $rep->getId(),
-                    'color' => $rep->getColor(),
-                    'initialFen' => $rep->getInitialFen(),
-                    'move' => $rep->getMove(),
-                    //'eco' => ['code' => 'A00', 'name' => 'The Cow System'],
-                    'autoplay' => $rep->isAutoPlay(),
-                    'focused' => $rep->isFocused(),
-                    'notes' => $rep->getNotes(),
-                    'halfmove' => $rep->getHalfMove(),
-                    'before' => $rep->getFenBefore(),
-                    'after' => $rep->getFenAfter(),
-                    'new' => $rep->getPracticeCount() == 0 ? 1 : 0,
-                    'practiceCount' => $rep->getPracticeCount(),
-                    'practiceFailed' => $rep->getPracticeFailed(),
-                    'practiceInARow' => $rep->getPracticeInARow(),
-                    'lastUsed' => $rep->getLastUsed(),
-                    'deltas' => $rep->getDeltas(),
-                    'line' => $this->getLineBefore($rep->getHalfMove(), $rep->getFenBefore(), $this->_allReps),
-                    'moves' => []
-                ];
+                $groups[$idx]["lines"][] = $this->getMoveArray($rep, $this->getLineBefore($rep->getHalfMove(), $rep->getFenBefore(), $this->_allReps));
             }
         }
 
@@ -1596,6 +1542,7 @@ class RepertoireService
                 //'eco' => ['code' => 'A00', 'name' => 'The Cow System'],
                 'autoplay' => $rep["auto_play"],
                 'focused' => $rep["focused"] ?? false,
+                'focusedParent' => $rep["focusedParent"] ?? false,
                 'notes' => $rep["notes"] ?? '',
                 'halfmove' => $rep["half_move"],
                 'before' => $rep["fen_before"],
@@ -1680,6 +1627,7 @@ class RepertoireService
                         //'eco' => $eco,
                         'autoplay' => $rep->isAutoPlay(),
                         'focused' => $rep->isFocused(),
+                        'focusedParent' => $rep->getFocusedParent(),
                         'notes' => $rep->getNotes(),
                         'halfmove' => $rep->getHalfMove(),
                         'before' => $rep->getFenBefore(),

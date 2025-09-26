@@ -121,19 +121,6 @@
 					<div class="toggle-label">Temporarily exclude this line from practice</div>
 				</label>
 			</div>
-			<div class="mb-2 py-1">
-				<label class="toggle">
-					<input id="repertoireFocusedCheckbox" data-element="yes" type="checkbox" class="sr-only peer">
-					<div class="knob"></div>
-					<div class="toggle-label">Add this position to the focus moves</div>
-				</label>
-			</div>
-			<div class="field mb-3">
-				<label class="label">Notes</label>
-				<div class="control">
-					<textarea id="repertoireNotesTextarea" data-element="yes" placeholder="Enter your notes here..." class="textarea"></textarea>
-				</div>
-			</div>
 			<div class="field">
 				<label class="label">Group:</label>
 				<div class="control has-icons-right">
@@ -154,6 +141,28 @@
 				</span>
 				<span>Remove from your repertoire</span>
 			</button>
+		</div>
+	</div>
+
+	<div id="focusedContainer" data-element="yes" class="is-hidden box p-0">
+		<div class="box-header">
+			<p class="has-text-weight-semibold">Focused</p>
+			<div class="pr-2"></div>
+		</div>
+		<div class="w-full p-3">
+			<div class="mb-1 py-1">
+				<label class="toggle">
+					<input id="repertoireFocusedCheckbox" data-element="yes" type="checkbox" class="sr-only peer">
+					<div class="knob"></div>
+					<div class="toggle-label">Add this position to the focus moves</div>
+				</label>
+			</div>
+			<div class="field">
+				<label class="label">Notes</label>
+				<div class="control">
+					<textarea id="repertoireNotesTextarea" data-element="yes" placeholder="Enter your notes here..." class="textarea"></textarea>
+				</div>
+			</div>
 		</div>
 	</div>
 

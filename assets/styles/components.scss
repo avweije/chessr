@@ -1,3 +1,13 @@
+/* Dot Marker */
+.dot-marker {
+    display: inline-block;
+    width: 0.75rem;
+    height: 0.75rem;
+    background-color: var(--color-link);
+    border-radius: 9999px;
+}
+
+
 /* Checkbox Switch - Toggles Icon/Button */
 .checkbox-switch {
   display: flex;
@@ -169,7 +179,7 @@
   color: var(--color-text-faded);
 }
 .boxed-radio-menu > .boxed-radio {
-  min-width: 7rem;
+  /* min-width: 7rem; */
 }
 div:not(.boxed-radio-menu) > .boxed-radio {
   min-width: 9rem;

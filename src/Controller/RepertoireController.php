@@ -130,7 +130,7 @@ class RepertoireController extends ChessrAbstractController
         $message = "";
 
         $repo = $this->em->getRepository(Repertoire::class);
-        $rep = $repo->findOneBy(['id' => $data["repertoire"]]);
+        $rep = $repo->findOneBy(['id' => $data["id"]]);
         if ($rep) {
             // Update the details that are provided
             if (isset($data['autoplay'])) $rep->setAutoPlay($data['autoplay']);
@@ -149,34 +149,49 @@ class RepertoireController extends ChessrAbstractController
         return new JsonResponse(["message" => $message]);
     }
 
-    #[Route('/api/repertoire/focus', methods: ['POST'], name: 'api_repertoire_focus')]
+    #[Route('/api/repertoire/focused/parent', methods: ['POST'], name: 'api_repertoire_focused_parent')]
     /**
-     * Updates the 'focused' flag & the notes for a certain repertoire move.
+     * Used for connecting/disconnecting focus moves together in a group.
+     * 
+     * items:
+     * [{ 
+     *  id: <repertoireId>,
+     *  parent: <parentRepertoireId>
+     *  notes: <notes>
+     *  }]
      *
      * @param  mixed $request
      * @return JsonResponse
      */
-    public function apiRepertoireFocus(Request $request): JsonResponse
+    public function apiRepertoireFocusedParent(Request $request): JsonResponse
     {
         $data = $request->getPayload()->all();
-        $message = "";
-        // Get the repertoire
-        $repo = $this->em->getRepository(Repertoire::class);
-        $rep = $repo->findOneBy(['id' => $data["id"]]);
-        if ($rep) {
-            // Update the repertoire
-            $rep->setFocused(true);
-            $rep->setNotes($data['notes']);
-            // Save it
-            $this->em->persist($rep);
-            $this->em->flush();
 
-            $message = "Added to focus moves.";
-        } else {
-            $message = "Repertoire not found.";
+        $updateCount = 0;
+
+        // Loop through the items
+        foreach ($data['items'] as $item) {
+            // Get the repertoire
+            $repo = $this->em->getRepository(Repertoire::class);
+            $rep = $repo->findOneBy(['id' => $item["id"]]);
+            if ($rep) {
+                // Find the parent, if we have one
+                $parent = $item['focusedParent'] ? $repo->findOneBy(['id' => $item["focusedParent"]]) : null;
+                // Update the repertoire
+                $rep->setFocusedParent($parent);
+                // If this move is being removed from the focus moves
+                if (isset($item['focused']) && $item['focused'] == false) {
+                    $rep->setFocused(false);
+                }
+                // Save it
+                $this->em->persist($rep);
+                $this->em->flush();
+
+                $updateCount++;
+            }
         }
 
-        return new JsonResponse(["message" => $message]);
+        return new JsonResponse(["message" => $updateCount . ' item(s) updated.']);
     }
 
     #[Route('/api/repertoire/groups', name: 'api_get_repertoire_groups')]

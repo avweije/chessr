@@ -8,6 +8,7 @@ import { MARKER_TYPE } from "../vendor/cm-chessboard/src/extensions/markers/Mark
 import { Utils } from "utils";
 import { Logger } from "logger";
 import { balloons } from 'https://cdn.jsdelivr.net/npm/balloons-js@0.0.3/+esm';
+import { focusBoardManager } from "focus-manager";
 
 import "../styles/chessboard.css";
 
@@ -58,6 +59,8 @@ class Practice extends MyChessBoard {
   lastMove = null;
   correctMoves = [];
 
+  focusBoardManager = null;
+
   // the practice vars used when running a practice
   practice = {
     lines: [],
@@ -100,7 +103,7 @@ class Practice extends MyChessBoard {
 
   constructor() {
     super();
-    
+
     // show the page loader
     Utils.showLoading();
 
@@ -234,6 +237,20 @@ class Practice extends MyChessBoard {
         // Show a toast
         Utils.showInfo('Copied!');
       });
+    });
+
+    // Listen for focused practice run
+    this.elements.boardPageOtherContainer.addEventListener("focusGroup:practice", (event) => {
+
+      console.log('focusGroup:practice', event);
+
+      // Run the focus group practice
+      this.runFocusGroupPractice(event.detail.lines);
+    });
+    // Go back to focused view
+    this.elements.focusedGoBackButton.addEventListener("click", (event) => {
+      // Toggle the other container
+      this.toggleBoardOrOther(false);
     });
   }
 
@@ -403,7 +420,12 @@ class Practice extends MyChessBoard {
 
     // Focus modal
     const showFocusModal = () => this.elements.focusModal.classList.add("is-active");
-    const closeFocusModal = () => this.elements.focusModal.classList.remove("is-active");
+    const closeFocusModal = () => {
+      // Hide the focus modal
+      this.elements.focusModal.classList.remove("is-active");
+      // Toggle the focus move button
+      this.toggleFocusMoveButton();
+    };
 
     const focusModalBkgd = this.elements.focusModal.getElementsByClassName("modal-background")[0];
 
@@ -413,6 +435,25 @@ class Practice extends MyChessBoard {
     this.elements.focusModalConfirmButton.addEventListener("click", () => {
       // Handle the confirmation
       this.onFocusModalConfirm();
+    });
+
+    // Unfocus modal
+    this.showUnfocusModal = () => this.elements.unfocusModal.classList.add("is-active");
+    this.closeUnfocusModal = () => {
+      // Hide the unfocus modal
+      this.elements.unfocusModal.classList.remove("is-active");
+      // Toggle the focus move button
+      this.toggleFocusMoveButton();
+    };
+
+    const unfocusModalBkgd = this.elements.unfocusModal.getElementsByClassName("modal-background")[0];
+
+    unfocusModalBkgd.addEventListener("click", this.closeUnfocusModal);
+    this.elements.unfocusModalCloseButton.addEventListener("click", this.closeUnfocusModal);
+    this.elements.unfocusModalCancelButton.addEventListener("click", this.closeUnfocusModal);
+    this.elements.unfocusModalConfirmButton.addEventListener("click", () => {
+      // Handle the confirmation
+      this.onUnfocusModalConfirm();
     });
 
     // You can expose show functions if needed elsewhere
@@ -460,7 +501,9 @@ class Practice extends MyChessBoard {
     this.practice.lastQueuedMove = move;
     // Toggle the previous & next move button
     this.elements.prevMoveButton.disabled = line == this.practice.firstMove.line && move == this.practice.firstMove.move;
-    this.elements.skipMoveButton.disabled = line == this.practice.lastMove.line && move == this.practice.lastMove.move;
+
+    // Don't disable the skip move button on the last move, otherwise we can't skip it..
+    //this.elements.skipMoveButton.disabled = line == this.practice.lastMove.line && move == this.practice.lastMove.move;
 
     const now = Date.now();
     // Use a debounce time for mouse click navigation
@@ -686,7 +729,7 @@ class Practice extends MyChessBoard {
    * @memberof Practice
    */
   showPgnContainer() {
-    this.elements.pgnContainer.classList.remove("is-hidden");
+    this.elements.pgnContainer.classList.remove('is-hidden');
   }
 
   /**
@@ -695,7 +738,7 @@ class Practice extends MyChessBoard {
    * @memberof Practice
    */
   hidePgnContainer() {
-    this.elements.pgnContainer.classList.add("is-hidden");
+    this.elements.pgnContainer.classList.add('is-hidden');
   }
 
   /**
@@ -746,11 +789,11 @@ class Practice extends MyChessBoard {
    */
 
   showSuggestionContainer() {
-    this.elements.suggestionContainer.classList.remove("is-hidden");
+    this.elements.suggestionContainer.classList.remove('is-hidden');
   }
 
   hideSuggestionContainer() {
-    this.elements.suggestionContainer.classList.add("is-hidden");
+    this.elements.suggestionContainer.classList.add('is-hidden');
   }
 
   updateSuggestionField(color, fen, suggestion) {
@@ -827,14 +870,14 @@ class Practice extends MyChessBoard {
         localStorage.setItem("show-practice-info", true);
       }
 
-      this.elements.practiceInfoContainer.classList.remove("is-hidden");
+      this.elements.practiceInfoContainer.classList.remove('is-hidden');
     } else {
       // update toggle setting
       if (eventObject !== false) {
         localStorage.setItem("show-practice-info", false);
       }
 
-      this.elements.practiceInfoContainer.classList.add("is-hidden");
+      this.elements.practiceInfoContainer.classList.add('is-hidden');
     }
   }
 
@@ -852,8 +895,8 @@ class Practice extends MyChessBoard {
 
   showAnalysis() {
     // show the analysis container
-    this.analysis.buttons.classList.remove("is-hidden");
-    this.analysis.container.classList.remove("is-hidden");
+    this.analysis.buttons.classList.remove('is-hidden');
+    this.analysis.container.classList.remove('is-hidden');
     // enable the buttons
     this.analysis.saveButton.disabled = false;
     this.analysis.ignoreButton.disabled = false;
@@ -862,8 +905,8 @@ class Practice extends MyChessBoard {
 
   hideAnalysis() {
     // hide the analysis container
-    this.analysis.buttons.classList.add("is-hidden");
-    this.analysis.container.classList.add("is-hidden");
+    this.analysis.buttons.classList.add('is-hidden');
+    this.analysis.container.classList.add('is-hidden');
     // disable the buttons
     this.analysis.saveButton.disabled = true;
     this.analysis.ignoreButton.disabled = true;
@@ -877,30 +920,30 @@ class Practice extends MyChessBoard {
     // configure the save dialog
     switch (this.practice.lines[this.practice.lineIdx].moves.length) {
       case 1:
-        this.analysis.saveDialog.textOneMove.classList.remove("is-hidden");
-        this.analysis.saveDialog.textMultipleMoves.classList.add("is-hidden");
-        this.analysis.saveDialog.movesList.classList.add("is-hidden");
+        this.analysis.saveDialog.textOneMove.classList.remove('is-hidden');
+        this.analysis.saveDialog.textMultipleMoves.classList.add('is-hidden');
+        this.analysis.saveDialog.movesList.classList.add('is-hidden');
         break;
       case 2:
-        this.analysis.saveDialog.textOneMove.classList.add("is-hidden");
-        this.analysis.saveDialog.textMultipleMoves.classList.remove("is-hidden");
-        this.analysis.saveDialog.movesList.classList.remove("is-hidden");
+        this.analysis.saveDialog.textOneMove.classList.add('is-hidden');
+        this.analysis.saveDialog.textMultipleMoves.classList.remove('is-hidden');
+        this.analysis.saveDialog.movesList.classList.remove('is-hidden');
         this.analysis.saveDialog.radioTop2.parentNode.parentNode.classList.remove(
-          "is-hidden"
+          'is-hidden'
         );
         this.analysis.saveDialog.radioTop3.parentNode.parentNode.classList.add(
-          "is-hidden"
+          'is-hidden'
         );
         break;
       case 3:
-        this.analysis.saveDialog.textOneMove.classList.add("is-hidden");
-        this.analysis.saveDialog.textMultipleMoves.classList.remove("is-hidden");
-        this.analysis.saveDialog.movesList.classList.remove("is-hidden");
+        this.analysis.saveDialog.textOneMove.classList.add('is-hidden');
+        this.analysis.saveDialog.textMultipleMoves.classList.remove('is-hidden');
+        this.analysis.saveDialog.movesList.classList.remove('is-hidden');
         this.analysis.saveDialog.radioTop2.parentNode.parentNode.classList.remove(
-          "is-hidden"
+          'is-hidden'
         );
         this.analysis.saveDialog.radioTop3.parentNode.parentNode.classList.remove(
-          "is-hidden"
+          'is-hidden'
         );
         break;
     }
@@ -1199,9 +1242,9 @@ class Practice extends MyChessBoard {
     this.elements.analysisGameFenField.innerHTML = fen;
     // Toggle the copy icon
     if (fen) {
-      this.elements.analysisGameFenFieldCopy.classList.remove("is-hidden");
+      this.elements.analysisGameFenFieldCopy.classList.remove('is-hidden');
     } else {
-      this.elements.analysisGameFenFieldCopy.classList.add("is-hidden");
+      this.elements.analysisGameFenFieldCopy.classList.add('is-hidden');
     }
 
     // set the game link
@@ -1310,7 +1353,7 @@ class Practice extends MyChessBoard {
     // toggle the pgn navigation buttons
     this.togglePgnNavigationButtons();
     // show the pgn navigation buttons
-    this.elements.pgnNavigationContainer.classList.remove("is-hidden");
+    this.elements.pgnNavigationContainer.classList.remove('is-hidden');
 
     // allow navigation by arrow left/right
     this.setOption(BOARD_SETTINGS.navigation, true);
@@ -1329,7 +1372,7 @@ class Practice extends MyChessBoard {
       // disable the pgn links
       this.setPgnWithLinks(false);
       // hide the pgn navigation buttons
-      this.elements.pgnNavigationContainer.classList.add("is-hidden");
+      this.elements.pgnNavigationContainer.classList.add('is-hidden');
 
       // disallow navigation by arrow left/right
       this.setOption(BOARD_SETTINGS.navigation, false);
@@ -1596,6 +1639,8 @@ class Practice extends MyChessBoard {
 
           console.log(response);
 
+          // Reset the focus moves
+          this.resetFocusMoves();
           // Enable the practice
           this.onGetRepertoire(response);
         })
@@ -1694,12 +1739,71 @@ class Practice extends MyChessBoard {
 
     // show the counters
     this.showCounters(this.practice.moveCount);
+
+    // Show the board container or the other container (for focused moves)
+    this.toggleBoardOrOther();
+  }
+
+  // Toggle the board and other containers
+  toggleBoardOrOther(loadMoves = true, showBoard = false) {
+
+    console.log('toggleBoardOrOther', loadMoves, showBoard, this.type);
+
+    // Toggle the board/other containers
+    if (this.type === 'focused' && !showBoard) {
+      // Show the other container
+      this.elements.boardPageBoardContainer.classList.add('is-hidden');
+      this.elements.boardPageOtherContainer.classList.remove('is-hidden');
+      // Reset start button text
+      this.elements.startPracticeButton.innerHTML = "Start your practice";
+      // Load the focused positions
+      if (loadMoves) {
+        this.resetFocusMoves();
+        this.loadFocusMoves();
+      }
+    } else {
+      // Show the board container
+      this.elements.boardPageOtherContainer.classList.add('is-hidden');
+      this.elements.boardPageBoardContainer.classList.remove('is-hidden');
+    }
+  }
+
+  // Loads the other container with the focus moves
+  loadFocusMoves() {
+
+    console.log('loadFocusMoves', this.elements.boardPageOtherContainer.firstElementChild);
+
+    // If already loaded, skip
+    if (this.elements.boardPageOtherContainer.firstElementChild) return;
+    // Load the focus board manager
+    this.focusBoardManager = new focusBoardManager(this.repertoire['focused'], this.settings);
+  }
+
+  // Reset the other container, clear all html
+  resetFocusMoves() {
+
+    console.log('Resetting focus moves HTML');
+
+    this.elements.boardPageOtherContainer.innerHTML = '';
+  }
+
+  // Run a focus group practice
+  runFocusGroupPractice(lines) {
+    // Get the practice lines
+    this.practice.lines = [];
+    this.practice.moveCount = this.getPracticeLines("focused", lines);
+    // Show the counters
+    this.showCounters(this.practice.moveCount);
+    // Toggle the board container
+    this.toggleBoardOrOther(false, true);
+    // Start the practice
+    this.onStartPractice();
   }
 
   // show a different repertoire type
   showRepertoireType(type, needsRefresh = this.needsRefresh, refreshRecommended = false) {
     // stop the current practice
-    this.stopPractice();
+    this.stopPractice(type);
     // set the type
     this.type = type;
     // toggle the pgn field
@@ -1774,9 +1878,9 @@ class Practice extends MyChessBoard {
   // hide the repertoire buttons
   hideRepertoireButtons() {
     // hide  the repertoire type buttons
-    this.elements.practiceRepertoireButtons.classList.add("is-hidden");
+    this.elements.practiceRepertoireButtons.classList.add('is-hidden');
     // show the custom repertoire field
-    this.elements.practiceCustomRepertoireField.classList.remove("is-hidden");
+    this.elements.practiceCustomRepertoireField.classList.remove('is-hidden');
 
     // hide the groups
     this.hideGroups();
@@ -1796,9 +1900,9 @@ class Practice extends MyChessBoard {
 
     // Show/hide new
     if (this.repertoire.new.length == 0) {
-      this.elements.repertoireNew.parentNode.classList.add("is-hidden");
+      this.elements.repertoireNew.parentNode.classList.add('is-hidden');
     } else {
-      this.elements.repertoireNew.parentNode.classList.remove("is-hidden");
+      this.elements.repertoireNew.parentNode.classList.remove('is-hidden');
     }
 
     // Toggle recommended
@@ -1810,9 +1914,9 @@ class Practice extends MyChessBoard {
 
     // Show/hide focused
     if (this.repertoire.focused.length == 0) {
-      this.elements.repertoireFocused.parentNode.classList.add("is-hidden");
+      this.elements.repertoireFocused.parentNode.classList.add('is-hidden');
     } else {
-      this.elements.repertoireFocused.parentNode.classList.remove("is-hidden");
+      this.elements.repertoireFocused.parentNode.classList.remove('is-hidden');
     }
 
     // Toggle repertoire all
@@ -1830,16 +1934,16 @@ class Practice extends MyChessBoard {
     // Select the right type
     const idx = this.types.indexOf(this.type);
     // Set to "all" if there are no practice lines for this type
-    if (idx == -1 
-        || this.elements.practiceRepertoireButtons.children[idx].children[0].disabled
+    if (idx == -1
+      || this.elements.practiceRepertoireButtons.children[idx].children[0].disabled
     ) {
       // check the checkbox
       this.elements.repertoireAll.checked = true;
     }
 
     // Toggle the group select container
-    if (this.elements.practiceRepertoireButtons.children[4].children[0].checked 
-        && this.repertoire.groups.length > 0
+    if (this.elements.practiceRepertoireButtons.children[4].children[0].checked
+      && this.repertoire.groups.length > 0
     ) {
       this.showGroups();
     } else {
@@ -1905,11 +2009,11 @@ class Practice extends MyChessBoard {
   }
 
   showGroups() {
-    this.elements.practiceGroupContainer.classList.remove("is-hidden");
+    this.elements.practiceGroupContainer.classList.remove('is-hidden');
   }
 
   hideGroups() {
-    this.elements.practiceGroupContainer.classList.add("is-hidden");
+    this.elements.practiceGroupContainer.classList.add('is-hidden');
   }
 
   onGroupSelectChange(event) {
@@ -1935,7 +2039,7 @@ class Practice extends MyChessBoard {
   }
 
   // split the repertoire into practice lines
-  getPracticeLines(type, lines, color = "", ourMove = false, lineMoves = [], 
+  getPracticeLines(type, lines, color = "", ourMove = false, lineMoves = [],
     add = true, isVariation = false, depth = 0, ourMoveTotalSoFar = 0
   ) {
     // keep track of how many moves there are for us
@@ -2064,28 +2168,31 @@ class Practice extends MyChessBoard {
     this.elements.skipMoveButton.title = "Skip this move";
 
     // toggle the buttons
+    this.elements.focusedGoBackButton.disabled = true;
+    this.elements.focusedGoBackButton.classList.add('is-hidden');
     this.elements.startPracticeButton.disabled = true;
-    this.elements.startPracticeButton.classList.add("is-hidden");
+    this.elements.startPracticeButton.classList.add('is-hidden');
     this.elements.giveHintButton.disabled = false;
-    this.elements.giveHintButton.classList.remove("is-hidden");
+    this.elements.giveHintButton.classList.remove('is-hidden');
     this.elements.prevMoveButton.disabled = true;
-    this.elements.prevMoveButton.classList.remove("is-hidden");
+    this.elements.prevMoveButton.classList.remove('is-hidden');
     this.elements.skipMoveButton.disabled = false;
-    this.elements.skipMoveButton.classList.remove("is-hidden");
+    this.elements.skipMoveButton.classList.remove('is-hidden');
 
     if (this.type == "analysis") {
       this.elements.showPracticeInfoButton.disabled = true;
-      this.elements.showPracticeInfoButton.nextElementSibling.classList.add("is-hidden");
+      this.elements.showPracticeInfoButton.nextElementSibling.classList.add('is-hidden');
 
-      this.elements.practiceInfoContainer.classList.add("is-hidden");
+      // Hide the practice info
+      this.elements.practiceInfoContainer.classList.add('is-hidden');
     } else {
       // Focus button
-      this.elements.focusMoveButton.disabled = false;
-      this.elements.focusMoveButton.classList.remove("is-hidden");
+      this.elements.focusMoveButton.checked = false;
+      this.elements.focusMoveButton.nextElementSibling.classList.remove('is-hidden');
       // Show practice info button
       this.elements.showPracticeInfoButton.disabled = false;
       this.elements.showPracticeInfoButton.nextElementSibling.classList.remove(
-        "is-hidden"
+        'is-hidden'
       );
 
       // get the show info setting
@@ -2129,22 +2236,30 @@ class Practice extends MyChessBoard {
   }
 
   // stop a practice (when switching type)
-  stopPractice() {
+  stopPractice(type = this.type) {
     // toggle the buttons
+    if (type === 'focused') {
+      this.elements.focusedGoBackButton.disabled = false;
+      this.elements.focusedGoBackButton.classList.remove('is-hidden');
+    } else {
+      this.elements.focusedGoBackButton.disabled = true;
+      this.elements.focusedGoBackButton.classList.add('is-hidden');
+    }
     this.elements.startPracticeButton.disabled = false;
     this.elements.startPracticeButton.innerHTML = "Start your practice";
-    this.elements.startPracticeButton.classList.remove("is-hidden");
+    this.elements.startPracticeButton.classList.remove('is-hidden');
     this.elements.giveHintButton.disabled = true;
-    this.elements.giveHintButton.classList.add("is-hidden");
+    this.elements.giveHintButton.classList.add('is-hidden');
     this.elements.prevMoveButton.disabled = true;
-    this.elements.prevMoveButton.classList.add("is-hidden");
+    this.elements.prevMoveButton.classList.add('is-hidden');
     this.elements.skipMoveButton.disabled = true;
-    this.elements.skipMoveButton.classList.add("is-hidden");
-    this.elements.focusMoveButton.disabled = true;
-    this.elements.focusMoveButton.classList.add("is-hidden");
+    this.elements.skipMoveButton.classList.add('is-hidden');
+    this.elements.focusMoveButton.checked = false;
+    this.elements.focusMoveButton.nextElementSibling.classList.add('is-hidden');
     this.elements.showPracticeInfoButton.disabled = true;
-    this.elements.showPracticeInfoButton.nextElementSibling.classList.add("is-hidden");
+    this.elements.showPracticeInfoButton.nextElementSibling.classList.add('is-hidden');
 
+    // Hide the practice info
     this.togglePracticeInfo(false);
 
     // stop animating
@@ -2220,9 +2335,9 @@ class Practice extends MyChessBoard {
     this.elements.practiceInfoFenField.innerHTML = fen;
     // Toggle the copy icon
     if (fen) {
-      this.elements.practiceInfoFenFieldCopy.classList.remove("is-hidden");
+      this.elements.practiceInfoFenFieldCopy.classList.remove('is-hidden');
     } else {
-      this.elements.practiceInfoFenFieldCopy.classList.add("is-hidden");
+      this.elements.practiceInfoFenFieldCopy.classList.add('is-hidden');
     }
 
     // update the stats
@@ -2377,7 +2492,7 @@ class Practice extends MyChessBoard {
     const amounts = [1, 2, 5, 10];
 
     // Repeat balloons for more effect
-    for (let i=0;i<amounts[amount];i++) {
+    for (let i = 0; i < amounts[amount]; i++) {
       const delay = i * 100;
       setTimeout(balloons, delay);
     }
@@ -2435,9 +2550,7 @@ class Practice extends MyChessBoard {
     this.practice.lastQueuedLine = _lineIdx;
     this.practice.lastQueuedMove = _moveIdx;
 
-
-
-    // hide the hint (if showing)
+    // Hide the hint (if showing)
     this.hideHint();
 
     log.log('Practice.js - runPractice, clearing markers', _lineIdx, _moveIdx);
@@ -2582,13 +2695,13 @@ class Practice extends MyChessBoard {
     // disable the pgn links
     this.setPgnWithLinks(false);
     // hide the pgn navigation buttons
-    this.elements.pgnNavigationContainer.classList.add("is-hidden");
+    this.elements.pgnNavigationContainer.classList.add('is-hidden');
 
     // disallow navigation by arrow left/right
     this.setOption(BOARD_SETTINGS.navigation, false);
 
     // Toggle the focus move button
-    this.toggleFocusMoveButton(this.practice.focused, this.practice.notes);
+    this.toggleFocusMoveButton();
 
     // recalibrate the move counter (in case of fast skipping errors)
     //if (this.practice.moveIdx == 0) {
@@ -3158,6 +3271,17 @@ class Practice extends MyChessBoard {
     }
   }
 
+  // Returns the current practice line
+  getCurrentLine() {
+    let current = this.practice.lines[this.practice.lineIdx];
+    if (this.type != "analysis") {
+      for (let i = 0; i < this.practice.moveIdx; i++) {
+        current = current.moves[0];
+      }
+    }
+    return current;
+  }
+
   // get the moves for a certain line/move
   getMoves() {
     let moves = [];
@@ -3565,7 +3689,7 @@ class Practice extends MyChessBoard {
 
   // show the counters
   showCounters(moveCount) {
-    this.elements.practiceCountersContainer.classList.remove("is-hidden");
+    this.elements.practiceCountersContainer.classList.remove('is-hidden');
 
     this.elements.practiceMoveCounter.innerHTML = moveCount;
     this.elements.practiceCorrectCounter.innerHTML = 0;
@@ -3574,7 +3698,7 @@ class Practice extends MyChessBoard {
 
   // hide the counters
   hideCounters() {
-    this.elements.practiceCountersContainer.classList.add("is-hidden");
+    this.elements.practiceCountersContainer.classList.add('is-hidden');
   }
 
   // increase the move count
@@ -3659,37 +3783,37 @@ class Practice extends MyChessBoard {
 
   // show an info message
   showInfo(status = "") {
-    this.elements.confirmContainer.classList.add("is-hidden");
-    this.elements.warningContainer.classList.add("is-hidden");
-    this.elements.infoContainer.classList.remove("is-hidden");
+    this.elements.confirmContainer.classList.add('is-hidden');
+    this.elements.warningContainer.classList.add('is-hidden');
+    this.elements.infoContainer.classList.remove('is-hidden');
     this.elements.infoContainer.getElementsByTagName("span")[1].innerHTML = status;
   }
 
   // show a confirmation message
   showConfirm(status = "") {
-    this.elements.infoContainer.classList.add("is-hidden");
-    this.elements.warningContainer.classList.add("is-hidden");
-    this.elements.confirmContainer.classList.remove("is-hidden");
+    this.elements.infoContainer.classList.add('is-hidden');
+    this.elements.warningContainer.classList.add('is-hidden');
+    this.elements.confirmContainer.classList.remove('is-hidden');
     this.elements.confirmContainer.getElementsByTagName("span")[1].innerHTML = status;
   }
 
   // show a warning message
   showWarning(status = "") {
-    this.elements.infoContainer.classList.add("is-hidden");
-    this.elements.confirmContainer.classList.add("is-hidden");
-    this.elements.warningContainer.classList.remove("is-hidden");
+    this.elements.infoContainer.classList.add('is-hidden');
+    this.elements.confirmContainer.classList.add('is-hidden');
+    this.elements.warningContainer.classList.remove('is-hidden');
     this.elements.warningContainer.getElementsByTagName("span")[1].innerHTML = status;
   }
 
   // show a hint message
   showHint(hint = "") {
-    this.elements.hintContainer.classList.remove("is-hidden");
+    this.elements.hintContainer.classList.remove('is-hidden');
     this.elements.hintContainer.getElementsByTagName("span")[1].innerHTML = hint;
   }
 
   // hide the hint messages
   hideHint() {
-    this.elements.hintContainer.classList.add("is-hidden");
+    this.elements.hintContainer.classList.add('is-hidden');
   }
 
   /**
@@ -4172,19 +4296,20 @@ class Practice extends MyChessBoard {
    * Toggle the focus move button. Show as checked if this is a focused move.
    * Update the button title.
    */
-  toggleFocusMoveButton(focused, notes) {
-    
-    console.log('toggleFocusMoveButton', focused, notes);
+  toggleFocusMoveButton() {
+
+    console.log('toggleFocusMoveButton', this.practice.focused, this.practice.notes);
 
     // Toggle the button
-    this.elements.focusMoveButton.disabled = focused;
+    //this.elements.focusMoveButton.disabled = this.practice.focused;
+    this.elements.focusMoveButton.checked = this.practice.focused;
     // Update the notes textarea
-    this.elements.focusMoveNotesTextarea.value = notes ?? '';
+    this.elements.focusMoveNotesTextarea.value = this.practice.notes ?? '';
     // Toggle the focus move container
-    if (this.elements.focusMoveButton.disabled) {
-      this.elements.focusMoveContainer.classList.remove("is-hidden");
+    if (this.practice.focused) {
+      this.elements.focusMoveContainer.classList.remove('is-hidden');
     } else {
-      this.elements.focusMoveContainer.classList.add("is-hidden");
+      this.elements.focusMoveContainer.classList.add('is-hidden');
     }
   }
 
@@ -4192,7 +4317,7 @@ class Practice extends MyChessBoard {
    * Hides the focus move container.
    */
   hideFocusMove() {
-    this.elements.focusMoveContainer.classList.add("is-hidden");
+    this.elements.focusMoveContainer.classList.add('is-hidden');
   }
 
   /**
@@ -4202,52 +4327,111 @@ class Practice extends MyChessBoard {
 
     console.log('focusMove', this.practice.id, this.practice.focused);
 
-    // Set the notes if we have them
-    this.elements.focusModalNotesTextarea.value = this.practice.notes ?? '';
-    // Show the focus modal
-    this.showFocusModal();
+    // If this is a focus move, remove it
+    if (this.practice.focused) {
+      // Ask for confirmation
+      this.showUnfocusModal();
+    } else {
+      // Set the notes if we have them
+      this.elements.focusModalNotesTextarea.value = this.practice.notes ?? '';
+      // Show the focus modal
+      this.showFocusModal();
+    }
   }
 
   /**
    * Called when the user confirms adding the current position as focus move through the modal.
    * Update the focused flag and the notes. Closes the modal once the AJAX call is done.
    */
-  onFocusModalConfirm() {
-    const url = "/api/repertoire/focus";
+  async onFocusModalConfirm() {
+    // Show is-loading
+    this.elements.focusModalConfirmButton.classList.add("is-loading");
+    // We need to refresh the repertoire data when starting a new practice
+    this.needsRefresh = true;
+
+    // Set the data to update
     const data = {
       id: this.practice.id,
+      focused: true,
       notes: this.elements.focusModalNotesTextarea.value
     };
 
+    try {
+      // Update the repertoire details
+      await this.updateRepertoireDetails(data);
+      // Update focused & notes
+      this.practice.focused = true;
+      this.practice.notes = this.elements.focusModalNotesTextarea.value;
+      // Update the actual line
+      const line = this.getCurrentLine();
+
+      line.focused = this.practice.focused;
+      line.notes = this.practice.notes;
+
+      console.log('Updated current line', line, this.getCurrentLine());
+
+    } catch (err) {
+      console.warn(err);
+    } finally {
+      // Hide is-loading
+      this.elements.focusModalConfirmButton.classList.remove("is-loading");
+      // Close the modal after
+      this.closeFocusModal();
+    }
+  }
+
+  async onUnfocusModalConfirm() {
     // Show is-loading
     this.elements.focusModalConfirmButton.classList.add("is-loading");
+    // We need to refresh the repertoire data when starting a new practice
+    this.needsRefresh = true;
 
-    // Call the backend to mark this move as focused
-    fetch(url, {
-      method: "POST",
-      body: JSON.stringify(data),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => res.json())
-      .then((response) => {
-        // Store the notes
-        this.practice.notes = this.elements.focusModalNotesTextarea.value;
-        // Set the button checked status
-        this.toggleFocusMoveButton(this.practice.focused, this.practice.notes);
-      })
-      .catch((err) => {
-        log.warn("Error:", err);
-        // show the error icon
-        Utils.showError(err);
-      })
-      .finally(() => {
-        // Hide is-loading
-        this.elements.focusModalConfirmButton.classList.remove("is-loading");
-        // Close the modal after
-        this.closeFocusModal();
+    // Set the data to update
+    const data = {
+      id: this.practice.id,
+      focused: false,
+      notes: this.elements.focusModalNotesTextarea.value
+    };
+
+    try {
+      // Update the repertoire details
+      await this.updateRepertoireDetails(data);
+      // Update focused & notes
+      this.practice.focused = false;
+      this.practice.notes = '';
+      // Update the actual line
+      const line = this.getCurrentLine();
+
+      line.focused = this.practice.focused;
+      line.notes = this.practice.notes;
+
+      console.log('Updated current line', line, this.getCurrentLine());
+      
+    } catch (err) {
+      console.warn(err);
+    } finally {
+      // Hide is-loading
+      this.elements.focusModalConfirmButton.classList.remove("is-loading");
+      // Close the modal after
+      this.closeUnfocusModal();
+    }
+  }
+
+  // Update the repertoire details
+  async updateRepertoireDetails(data) {
+    try {
+      const res = await fetch('/api/repertoire/details', {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: { "Content-Type": "application/json" },
       });
+      const response = await res.json();
+      return response;
+    } catch (err) {
+      log.warn("Error:", err);
+      Utils.showError(err);
+      throw err; // propagate to caller
+    }
   }
 
   onAnalyseGame() {
@@ -4309,12 +4493,12 @@ class Practice extends MyChessBoard {
       count > 1 ? "Moves" : "Move";
 
     // show the moves list
-    this.elements.playedMovesContainer.classList.remove("is-hidden");
+    this.elements.playedMovesContainer.classList.remove('is-hidden');
   }
 
   // hide the played moves container
   hidePlayedMoves() {
-    this.elements.playedMovesContainer.classList.add("is-hidden");
+    this.elements.playedMovesContainer.classList.add('is-hidden');
   }
 
   // add a move to the played moves container
@@ -4337,7 +4521,7 @@ class Practice extends MyChessBoard {
     if (line && line.length > 0) {
       this.elements.playedMovesList.children[index].children[1].innerHTML = "show line";
       this.elements.playedMovesList.children[index].children[1].classList.remove(
-        "is-hidden"
+        'is-hidden'
       );
 
       // add the click handler

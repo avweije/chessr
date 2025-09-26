@@ -51,6 +51,9 @@ class Repertoire
     #[ORM\Column(options: ['default' => false])]
     private ?bool $Focused = null;
 
+    #[ORM\ManyToOne(targetEntity: Repertoire::class)]
+    private ?Repertoire $FocusedParent = null;
+
     #[ORM\Column(length: 1024, nullable: true)]
     private ?string $Notes = null;
 
@@ -214,6 +217,17 @@ class Repertoire
     {
         $this->Focused = $Focused;
 
+        return $this;
+    }
+
+    public function getFocusedParent(): ?Repertoire
+    {
+        return $this->FocusedParent;
+    }
+
+    public function setFocusedParent(?Repertoire $FocusedParent): static
+    {
+        $this->FocusedParent = $FocusedParent;
         return $this;
     }
 

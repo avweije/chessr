@@ -125,11 +125,12 @@ class Repertoire extends MyChessBoard {
     this.elements.repertoireExcludeCheckbox.addEventListener("change",
       this.onRepertoireExcludeChange.bind(this)
     );
+
+    // Focused container
     this.elements.repertoireFocusedCheckbox.addEventListener("change", () => {
       // Update the details
       this.onRepertoireDetailsChange({ focused: this.elements.repertoireFocusedCheckbox.checked });
     });
-    // Repertoire details: notes
     this.elements.repertoireNotesTextarea.addEventListener("change", () => {
       // Update the details
       this.onRepertoireDetailsChange({ notes: this.elements.repertoireNotesTextarea.value });
@@ -1227,7 +1228,7 @@ class Repertoire extends MyChessBoard {
     console.log('onRepertoireDetailsChange', data);
     
     // Set the repertoire id
-    data.repertoire = this.repertoire.id;
+    data.id = this.repertoire.id;
 
     // Update the repertoire details
     const url = "/api/repertoire/details";
@@ -1391,10 +1392,17 @@ class Repertoire extends MyChessBoard {
       (this.color == "white" && this.game.turn() == "w") ||
       (this.color == "black" && this.game.turn() == "b");
 
-    if (saved && !ourTurn) {
-      this.showRepertoireDetails();
-    } else {
+    // Toggle the containers
+    if (ourTurn) {
+      // Hide the repertoire details
       this.hideRepertoireDetails();
+      // Show the focused container if we have moves
+      if (hasMoved) this.showFocusedContainer();
+    } else {
+      // Show the repertoire details if we have them
+      if (saved) this.showRepertoireDetails();
+      // Hide the focused container
+      this.hideFocusedContainer();
     }
   }
 
@@ -1448,14 +1456,24 @@ class Repertoire extends MyChessBoard {
       });
   }
 
-  // show the repertoire details
+  // Show the repertoire details
   showRepertoireDetails() {
     this.elements.repertoireContainer.classList.remove("is-hidden");
   }
 
-  // hide the repertoire details
+  // Hide the repertoire details
   hideRepertoireDetails() {
     this.elements.repertoireContainer.classList.add("is-hidden");
+  }
+
+  // Show the focused container
+  showFocusedContainer() {
+    this.elements.focusedContainer.classList.remove("is-hidden");
+  }
+
+  // Hide the focused container
+  hideFocusedContainer() {
+    this.elements.focusedContainer.classList.add("is-hidden");
   }
 
   /**

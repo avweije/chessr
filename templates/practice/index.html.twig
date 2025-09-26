@@ -137,6 +137,9 @@
 	</div>
 
 	<div class="is-flex is-justify-content-flex-end my-2">
+		<button type="button" id="focusedGoBackButton" data-element="yes" disabled class="is-hidden button is-primary mr-1">
+			Back to focused
+		</button>
 		<button type="button" id="startPracticeButton" data-element="yes" disabled class="button is-primary">
 			Start your practice
 		</button>
@@ -157,9 +160,12 @@
 		<button type="button" id="skipMoveButton" data-element="yes" title="Skip this move" disabled class="is-hidden button is-primary ml-1">
 			<i class="fa-solid fa-forward-step"></i>
 		</button>
-		<button type="button" id="focusMoveButton" data-element="yes" title="Focus move" disabled class="is-hidden button is-primary ml-1">
-			<i class="fa-solid fa-thumbtack"></i>
-		</button>
+		<div class="is-flex">
+			<input type="checkbox" class="is-hidden is-button-checkbox" id="focusMoveButton" data-element="yes" value="1">
+			<label for="focusMoveButton" title="Focused" class="is-hidden button is-primary ml-1">
+				<i class="fa-solid fa-thumbtack"></i>
+			</label>
+		</div>
 		<div id="analysisGameButtons" class="is-hidden is-flex ml-1">
 			<button type="button" id="analysisSaveButton" data-element="yes" title="Save to repertoire" disabled class="button is-primary">
 				<i class="fa-solid fa-floppy-disk"></i>
@@ -240,10 +246,10 @@
 			<p class="p-2 is-size-6 w-full is-ellipsis"></p>
 			<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">FEN:</label>
 			<div class="is-flex is-align-items-center is-justify-content-space-between">
-    			<span id="analysisGameFenField" data-element="yes" class="p-2 is-size-6 w-full is-ellipsis"></span>
-      			<span id="analysisGameFenFieldCopy" data-element="yes" class="is-hidden icon link-with-hover">
-        			<i class="fas fa-copy"></i>
-      			</span>
+				<span id="analysisGameFenField" data-element="yes" class="p-2 is-size-6 w-full is-ellipsis"></span>
+				<span id="analysisGameFenFieldCopy" data-element="yes" class="is-hidden icon link-with-hover">
+					<i class="fas fa-copy"></i>
+				</span>
 			</div>
 			<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">Link:</label>
 			<a href="#" target="_blank" class="p-2 is-size-7 has-text-weight-normal w-full is-ellipsis"></a>
@@ -267,10 +273,10 @@
 				<p class="p-2 is-ellipsis"></p>
 				<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">FEN:</label>
 				<div class="is-flex is-align-items-center is-justify-content-space-between">
-    				<span id="practiceInfoFenField" data-element="yes" class="p-2 is-size-6 w-full is-ellipsis"></span>
-      				<span id="practiceInfoFenFieldCopy" data-element="yes" class="is-hidden icon link-with-hover">
-        				<i class="fas fa-copy"></i>
-    	  			</span>
+					<span id="practiceInfoFenField" data-element="yes" class="p-2 is-size-6 w-full is-ellipsis"></span>
+					<span id="practiceInfoFenFieldCopy" data-element="yes" class="is-hidden icon link-with-hover">
+						<i class="fas fa-copy"></i>
+					</span>
 				</div>
 				<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">Stats:</label>
 				<p class="p-2 is-ellipsis"></p>
@@ -284,18 +290,51 @@
 		</div>
 	</div>
 
+	<div id="practiceFocusedContainer" data-element="yes" class="is-hidden box p-0">
+		<div class="box-header">
+			<p class="has-text-weight-semibold">Info</p>
+			<button type="button" title="Open in repertoire" class="button is-small" id="practiceInfoOpenInRepertoireButton" data-element="yes">
+				<span class="icon">
+					<i class="fa-solid fa-up-right-from-square"></i>
+				</span>
+			</button>
+		</div>
+		<div id="practiceInfoFields" data-element="yes" class="grid grid-auto-1fr is-align-items-center p-2">
+			<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">ECO:</label>
+			<p class="p-2 is-ellipsis"></p>
+			<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">PGN:</label>
+			<p class="p-2 is-ellipsis"></p>
+			<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">FEN:</label>
+			<div class="is-flex is-align-items-center is-justify-content-space-between">
+				<span id="practiceInfoFenField" data-element="yes" class="p-2 is-size-6 w-full is-ellipsis"></span>
+				<span id="practiceInfoFenFieldCopy" data-element="yes" class="is-hidden icon link-with-hover">
+					<i class="fas fa-copy"></i>
+				</span>
+			</div>
+			<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">Stats:</label>
+			<p class="p-2 is-ellipsis"></p>
+		</div>
+	</div>
+{% endblock %}
+
+{% block board_other %}
+	<div class="is-flex is-flex-direction-column is-align-items-center">
+		<div id="focusMovesContainer" data-element="yes" class="is-flex is-flex-wrap-wrap is-justify-content-flex-start"></div>
+	</div>
 {% endblock %}
 
 {% block body_end %}
 	{{ include('practice/dialogs/save.html.twig') }}
 	{{ include('practice/dialogs/ignore.html.twig') }}
 	{{ include('practice/dialogs/focus.html.twig') }}
+	{{ include('practice/dialogs/unfocus.html.twig') }}
 {% endblock %}
 
 {% block stylesheets %}
 	{{ parent() }}
 
 	<link rel="stylesheet" href="{{ asset('styles/modal.css') }}">
+	<link rel="stylesheet" href="{{ asset('styles/practice.scss') }}">
 {% endblock %}
 
 {% block javascripts %}

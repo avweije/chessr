@@ -1,10 +1,10 @@
 # Todo
 
-- make class to work with engine easier (for repertoire and analysis pages)
 - move api functions to appropriate controllers, remove api controller.
 
-- icons in navbar instead of text?
-- only recalculate recommended if user wants to? if it happens right away, its a bit weird - maybe refresh icon or button?
+- make a serializeRepertoire function to make a json array from a parameter => used XXX times in RepertoireService --> already have getMoveArray() need to further implement this..
+
+- replace api calls for exclude/autoplay with /details api call
 
 # Logger class
 

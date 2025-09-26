@@ -175,4 +175,20 @@ export class Utils {
 
     return (h > 0 ? h + "h " : "") + (h > 0 || m > 0 ? m + "m " : "") + s + "s";
   }
+
+  /**
+   * Deep merges 2 objects.
+   */
+  deepMerge(obj1, obj2) {
+    for (let key in obj2) {
+      if (obj2.hasOwnProperty(key)) {
+        if (obj2[key] instanceof Object && obj1[key] instanceof Object) {
+          obj1[key] = this.deepMerge(obj1[key], obj2[key]);
+        } else {
+          obj1[key] = obj2[key];
+        }
+      }
+    }
+    return obj1;
+  }
 }

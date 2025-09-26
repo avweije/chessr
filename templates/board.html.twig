@@ -7,10 +7,8 @@
 	</div>
 
 	<div class="is-flex is-justify-content-space-around">
-		<div>
-
+		<div id="boardPageBoardContainer" data-element="yes">
 			{% block board_top %}{% endblock %}
-
 			<div class="is-flex">
 				<div class="mr-2 board-left-container">
 					{% block board_left %}{% endblock %}
@@ -19,6 +17,9 @@
 					{% block board_right %}{% endblock %}
 				</div>
 			</div>
+		</div>
+		<div id="boardPageOtherContainer" data-element="yes" class="is-hidden">
+			{% block board_other %}{% endblock %}
 		</div>
 	</div>
 
