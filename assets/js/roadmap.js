@@ -249,7 +249,7 @@ class Roadmap {
     // add the header row
     let div = document.createElement("div");
     div.className =
-      "is-flex is-justify-content-center is-align-items-center is-rounded is-size-7 has-text-centered p-2";
+      "is-flex is-justify-content-center is-align-items-center is-rounded is-size-7 p-2";
 
     let sp = document.createElement("span");
     sp.innerHTML = '<i class="fa-solid fa-medal"></i>';
@@ -266,7 +266,6 @@ class Roadmap {
     row.appendChild(div);
 
     div = document.createElement("div");
-    div.className = "has-text-centered";
     div.innerHTML = "Response";
     row.appendChild(div);
 
@@ -302,7 +301,7 @@ class Roadmap {
 
       // add the percentage played
       div = document.createElement("div");
-      div.className = "is-rounded is-size-6 has-text-centered p-2";
+      div.className = "is-rounded is-size-6 has-text-centered p-3";
       div.innerHTML = moves[i].percentage + "%";
       div.addEventListener(
         "click",
@@ -310,11 +309,10 @@ class Roadmap {
       );
 
       row.appendChild(div);
-      //this.elements.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
 
-      // add the ECO
+      // Create the ECO cell
       div = document.createElement("div");
-      div.className = "is-rounded is-size-6 p-2";
+      div.className = "is-rounded is-size-6 p-3";
       div.innerHTML = moves[i].eco.name;
       div.addEventListener(
         "click",
@@ -322,11 +320,10 @@ class Roadmap {
       );
 
       row.appendChild(div);
-      //this.elements.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
 
-      // add the PGN
+      // Create the PGN cell
       div = document.createElement("div");
-      div.className = "is-rounded is-size-6 p-2";
+      div.className = "is-rounded is-size-6 p-3";
       div.innerHTML = moves[i].pgn;
       div.addEventListener(
         "click",
@@ -334,12 +331,23 @@ class Roadmap {
       );
 
       row.appendChild(div);
-      //this.elements.roadmapTreeMissingMoves.firstElementChild.appendChild(div);
 
-      // add the move
+      // Create the move cell
       div = document.createElement("div");
-      div.className = "is-rounded is-size-6 text-center p-2";
-      div.innerHTML = moves[i].move;
+      div.className = "is-rounded is-nowrap p-3";
+
+      let moveSpan = document.createElement('span');
+      moveSpan.className = 'is-size-6';
+      moveSpan.innerText = moves[i].move;
+
+      let iconSpan = document.createElement('span');
+      iconSpan.className = 'grid-show-on-hover icon is-small ml-5 has-text-faded';
+      iconSpan.innerHTML = '<i class="fa-solid fa-up-right-from-square"></i>';
+
+      div.appendChild(moveSpan);
+      div.appendChild(iconSpan);
+
+      // Add click listener
       div.addEventListener(
         "click",
         this.onOpenMissingMove.bind(this, moves[i])
@@ -463,12 +471,12 @@ class Roadmap {
       return 0;
     });
 
-    //
+    // Get the group id
     const groupId = this.tree.join("_");
-    //
+    // Create the tree row
     const row = document.createElement("div");
     row.id = "roadmapTreeRow_" + groupId;
-    row.className = "is-flex is-flex-wrap-wrap is-justify-content-center is-gap-1";
+    row.className = "is-flex is-flex-wrap-wrap is-justify-content-center is-gap-2";
     row.setAttribute("data-type", "tree-row");
     row.setAttribute("data-level", level);
 
@@ -476,38 +484,48 @@ class Roadmap {
     for (let i = 0; i < data.length; i++) {
       console.info(i, data[i]);
 
-      //
+      // Create the element for the variation
       const variation = document.createElement("div");
       variation.id = "roadmapTreeItem_" + data[i].id;
+      // Set the class
       variation.className =
-        "box is-hoverable roadmap-tree-item p-2 m-0 is-relative is-flex is-flex-direction-column is-flex-shrink-0 is-flex-grow-0 is-justify-content-center";
+        "box roadmap-tree-item p-0 m-0 is-relative is-flex is-flex-direction-column is-flex-shrink-0 is-flex-grow-0 is-justify-content-center";
+      // Only hoverable if we have follow up lines
+      if (data[i].lines.length > 0) variation.className += " is-hoverable";
+
+      // Set the data id & level
       variation.setAttribute("data-id", data[i].id);
       variation.setAttribute("data-level", level);
-      //
+      
+      // Create the hidden radio
       const radio = document.createElement("input");
       radio.id = "roadmapTreeRadio_" + data[i].id;
       radio.name = "roadmapTreeRadio_" + groupId;
       radio.type = "radio";
-      radio.className = "is-hidden peer";
-      //
+      radio.className = "is-hidden";
+
+      // Add click handler if we have follow up lines
       if (data[i].lines.length > 0) {
         radio.addEventListener(
           "click",
           this.onClickTreeItem.bind(this, data[i].id, i)
         );
       }
-      //
+      
+      // Add it
       variation.appendChild(radio);
-      //
+
+      // Create the label for the radio button
       const clickable = document.createElement("label");
       clickable.htmlFor = "roadmapTreeRadio_" + data[i].id;
-      clickable.className =
-        "is-flex is-flex-direction-column is-flex-grow-1" +
-        (data[i].lines.length > 0 ? " cursor-pointer" : "");
-      //
+      clickable.className = "is-flex is-flex-direction-column is-flex-grow-1 p-3";
+      // Add cursor pointer if we have follow up lines
+      if (data[i].lines.length > 0) clickable.className += " cursor-pointer";
+      
+      // Create the header element
       const header = document.createElement("div");
-      header.className = "is-flex is-justify-content-space-between is-align-items-center";
-      //
+      header.className = "is-flex is-justify-content-space-between is-align-items-center p-1";
+      // Get the move as short PGN notation
       const move =
         Math.ceil(data[i].line.length / 2) +
         "." +
@@ -516,16 +534,17 @@ class Roadmap {
         (data[i].move !== ""
           ? data[i].move
           : data[i].line[data[i].line.length - 1]);
-      //
+      // Create the PGN element
       const pgn = document.createElement("span");
-      pgn.className = "has-text-weight-medium px-3 pt-2";
+      pgn.className = "has-text-weight-medium";
       pgn.innerHTML = move;
 
-      let accuracyIdx = Math.max(0, Math.ceil((1 - data[i].fail) * 3) - 1);
+      // Get the accuracy index
+      let accuracyIdx = Math.min(2, Math.max(0, Math.floor((1 - data[i].fail) * 3)));
 
       const accuracy = document.createElement("span");
       accuracy.className =
-        "is-flex is-align-items-center has-text-weight-medium is-size-6 px-2 pt-2 " +
+        "is-flex is-align-items-center has-text-weight-medium is-size-6 " +
         colors[accuracyIdx][0];
 
       const icon = document.createElement("span");
@@ -543,7 +562,7 @@ class Roadmap {
       header.appendChild(accuracy);
 
       const main = document.createElement("div");
-      main.className = "is-flex is-flex-direction-column is-justify-content-space-between is-flex-grow-1 px-3 pb-3 pt-1";
+      main.className = "is-flex is-flex-direction-column is-justify-content-space-between is-flex-grow-1 pt-2";
 
       const eco = document.createElement("div");
       eco.className = "is-size-6";
@@ -575,31 +594,28 @@ class Roadmap {
         cntrs.appendChild(sp);
       }
 
-      //
+      // Add the ECO and counters
       main.appendChild(eco);
       main.appendChild(cntrs);
 
-      //
+      // Add the header and main part
       clickable.appendChild(header);
       clickable.appendChild(main);
-      //
+
+      // Create the footer element
       const footer = document.createElement("div");
-      footer.className =
-        "is-flex is-justify-content-end  is-align-items-center";
+      footer.className = "roadmap-tree-item-footer";
 
       // if there are any variations
       if (data[i].vcount > 0) {
         // find the lowest accuracy in this line
         const lowestAcc = this.findLowestAccuracy(data[i].lines);
 
-        console.info("lowestAcc", lowestAcc);
-
         // only show it if it's lower than the current
         if (lowestAcc.fail > data[i].fail) {
-          //
           accuracyIdx = Math.max(0, Math.ceil((1 - lowestAcc.fail) * 3) - 1);
 
-          //
+          // Create the lowest variation element
           const lowest = document.createElement("span");
           lowest.title = "Lowest accuracy variation";
           lowest.className =
@@ -608,15 +624,6 @@ class Roadmap {
             " " +
             colors[accuracyIdx][1];
 
-          //
-          // find the lowest accuracy in this line
-          //
-          // make sure we can jump directly to that line
-          //
-          // get the accuracyIdx for it
-          //
-          // get the right color to display it
-          //
 
           sp = document.createElement("span");
           sp.innerHTML = '<i class="fa-solid fa-arrow-trend-down"></i>';
@@ -641,7 +648,7 @@ class Roadmap {
           footer.appendChild(lowest);
         }
       } else {
-        //
+        // Create the last variation in line icon
         const last = document.createElement("span");
         last.title = "Last variation in line";
         last.className = "px-2 py-1";
@@ -654,7 +661,7 @@ class Roadmap {
         footer.appendChild(last);
       }
 
-
+      // Create the missing top responses icon
       const missingMoves = this.findMissingTopPlayedMoves(data[i].lines);
       if (missingMoves.length > 0) {
 
@@ -665,8 +672,7 @@ class Roadmap {
 
         const missing = document.createElement("span");
         missing.title = "Missing top responses";
-        missing.className =
-          "cursor-pointer is-flex  is-align-items-center px-2 py-1";
+        missing.className = "link-secondary is-flex is-align-items-center px-2 py-1";
 
         sp = document.createElement("span");
         sp.innerHTML = '<i class="fa-solid fa-medal"></i>';
@@ -687,42 +693,34 @@ class Roadmap {
         footer.appendChild(missing);
       }
 
-      //
+      // Create the open in repertoire icon
       const repertoire = document.createElement("span");
       repertoire.title = "Open in repertoire";
-      repertoire.className =
-        "cursor-pointer is-flex is-align-items-center px-2 py-1";
-
+      repertoire.className = "link-secondary is-flex is-align-items-center px-2 py-1";
       sp = document.createElement("span");
       sp.innerHTML = '<i class="fa-solid fa-chess-board"></i>';
-
       repertoire.appendChild(sp);
-
       repertoire.addEventListener(
         "click",
         this.onOpenInRepertoire.bind(this, data[i])
       );
 
-      //
+      // Create the open in practice icon
       const practice = document.createElement("span");
       practice.title = "Open in practice";
-      practice.className =
-        "cursor-pointer is-flex is-align-items-center px-2 py-1";
-
+      practice.className = "link-secondary is-flex is-align-items-center px-2 py-1";
       sp = document.createElement("span");
       sp.innerHTML = '<i class="fa-solid fa-gamepad"></i>';
-
       practice.appendChild(sp);
-
       practice.addEventListener(
         "click",
         this.onOpenInPractice.bind(this, data[i])
       );
 
-      //
+      // Add the icons
       footer.appendChild(repertoire);
       footer.appendChild(practice);
-      //
+      // Add the clickable part and the footer
       variation.appendChild(clickable);
       variation.appendChild(footer);
 

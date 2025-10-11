@@ -33,7 +33,7 @@
     padding: 0.25rem 0.5rem;
     color: var(--color-text-title);
     font-weight: 600;
-    border-bottom: solid 1px var(--color-surface-alt);
+    border-bottom: solid 1px var(--color-surface-border);
     margin-bottom: 0.5rem;
 }
 
@@ -67,4 +67,15 @@
 
 .grid.is-hoverable .grid-row:hover > * {
   background-color: var(--color-surface-alt);
+}
+
+
+/* Show on hover, can be used for child elements */
+.grid-show-on-hover {
+    transition: opacity ease 0.3s;
+    opacity: 0;
+}
+
+.grid.is-hoverable .grid-row:hover .grid-show-on-hover {
+    opacity: 1;
 }

@@ -34,7 +34,7 @@ import "../../styles/chessboard.css";
  * - Show         : show move, animate it? show move markers? arrows..
  * - Unfocus      : manager: call onRemove ? remove the position from focus moves? 
  */
-export class focusBoard {
+export class FocusBoard {
     group = null;
     move = null;
     settings = null;
@@ -47,6 +47,7 @@ export class focusBoard {
 
     elements = {
         container: null,
+        header: null,
         board: null,
         boardSelector: null,
         buttons: {
@@ -54,6 +55,7 @@ export class focusBoard {
             disconnect: null,
             animate: null,
             show: null,
+            repertoire: null,
             unfocus: null
         },
         notes: {
@@ -64,12 +66,14 @@ export class focusBoard {
 
     constructor(group, move, settings = {}) {
 
-        console.log('focusBoard constructor', group, move);
+        console.log('FocusBoard constructor', group, move);
 
         // Store the move
         this.group = group;
         this.move = move;
         this.settings = settings;
+        // Get the elements
+        this.getElements();
         // Create the focus board element
         this.createElement();
         // Get the color
@@ -82,11 +86,33 @@ export class focusBoard {
         this.board.board.setPosition(this.move?.after ?? '', false);
     }
 
+    // Get the required elements
+    getElements() {
+        // Get the data-elements for reference
+        //this.elements = {};
+        document.querySelectorAll("[data-element]").forEach(el => {
+            if (el.dataset.element !== "yes") return;
+            this.elements[el.id] = el;
+        });
+
+        // get the practice type
+        this.type = this.elements.board.getAttribute("data-type");
+        // get the repertoire id (from the roadmap)
+        this.repertoireId = this.elements.board.getAttribute("data-id");
+    }
+
     // Creates the focus board element
     createElement() {
         // Create the focus board container element
         this.elements.container = document.createElement('div');
         this.elements.container.className = 'box focus-board-container';
+
+        // Create the board header (ECO)
+        if (this.move.eco) {
+            this.elements.header = document.createElement('div');
+            this.elements.header.className = 'focus-board-header is-size-7 is-ellipsis';
+            this.elements.header.innerHTML = this.move.eco.name + ' [' + this.move.eco.code + ']';
+        }
 
         // Create the board element
         this.elements.board = document.createElement('div');
@@ -124,18 +150,24 @@ export class focusBoard {
         this.elements.buttons.show.innerHTML = '<span class="icon"><i class="fa-solid fa-eye"></i></span>';
         this.elements.buttons.show.title = 'Show the correct move';
 
+        this.elements.buttons.repertoire = document.createElement('button');
+        this.elements.buttons.repertoire.type = 'button';
+        this.elements.buttons.repertoire.className = 'button is-small';
+        this.elements.buttons.repertoire.innerHTML = '<span class="icon"><i class="fa-solid fa-up-right-from-square"></i></span>';
+        this.elements.buttons.repertoire.title = 'Open in repertoire';
+
         this.elements.buttons.unfocus = document.createElement('button');
         this.elements.buttons.unfocus.type = 'button';
         this.elements.buttons.unfocus.className = 'button is-small';
         this.elements.buttons.unfocus.innerHTML = '<span class="icon"><i class="fa-solid fa-thumbtack-slash"></i></span>';
-        this.elements.buttons.unfocus.title = 'Remove from focus moves';
+        this.elements.buttons.unfocus.title = 'Remove from focused';
 
         // Get the accuracy percentage
         let count = 0;
         let failed = 0;
         for (let i=0;i<this.move.moves.length;i++) {
-            count += this.move.moves[i].practiceCount;
-            failed += this.move.moves[i].practiceFailed;
+            count += this.move.moves[i].stats.attempts;
+            failed += this.move.moves[i].stats.failed;
         }
 
         const successPct = 1 - (failed / count);
@@ -159,6 +191,7 @@ export class focusBoard {
         bottomButtons.appendChild(accuracyTag);
         bottomButtons.appendChild(this.elements.buttons.animate);
         bottomButtons.appendChild(this.elements.buttons.show);
+        bottomButtons.appendChild(this.elements.buttons.repertoire);
         bottomButtons.appendChild(this.elements.buttons.unfocus);
 
         this.elements.buttons.container.appendChild(topButtons);
@@ -190,6 +223,11 @@ export class focusBoard {
         boardAndButtons.appendChild(boardAndSelector);
         boardAndButtons.appendChild(this.elements.buttons.container);
 
+        // Add the ECO header if we have one
+        if (this.move.eco) {
+            this.elements.container.appendChild(this.elements.header);
+        }
+        // Add the board and notes
         this.elements.container.appendChild(boardAndButtons);
         this.elements.container.appendChild(this.elements.notes.container);
     }
@@ -220,6 +258,10 @@ export class focusBoard {
         this.elements.buttons.show.addEventListener("click", () => {
             this.show();
         });
+        // Open in repertoire button
+        this.elements.buttons.repertoire.addEventListener("click", () => {
+            this.openInRepertoire();
+        });
         // Unfocus button (remove as focus move)
         this.elements.buttons.unfocus.addEventListener("click", () => {
             this.bubbleEvent("unfocus");
@@ -239,7 +281,7 @@ export class focusBoard {
     bubbleEvent(event, details = null) {
         // Dispatch a custom event, group or manager can catch it
         this.elements.container.dispatchEvent(
-            new CustomEvent('focusBoard:' + event, {
+            new CustomEvent('FocusBoard:' + event, {
                 bubbles: true,
                 detail: details ?? { group: this.group, board: this }
             })
@@ -342,6 +384,35 @@ export class focusBoard {
             this.board.board.addMarker(CUSTOM_MARKER_TYPE.squareRed, moves[i].to);
         }
     }
+
+    
+  // Open the position in the repertoire
+  openInRepertoire() {
+    // Clear the form
+    this.elements.repertoireForm.innerHTML = '';
+    // Set the form action to the repertoire color
+    this.elements.repertoireForm.action = "./repertoire/" + this.move.color;
+    // Create the FEN field
+    const inp = document.createElement("input");
+    inp.type = "hidden";
+    inp.name = "fen";
+
+    this.elements.repertoireForm.appendChild(inp);
+
+    // Get the moves
+    const moves = [...this.move.line, this.move.move];
+    // Create a field for each move
+    for (let i = 0; i < moves.length; i++) {
+      const inp = document.createElement("input");
+      inp.type = "hidden";
+      inp.name = "line[]";
+      inp.value = moves[i];
+
+      this.elements.repertoireForm.appendChild(inp);
+    }
+    // Submit the form
+    this.elements.repertoireForm.submit();
+  }
 
     // create or update the chessboard
     createChessboard() {

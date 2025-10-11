@@ -291,19 +291,31 @@ class Settings {
 
   // update the range input titles
   updateRangeInputTitles() {
+    // Get the minutes and seconds for the repertoire engine time
     const m = Math.floor(parseInt(this.elements.repertoireEngineTime.value) / 60);
     const s = parseInt(this.elements.repertoireEngineTime.value) - m * 60;
-
+    // Set the animation duration title
     this.elements.animationDuration.title =
       this.elements.animationDuration.value + "ms";
+    // Set the repertoire engine time title
     this.elements.repertoireEngineTime.title =
       m > 0 ? m + "m " + (s > 0 ? s + "s" : "") : s + "s";
+    // Set the analyse engine time title
     this.elements.analyseEngineTime.title =
       parseInt(this.elements.analyseEngineTime.value) == 500
         ? this.elements.analyseEngineTime.value + "ms"
         : parseInt(this.elements.analyseEngineTime.value) / 1000 + "s";
+    // Set the analyse mistake tolerance title
+    this.elements.analyseMistakeTolerance.title = ["200", "500", "800"][
+      parseInt(this.elements.analyseMistakeTolerance.value)
+    ] + " centipawns";
+    // Set the practice recommend interval title
     this.elements.recommendInterval.title = ["Less", "Average", "More", "Most"][
       parseInt(this.elements.recommendInterval.value)
+    ];
+    // Set the practice balloons amount title
+    this.elements.balloonsAmount.title = ["(N)one", "A few", "A bunch", "A lot"][
+      parseInt(this.elements.balloonsAmount.value)
     ];
   }
 

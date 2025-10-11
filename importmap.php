@@ -65,7 +65,7 @@ return [
         'entrypoint' => true,
     ],
     'balloons' => [
-        'path' => './assets/vendor/balloons/balloons.js',
+        'path' => './assets/vendor/balloons/balloons.esm.js',
         'entrypoint' => true,
     ],
 ];

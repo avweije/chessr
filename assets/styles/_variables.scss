@@ -13,50 +13,38 @@ $primary: #f6ad55;
 $link: #0369a1;
 $info: #4dd0e1;
 $success: #4caf50;
-$warning: #ff9800;
+$warning: #e68a00; //#ff9800;
 $danger: #f44336;
 
-// Link variants
-$link-border: #fbd38d;
-
-// green-variant
-//$link: #0f766e; // #0369a1; // #22c55e;
-//$info: #4dd0e1;
-//$link-text: #38a169;
-//$link-hover: #48bb78;
+// Link hover (bulma link)
+$link-hover: #1fadbf;
+// Secondary link (navbar, hrefs)
+$link-text: #957f49; // #1f7f8b;
+$link-text-hover: #ad9863; // #52afbb;
+$link-text-border: #fbd38d;
 
 // blue-variant
 $link: #1f7f8b; // same as text-title
 $info: #4dd0e1;
-$link-text: #957f49; // #1f7f8b;
-$link-hover: #ad9863; // #52afbb;
-
-// teal-variant
-//$link: #0891b2; // #0369a1;
-//$info: #5eead4; // #4dd0e1;
-//$link-text: #0d9488; // #38a169;
-//$link-hover: #14b8a6; // #48bb78;
 
 // Text colors
-//$text-default: #b45309;
-//$text-title: #c05621;
-//$text-faded: #ca854d;
 $text-on-background: #d1d5db;
-$text-default: #241a09; // #855408; // #9d472a;
-//$text-title: #0f766e; // #2f855a;
+$text-default: #683111; // #855408; // #9d472a;
 $text-title: #D18C2B; // #22a7b5; // blue-variant
-$text-faded: #6e452b; // #a0582b;
+$text-faded: #5b3118; // #6e452b; // #a0582b;
 
 // Surfaces
 $background: #735751;
 $surface-main: #efe9d9;
-$surface-alt: #f0d58c;
+$surface-alt: #f0e3bf; // #f0d58c;
 $on-surface: #2c2c2c;
 $surface-mixed: mix($surface-alt, $surface-main, 20%);
 
+$skeleton-background: #cbcbcb;
+
 // Custom Extras
 $primary-lighter: #f5daba;
-$surface-border: #dbbc68; // rgb(246, 173, 85);
+$surface-border: #d4c59c; // #dbbc68; // rgb(246, 173, 85);
 $input-background: #fcfcfc;
 $input-text: #a0674a;
 $input-background-disabled: #f0f0f0;
@@ -70,10 +58,12 @@ $success-dark: #4caf50;
 $warning-dark: #ffb74d;
 $danger-dark: #e57373;
 
-// Link variants
-$link-border-dark: #5a5a5a;
+// Link variants (bulma)
+$link-hover-dark: #66ad84;
+// Secondary link (navbar, hrefs)
 $link-text-dark: #b99a4e;
-$link-hover-dark: #d7ac29;
+$link-text-hover-dark: #d7ac29;
+$link-text-border-dark: #5a5a5a;
 
 // Text colors
 $text-default-dark: #e0e0e0;

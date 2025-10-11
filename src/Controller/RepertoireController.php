@@ -432,9 +432,12 @@ class RepertoireController extends ChessrAbstractController
 
         $this->em->flush();
 
+        // Get the new count of recommended moves
+        $recommendedCount = isset($_SESSION['recommendedLines']) ? $this->repertoireService->countMoves($_SESSION['recommendedLines'], false) : 0;
+        
         return new JsonResponse([
             "message" => "Counters updated.",
-            "recommendedCount" => $this->repertoireService->countMoves($_SESSION['recommendedLines'], false),
+            "recommendedCount" => $recommendedCount,
             "idsUpdated" => $ids
         ]);
     }

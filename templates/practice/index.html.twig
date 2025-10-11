@@ -25,10 +25,10 @@
 			<label class="boxed-radio-label" for="repertoireRecommended"></label>
 			<span class="boxed-radio-text is-flex is-align-items-center">
 				Recommended
-				<span id="repertoireRecommendedRefresh" data-element="yes" class="is-hidden icon ml-1">
+				<sup id="repertoireRecommendedCount" data-element="yes" class="pl-1"></sup>
+				<span id="repertoireRecommendedRefresh" data-element="yes" class="icon cursor-pointer pointer-events-auto ml-1">
 					<i class="fa-solid fa-arrows-rotate"></i>
 				</span>
-				<sup id="repertoireRecommendedCount" data-element="yes" class="pl-1"></sup>
 			</span>
 		</div>
 		<div class="boxed-radio is-hidden">
@@ -179,7 +179,7 @@
 		</div>
 	</div>
 
-	<div id="playedMovesContainer" data-element="yes" class="is-hidden box p-0">
+	<div id="playedMovesContainer" data-element="yes" class="is-hidden box p-0 mb-2">
 		<p class="box-header has-text-weight-semibold">Moves</p>
 		<div id="playedMovesList" data-element="yes" class="p-2">
 			<div class="border-b border-tacao-200 dark:border-slate-900 p-2">1. _</div>
@@ -187,7 +187,7 @@
 		</div>
 	</div>
 
-	<div id="pgnContainer" data-element="yes" class="is-hidden box p-0">
+	<div id="pgnContainer" data-element="yes" class="is-hidden box p-0 mb-2">
 		<div class="box-header">
 			<p class="has-text-weight-semibold">PGN</p>
 			<div id="pgnNavigationContainer" data-element="yes" class="is-flex is-align-items-center pl-3">
@@ -216,7 +216,7 @@
 		<div id="pgnField" data-element="yes" class="pgn-moves-container p-3 is-size-6"></div>
 	</div>
 
-	<div id="suggestionContainer" data-element="yes" class="is-hidden box p-0">
+	<div id="suggestionContainer" data-element="yes" class="is-hidden box p-0 mb-2">
 		<p class="box-header has-text-weight-semibold">Suggestion</p>
 		<div class="is-flex is-align-items-center p-2">
 			<div id="suggestionField" data-element="yes" class="p-2"></div>
@@ -230,67 +230,33 @@
 
 	<form id="repertoireForm" data-element="yes" method="post" target="_blank" action=""></form>
 
-	<div id="focusMoveContainer" data-element="yes" class="is-hidden box p-0">
+	<div id="focusMoveContainer" data-element="yes" class="is-hidden box p-0 mb-2">
 		<p class="box-header has-text-weight-semibold">Focused</p>
 		<div class="p-3">
 			<textarea id="focusMoveNotesTextarea" data-element="yes" class="textarea" placeholder="Enter your notes here..."></textarea>
 		</div>
 	</div>
 
-	<div id="analysisGameContainer" data-element="yes" class="is-hidden box p-0">
+	<div id="analysisGameContainer" data-element="yes" class="is-hidden box p-0 mb-2">
 		<p class="box-header has-text-weight-semibold">Game</p>
-		<div id="analysisGameFields" data-element="yes" class="grid grid-auto-1fr is-align-items-center p-2">
-			<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">Opponent:</label>
-			<p class="p-2 is-size-6 w-full is-ellipsis"></p>
-			<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">Move:</label>
-			<p class="p-2 is-size-6 w-full is-ellipsis"></p>
-			<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">FEN:</label>
+		<div id="analysisGameFields" data-element="yes" class="grid grid-auto-1fr is-align-items-center p-4 is-gap-1">
+			<label class="is-size-7 has-text-weight-semibold has-text-faded">Opponent:</label>
+			<p class="is-size-6 w-full is-ellipsis"></p>
+			<label class="is-size-7 has-text-weight-semibold has-text-faded">Move:</label>
+			<p class="is-size-6 w-full is-ellipsis"></p>
+			<label class="is-size-7 has-text-weight-semibold has-text-faded">FEN:</label>
 			<div class="is-flex is-align-items-center is-justify-content-space-between">
-				<span id="analysisGameFenField" data-element="yes" class="p-2 is-size-6 w-full is-ellipsis"></span>
+				<span id="analysisGameFenField" data-element="yes" class="is-size-7 w-full is-ellipsis"></span>
 				<span id="analysisGameFenFieldCopy" data-element="yes" class="is-hidden icon link-with-hover">
 					<i class="fas fa-copy"></i>
 				</span>
 			</div>
-			<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">Link:</label>
-			<a href="#" target="_blank" class="p-2 is-size-7 has-text-weight-normal w-full is-ellipsis"></a>
+			<label class="is-size-7 has-text-weight-semibold has-text-faded">Link:</label>
+			<a href="#" target="_blank" class="is-size-7 has-text-weight-normal w-full is-ellipsis"></a>
 		</div>
 	</div>
 
-	<div id="practiceInfoContainer" data-element="yes" class="is-hidden">
-		<div class="box p-0">
-			<div class="box-header">
-				<p class="has-text-weight-semibold">Info</p>
-				<button type="button" title="Open in repertoire" class="button is-small" id="practiceInfoOpenInRepertoireButton" data-element="yes">
-					<span class="icon">
-						<i class="fa-solid fa-up-right-from-square"></i>
-					</span>
-				</button>
-			</div>
-			<div id="practiceInfoFields" data-element="yes" class="grid grid-auto-1fr is-align-items-center p-2">
-				<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">ECO:</label>
-				<p class="p-2 is-ellipsis"></p>
-				<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">PGN:</label>
-				<p class="p-2 is-ellipsis"></p>
-				<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">FEN:</label>
-				<div class="is-flex is-align-items-center is-justify-content-space-between">
-					<span id="practiceInfoFenField" data-element="yes" class="p-2 is-size-6 w-full is-ellipsis"></span>
-					<span id="practiceInfoFenFieldCopy" data-element="yes" class="is-hidden icon link-with-hover">
-						<i class="fas fa-copy"></i>
-					</span>
-				</div>
-				<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">Stats:</label>
-				<p class="p-2 is-ellipsis"></p>
-			</div>
-		</div>
-
-		<div class="is-flex is-justify-content-flex-end mt-2">
-			<button type="button" id="analyseGameButton" data-element="yes" class="button is-link">
-				Analyse on Lichess
-			</button>
-		</div>
-	</div>
-
-	<div id="practiceFocusedContainer" data-element="yes" class="is-hidden box p-0">
+	<div id="practiceInfoContainer" data-element="yes" class="is-hidden box p-0 mb-2">
 		<div class="box-header">
 			<p class="has-text-weight-semibold">Info</p>
 			<button type="button" title="Open in repertoire" class="button is-small" id="practiceInfoOpenInRepertoireButton" data-element="yes">
@@ -299,21 +265,38 @@
 				</span>
 			</button>
 		</div>
-		<div id="practiceInfoFields" data-element="yes" class="grid grid-auto-1fr is-align-items-center p-2">
-			<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">ECO:</label>
-			<p class="p-2 is-ellipsis"></p>
-			<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">PGN:</label>
-			<p class="p-2 is-ellipsis"></p>
-			<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">FEN:</label>
+		<div id="practiceInfoFields" data-element="yes" class="grid grid-auto-1fr is-align-items-flex-start p-4 mb-0 is-gap-1">
+			<label class="is-size-7 has-text-weight-semibold has-text-faded pt-half">ECO:</label>
+			<p class="is-ellipsis"></p>
+			<label class="is-size-7 has-text-weight-semibold has-text-faded pt-half">PGN:</label>
+			<p></p>
+			<label class="is-size-7 has-text-weight-semibold has-text-faded pt-half">FEN:</label>
 			<div class="is-flex is-align-items-center is-justify-content-space-between">
-				<span id="practiceInfoFenField" data-element="yes" class="p-2 is-size-6 w-full is-ellipsis"></span>
+				<span id="practiceInfoFenField" data-element="yes" class="is-size-7 w-full is-ellipsis"></span>
 				<span id="practiceInfoFenFieldCopy" data-element="yes" class="is-hidden icon link-with-hover">
 					<i class="fas fa-copy"></i>
 				</span>
 			</div>
-			<label class="p-2 is-size-7 has-text-weight-semibold has-text-faded">Stats:</label>
-			<p class="p-2 is-ellipsis"></p>
 		</div>
+		<div id="practiceInfoStats" data-element="yes" class="box-footer is-flex is-align-items-center is-justify-content-center is-gap-3 p-3">
+			<div class="is-flex is-align-items-center">
+				<span class="has-text-faded is-size-7 mr-2">Accuracy:</span>
+				<div id="practiceInfoStatsAccuracy" data-element="yes" class="tag is-success">100%</div>
+				<div id="practiceInfoStatsImproving" data-element="yes" title="Streak" class="is-hidden tag ml-1">
+					<i class="fa-solid fa-arrow-trend-up"></i>
+				</div>
+			</div>
+			<div class="is-flex is-align-items-center">
+				<span class="has-text-faded is-size-7 mr-2">Last practice:</span>
+				<div id="practiceInfoStatsLastText" data-element="yes" class="tag is-success">Today</div>
+			</div>
+		</div>
+	</div>
+
+	<div id="analayseOnLichessContainer" data-element="yes" class="is-hidden is-flex is-justify-content-flex-end">
+		<button type="button" id="analyseGameButton" data-element="yes" class="button is-link">
+			Analyse on Lichess
+		</button>
 	</div>
 {% endblock %}
 
@@ -341,7 +324,7 @@
 	{{ parent() }}
 
 	<script>
-		const workerUrl = "{{ asset('js/workers/practice01.js') }}";
+		const workerUrl = "{{ asset('js/workers/practice-worker.js') }}";
 	</script>
 	<script type="module" src="{{ asset('js/practice.js') }}"></script>
 {% endblock %}

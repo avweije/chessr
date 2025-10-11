@@ -111,8 +111,8 @@ class GameEvaluator
 
         // The centipawn loss limit
         $cpLossLimits = [
-            0 => 300, // 3 pawns
-            1 => 600, // rook and pawn or 2 minor pieces
+            0 => 200, // 2 pawns
+            1 => 500, // rook and pawn
             2 => 800, // rook and minor
         ];
 

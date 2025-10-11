@@ -1,4 +1,4 @@
-import { focusBoard } from "focus-board";
+import { FocusBoard } from "focus-board";
 
 /**
  * Controller for focus boards.
@@ -17,7 +17,7 @@ import { focusBoard } from "focus-board";
  * - run in practice
  * -
  */
-export class focusBoardGroup {
+export class FocusBoardGroup {
     parent = null;
     isMainGroup = false;
     focused = null;
@@ -30,23 +30,26 @@ export class focusBoardGroup {
         boardContainer: null,
         practiceButton: null,
         zoomOutButton: null,
-        zoomInButton: null
+        zoomInButton: null,
+        toggleButton: null
     };
 
     // Used for zoom in/out, set initial size to same as in CSS
     boardSize = {
         current: 350,
         min: 200,
-        max: 500,
+        max: 550,
         step: 50
     };
 
     // The FocusBoards collection
     boards = [];
+    // The ECO names for all the boards, used to determine the group name
+    ecos = [];
 
     constructor(parent, isMainGroup, focused, boardSettings) {
 
-        console.log('focusBoardGroup constructor', focused);
+        console.log('FocusBoardGroup constructor', focused);
 
         this.parent = parent;
         this.isMainGroup = isMainGroup;
@@ -56,6 +59,8 @@ export class focusBoardGroup {
         this.createElement();
         // Create the boards
         this.createBoards();
+        // Update the group name
+        this.updateGroupName();
         // Add the listeners
         this.addListeners();
     }
@@ -70,7 +75,7 @@ export class focusBoardGroup {
         // Create the group header element
         this.elements.groupHeader = document.createElement('h2');
         this.elements.groupHeader.className = 'title is-size-5 m-0';
-        this.elements.groupHeader.innerHTML = this.isMainGroup ? 'Ungrouped' : 'Grouped';
+        this.elements.groupHeader.innerHTML = '';
         // Add to the header
         this.elements.header.appendChild(this.elements.groupHeader);
         // Create the button container
@@ -78,6 +83,7 @@ export class focusBoardGroup {
         // Create the practice button
         this.elements.practiceButton = document.createElement('button');
         this.elements.practiceButton.type = 'button';
+        this.elements.practiceButton.title = 'Open in practice';
         this.elements.practiceButton.className = 'button is-small mr-1';
         this.elements.practiceButton.innerHTML = `
             <span class="icon">
@@ -90,6 +96,7 @@ export class focusBoardGroup {
         // Create zoom out button
         this.elements.zoomOutButton = document.createElement('button');
         this.elements.zoomOutButton.type = 'button';
+        this.elements.zoomOutButton.title = 'Zoom out';
         this.elements.zoomOutButton.className = 'button is-small mr-1';
         this.elements.zoomOutButton.innerHTML = `
             <span class="icon">
@@ -101,7 +108,8 @@ export class focusBoardGroup {
         // Create zoom in button
         this.elements.zoomInButton = document.createElement('button');
         this.elements.zoomInButton.type = 'button';
-        this.elements.zoomInButton.className = 'button is-small';
+        this.elements.zoomInButton.title = 'Zoom in';
+        this.elements.zoomInButton.className = 'button is-small mr-1';
         this.elements.zoomInButton.innerHTML = `
             <span class="icon">
                 <i class="fa-solid fa-magnifying-glass-plus"></i>
@@ -109,6 +117,18 @@ export class focusBoardGroup {
         `;
         // Add to the buttons
         buttons.appendChild(this.elements.zoomInButton);
+        // Create toggle button
+        this.elements.toggleButton = document.createElement('button');
+        this.elements.toggleButton.type = 'button';
+        this.elements.toggleButton.title = 'Hide group';
+        this.elements.toggleButton.className = 'button is-small';
+        this.elements.toggleButton.innerHTML = `
+            <span class="icon">
+                <i class="fa-solid fa-caret-up"></i>
+            </span>
+        `;
+        // Add to the buttons
+        buttons.appendChild(this.elements.toggleButton);
         // Add it to the header
         this.elements.header.appendChild(buttons);
         // Create the board container element
@@ -123,9 +143,9 @@ export class focusBoardGroup {
         // Reset the boards
         this.boards = [];
         // Add the boards
-        for (let i=0;i<this.focused.length;i++) {
+        for (let i = 0; i < this.focused.length; i++) {
             // Create the focus board
-            const board = new focusBoard(this, this.focused[i], this.boardSettings);
+            const board = new FocusBoard(this, this.focused[i], this.boardSettings);
             // Add it to the container
             this.elements.boardContainer.appendChild(board.getElement());
             // Keep track of the boards created
@@ -133,13 +153,37 @@ export class focusBoardGroup {
         }
     }
 
+    updateGroupName() {
+        // The main group name
+        let groupName = 'Ungrouped';
+        // Determine the name if not the main group
+        if (!this.isMainGroup) {
+            // Get the ECO names
+            this.getEcoNames();
+            // Determine the group name
+            groupName = this.getGroupNameFromECO(this.ecos);
+            // Fallback
+            if (groupName === '') groupName = 'Grouped';
+        }
+        // Update the group name
+        this.elements.groupHeader.innerHTML = groupName;
+    }
+
+    getEcoNames() {
+        // Get the ECO names
+        this.ecos = [];
+        for (let i = 0; i < this.focused.length; i++) {
+            if (this.focused[i].eco?.name) this.ecos.push(this.focused[i].eco.name);
+        }
+    }
+
     addListeners() {
         // Catch board selection
-        this.elements.container.addEventListener("focusBoard:select", e => {
+        this.elements.container.addEventListener("FocusBoard:select", e => {
             this.onSelectBoard(e.detail.board);
         });
         // Catch board deselection
-        this.elements.container.addEventListener("focusBoard:deselect", e => {
+        this.elements.container.addEventListener("FocusBoard:deselect", e => {
             this.onDeselectBoard(e.detail.board);
         });
         // Practice button
@@ -150,7 +194,7 @@ export class focusBoardGroup {
                     bubbles: true,
                     detail: {
                         group: this,
-                        lines: this.focused
+                        lines: [...this.focused] // pass a copy instead of a reference
                     }
                 })
             );
@@ -163,6 +207,63 @@ export class focusBoardGroup {
         this.elements.zoomInButton.addEventListener("click", e => {
             this.zoomIn();
         });
+        // Toggle button
+        this.elements.toggleButton.addEventListener("click", e => {
+            this.toggleGroup();
+        });
+    }
+
+    /**
+     * Generate a group name from ECO names of boards using majority word matching.
+     *
+     * @param {string[]} ecoNames - Array of ECO names
+     * @returns {string} Group name
+     */
+    getGroupNameFromECO(ecoNames) {
+        if (!ecoNames || ecoNames.length === 0) return '';
+
+        // Split each ECO name into words
+        const wordsPerName = ecoNames.map(name => name.split(' '));
+
+        let groupNameWords = [];
+        let remainingIndexes = wordsPerName.map((_, idx) => idx);
+        let wordPos = 0;
+
+        while (remainingIndexes.length > 0) {
+            const counts = {};
+
+            // Count the words at this position for remaining boards
+            remainingIndexes.forEach(idx => {
+                const word = wordsPerName[idx][wordPos];
+                if (word) counts[word] = (counts[word] || 0) + 1;
+            });
+
+            if (Object.keys(counts).length === 0) break; // no words left
+
+            // Find majority word
+            const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+            const [topWord, topCount] = sorted[0];
+            const total = remainingIndexes.length;
+
+            // Stop if no clear majority (<=50%)
+            if (topCount <= total / 2) break;
+
+            // Append majority word
+            groupNameWords.push(topWord);
+
+            // Keep only boards that have this word at this position
+            remainingIndexes = remainingIndexes.filter(idx => wordsPerName[idx][wordPos] === topWord);
+
+            // Stop if only one board left
+            if (remainingIndexes.length <= 1) break;
+
+            wordPos++;
+        }
+
+        // Fallback: if nothing added, take first ECO name
+        if (groupNameWords.length === 0) return ecoNames[0] + ' ***';
+
+        return groupNameWords.join(' ').replace(/[^a-zA-Z0-9]+$/, '');
     }
 
     zoomOut() {
@@ -187,6 +288,32 @@ export class focusBoardGroup {
         this.elements.zoomInButton.disabled = this.boardSize.current >= this.boardSize.max;
     }
 
+    toggleGroup() {
+        // is-collapsed
+        // Toggle the board container
+        if (this.elements.boardContainer.classList.contains('is-collapsed')) {
+            // Show the board container
+            this.elements.boardContainer.classList.remove('is-collapsed');
+            // Update the button icon
+            this.elements.toggleButton.innerHTML = '<span class="icon"><i class="fa-solid fa-caret-up"></i></span>';
+            this.elements.toggleButton.title = 'Hide group';
+            // Show the other buttons
+            this.elements.practiceButton.classList.remove('is-hidden');
+            this.elements.zoomOutButton.classList.remove('is-hidden');
+            this.elements.zoomInButton.classList.remove('is-hidden');
+        } else {
+            // Hide the board container
+            this.elements.boardContainer.classList.add('is-collapsed')
+            // Update the button icon
+            this.elements.toggleButton.innerHTML = '<span class="icon"><i class="fa-solid fa-caret-down"></i></span>';
+            this.elements.toggleButton.title = 'Show group';
+            // Hide the other buttons
+            this.elements.practiceButton.classList.add('is-hidden');
+            this.elements.zoomOutButton.classList.add('is-hidden');
+            this.elements.zoomInButton.classList.add('is-hidden');
+        }
+    }
+
     getElement() {
         return this.elements.container;
     }
@@ -199,7 +326,7 @@ export class focusBoardGroup {
 
         console.log('getSelectedBoard:', this.boards);
 
-        for (let i=0;i<this.boards.length;i++) {
+        for (let i = 0; i < this.boards.length; i++) {
             if (this.boards[i].isSelected()) return this.boards[i];
         }
         return null;
@@ -213,6 +340,8 @@ export class focusBoardGroup {
         this.focused.push(board.move);
         // Add the board element
         this.elements.boardContainer.appendChild(board.getElement());
+        // Update the group name
+        this.updateGroupName();
 
         return this.boards.length;
     }
@@ -230,6 +359,8 @@ export class focusBoardGroup {
         // Remove from the arrays
         this.focused.splice(idx, 1);
         this.boards.splice(idx, 1);
+        // Update the group name
+        this.updateGroupName();
 
         return this.boards.length;
     }
@@ -259,9 +390,9 @@ export class focusBoardGroup {
     selectBoard(board) {
         // Get the board container element
         const boardContainer = board.getElement();
-        
+
         console.log('selectBoard', board, boardContainer);
-        
+
         // Select it
         boardContainer.classList.add('is-selected');
         // Toggle connect/disconnect icons
@@ -276,9 +407,9 @@ export class focusBoardGroup {
     deselectBoard(board) {
         // Get the board container element
         const boardContainer = board.getElement();
-        
+
         console.log('DeselectBoard', board, boardContainer);
-        
+
         // Deselect it
         boardContainer.classList.remove('is-selected');
     }
@@ -289,14 +420,14 @@ export class focusBoardGroup {
         console.log('DeselectAll', this);
 
         // Unselect all boards
-        for (let i=0;i<this.boards.length;i++) {
+        for (let i = 0; i < this.boards.length; i++) {
             this.deselectBoard(this.boards[i]);
         }
     }
 
     // Toggles the connect icon for all boards
     toggleConnectDisconnect(isAnySelected = false) {
-        for (let i=0;i<this.boards.length;i++) {
+        for (let i = 0; i < this.boards.length; i++) {
             // Allow connect if main group, not selected and another board is selected
             if (this.isMainGroup && isAnySelected && !this.boards[i].isSelected()) {
                 this.boards[i].elements.buttons.connect.classList.remove('is-hidden');

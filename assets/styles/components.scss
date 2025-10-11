@@ -126,7 +126,7 @@
 
 /* when checked, slide knob to the right */
 .toggle > input:checked ~ .knob::after {
-  transform: translateX(calc(var(--toggle-width) - var(--toggle-height)));
+  transform: translateX(calc(var(--toggle-width) - var(--toggle-height) - (var(--knob-margin) / 2)));
 }
 
 /* toggle label */
@@ -188,7 +188,7 @@ div:not(.boxed-radio-menu) > .boxed-radio {
 }
 .boxed-radio-menu > .boxed-radio {
   font-size: 0.875rem;
-  padding: 0.75rem 0.75rem;
+  padding: 0.75rem 1.25rem;
 }
 
 .boxed-radio-menu .boxed-radio {

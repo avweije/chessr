@@ -9,11 +9,16 @@
   // Primary colors
   --color-primary: #{variables.$primary};
   --color-link: #{variables.$link};
-  --color-link-border: #{variables.$link-border};
   --color-info: #{variables.$info};
   --color-success: #{variables.$success};
   --color-warning: #{variables.$warning};
   --color-danger: #{variables.$danger};
+
+  // Link extras
+  --color-link-hover: #{variables.$link-hover};
+  --color-link-text: #{variables.$link-text};
+  --color-link-text-hover: #{variables.$link-text-hover};
+  --color-link-text-border: #{variables.$link-text-border};
 
   // Text colors
   --color-text-default: #{variables.$text-default};
@@ -53,8 +58,8 @@
 
   // Overrides
   --bulma-link-color: #{variables.$link-text};
-  --bulma-link-hover-color: #{variables.$link-hover};
-  --bulma-skeleton-background: #cbcbcb;
+  --bulma-link-hover-color: #{variables.$link-text-hover};
+  --bulma-skeleton-background: #{variables.$skeleton-background};
 }
 
 // ---------------------------
@@ -63,18 +68,25 @@
 [data-theme="dark"] {
   --color-primary: #{variables.$primary-dark};
   --color-link: #{variables.$link-dark};
-  --color-link-border: #{variables.$link-border-dark};
   --color-info: #{variables.$info-dark};
   --color-success: #{variables.$success-dark};
   --color-warning: #{variables.$warning-dark};
   --color-danger: #{variables.$danger-dark};
 
+  // Link extras
+  --color-link-hover: #{variables.$link-hover-dark};
+  --color-link-text: #{variables.$link-text-dark};
+  --color-link-text-hover: #{variables.$link-text-hover-dark};
+  --color-link-text-border: #{variables.$link-text-border-dark};
+
+  // Text colors
   --color-text: #{variables.$text-default-dark};
   --color-text-default: #{variables.$text-default-dark};
   --color-text-title: #{variables.$text-title-dark};
   --color-text-faded: #{variables.$text-faded-dark};
   --color-text-on-background: #{variables.$text-on-background-dark};
 
+  // Surface colors
   --color-background: #{variables.$background-dark};
   --color-surface-main: #{variables.$surface-main-dark};
   --color-surface-alt: #{variables.$surface-alt-dark};
@@ -108,7 +120,7 @@
   --bulma-text: #{variables.$text-default-dark};   // fixes .has-text-default
   --bulma-link: #{variables.$link-dark};          // if needed for `.has-text-link`
   --bulma-link-color: #{variables.$link-text-dark};
-  --bulma-link-hover-color: #{variables.$link-hover-dark};
+  --bulma-link-hover-color: #{variables.$link-text-hover-dark};
   --bulma-background: #{variables.$surface-main-dark}; // if you want `.has-background-*` to follow dark mode
   --bulma-skeleton-background: #{fn.bulmaLighten(variables.$surface-alt-dark,40%)};
 }

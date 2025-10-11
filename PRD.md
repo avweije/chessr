@@ -6,6 +6,9 @@
 
 - replace api calls for exclude/autoplay with /details api call
 
+- do we need to add the initial position for white as a repertoire record?
+if we dont, we cant add it as a focused move.. the notes and flag are on the opponents position..
+
 # Logger class
 
 - logger class, default only logs for current page JS?

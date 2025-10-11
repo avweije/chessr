@@ -1,5 +1,5 @@
-import { focusBoardGroup } from "focus-group";
-import { focusBoard } from "focus-board";
+import { FocusBoardGroup } from "focus-group";
+import { FocusBoard } from "focus-board";
 
 /**
  * The manager for the focus boards.
@@ -25,21 +25,24 @@ import { focusBoard } from "focus-board";
  * Global actions are? Maybe something like show notes, hide notes?
  * 
  */
-export class focusBoardManager {
+export class FocusBoardManager {
     focused = null;
     boardSettings = null;
+    practiceClass = null;
 
     container = null;
     groups = [];
 
-    constructor(focused, boardSettings) {
+    constructor(focused, boardSettings, practiceClass) {
 
-        console.log('focusBoardManager constructor', focused, boardSettings);
+        console.log('FocusBoardManager constructor', focused, boardSettings);
 
         // Store a copy of the focused array
         this.focused = focused.slice(0);
         // Store the board settings
         this.boardSettings = boardSettings;
+        // Store the practice class for reference
+        this.practiceClass = practiceClass;
         // Get the container for the groups
         this.container = document.getElementById('boardPageOtherContainer');
         // Get the elements
@@ -92,7 +95,7 @@ export class focusBoardManager {
         // Create the groups
         for (const [key, groupItems] of Object.entries(groups)) {
             // Create the group
-            const group = new focusBoardGroup(this.container, key === 'main', groupItems, this.boardSettings);
+            const group = new FocusBoardGroup(this.container, key === 'main', groupItems, this.boardSettings);
             // Add it
             this.container.appendChild(group.getElement());
             this.groups.push(group);
@@ -137,40 +140,65 @@ export class focusBoardManager {
 
     addListeners() {
         // In manager (only once, at the top container)
-        this.container.addEventListener("focusBoard:select", e => {
+        this.container.addEventListener("FocusBoard:select", e => {
             // Handle the board selection
             this.onSelectBoard(e.detail.group, e.detail.board);
         });
 
         // In manager (only once, at the top container)
-        this.container.addEventListener("focusBoard:deselect", e => {
+        this.container.addEventListener("FocusBoard:deselect", e => {
             // Handle the board deselection
             this.onDeselectBoard(e.detail.group, e.detail.board);
         });
 
         // Connect board
-        this.container.addEventListener("focusBoard:connect", e => {
+        this.container.addEventListener("FocusBoard:connect", e => {
             // Handle the board connection
             this.onConnectBoard(e.detail.group, e.detail.board);
         });
 
         // Disconnect board
-        this.container.addEventListener("focusBoard:disconnect", e => {
+        this.container.addEventListener("FocusBoard:disconnect", e => {
             // Handle the board disconnection
             this.onDisconnectBoard(e.detail.group, e.detail.board);
         });
 
         // Unfocus board (remove from focus moves)
-        this.container.addEventListener("focusBoard:unfocus", e => {
+        this.container.addEventListener("FocusBoard:unfocus", e => {
             // Handle the board removal
             this.onUnfocusBoard(e.detail.group, e.detail.board);
         });
 
         // Notes update
-        this.container.addEventListener("focusBoard:notes", e => {
+        this.container.addEventListener("FocusBoard:notes", e => {
             // Update the notes
             this.saveFocusedNotes(e.detail);
         });
+    }
+
+
+    /* Update notes in case of edits */
+
+    updateNotes(updated) {
+        
+        console.log('Update notes', updated, this.groups);
+
+
+        for (let i=0;i<this.groups.length;i++) {
+
+            for (let y=0;y<this.groups[i].boards.length;y++) {
+
+                console.log(this.groups[i].boards[y]);
+
+                for (let z=0;z<updated.length;z++) {
+                    
+                    if (updated[z].id === this.groups[i].boards[y].move.id) {
+                        this.groups[i].boards[y].move.notes = updated[z].notes;
+                        this.groups[i].boards[y].elements.notes.textArea.value = updated[z].notes;
+                    }
+                }
+            }
+        }
     }
 
 
@@ -302,8 +330,6 @@ export class focusBoardManager {
         if (remaining === 1) {
             // Add the board to the main group
             this.addBoardToMainGroup(group.boards[0]);
-            // Remove the group
-            this.removeGroup(group);
 
             // Ungroup the 1st board also (DB)
             items.push({
@@ -342,11 +368,17 @@ export class focusBoardManager {
             }
         }
 
+        // Remove the group if needed
+        if (remaining <=1 ) {
+            // Remove the group
+            this.removeGroup(group);
+        }
+
         // Add to the main group, unless we are removing it from the focus moves
         if (!unfocus) this.addBoardToMainGroup(board);
         // Toggle the connect/disconnect buttons
         const mainGroup = this.getMainGroup();
-        mainGroup.toggleConnectDisconnect(this.getSelectedBoard() !== null);
+        if (mainGroup) mainGroup.toggleConnectDisconnect(this.getSelectedBoard() !== null);
 
         // Save the changes to the database
         this.saveFocusedParent(items);
@@ -372,7 +404,7 @@ export class focusBoardManager {
 
     createGroup(focused) {
         // Create the focus group
-        const group = new focusBoardGroup(this.container, false, focused, this.boardSettings);
+        const group = new FocusBoardGroup(this.container, false, focused, this.boardSettings);
         // Add as 1st group in the container
         this.container.insertBefore(group.getElement(), this.container.firstElementChild);
         // Add to array
@@ -401,7 +433,7 @@ export class focusBoardManager {
 
     createMainGroup(focused = []) {
         // Create the main group
-        const group = new focusBoardGroup(this.container, true, focused, this.boardSettings);
+        const group = new FocusBoardGroup(this.container, true, focused, this.boardSettings);
         // Add to our groups array
         this.groups.push(group);
         // Add the main group to the container

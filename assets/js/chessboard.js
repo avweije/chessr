@@ -57,7 +57,7 @@ export const PIECE_TILESIZE = {
 
   get(str) {
     // strip the basename
-    var base = new String(str).substring(str.lastIndexOf("/") + 1);
+    let base = new String(str).substring(str.lastIndexOf("/") + 1);
     if (base.lastIndexOf(".") != -1)
       base = base.substring(0, base.lastIndexOf("."));
 
@@ -130,16 +130,16 @@ export class MyChessBoard {
     this.game = new MyChess();
 
     // initialise the pgn field
-    this.pgnField = new PgnField({ 
-      container: null, 
+    this.pgnField = new PgnField({
+      container: null,
       options: {
-        navigationEnabled: true, 
+        navigationEnabled: true,
         useVariations: true,
         withLinks: true
       },
       handlers: {
         onGotoMove: (moveNr, variationIdx, moves) => {
-          
+
           console.log("Chessboard.js - onGotoMove:", moveNr, variationIdx, moves);
 
           this.gotoMove(moveNr, variationIdx, moves);
@@ -165,7 +165,7 @@ export class MyChessBoard {
    */
   init(boardElement, boardSettings = {}, settings = {}) {
     // the default board settings
-    var _boardSettings = {
+    let _boardSettings = {
       position: FEN.start,
       orientation: COLOR.white,
       assetsUrl: "/assets/", // wherever you copied the assets folder to, could also be in the node_modules folder
@@ -211,9 +211,9 @@ export class MyChessBoard {
   setOption(setting, value) {
     try {
       // get the (nested) setting keys
-      var parts = setting.split(".");
-      var temp = this.boardSettings;
-      for (var i = 1; i < parts.length; i++) {
+      let parts = setting.split(".");
+      let temp = this.boardSettings;
+      for (let i = 1; i < parts.length; i++) {
         temp = temp[parts[i - 1]];
       }
       // update the setting
@@ -303,9 +303,9 @@ export class MyChessBoard {
    */
   getFen() {
     // the en passant notation
-    var enPassant = "-";
+    let enPassant = "-";
     // get the last move
-    var last = this.game.history({ verbose: true }).pop();
+    let last = this.game.history({ verbose: true }).pop();
     // if the last move was a pawn move
     if (last && last.piece == "p") {
       // if the pawn moved 2 squares
@@ -317,7 +317,7 @@ export class MyChessBoard {
     }
 
     // split the game FEN
-    var fenParts = this.game.fen().split(" ");
+    let fenParts = this.game.fen().split(" ");
     // override the en passant part
     fenParts[3] = enPassant;
 
@@ -327,44 +327,53 @@ export class MyChessBoard {
   /**
    * Resets the position to the initial FEN and moves given.
    * 
-   * @param {string} initialFen - The initial starting position.
-   * @param {array} moves       - The moves to make after resetting.
-   * @param {bool} resetMoves   - Reset all the moves.
-   * @param {bool} updateBoard  - Update the board once done.
+   * @param {string} initialFen   - The initial starting position.
+   * @param {array} moves         - The moves to make after resetting.
+   * @param {bool} resetVariation - Reset all the moves if this is a variation or a different line.
+   * @param {bool} resetMoves     - Reset the moves even if the current moves match the new moves.
+   * @param {bool} updateBoard    - Update the board once done.
    * @returns 
    */
-  async resetToPosition(initialFen, moves, resetMoves = false, updateBoard = true) {
+  async resetToPosition(initialFen, moves, resetVariation = false, resetMoves = false, updateBoard = true) {
 
     //console.log('Chessboard.js - resetToPosition', moves, resetMoves, updateBoard);
 
     // get the current moves
-    var history = this.game.history({ verbose: true });
-    var movesToMake = [];
-    var movesThatMatch = [];
+    let history = this.game.history({ verbose: true });
+    let movesToMake = [];
+    let movesThatMatch = [];
 
-    //var match = initialFen == this.initialFen && moves.length >= history.length;
-    var match = initialFen == this.initialFen && !resetMoves;
-    var lastMatchingFen = "";
+    //let match = initialFen == this.initialFen && moves.length >= history.length;
+    let match = initialFen == this.initialFen && !resetMoves;
 
     // see if the current moves match the new moves
-    for (var i = 0; i < moves.length; i++) {
-      // if this is a new move
-      if (match == false || i >= history.length) {
-        movesToMake.push(moves[i]);
-      } else if (moves[i] !== history[i].san) {
-        movesToMake.push(moves[i]);
-        // not a match, stop checking
-        match = false;
-        //break;
-      } else if (match) {
-        //lastMatchingFen = history[i].after;
-        movesThatMatch.push(moves[i]);
+    if (!resetMoves) {
+      for (let i = 0; i < moves.length; i++) {
+        // if this is a new move
+        if (match == false || i >= history.length) {
+          movesToMake.push(moves[i]);
+        } else if (moves[i] !== history[i].san) {
+          movesToMake.push(moves[i]);
+          // not a match, stop checking
+          match = false;
+          //break;
+        } else if (match) {
+          //lastMatchingFen = history[i].after;
+          movesThatMatch.push(moves[i]);
+        }
       }
     }
 
     // if a match, but current history has more moves
     if (match && history.length > moves.length) {
       match = false;
+    }
+
+    // If we need to reset the variation
+    if (resetMoves || (!match && resetVariation)) {
+      // Add all the moves to the moves to make array
+      movesToMake = moves;
+      movesThatMatch = [];
     }
 
     console.log('resetToPosition: match?', match, movesThatMatch);
@@ -379,7 +388,7 @@ export class MyChessBoard {
           this.game.reset();
         }
         // make the moves that matched
-        for (var i = 0; i < movesThatMatch.length; i++) {
+        for (let i = 0; i < movesThatMatch.length; i++) {
           this.game.move(movesThatMatch[i]);
         }
         // update the board
@@ -398,9 +407,9 @@ export class MyChessBoard {
     }
 
     // the new moves
-    var newMoves = [];
+    let newMoves = [];
     // make the (new) moves
-    for (var i = moves.length - movesToMake.length; i < moves.length; i++) {
+    for (let i = moves.length - movesToMake.length; i < moves.length; i++) {
       this.game.move(moves[i]);
       newMoves.push(this.game.history({ verbose: true }).pop());
     }
@@ -449,17 +458,17 @@ export class MyChessBoard {
       this.pgnField.resetTo(index);
 
       // get the history of moves
-      var moves = this.game.history({ verbose: true });
+      let moves = this.game.history({ verbose: true });
 
       // undo the last X moves
-      for (var i = 1; i < moves.length - index; i++) {
+      for (let i = 1; i < moves.length - index; i++) {
         this.game.undo();
       }
 
       /*
       // reset the game and make the moves
       this.game.reset();
-      for (var i = 0; i <= index; i++) {
+      for (let i = 0; i <= index; i++) {
         this.game.move(moves[i].san);
       }
         */
@@ -504,7 +513,7 @@ export class MyChessBoard {
     this.initialFen = fen;
 
     //console.log('Chessboard.js - resetToCurrent', fen);
-    
+
     // reset the pgn field to this the current history
     this.pgnField.resetToCurrent(fen, this.game.history({ verbose: true }));
   }
@@ -549,7 +558,7 @@ export class MyChessBoard {
     console.log('Chessboard.js - gotoMove', moveNr, variationIdx, moves);
 
     // reset to position (need to use diff function for this later..)
-    this.resetToPosition(this.initialFen, moves, false, false);
+    this.resetToPosition(this.initialFen, moves, false, false, false);
     // update the board
     this.board.setPosition(this.game.fen());
     // process the move
@@ -582,38 +591,38 @@ export class MyChessBoard {
     return this.pgnField.isLast();
   }
 
-   /**
-   * Navigates to the 1st move in the current line or variation. Pass-through for PgnField.
-   * 
-   * @returns {bool}
-   */
+  /**
+  * Navigates to the 1st move in the current line or variation. Pass-through for PgnField.
+  * 
+  * @returns {bool}
+  */
   gotoFirst() {
     this.pgnField.gotoFirst()
   }
 
-   /**
-   * Navigates to the last move in the current line or variation. Pass-through for PgnField.
-   * 
-   * @returns {bool}
-   */
+  /**
+  * Navigates to the last move in the current line or variation. Pass-through for PgnField.
+  * 
+  * @returns {bool}
+  */
   gotoLast() {
     this.pgnField.gotoLast();
   }
 
-   /**
-   * Navigates to the previous move in the current line or variation. Pass-through for PgnField.
-   * 
-   * @returns {bool}
-   */
+  /**
+  * Navigates to the previous move in the current line or variation. Pass-through for PgnField.
+  * 
+  * @returns {bool}
+  */
   gotoPrevious() {
     this.pgnField.gotoPrevious();
   }
 
-   /**
-   * Navigates to the next move in the current line or variation. Pass-through for PgnField.
-   * 
-   * @returns {bool}
-   */
+  /**
+  * Navigates to the next move in the current line or variation. Pass-through for PgnField.
+  * 
+  * @returns {bool}
+  */
   gotoNext() {
     this.pgnField.gotoNext();
   }
@@ -690,7 +699,7 @@ export class MyChessBoard {
         this.board.removeMarkers();
 
         // re-add next premove markers
-        for (var i = 0; i < this.premoves.length; i++) {
+        for (let i = 0; i < this.premoves.length; i++) {
           this.board.addMarker(
             CUSTOM_MARKER_TYPE.squareRed,
             this.premoves[i].squareFrom
@@ -707,7 +716,7 @@ export class MyChessBoard {
       }
     }
   }
-  
+
 
   /**
    * The following functions are callbacks, to be overriden in extended classes.
@@ -771,7 +780,7 @@ export class MyChessBoard {
       return true;
     }
 
-    var piece = this.board.getPiece(event.squareFrom);
+    let piece = this.board.getPiece(event.squareFrom);
 
     // only pick up pieces for the side to move
     if (
@@ -781,10 +790,10 @@ export class MyChessBoard {
       return false;
     }
 
-    var moves = [];
+    let moves = [];
     for (const move of this.game.moves({ square: event.squareFrom })) {
       // remove the piece notation and other characters to just get the square
-      var t = move
+      let t = move
         .replace(/^[RNBKQ]x?/, "")
         .replace("!", "")
         .replace("#", "");
@@ -820,7 +829,7 @@ export class MyChessBoard {
               // if this is a premove
               if (this.status !== BOARD_STATUS.waitingOnMove) {
                 // add the premove
-                var temp = event;
+                let temp = event;
                 temp.promotion = result.piece.charAt(1);
                 this.premoves.push(temp);
                 // remove any markers before adding the premove markers
@@ -869,7 +878,7 @@ export class MyChessBoard {
       }
 
       // see if the move is legal
-      var move = this.game.move({
+      let move = this.game.move({
         from: event.squareFrom,
         to: event.squareTo,
         promotion: "q", // NOTE: always promote to a queen for example simplicity
@@ -955,7 +964,7 @@ export class MyChessBoard {
     }
 
     // get the last move
-    var last = this.game.history({ verbose: true }).pop();
+    let last = this.game.history({ verbose: true }).pop();
 
     // add marker for last move
     if (last) {

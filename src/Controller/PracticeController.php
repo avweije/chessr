@@ -96,13 +96,10 @@ class PracticeController extends ChessrAbstractController
 
         $jsonEco = $serializer->serialize($ecoResult, 'json');
 
-        // if we need a specific repertoire line
+        // If we need a specific repertoire item
         if ($repertoireId != null) {
-            // get the lines
-            //$repertoireItem = $this->repertoireService->getLines($repertoireId);
+            // Get the lines for this repertoire item
             $repertoireItem = $this->repertoireService->getLinesForMove($repertoireId);
-
-            //dd($repertoireItem);
 
             return new JsonResponse([
                 "custom" => $repertoireItem,
@@ -111,7 +108,7 @@ class PracticeController extends ChessrAbstractController
         }
 
         // get the repertoire lines and the group lines
-        [$lines, $groups] = $this->repertoireService->getLines(null, $isRoadmap, $statisticsOnly);
+        [$lines, $groups] = $this->repertoireService->getLines($isRoadmap, $statisticsOnly);
 
         // Get the focus moves
         $focusMoves = $this->repertoireService->getFocusMoves();
@@ -139,10 +136,12 @@ class PracticeController extends ChessrAbstractController
 
             // not needed for the roadmap
             if (!$isRoadmap) {
-                // find the new lines
+                // Get the new lines
                 $resp['new'] = $this->repertoireService->getNewLines($lines);
-                // find the recommended lines
+                // Get the recommended lines
                 $resp['recommended'] = $this->repertoireService->getRecommendedLines($lines, $refreshRecommended);
+                // Add the global stats
+                $resp['globalStats'] = $this->repertoireService->getGlobalStats();
                 // Get the recommended completed flag
                 $resp['recommendedCompleted'] = $_SESSION['recommendedCompleted'] ?? false;
                 $resp['recommendedCount'] = $this->repertoireService->countMoves($resp['recommended']);

@@ -37,7 +37,7 @@ $bulma-colors: (
 
 // Extend bulma colors with custom variables
 $custom-colors: map.merge($bulma-colors, (
-    "link-border": variables.$link-border,
+    "link-border": variables.$link-text-border,
     "surface-alt": variables.$surface-alt,
     "default": variables.$text-default,
     "title": variables.$text-title,
@@ -128,6 +128,18 @@ body {
 .dark .body-background {
   filter: brightness(0.25);
 }
+
+
+/* Secondary link class */
+.link-secondary {
+  cursor: pointer;
+  color: var(--color-link)
+}
+
+.link-secondary:hover {
+  color: var(--color-link-hover);
+}
+
 
 /* logo */
 img.logo {

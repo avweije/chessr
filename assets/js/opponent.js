@@ -1263,22 +1263,18 @@ class Opponent {
     box.appendChild(inp);
 
     var lbl = document.createElement("label");
-    lbl.className =
-      "boxed-radio-label peer-checked:border-blue-300 peer-checked:bg-blue-100";
-    lbl.htmlFor =
-      "opponentBoxRadio_" + opponent.id + (forModal ? "_modal" : "");
+    lbl.className = "boxed-radio-label";
+    lbl.htmlFor = "opponentBoxRadio_" + opponent.id + (forModal ? "_modal" : "");
 
     box.appendChild(lbl);
 
     var circle = document.createElement("div");
-    circle.className =
-      "boxed-radio-circle peer-checked:border-transparent peer-checked:bg-blue-400 peer-checked:ring-2";
+    circle.className = "boxed-radio-circle";
 
     box.appendChild(circle);
 
     var sp = document.createElement("span");
-    sp.className =
-      "boxed-radio-text peer-disabled:text-gray-300 peer-disabled:dark:text-gray-500 peer-checked:text-gray-700";
+    sp.className = "boxed-radio-text";
 
     var p1 = document.createElement("p");
     p1.className = "has-text-left pr-3";
@@ -1633,24 +1629,24 @@ class Opponent {
     for (var i = 0; i < moves.length; i++) {
       // create the move holder
       var holder = document.createElement("div");
-      holder.className =
-        "opponent-move-holder " +
-        color +
-        (moves[i].percentage < 3 ? " sporadic-move" : "");
+      holder.className = "opponent-move-holder "
+        + color
+        + (moves[i].percentage < 3 ? " sporadic-move" : "");
 
-      // create the header part
+      // Create the header
       var hdr = document.createElement("div");
       hdr.className = "opponent-move-header";
 
-      // the move
+      // Add the move
       var sp = document.createElement("span");
       sp.innerHTML = moves[i].move;
 
       hdr.appendChild(sp);
 
-      // the percentage played
+      // Add the percentage played
       sp = document.createElement("span");
       sp.innerHTML = moves[i].percentage + "%";
+      sp.title = '% played';
 
       hdr.appendChild(sp);
 
@@ -1660,6 +1656,7 @@ class Opponent {
         sp = document.createElement("span");
         sp.className = "opponent-move-checkmark";
         sp.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+        sp.title = 'In your repertoire';
 
         hdr.appendChild(sp);
       }
@@ -1669,54 +1666,47 @@ class Opponent {
       var lossPct = Math.round((moves[i].losses / moves[i].total) * 100);
       var diff = Math.abs(winPct - lossPct);
 
-      // even = win/loss difference less than 3 or win/loss percentage difference of less than 8%
-      var rate =
-        diff < 8 || Math.abs(moves[i].wins - moves[i].losses) < 3
+      // Calculate the rate, even, win or loss
+      var rate = diff < 8 || Math.abs(moves[i].wins - moves[i].losses) < 3
           ? "even"
           : winPct > lossPct
             ? "win"
             : "loss";
 
-      //console.log(moves[i].total, winPct, lossPct, diff, rate);
-
-      // create the footer part
+      // Create the footer element
       var ftr = document.createElement("div");
       ftr.className = "opponent-move-footer";
-      ftr.innerHTML =
-        '<span class="' +
-        (rate == "win"
-          ? "accuracy-green"
+
+      const winsHtml = '<span title="Wins" class="' + (rate == "win"
+          ? "accuracy-green" 
           : rate == "even"
             ? "accuracy-orange"
             : "accuracy-red") +
-        '">W: ' +
-        moves[i].wins +
-        '</span><span class="' +
-        (rate == "loss"
+        '">W: ' + moves[i].wins + '</span>';
+      const lossesHtml = '<span title="Losses" class="' + (rate == "loss"
           ? "accuracy-red"
           : rate == "even"
             ? "accuracy-orange"
             : "accuracy-green") +
-        '">L: ' +
-        moves[i].losses +
-        "</span>";
+        '">L: ' + moves[i].losses + '</span>';
+
+      ftr.innerHTML = winsHtml + lossesHtml;
 
       holder.appendChild(hdr);
       holder.appendChild(ftr);
 
+      // Add the click handler
       holder.addEventListener(
         "click",
         ((move) => {
           return function (event) {
-            console.log("before load opponent move:");
-            console.log(this, event, move);
             // load the opponent move
             this.loadOpponentMove(move);
           };
         })(moves[i].move).bind(this)
       );
 
-      // add the move to the table
+      // Add the move to the table
       this.elements.opponentMovesTable.appendChild(holder);
     }
   }
