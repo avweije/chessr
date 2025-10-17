@@ -4,7 +4,7 @@ import {
 } from "chessboard";
 import { CUSTOM_ARROW_TYPE } from "ThickerArrows";
 import { COLOR } from "../../vendor/cm-chessboard/src/view/ChessboardView.js";
-import { Markers } from "../../vendor/cm-chessboard/src/extensions/markers/Markers.js";
+import { MARKER_TYPE, Markers } from "../../vendor/cm-chessboard/src/extensions/markers/Markers.js";
 import { Utils } from "utils";
 import { ThickerArrows } from "ThickerArrows";
 
@@ -41,9 +41,11 @@ export class FocusBoard {
 
     color = 'white';
     board = null;
+    representation2D = null;
 
     isAnimating = false;
     isShowing = false;
+    isHighlighted = false;
 
     elements = {
         container: null,
@@ -53,6 +55,7 @@ export class FocusBoard {
         buttons: {
             connect: null,
             disconnect: null,
+            differences: null,
             animate: null,
             show: null,
             repertoire: null,
@@ -65,9 +68,6 @@ export class FocusBoard {
     };
 
     constructor(group, move, settings = {}) {
-
-        console.log('FocusBoard constructor', group, move);
-
         // Store the move
         this.group = group;
         this.move = move;
@@ -82,8 +82,80 @@ export class FocusBoard {
         this.createChessboard();
         // Add the listeners
         this.addListeners();
+        // Load the position
+        this.loadPosition();
+        // Load the FEN
+        this.board.game.load(this.move.after);
+        // Get the 2D board representation
+        this.representation2D = this.board.game.board();
+    }
+
+    // Load the position into the board
+    loadPosition() {
         // Show the position
         this.board.board.setPosition(this.move?.after ?? '', false);
+    }
+
+    // Toggle the highlight markers
+    toggleHighlights() {
+        // Toggle the status
+        this.isHighlighted = !this.isHighlighted;
+        // Bubble the event so the group can handle
+        this.bubbleEvent("highlightToggle");
+    }
+
+    // Remove the highlight markers
+    removeHighlights(reset = true) {
+        // Remove any existing markers
+        this.board.board.removeMarkers(CUSTOM_MARKER_TYPE.insideRed);
+        // Reset the status
+        if (reset) this.isHighlighted = false;
+    }
+
+    // Highlight the differences between this board and the others
+    highlightDifferences(others) {
+        // Remove existing highlights
+        this.removeHighlights(false);
+        // If no others, return
+        if (!others || others.length === 0) return;
+        // Get the differences
+        const diffs = [];
+        for (let i=0;i<others.length;i++) {
+            const other = others[i];
+            for (let r=0;r<8;r++) {
+                for (let f=0;f<8;f++) {
+                    // Get the values
+                    const thisSquare = {
+                        square: this.representation2D[r][f]?.square ?? '',
+                        type: this.representation2D[r][f]?.type ?? '',
+                        color: this.representation2D[r][f]?.color ?? ''
+                    };
+                    const otherSquare = {
+                        square: other[r][f]?.square ?? '',
+                        type: other[r][f]?.type ?? '',
+                        color: other[r][f]?.color ?? ''
+                    };
+
+                    // If different...
+                    if (thisSquare.type !== otherSquare.type || thisSquare.color !== otherSquare.color) {
+                        // Only add if we have a piece here and not already added
+                        if (this.representation2D[r][f] && !diffs.includes(this.representation2D[r][f]['square'])) {
+                            diffs.push(this.representation2D[r][f]['square']);
+                        }
+                    }
+                }   
+            }
+        }
+
+        // Add the markers
+        for (let i=0;i<diffs.length;i++) {
+            this.board.board.addMarker(CUSTOM_MARKER_TYPE.insideRed, diffs[i]);
+        }
+    }
+
+    // Get the 2D representation of the board
+    getRepresentation2D() {
+        return this.representation2D;
     }
 
     // Get the required elements
@@ -138,6 +210,13 @@ export class FocusBoard {
         this.elements.buttons.disconnect.innerHTML = '<span class="icon"><i class="fa-solid fa-unlink"></i></span>';
         this.elements.buttons.disconnect.title = 'Disconnect from group';
 
+        // Create the highlight differences button
+        this.elements.buttons.differences = document.createElement('button');
+        this.elements.buttons.differences.type = 'button';
+        this.elements.buttons.differences.className = 'is-hidden button is-primary is-small is-align-self-start';
+        this.elements.buttons.differences.innerHTML = '<span class="icon"><i class="fa-solid fa-wand-magic-sparkles"></i></span>';
+        this.elements.buttons.differences.title = 'Highlight differences';
+
         this.elements.buttons.animate = document.createElement('button');
         this.elements.buttons.animate.type = 'button';
         this.elements.buttons.animate.className = 'button is-small';
@@ -172,19 +251,17 @@ export class FocusBoard {
 
         const successPct = 1 - (failed / count);
         const accuracyIdx = Math.min(2, Math.floor(successPct * 3));
-        //const accuracyTypes = ['is-danger', 'is-warning', 'is-success'];
         const accuracyTypes = ['has-background-danger', 'has-background-warning', 'has-background-success'];
 
         // Create the accuracy tag
         const accuracyTag = document.createElement('div');
-        //accuracyTag.className = `tag ${accuracyTypes[accuracyIdx]} is-light px-1 mb-5`;
-        //accuracyTag.innerHTML = Math.round(successPct * 100) + '%';
         accuracyTag.className = `dot-marker mb-2 ${accuracyTypes[accuracyIdx]}`;
 
         // Add the buttons to separate containers so we can have buttons at top and bottom
         const topButtons = document.createElement('div');
         topButtons.appendChild(this.elements.buttons.connect);
         topButtons.appendChild(this.elements.buttons.disconnect);
+        topButtons.appendChild(this.elements.buttons.differences);
 
         const bottomButtons = document.createElement('div');
         bottomButtons.className = 'is-align-items-center'
@@ -250,6 +327,10 @@ export class FocusBoard {
         this.elements.buttons.disconnect.addEventListener("click", () => {
             this.bubbleEvent("disconnect");
         });
+        // Highlight differences button
+        this.elements.buttons.differences.addEventListener("click", () => {
+            this.toggleHighlights();
+        });
         // Animate button
         this.elements.buttons.animate.addEventListener("click", () => {
             this.animate();
@@ -293,6 +374,9 @@ export class FocusBoard {
         return this.elements.container;
     }
 
+
+    /* For use in FocusGroup */
+
     // Returns true if this is the currently selected board
     isSelected() {
         return this.elements.container.classList.contains('is-selected');
@@ -305,80 +389,74 @@ export class FocusBoard {
         // Safety check
         if (this.isAnimating) return false;
 
+        // If showing the move, hide it
+        let wasShowing = this.isShowing;
+        if (this.isShowing) {
+            this.show();
+        }
         // Start animating
         this.isAnimating = true;
 
         // Get the moves
         const moves = [...this.move.line, this.move.move];
-
-        console.log(this.board);
-
         // Reset the game and make the moves
         this.board.game.reset();
         // Update the board
         this.board.board.setPosition(this.board.getFen());
-
         // Make the moves so we can get the from and to
         for (let i = 0; i < moves.length; i++) {
             this.board.game.move(moves[i]);
         }
         // Get the history
         const history = this.board.game.history({ verbose: true });
-
         // Animate the moves
         for (let i = 0; i < history.length; i++) {
             await this.board.board.movePiece(history[i]["from"], history[i]["to"], true);
         }
 
+        // Done animating
         this.isAnimating = false;
+        // If was showing, show again
+        if (wasShowing) {
+            this.show();
+        }
     }
 
+    // Toggle showing the correct move
     show() {
-        // Already showing or not
-        //const arrows = this.board.board.getArrows();
-        
-        //console.log(this.move, arrows, this.board.getFen(), this.board.game.history());
+        // Safety check
+        if (this.isAnimating) return false;
 
         // Toggle the show button
-        //this.toggleShowButton(arrows && arrows.length > 0);
         this.toggleShowButton(this.isShowing);
-
         // Toggle the status
         this.isShowing = !this.isShowing;
 
         // If we need to remove the markers
         if (!this.isShowing) {
-            this.board.board.removeMarkers();
-
+            this.board.board.removeMarkers(CUSTOM_MARKER_TYPE.squareRed);
             return;
         }
 
         // load the FEN
-        this.board.game.load(this.move.after);
+        this.board.game.load(this.move.before);
 
-        console.log('Loaded FEN:', this.move.after);
-
-        const moves = [];
         // Make the move(s) so we get the from and to
+        const moves = [];
         try {
+            // Make the last opponent move
+            moves.push(this.board.game.move(this.move.move));
+            // Make our move(s)
             for (let i=0;i<this.move.moves.length;i++) {
-                // Make the move and get the move details
                 moves.push(this.board.game.move(this.move.moves[i].move));
-                // Undo the move
                 this.board.game.undo();
             }
         } catch (err) {
             console.warn(err);
         }
-
-        console.log('Moves:', moves);
         
-        // Add the arrow(s)
+        // Add the markers for all the correct moves
         for (let i=0;i<moves.length;i++) {
-            //this.board.board.addArrow(CUSTOM_ARROW_TYPE.normal, moves[i].from, moves[i].to);
-
-            //console.log('Added arrow from', moves[i].from, 'to', moves[i].to);
-
             // Add the move markers
             this.board.board.addMarker(CUSTOM_MARKER_TYPE.squareRed, moves[i].from);
             this.board.board.addMarker(CUSTOM_MARKER_TYPE.squareRed, moves[i].to);

@@ -27,6 +27,18 @@ export const CUSTOM_MARKER_TYPE = {
     class: "marker-square-red",
     slice: "markerSquare",
   },
+  insideRed: {
+    class: "marker-inside-red",
+    slice: "markerInsideRed",
+  },
+  glowPulse: {
+    class: "marker-glow-pulse",
+    slice: "markerGlowPulse",
+  },
+  triangle: {
+    class: "marker-triangle",
+    slice: "markerTriangle",
+  }
 };
 
 export const BOARD_STATUS = {
@@ -104,26 +116,6 @@ export class MyChessBoard {
 
   history = [];
   variations = [];
-
-  // the custom markers
-  markers = {
-    checkmark: {
-      class: "marker-checkmark",
-      slice: "markerCheckmark",
-    },
-    cancel: {
-      class: "marker-cancel",
-      slice: "markerCancel",
-    },
-    squareGreen: {
-      class: "marker-square-green",
-      slice: "markerSquare",
-    },
-    squareRed: {
-      class: "marker-square-red",
-      slice: "markerSquare",
-    },
-  };
 
   constructor() {
     // create the chess game
@@ -264,6 +256,9 @@ export class MyChessBoard {
     this.board.removeMarkers(CUSTOM_MARKER_TYPE.checkmark);
     this.board.removeMarkers(CUSTOM_MARKER_TYPE.cancel);
     this.board.removeMarkers(CUSTOM_MARKER_TYPE.squareGreen);
+    this.board.removeMarkers(CUSTOM_MARKER_TYPE.glow);
+    this.board.removeMarkers(CUSTOM_MARKER_TYPE.glowPulse);
+    this.board.removeMarkers(CUSTOM_MARKER_TYPE.triangle);
     if (!keepPremove) {
       this.board.removeMarkers(CUSTOM_MARKER_TYPE.squareRed);
     }

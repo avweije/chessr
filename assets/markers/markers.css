@@ -72,6 +72,15 @@
   opacity: 0.8 !important;
 }
 
+.cm-chessboard .markers .marker.marker-inside-red,
+.cm-chessboard .markers .marker.marker-glow-pulse,
+.cm-chessboard .markers .marker.marker-triangle {
+  /*fill: #f23636 !important;
+  stroke: #f23636 !important;
+  stroke-width: 4px !important;
+  opacity: 0.8 !important;*/
+}
+
 /*# sourceMappingURL=markers.css.map */
 
 /* marker colors per theme */

@@ -34,9 +34,6 @@ export class FocusBoardManager {
     groups = [];
 
     constructor(focused, boardSettings, practiceClass) {
-
-        console.log('FocusBoardManager constructor', focused, boardSettings);
-
         // Store a copy of the focused array
         this.focused = focused.slice(0);
         // Store the board settings
@@ -45,6 +42,8 @@ export class FocusBoardManager {
         this.practiceClass = practiceClass;
         // Get the container for the groups
         this.container = document.getElementById('boardPageOtherContainer');
+        // Add the class name
+        this.container.className = 'mt-6';
         // Get the elements
         this.getElements();
         // Initialize the modals
@@ -72,8 +71,18 @@ export class FocusBoardManager {
 
     initModals() {
         // Unfocus modal
-        this.showUnfocusModal = () => this.elements.unfocusModal.classList.add("is-active");
-        this.closeUnfocusModal = () => this.elements.unfocusModal.classList.remove("is-active");
+        this.showUnfocusModal = () => {
+            // Make sure we know we are showing it
+            this._unfocusModalShown = true;
+            // Show the unfocus modal
+            this.elements.unfocusModal.classList.add("is-active");
+        };
+        this.closeUnfocusModal = () => {
+            // Only if we are showing it
+            if (!this._unfocusModalShown) return;
+            // Hide the unfocus modal
+            this.elements.unfocusModal.classList.remove("is-active");
+        };
 
         const unfocusModalBkgd = this.elements.unfocusModal.getElementsByClassName("modal-background")[0];
 
@@ -81,6 +90,8 @@ export class FocusBoardManager {
         this.elements.unfocusModalCloseButton.addEventListener("click", this.closeUnfocusModal);
         this.elements.unfocusModalCancelButton.addEventListener("click", this.closeUnfocusModal);
         this.elements.unfocusModalConfirmButton.addEventListener("click", () => {
+            // Only if we are showing it
+            if (!this._unfocusModalShown) return;
             // Handle the confirmation
             this.onUnfocusModalConfirm();
         });
@@ -100,7 +111,7 @@ export class FocusBoardManager {
             this.container.appendChild(group.getElement());
             this.groups.push(group);
             // Toggle the connect/disconnect buttons.
-            group.toggleConnectDisconnect(false);
+            group.toggleBoardButtons(false);
         }
     }
 
@@ -165,6 +176,9 @@ export class FocusBoardManager {
 
         // Unfocus board (remove from focus moves)
         this.container.addEventListener("FocusBoard:unfocus", e => {
+
+            console.log('FocusBoardManager: Unfocus requested:', e.detail.group, e.detail.board);
+
             // Handle the board removal
             this.onUnfocusBoard(e.detail.group, e.detail.board);
         });
@@ -180,18 +194,9 @@ export class FocusBoardManager {
     /* Update notes in case of edits */
 
     updateNotes(updated) {
-        
-        console.log('Update notes', updated, this.groups);
-
-
-        for (let i=0;i<this.groups.length;i++) {
-
-            for (let y=0;y<this.groups[i].boards.length;y++) {
-
-                console.log(this.groups[i].boards[y]);
-
-                for (let z=0;z<updated.length;z++) {
-                    
+        for (let i = 0; i < this.groups.length; i++) {
+            for (let y = 0; y < this.groups[i].boards.length; y++) {
+                for (let z = 0; z < updated.length; z++) {
                     if (updated[z].id === this.groups[i].boards[y].move.id) {
                         this.groups[i].boards[y].move.notes = updated[z].notes;
                         this.groups[i].boards[y].elements.notes.textArea.value = updated[z].notes;
@@ -212,7 +217,7 @@ export class FocusBoardManager {
             // Unselect all
             this.groups[i].deselectAll();
             // Toggle connect/disconnect buttons
-            this.groups[i].toggleConnectDisconnect(board !== null);
+            this.groups[i].toggleBoardButtons(board !== null);
         }
     }
 
@@ -222,7 +227,7 @@ export class FocusBoardManager {
             // Skip active group
             if (group === this.groups[i]) continue;
             // Toggle connect/disconnect buttons
-            this.groups[i].toggleConnectDisconnect(false);
+            this.groups[i].toggleBoardButtons(false);
         }
     }
 
@@ -230,14 +235,9 @@ export class FocusBoardManager {
     /* Connect/Disconnect */
 
     onConnectBoard(group, board) {
-
-        console.log('FocusManager:onConnectBoard', group, board);
-
         // Get the selected group
         let selectedGroup = this.getSelectedGroup();
         if (selectedGroup === null) return;
-
-        console.log('selectedGroup:', selectedGroup);
 
         // Get the selected board
         const selectedBoard = selectedGroup.getSelectedBoard();
@@ -271,7 +271,7 @@ export class FocusBoardManager {
             // Select the board that was selected
             group.selectBoard(group.boards[0]);
             // Toggle the connect/disconnect buttons
-            group.toggleConnectDisconnect(true);
+            group.toggleBoardButtons(true);
 
             // Add both repertoire items to the DB update
             items.push({
@@ -286,13 +286,9 @@ export class FocusBoardManager {
             // Add board to selected group
             selectedGroup.addBoard(board);
             // Toggle the connect/disconnect buttons
-            selectedGroup.toggleConnectDisconnect(true);
-
+            selectedGroup.toggleBoardButtons(true);
             // Get the 1st repertoire item in the group
             const firstItem = selectedGroup.focused[0];
-
-            console.log('firstItem, board:', firstItem, board);
-
             // Add the repertoire item to the DB update
             items.push({
                 id: board.move.id,
@@ -305,15 +301,11 @@ export class FocusBoardManager {
     }
 
     onDisconnectBoard(group, board, unfocus = false) {
-
-        console.log('FocusManager:onDisconnectBoard', group, board, unfocus);
-
         // Safety check
         if (group === null || (group.isMainGroup && !unfocus)) return;
 
         // The items that need to be updated in the database
         const items = [];
-
         // Remove board from group
         const remaining = group.removeBoard(board);
 
@@ -326,8 +318,10 @@ export class FocusBoardManager {
         if (unfocus) item.focused = false;
         items.push(item);
 
+        console.log('Item:', item);
+
         // Remove the group if only 1 board remaining
-        if (remaining === 1) {
+        if (remaining === 1 && !group.isMainGroup) {
             // Add the board to the main group
             this.addBoardToMainGroup(group.boards[0]);
 
@@ -337,8 +331,6 @@ export class FocusBoardManager {
                 focusedParent: null
             });
         } else if (remaining > 1 && !unfocus) {
-
-            console.log('Checking to see if the parentIds need to be updated...', board, group.focused);
 
             // If the removed board was the 1st board, that was the parent for the group
             // In that case, we need to update the parentIds to the id of the (newly) 1st item
@@ -369,7 +361,7 @@ export class FocusBoardManager {
         }
 
         // Remove the group if needed
-        if (remaining <=1 ) {
+        if (remaining === 0 || (remaining === 1 && !group.isMainGroup)) {
             // Remove the group
             this.removeGroup(group);
         }
@@ -378,7 +370,7 @@ export class FocusBoardManager {
         if (!unfocus) this.addBoardToMainGroup(board);
         // Toggle the connect/disconnect buttons
         const mainGroup = this.getMainGroup();
-        if (mainGroup) mainGroup.toggleConnectDisconnect(this.getSelectedBoard() !== null);
+        if (mainGroup) mainGroup.toggleBoardButtons(this.getSelectedBoard() !== null);
 
         // Save the changes to the database
         this.saveFocusedParent(items);
@@ -483,14 +475,14 @@ export class FocusBoardManager {
     }
 
     saveFocusedParent(items) {
+        // The repertoire needs to be refreshed after this change
+        this.practiceClass.needsRefresh = true;
         // Set the endpoint
         const url = "/api/repertoire/focused/parent";
 
         const data = {
             items: items
         };
-
-        console.log('saveFocusedParent, Items:', items);
 
         // (Dis)connect the repertoire items
         fetch(url, {
@@ -516,12 +508,15 @@ export class FocusBoardManager {
         // Set the endpoint
         const url = "/api/repertoire/details";
 
+        console.log('Saving notes:', item);
+
+        // Safety check
+        if (!item || !item.id) return;
+
         const data = {
             id: item.id,
             notes: item.notes
         };
-
-        console.log('saveFocusedNotes, Items:', item);
 
         // (Dis)connect the repertoire items
         fetch(url, {

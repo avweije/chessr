@@ -22,6 +22,7 @@ export class FocusBoardGroup {
     isMainGroup = false;
     focused = null;
     boardSettings = null;
+    showingDifferences = false;
 
     elements = {
         container: null,
@@ -46,6 +47,8 @@ export class FocusBoardGroup {
     boards = [];
     // The ECO names for all the boards, used to determine the group name
     ecos = [];
+
+    representations2D = [];
 
     constructor(parent, isMainGroup, focused, boardSettings) {
 
@@ -74,22 +77,22 @@ export class FocusBoardGroup {
         this.elements.header.className = 'focus-group-header'
         // Create the group header element
         this.elements.groupHeader = document.createElement('h2');
-        this.elements.groupHeader.className = 'title is-size-5 m-0';
+        this.elements.groupHeader.className = 'title is-size-6 m-0 ml-2';
         this.elements.groupHeader.innerHTML = '';
         // Add to the header
         this.elements.header.appendChild(this.elements.groupHeader);
         // Create the button container
         const buttons = document.createElement('div');
+        buttons.className = 'buttons is-gap-1';
         // Create the practice button
         this.elements.practiceButton = document.createElement('button');
         this.elements.practiceButton.type = 'button';
         this.elements.practiceButton.title = 'Open in practice';
-        this.elements.practiceButton.className = 'button is-small mr-1';
+        this.elements.practiceButton.className = 'button';
         this.elements.practiceButton.innerHTML = `
             <span class="icon">
                 <i class="fa-solid fa-gamepad"></i>
             </span>
-            <span>Practice</span>
         `;
         // Add to the buttons
         buttons.appendChild(this.elements.practiceButton);
@@ -97,7 +100,7 @@ export class FocusBoardGroup {
         this.elements.zoomOutButton = document.createElement('button');
         this.elements.zoomOutButton.type = 'button';
         this.elements.zoomOutButton.title = 'Zoom out';
-        this.elements.zoomOutButton.className = 'button is-small mr-1';
+        this.elements.zoomOutButton.className = 'button';
         this.elements.zoomOutButton.innerHTML = `
             <span class="icon">
                 <i class="fa-solid fa-magnifying-glass-minus"></i>
@@ -109,7 +112,7 @@ export class FocusBoardGroup {
         this.elements.zoomInButton = document.createElement('button');
         this.elements.zoomInButton.type = 'button';
         this.elements.zoomInButton.title = 'Zoom in';
-        this.elements.zoomInButton.className = 'button is-small mr-1';
+        this.elements.zoomInButton.className = 'button';
         this.elements.zoomInButton.innerHTML = `
             <span class="icon">
                 <i class="fa-solid fa-magnifying-glass-plus"></i>
@@ -121,7 +124,7 @@ export class FocusBoardGroup {
         this.elements.toggleButton = document.createElement('button');
         this.elements.toggleButton.type = 'button';
         this.elements.toggleButton.title = 'Hide group';
-        this.elements.toggleButton.className = 'button is-small';
+        this.elements.toggleButton.className = 'button';
         this.elements.toggleButton.innerHTML = `
             <span class="icon">
                 <i class="fa-solid fa-caret-up"></i>
@@ -142,6 +145,10 @@ export class FocusBoardGroup {
     createBoards() {
         // Reset the boards
         this.boards = [];
+
+        // 2D representation of all boards in the group
+        this.representations2D = [];
+
         // Add the boards
         for (let i = 0; i < this.focused.length; i++) {
             // Create the focus board
@@ -150,6 +157,47 @@ export class FocusBoardGroup {
             this.elements.boardContainer.appendChild(board.getElement());
             // Keep track of the boards created
             this.boards.push(board);
+
+            // Get the 2D board representation
+            this.representations2D.push(board.getRepresentation2D());
+        }
+
+        // TEMP: testing 2D representation
+        console.log('FocusGroup:createBoards - 2D representation of all boards in the group:', this.representations2D);
+    }
+
+    // Highlights the differences between the boards in the group
+    highlightDifferences() {
+        // Get the selected board
+        const selectedBoard = this.getSelectedBoard();
+        // 2D representation of the boards to compare against
+        const others = this.boards
+            .filter(board => board !== selectedBoard && board.isHighlighted)
+            .map(board => board.getRepresentation2D());
+        // Add the selected board, only if there are others to compare against
+        if (selectedBoard && others.length > 0) {
+            others.push(selectedBoard.getRepresentation2D());
+        } else {
+            // No selected board or no others to compare against, remove all highlights
+            this.removeHighlights();
+            return;
+        }
+        // 2D representation of all boards in the group
+        for (const board of this.boards) {
+            // Highlight differences or remove highlights
+            if (board === selectedBoard || board.isHighlighted) {
+                board.highlightDifferences(others);
+            } else {
+                board.removeHighlights();
+            }
+        }
+    }
+
+    // Removes all highlights from the boards in the group
+    removeHighlights() {
+        for (const board of this.boards) {
+            // Remove highlights
+            board.removeHighlights();
         }
     }
 
@@ -185,6 +233,10 @@ export class FocusBoardGroup {
         // Catch board deselection
         this.elements.container.addEventListener("FocusBoard:deselect", e => {
             this.onDeselectBoard(e.detail.board);
+        });
+        // Catch board highlight differences toggle
+        this.elements.container.addEventListener("FocusBoard:highlightToggle", e => {
+            this.highlightDifferences();
         });
         // Practice button
         this.elements.practiceButton.addEventListener("click", e => {
@@ -323,9 +375,6 @@ export class FocusBoardGroup {
     }
 
     getSelectedBoard() {
-
-        console.log('getSelectedBoard:', this.boards);
-
         for (let i = 0; i < this.boards.length; i++) {
             if (this.boards[i].isSelected()) return this.boards[i];
         }
@@ -347,10 +396,8 @@ export class FocusBoardGroup {
     }
 
     removeBoard(board) {
+        // Find the board
         const idx = this.boards.indexOf(board);
-
-        console.log('FocusGroup:removeBoard', idx, board, this.boards);
-
         if (idx === -1) return this.boards.length;
 
         // Remove the element from the group
@@ -366,33 +413,24 @@ export class FocusBoardGroup {
     }
 
     onSelectBoard(board) {
-
-        console.log('onSelectBoard', board);
-
         // Deselect all boards
         this.deselectAll();
         // Select the active board
-        this.selectBoard(board);
-        // Toggle connect/disconnect buttons
-        this.toggleConnectDisconnect(true);
+        this.selectBoard(board, true);
+        // Toggle board buttons
+        this.toggleBoardButtons(true);
     }
 
     onDeselectBoard(board) {
-
-        console.log('onDeselectBoard', board);
-
         // Deselect the active board
-        this.deselectBoard(board);
-        // Toggle connect/disconnect buttons
-        this.toggleConnectDisconnect(false);
+        this.deselectBoard(board, true);
+        // Toggle board buttons
+        this.toggleBoardButtons(false);
     }
 
-    selectBoard(board) {
+    selectBoard(board, wasSelected = false) {
         // Get the board container element
         const boardContainer = board.getElement();
-
-        console.log('selectBoard', board, boardContainer);
-
         // Select it
         boardContainer.classList.add('is-selected');
         // Toggle connect/disconnect icons
@@ -402,31 +440,33 @@ export class FocusBoardGroup {
         } else {
             board.elements.buttons.disconnect.classList.remove('is-hidden');
         }
+        // Remove the highlights
+        this.removeHighlights();
     }
 
-    deselectBoard(board) {
+    deselectBoard(board, wasDeselected = false) {
         // Get the board container element
         const boardContainer = board.getElement();
-
-        console.log('DeselectBoard', board, boardContainer);
-
         // Deselect it
         boardContainer.classList.remove('is-selected');
+        // Remove the highlights
+        this.removeHighlights();
     }
 
     // Deselect all
     deselectAll() {
-
-        console.log('DeselectAll', this);
-
         // Unselect all boards
         for (let i = 0; i < this.boards.length; i++) {
             this.deselectBoard(this.boards[i]);
         }
+        // Remove the highlights
+        this.removeHighlights();
     }
 
-    // Toggles the connect icon for all boards
-    toggleConnectDisconnect(isAnySelected = false) {
+    // Toggles the board buttons for all boards
+    toggleBoardButtons(isAnySelected = false) {
+        // Is this group selected
+        const isGroupSelected = this.getSelectedBoard();
         for (let i = 0; i < this.boards.length; i++) {
             // Allow connect if main group, not selected and another board is selected
             if (this.isMainGroup && isAnySelected && !this.boards[i].isSelected()) {
@@ -439,6 +479,12 @@ export class FocusBoardGroup {
                 this.boards[i].elements.buttons.disconnect.classList.add('is-hidden');
             } else {
                 this.boards[i].elements.buttons.disconnect.classList.remove('is-hidden');
+            }
+            // Show the highlight differences button only if any board is selected
+            if (isGroupSelected && isAnySelected && !this.boards[i].isSelected()) {
+                this.boards[i].elements.buttons.differences.classList.remove('is-hidden');
+            } else {
+                this.boards[i].elements.buttons.differences.classList.add('is-hidden');
             }
         }
     }

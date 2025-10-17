@@ -445,8 +445,28 @@ class Practice extends MyChessBoard {
     });
 
     // Unfocus modal
-    this.showUnfocusModal = () => this.elements.unfocusModal.classList.add("is-active");
+    this.initUnfocusModal();
+
+    // Expose the modal functions
+    this.showSaveModal = showSaveModal;
+    this.closeSaveModal = closeSaveModal;
+    this.showIgnoreModal = showIgnoreModal;
+    this.closeIgnoreModal = closeIgnoreModal;
+    this.showFocusModal = showFocusModal;
+    this.closeFocusModal = closeFocusModal;
+  }
+
+  // Initialize the unfocus modal
+  initUnfocusModal() {
+    this.showUnfocusModal = () => {
+      // Make sure we know we are showing it
+      this._unfocusModalShown = true;
+      // Show the unfocus modal
+      this.elements.unfocusModal.classList.add("is-active");
+    };
     this.closeUnfocusModal = () => {
+      // Only if we are showing it
+      if (!this._unfocusModalShown) return;
       // Hide the unfocus modal
       this.elements.unfocusModal.classList.remove("is-active");
       // Toggle the focus move button
@@ -459,17 +479,11 @@ class Practice extends MyChessBoard {
     this.elements.unfocusModalCloseButton.addEventListener("click", this.closeUnfocusModal);
     this.elements.unfocusModalCancelButton.addEventListener("click", this.closeUnfocusModal);
     this.elements.unfocusModalConfirmButton.addEventListener("click", () => {
+      // Only if we are showing it
+      if (!this._unfocusModalShown) return;
       // Handle the confirmation
       this.onUnfocusModalConfirm();
     });
-
-    // You can expose show functions if needed elsewhere
-    this.showSaveModal = showSaveModal;
-    this.closeSaveModal = closeSaveModal;
-    this.showIgnoreModal = showIgnoreModal;
-    this.closeIgnoreModal = closeIgnoreModal;
-    this.showFocusModal = showFocusModal;
-    this.closeFocusModal = closeFocusModal;
   }
 
   /**
