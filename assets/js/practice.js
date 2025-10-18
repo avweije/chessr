@@ -216,6 +216,32 @@ class Practice extends MyChessBoard {
     this.elements.focusMoveButton.addEventListener("click", () => {
       this.focusMove();
     });
+
+    // Drill mode buttons
+    this.elements.drillModeButton.addEventListener("click", () => {
+      this.toggleDrillMode();
+    });
+    // Different drills
+    this.elements.drillShowAnimationButton.addEventListener("click", () => {
+      this.drillShowAnimation();
+    });
+    this.elements.drillSpotTheMoveButton.addEventListener("click", () => {
+      this.drillSpotTheMove();
+    });
+    this.elements.drillVisualizeMoveButton.addEventListener("click", () => {
+      this.drillVisualizeMove();
+    });
+    // Visualize move listeners
+    this.elements.drillVisualizeMovePgnToggle.addEventListener("change", () => {
+      this.drillVisualizeMoveTogglePgnField();
+    });
+    this.elements.drillVisualizeMoveHighlightSquaresSelect.addEventListener("change", () => {
+      this.drillVisualizeMoveHighlightSquares();
+    });
+    this.elements.drillVisualizeMoveFlashMovesSelect.addEventListener("change", () => {
+      this.drillVisualizeMoveFlashMoves();
+    });
+
     // Notes textarea
     this.elements.focusMoveNotesTextarea.addEventListener("change", () => {
       // Update the notes
@@ -245,15 +271,25 @@ class Practice extends MyChessBoard {
     });
 
     // Listen for focused practice run
-    this.elements.boardPageOtherContainer.addEventListener("focusGroup:practice", (event) => {
+    this.elements.boardPageOtherContainer.addEventListener("FocusGroup:practice", (event) => {
 
-      console.log('focusGroup:practice', event);
+      console.log('FocusGroup:practice', event);
 
       // Randomize the lines
       const randomized = event.detail.lines.sort(() => Math.random() - 0.5);
       // Run the focus group practice
       this.runFocusGroupPractice(randomized);
     });
+
+    // Listen for focused drill mode
+    this.elements.boardPageOtherContainer.addEventListener("FocusBoard:drillMode", (event) => {
+
+      console.log('FocusBoard:drillMode', event);
+
+      // Run the focus group drill mode
+      this.runFocusGroupDrill(event.detail.move);
+    });
+
     // Go back to focused view
     this.elements.focusedGoBackButton.addEventListener("click", (event) => {
       // Toggle the other container
@@ -861,9 +897,6 @@ class Practice extends MyChessBoard {
    */
 
   togglePracticeInfo(eventObject) {
-    // blur the button
-    this.elements.showPracticeInfoButton.blur();
-
     if (
       !this.elements.showPracticeInfoButton.disabled &&
       this.elements.showPracticeInfoButton.checked
@@ -940,8 +973,6 @@ class Practice extends MyChessBoard {
 
   // fired when the analysis save to repertoire button is clicked
   onAnalysisSave(event) {
-    // blur the button
-    this.analysis.saveButton.blur();
     // configure the save dialog
     switch (this.practice.lines[this.practice.lineIdx].moves.length) {
       case 1:
@@ -1138,8 +1169,6 @@ class Practice extends MyChessBoard {
 
   // fired when the analysis discard button is clicked
   onAnalysisDiscard(event, removeFromDb = true) {
-    // blur the button
-    this.analysis.discardButton.blur();
     // we need to refresh the repertoire data when starting a new practice
     this.needsRefresh = true;
 
@@ -1664,13 +1693,13 @@ class Practice extends MyChessBoard {
       // Reset the focus moves
       this.resetFocusMoves();
       // Pass the ECO dataset to the worker
-      this.postToWorker({ 
-        action: 'SET_DATA', 
+      this.postToWorker({
+        action: 'SET_DATA',
         data: this.repertoire.eco
       })
-      .then(result => {
-        console.log('Worker finished:', result);
-      });
+        .then(result => {
+          console.log('Worker finished:', result);
+        });
     }
 
     // get the number of moves (ours) for the different repertoires
@@ -1719,18 +1748,18 @@ class Practice extends MyChessBoard {
       // set the custom repertoire field
       this.elements.practiceCustomRepertoireField.children[0].children[0].innerHTML = pgn;
       // Get the ECO code
-      this.postToWorker({ 
-        action: 'GET_ECO', 
+      this.postToWorker({
+        action: 'GET_ECO',
         pgn: pgn
       })
-      .then(result => {
+        .then(result => {
 
-        console.log('Worker finished:', result);
+          console.log('Worker finished:', result);
 
-        // set the custom repertoire field
-        this.elements.practiceCustomRepertoireField.children[0].children[0].innerHTML = 
-          result.name + " (" + result.pgn + ")";
-      });
+          // set the custom repertoire field
+          this.elements.practiceCustomRepertoireField.children[0].children[0].innerHTML =
+            result.name + " (" + result.pgn + ")";
+        });
 
       // hide the repertoire type buttons
       this.hideRepertoireButtons();
@@ -1822,13 +1851,13 @@ class Practice extends MyChessBoard {
 
     console.log('Getting ECO codes..');
 
-    for (let i=0;i<moves.length;i++) {
+    for (let i = 0; i < moves.length; i++) {
       // If we already have the ECO code, skip it
       if (moves[i].eco?.code) continue;
       // Get the PGN
       const pgn = this.getPgnForMoves(moves[i].line);
       // Get the ECO code
-      const result = await this.postToWorker({ action: 'GET_ECO',  pgn: pgn });
+      const result = await this.postToWorker({ action: 'GET_ECO', pgn: pgn });
 
       console.log('>>>>>>>>>>>> Worker finished:', result, moves[i]);
 
@@ -1848,6 +1877,23 @@ class Practice extends MyChessBoard {
     this.toggleBoardOrOther(false, true);
     // Start the practice
     this.onStartPractice();
+  }
+
+  // Run a focus group drill
+  runFocusGroupDrill(line) {
+
+    console.log('runFocusGroupDrill', line);
+
+    // Get the practice lines
+    this.practice.lines = [line];
+    // Set the current move
+    this.practice.lineIdx = 0;
+    this.practice.moveIdx = 0;
+    // Toggle the board container
+    this.toggleBoardOrOther(false, true);
+    // Toggle drill mode
+    this.elements.drillModeButton.checked = true;
+    this.toggleDrillMode();
   }
 
   // show a different repertoire type
@@ -1913,8 +1959,8 @@ class Practice extends MyChessBoard {
     // Recommended repertoire refresh icon
     this.elements.repertoireRecommendedRefresh.addEventListener("click",
       (event) => {
-          console.log('Refreshing recommended repertoire');
-          this.showRepertoireType("recommended", this.needsRefresh, true);
+        console.log('Refreshing recommended repertoire');
+        this.showRepertoireType("recommended", this.needsRefresh, true);
       }
     );
     // Focused repertoire button
@@ -2254,6 +2300,9 @@ class Practice extends MyChessBoard {
       // Focus button
       this.elements.focusMoveButton.checked = false;
       this.elements.focusMoveButton.nextElementSibling.classList.remove('is-hidden');
+      // Drill mode button
+      this.elements.drillModeButton.checked = false;
+      this.elements.drillModeButton.nextElementSibling.classList.remove('is-hidden');
       // Show practice info button
       this.elements.showPracticeInfoButton.disabled = false;
       this.elements.showPracticeInfoButton.nextElementSibling.classList.remove(
@@ -2300,7 +2349,7 @@ class Practice extends MyChessBoard {
 
   // stop a practice (when switching type)
   stopPractice(type = this.type) {
-    // toggle the buttons
+    // Toggle the focus move buttons
     if (type === 'focused') {
       this.elements.focusedGoBackButton.disabled = false;
       this.elements.focusedGoBackButton.classList.remove('is-hidden');
@@ -2308,6 +2357,7 @@ class Practice extends MyChessBoard {
       this.elements.focusedGoBackButton.disabled = true;
       this.elements.focusedGoBackButton.classList.add('is-hidden');
     }
+    // Enable the start practice button
     this.elements.startPracticeButton.disabled = this.repertoire === null;
     this.elements.startPracticeButton.innerHTML = "Start your practice";
     this.elements.startPracticeButton.classList.remove('is-hidden');
@@ -2317,10 +2367,22 @@ class Practice extends MyChessBoard {
     this.elements.prevMoveButton.classList.add('is-hidden');
     this.elements.skipMoveButton.disabled = true;
     this.elements.skipMoveButton.classList.add('is-hidden');
+
+    // Hide focus move button
     this.elements.focusMoveButton.checked = false;
     this.elements.focusMoveButton.nextElementSibling.classList.add('is-hidden');
+
     this.elements.showPracticeInfoButton.disabled = true;
     this.elements.showPracticeInfoButton.nextElementSibling.classList.add('is-hidden');
+
+    // Hide drill mode button
+    this.elements.drillModeButton.checked = false;
+    this.elements.drillModeButton.nextElementSibling.classList.add('is-hidden');
+    // Hide the drill mode buttons
+    this.elements.drillModeButtons.classList.add('is-hidden');
+    // Hide the drill mode containers
+    this.elements.drillModeContainer.classList.add('is-hidden');
+    this.elements.drillVisualizeMoveContainer.classList.add('is-hidden');
 
     // Hide the practice info
     this.togglePracticeInfo(false);
@@ -2403,14 +2465,14 @@ class Practice extends MyChessBoard {
     if (pgn != "") {
       // Update the ECO field
       this.postToWorker({ action: 'GET_ECO', pgn: pgn })
-      .then(result => {
+        .then(result => {
 
-        console.log('Worker finished:', result);
+          console.log('Worker finished:', result);
 
-        // set the practice info ECO field
-        this.elements.practiceInfoFields.children[1].innerHTML =
+          // set the practice info ECO field
+          this.elements.practiceInfoFields.children[1].innerHTML =
             result.name + ' <span class="has-text-faded is-size-8 ml-1">(' + result.code + ')</span>';
-      });
+        });
     }
   }
 
@@ -2530,8 +2592,8 @@ class Practice extends MyChessBoard {
 
     // Repeat balloons for more effect
     //for (let i = 0; i < amounts[amount]; i++) {
-      //const delay = i * 100;
-      //setTimeout(() => balloons(amounts[amount]), delay);
+    //const delay = i * 100;
+    //setTimeout(() => balloons(amounts[amount]), delay);
     //}
   }
 
@@ -3428,6 +3490,8 @@ class Practice extends MyChessBoard {
       return false;
     }
 
+    console.log('animateMoves', moves, lastOnly);
+
     // reset stop animating boolean
     this.practice.stopAnimating = false;
 
@@ -3458,6 +3522,24 @@ class Practice extends MyChessBoard {
     }
   }
 
+  // Interrupt the ongoing animation, if any, and returns once it's stopped
+  async interruptAnimation() {
+    // Stop any ongoing animation
+    this.practice.stopAnimating = true;
+    // Wait for any ongoing animation to finish
+    if (this.practice._currentAnimatePromise) {
+
+      console.log('Waiting for ongoing animation to finish...');
+
+      // Call it and wait for the animation to finish
+      await this.practice._currentAnimatePromise;
+      // Clear the promise variable
+      this.practice._currentAnimatePromise = null;
+    }
+    // Animation finished
+    this.practice.stopAnimating = false;
+  }
+
   /**
    * Counters functions.
    * - showCounters
@@ -3470,11 +3552,16 @@ class Practice extends MyChessBoard {
 
   // show the counters
   showCounters(moveCount) {
+    // Show the counters container
+    this.elements.practiceCountersContainer.classList.remove('is-invisible');
     this.elements.practiceCountersContainer.classList.remove('is-hidden');
 
-    this.elements.practiceMoveCounter.innerHTML = moveCount;
-    this.elements.practiceCorrectCounter.innerHTML = 0;
-    this.elements.practiceFailedCounter.innerHTML = 0;
+    // Set the counters
+    if (moveCount !== false) {
+      this.elements.practiceMoveCounter.innerHTML = moveCount;
+      this.elements.practiceCorrectCounter.innerHTML = 0;
+      this.elements.practiceFailedCounter.innerHTML = 0;
+    }
   }
 
   // hide the counters
@@ -3605,8 +3692,6 @@ class Practice extends MyChessBoard {
 
   // give a hint
   giveHint() {
-    // blur the button
-    this.elements.giveHintButton.blur();
     // if this is the 1st hint
     if (this.hintCounter == 0) {
       // get the hint and show it
@@ -3952,9 +4037,6 @@ class Practice extends MyChessBoard {
 
   // go back to the previous move
   async prevMove() {
-    // blur the button
-    this.elements.prevMoveButton.blur();
-
     // get the previous move values
     const [prevLine, prevMove, playableCount] = this.getPrevMove(
       this.practice.lastQueuedLine,
@@ -3985,8 +4067,6 @@ class Practice extends MyChessBoard {
 
   // skip the current move
   async skipMove() {
-    // blur the button
-    this.elements.skipMoveButton.blur();
     // if practice was paused
     if (this.practice.paused) {
       // continue practice
@@ -4028,6 +4108,9 @@ class Practice extends MyChessBoard {
     // Enqueue the practice run
     this.enqueueRun(nextLine, nextMove, true);
   }
+
+
+  /* Focus Moves Functions */
 
   /**
    * Toggle the focus move button. Show as checked if this is a focused move.
@@ -4145,7 +4228,7 @@ class Practice extends MyChessBoard {
       line.notes = this.practice.notes;
 
       console.log('Updated current line', line, this.getCurrentLine());
-      
+
     } catch (err) {
       console.warn(err);
     } finally {
@@ -4155,6 +4238,502 @@ class Practice extends MyChessBoard {
       this.closeUnfocusModal();
     }
   }
+
+
+  /* Drill Mode Functions */
+
+  toggleDrillMode() {
+
+    console.log('toggleDrillMode', this.elements.drillModeButton.checked);
+
+    // Toggle drill mode
+    if (this.elements.drillModeButton.checked) {
+      // Show drill mode
+      this.showDrillMode();
+    } else {
+      // Go back to regular practice mode or focus moves
+      if (this.type == 'focused') {
+        this.toggleBoardOrOther(false);
+      } else {
+        this.hideDrillMode();
+      }
+    }
+  }
+
+  async showDrillMode() {
+    // Hide the info/hint containers
+    this.elements.confirmContainer.classList.add('is-hidden');
+    this.elements.warningContainer.classList.add('is-hidden');
+    this.elements.hintContainer.classList.add('is-hidden');
+
+    // Hide the focused buttons
+    this.elements.focusedGoBackButton.classList.add('is-hidden');
+    this.elements.startPracticeButton.classList.add('is-hidden');
+
+    // Hide the practice buttons
+    this.elements.giveHintButton.classList.add('is-hidden');
+    this.elements.showPracticeInfoButton.nextElementSibling.classList.add('is-hidden');
+    this.elements.skipMoveButton.classList.add('is-hidden');
+    this.elements.prevMoveButton.classList.add('is-hidden');
+    this.elements.focusMoveButton.nextElementSibling.classList.add('is-hidden');
+
+    // Hide the move counters, but keep the space
+    this.elements.practiceCountersContainer.classList.add('is-invisible');
+    // Hide the focus move container
+    this.hideFocusMove();
+    // Hide the played moves container
+    this.hidePlayedMoves();
+
+    // Hide the practice info container
+    this.elements.practiceInfoContainer.classList.add('is-hidden');
+    // Hide the analyse on lichess button
+    this.elements.analayseOnLichessContainer.classList.add('is-hidden');
+
+    // Stop animating
+    this.practice.stopAnimating = true;
+    // Wait for any ongoing animation to finish
+    if (this.practice._currentAnimatePromise) {
+
+      console.log('Waiting for ongoing animation to finish...');
+
+      // Call it and wait for the animation to finish
+      await this.practice._currentAnimatePromise;
+    }
+
+    // Remove all markers and arrows
+    this.board.removeMarkers();
+    this.board.removeArrows();
+
+    // Reset the position
+    await this.drillResetPosition();
+
+    // Show the info container with drill mode info
+    this.showInfo("Train your instincts. Select a drill to reinforce your repertoire.");
+
+    // Show the drill mode buttons
+    this.elements.drillModeButtons.classList.remove('is-hidden');
+    this.elements.drillModeButton.nextElementSibling.classList.remove('is-hidden');
+    // Show the drill mode container
+    this.elements.drillModeContainer.classList.remove('is-hidden');
+    // Hide the other drill containers
+    this.elements.drillVisualizeMoveContainer.classList.add('is-hidden');
+  }
+
+  hideDrillMode() {
+    // Hide the drill mode buttons
+    this.elements.drillModeButtons.classList.add('is-hidden');
+    // Hide the drill mode containers
+    this.elements.drillModeContainer.classList.add('is-hidden');
+    this.elements.drillVisualizeMoveContainer.classList.add('is-hidden');
+    // Show the practice buttons
+    this.elements.giveHintButton.classList.remove('is-hidden');
+    this.elements.showPracticeInfoButton.nextElementSibling.classList.remove('is-hidden');
+    this.elements.skipMoveButton.classList.remove('is-hidden');
+    this.elements.prevMoveButton.classList.remove('is-hidden');
+    this.elements.focusMoveButton.nextElementSibling.classList.remove('is-hidden');
+
+    // Show the move counters
+    this.elements.practiceCountersContainer.classList.remove('is-invisible');
+    // Toggle the practice info container
+    this.togglePracticeInfo(false);
+    // Show the focus move container if this is a focused move
+    if (this.practice.focused) {
+      this.elements.focusMoveContainer.classList.remove('is-hidden');
+    }
+
+    // Set animation to false
+    this.practice.animateToPosition = false;
+    this.practice.animateFromBeginning = false;
+    // Continue the practice to reset any drill mode state
+    this.continuePractice(false);
+  }
+
+  async drillResetPosition(loadEmpty = false) {
+    // reset the game & board
+    this.game.reset();
+    // Get the current line
+    const line = this.getCurrentLine();
+    // Get the FEN
+    const fen = loadEmpty ? '8/8/8/8/8/8/8/8 w - - 0 1' : line.after || line.fen;
+    // Update the board to the current position
+    await this.board.setPosition(fen, true);
+
+    return line;
+  }
+
+  drillGetLineMoves(line, includeLast = true) {
+
+    console.log('drillGetLineMoves', line, includeLast);
+
+    // Reset the game
+    if (line.initialFen !== '') {
+      this.game.load(line.initialFen);
+    } else {
+      this.game.reset();
+    }
+    // Get the line moves
+    const lineMoves = [...line.line];
+    if (includeLast && line.move) lineMoves.push(line.move);
+    // Get the board moves for the line
+    const boardMoves = [];
+    try {
+      for (let j = 0; j < lineMoves.length; j++) {
+      // Safety check
+        if (!lineMoves[j]) continue;
+        // Make the move and get the details
+        const last = this.game.move(lineMoves[j]);
+        boardMoves.push(last);
+      }
+    } catch (err) {
+      console.warn(err);
+    }
+
+    return boardMoves;
+  }
+
+  async drillShowAnimation() {
+
+    console.log('drillShowAnimation', this.practice._currentAnimatePromise);
+
+    // Stop any ongoing animation
+    this.practice.stopAnimating = true;
+    // Wait for any ongoing animation to finish
+    if (this.practice._currentAnimatePromise) {
+
+      console.log('Waiting for ongoing animation to finish...');
+
+      // Call it and wait for the animation to finish
+      await this.practice._currentAnimatePromise;
+    }
+    // Animation finished
+    this.practice.stopAnimating = false;
+
+    // Remove all markers and arrows
+    this.board.removeMarkers();
+    this.board.removeArrows();
+
+    // Show the drill mode container
+    this.elements.drillModeContainer.classList.remove('is-hidden');
+    this.elements.drillVisualizeMoveContainer.classList.add('is-hidden');
+
+    // Get the animation promise
+    this.practice._currentAnimatePromise = this.drillStartAnimation();
+    // Call it and wait for the animation to finish
+    await this.practice._currentAnimatePromise;
+    // Reset the animation promise
+    this.practice._currentAnimatePromise = null;
+
+  }
+
+  async drillStartAnimation() {
+    // Get the current line
+    const line = this.getCurrentLine();
+    // Get the last move
+    let last = line.move ? line : null;
+    if (!last && line.line.length > 0) {
+      // Get the line moves
+      const boardMoves = this.drillGetLineMoves(line, true);
+      // The last one is the last opponent move
+      last = boardMoves.pop();
+      last.move = last.san;
+    }
+    // Get the moves
+    const moves = [last, ...line.moves];
+
+    console.log('Drill Show Animation - current line:', line, moves, this.practice.stopAnimating);
+
+    // Reset the game & board
+    this.game.reset();
+    // Catch any exception
+    try {
+
+      // Animate the line
+      await this.drillAnimateLine(line, false);
+      // Remove the markers
+      this.board.removeMarkers();
+      // Check for interruption
+      if (this.practice.stopAnimating) return;
+
+      // Repeat showing the moves 3 times with delays
+      for (let i = 0; i < 3; i++) {
+        // Animate the moves
+        await this.drillAnimateMoves(moves, i);
+        // Check for interruption
+        if (this.practice.stopAnimating) return;
+      }
+
+      console.log('Before final animation', [...line.line, line.move], this.practice.stopAnimating, this.practice.lineIdx, this.practice.moveIdx);
+
+      // Animate the line one last time and stay there
+      await this.drillAnimateLine(line, 1);
+
+    } catch (err) {
+      console.warn('Error during drill animation:', err);
+    }
+  }
+
+  async drillAnimateMoves(moves, counter = 0) {
+    // Update the board to the current position
+    await this.board.setPosition(moves[0].before || moves[0].fen, true);
+    // Wait for a moment
+    await Utils.sleep(counter == 0 ? 500 : 1000);
+    // Animate the moves one by one
+    for (let j = 0; j < moves.length; j++) {
+      // Safety check
+      if (!moves[j]) continue;
+      // Load the position before the opponent move
+      this.game.load(moves[j].before || moves[j].fen);
+      // Update the board to the current position
+      await this.board.setPosition(moves[j].before || moves[j].fen, true);
+
+      // Wait for a moment if there was an undo
+      await Utils.sleep(j > 1 ? 500 : 0);
+      // Check for interruption
+      if (this.practice.stopAnimating) return;
+
+      // Animate the move
+      let move = this.game.move(moves[j].move);
+      await this.board.movePiece(move.from, move.to, true);
+      // Get the marker type
+      const markerType = j > 0 ? CUSTOM_MARKER_TYPE.squareGreen : MARKER_TYPE.square;
+
+      // Add the last move markers
+      this.board.addMarker(markerType, move.from);
+      this.board.addMarker(markerType, move.to);
+      // Add the checkmark marker for our moves
+      if (j > 0) {
+        this.board.addMarker(CUSTOM_MARKER_TYPE.checkmark, move.to);
+      }
+      // Check for interruption
+      if (this.practice.stopAnimating) return;
+
+      // Determine delay (0.5s to 3.5s)
+      const delay = (j > 0 ? 1500 : 500) + Math.floor(Math.random() * 2000);
+      // Wait for a moment
+      await Utils.sleep(delay);
+
+      // Remove the markers
+      this.board.removeMarkers();
+      // Check for interruption
+      if (this.practice.stopAnimating) return;
+
+      // Glow marker for square?
+
+    }
+  }
+
+  async drillAnimateLine(line, includeLast = false) {
+    // Get the line moves
+    const boardMoves = this.drillGetLineMoves(line);
+    // Remove the markers
+    this.board.removeMarkers();
+    // Finally, animate the line and stay there
+    await this.animateMoves(this.practice.lineIdx, this.practice.moveIdx, boardMoves);
+    // Check for interruption
+    if (this.practice.stopAnimating) return;
+
+    // Add the last move markers
+    if (includeLast) {
+      const last = boardMoves.pop();
+      this.board.addMarker(MARKER_TYPE.square, last.from);
+      this.board.addMarker(MARKER_TYPE.square, last.to);
+    }
+  }
+
+  async drillSpotTheMove() {
+    // Stop any ongoing animation
+    await this.interruptAnimation();
+
+    // Remove all markers and arrows
+    this.board.removeMarkers();
+    this.board.removeArrows();
+
+    // Reset the position
+    await this.drillResetPosition();
+
+    // Show the drill mode container
+    this.elements.drillModeContainer.classList.remove('is-hidden');
+    this.elements.drillVisualizeMoveContainer.classList.add('is-hidden');
+
+    // Todo..
+
+  }
+
+  async drillVisualizeMove() {
+    // Stop any ongoing animation
+    await this.interruptAnimation();
+
+    // Remove all markers and arrows
+    this.board.removeMarkers();
+    this.board.removeArrows();
+
+    // Reset the position
+    const line = await this.drillResetPosition();
+    
+    // Get the moves to visualize
+    const moves = [...line.line];
+    if (line.move) moves.push(line.move);
+    // Get the PGN for this position
+    this.practice.drillModeCurrentPgn = this.getPgnForMoves(moves);
+    // Set the PGN field
+    this.elements.drillVisualizeMovePgnField.innerHTML = this.practice.drillModeCurrentPgn;
+
+    // Set the PGN toggle on by default
+    this.elements.drillVisualizeMovePgnToggle.checked = true;
+    // Update the PGN field visibility
+    this.drillVisualizeMoveTogglePgnField();
+
+    // Show the visualize move container
+    this.elements.drillVisualizeMoveContainer.classList.remove('is-hidden');
+    this.elements.drillModeContainer.classList.add('is-hidden');
+
+    // Wait for a moment
+    await Utils.sleep(1000);
+    // Empty the board
+    await this.board.setPosition('8/8/8/8/8/8/8/8 w - - 0 1', true);
+  }
+
+  drillVisualizeMoveTogglePgnField() {
+
+    console.log('drillVisualizeMoveTogglePgnField', this.elements.drillVisualizeMovePgnToggle.checked);
+
+    // Update the PGN field visibility
+    if (this.elements.drillVisualizeMovePgnToggle.checked) {
+      // Restore the PGN field
+      this.elements.drillVisualizeMovePgnField.innerHTML = this.practice.drillModeCurrentPgn;
+      // Regular size
+      this.elements.drillVisualizeMovePgnField.classList.add('is-size-6');
+      this.elements.drillVisualizeMovePgnField.classList.remove('is-size-7');
+    } else {
+      // Set the text
+      this.elements.drillVisualizeMovePgnField.innerHTML = 'Use the toggle to show the PGN here.';
+      // Smaller size
+      this.elements.drillVisualizeMovePgnField.classList.remove('is-size-6');
+      this.elements.drillVisualizeMovePgnField.classList.add('is-size-7');
+    }
+  }
+
+  async drillVisualizeMoveHighlightSquares() {
+
+    console.log('drillVisualizeMoveHighlightSquares', this.elements.drillVisualizeMoveHighlightSquaresSelect.value);
+
+    // Stop any ongoing animation
+    await this.interruptAnimation();
+
+    // Reset the flash moves select box
+    this.elements.drillVisualizeMoveFlashMovesSelect.value = '';
+
+    // Remove all markers and arrows
+    this.board.removeMarkers();
+    this.board.removeArrows();
+
+    // Reset the position
+    const line = await this.drillResetPosition(true);
+
+    // If no highlighting, return
+    if (this.elements.drillVisualizeMoveHighlightSquaresSelect.value === '') return;
+
+    // Get the line moves
+    const boardMoves = this.drillGetLineMoves(line);
+
+    // Todo..
+  }
+
+  async drillVisualizeMoveFlashMoves() {
+
+    console.log('drillVisualizeMoveFlashMoves', this.elements.drillVisualizeMoveFlashMovesSelect.value);
+
+    // Stop any ongoing animation
+    await this.interruptAnimation();
+
+    // Reset the highlight squares select box
+    this.elements.drillVisualizeMoveHighlightSquaresSelect.value = '';
+
+    // Remove all markers and arrows
+    this.board.removeMarkers();
+    this.board.removeArrows();
+
+    // Reset the position
+    const line = await this.drillResetPosition(true);
+
+    // If no flashing, return
+    if (this.elements.drillVisualizeMoveFlashMovesSelect.value === '') return;
+
+    // Get the line moves
+    //const boardMoves = this.drillGetLineMoves(line);
+
+    // Get the animation promise
+    this.practice._currentAnimatePromise = 
+      this.drillVisualizeMoveFlashAnimate(this.elements.drillVisualizeMoveFlashMovesSelect.value, line);
+    // Call it and wait for the animation to finish
+    await this.practice._currentAnimatePromise;
+    // Reset the animation promise
+    this.practice._currentAnimatePromise = null;
+    
+
+
+    // Todo..
+  }
+
+  async drillVisualizeMoveFlashAnimate(type, line) {
+
+    // sequential
+    // sequence
+
+    // Set the empty FEN
+    const emptyFen = '8/8/8/8/8/8/8/8 w - - 0 1';
+
+    // Load the position
+    this.game.load(line.after || line.fen);
+    // Get the board representation
+    const boardRep = this.game.board();
+
+    console.log('drillVisualizeMoveFlashAnimate', type, line, emptyFen, boardRep);
+
+    try {
+      // Empty the board
+      this.board.setPosition(emptyFen, false);
+      // Flash the pieces
+      for (let r=0;r<8;r++) {
+        for (let f=0;f<8;f++) {
+          // Skip if no piece on this square
+          const square = boardRep[r][f];
+          if (!square || !square.square) continue;
+          // Fade in the piece
+          await this.board.setPiece(square.square, square.color + square.type, true);
+          // Wait for a moment
+          await Utils.sleep(500);
+          // Check for interruption
+          if (this.practice.stopAnimating) return;
+
+          // If this is flash sequence, fade out the piece(s)
+          if (type === 'sequence') {
+            // Fade out piece(s)
+            await this.board.setPosition(emptyFen, true);
+            // Wait for a moment
+            await Utils.sleep(250);
+            // Check for interruption
+            if (this.practice.stopAnimating) return;
+          }
+        }
+      }
+      // Wait for a moment
+      await Utils.sleep(2000);
+      // Check for interruption
+      if (this.practice.stopAnimating) return;
+      // Fade out piece(s)
+      await this.board.setPosition(emptyFen, true);
+      // Reset the select box
+      this.elements.drillVisualizeMoveFlashMovesSelect.value = '';
+
+    } catch (err) {
+      console.warn(err);
+    }
+
+  }
+
+
+  /* API Calls */
 
   // Update the repertoire notes
   async updateRepertoireNotes() {
@@ -4171,7 +4750,7 @@ class Practice extends MyChessBoard {
       // Get the actual line
       const line = this.getCurrentLine();
       // Update the repertoire details
-      await this.updateRepertoireDetails({ 
+      await this.updateRepertoireDetails({
         id: this.practice.id,
         notes: notes
       });

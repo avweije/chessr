@@ -31,9 +31,13 @@ export const CUSTOM_MARKER_TYPE = {
     class: "marker-inside-red",
     slice: "markerInsideRed",
   },
-  glowPulse: {
-    class: "marker-glow-pulse",
-    slice: "markerGlowPulse",
+  insideYellow: {
+    class: "marker-inside-yellow",
+    slice: "markerInsideYellow",
+  },
+  pulsingGlow: {
+    class: "marker-pulse-glow",
+    slice: "markerPulsingGlow",
   },
   triangle: {
     class: "marker-triangle",

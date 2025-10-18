@@ -131,9 +131,7 @@
   background-color: var(--color-primary) !important;
   color: #{fn.bulmaDarken(variables.$primary,55%)};
 
-  &:hover,
-  &:focus,
-  &:active {
+  &:hover {
     background-color: #{fn.bulmaLighten(variables.$primary,20%)} !important;
     color: #{fn.bulmaDarken(fn.bulmaLighten(variables.$primary,20%),55%)} !important;
   }
@@ -142,9 +140,7 @@
   background-color: var(--color-link) !important;
   color: #{fn.bulmaDarken(variables.$link,55%)};
 
-  &:hover,
-  &:focus,
-  &:active {
+  &:hover {
     background-color: #{fn.bulmaLighten(variables.$link,20%)} !important;
     color: #{fn.bulmaDarken(fn.bulmaLighten(variables.$link,20%),55%)} !important;
   }
@@ -206,9 +202,7 @@
   .button.is-primary {
     color: #{fn.bulmaDarken(variables.$primary-dark,55%)};
 
-    &:hover,
-    &:focus,
-    &:active {
+    &:hover {
       background-color: #{fn.bulmaLighten(variables.$primary-dark,20%)} !important;
       color: #{fn.bulmaDarken(fn.bulmaLighten(variables.$primary-dark,20%),55%)} !important;
     }
@@ -216,9 +210,7 @@
   .button.is-link {
     color: #{fn.bulmaDarken(variables.$link-dark,55%)};
 
-    &:hover,
-    &:focus,
-    &:active {
+    &:hover {
       background-color: #{fn.bulmaLighten(variables.$link-dark,20%)} !important;
       color: #{fn.bulmaDarken(fn.bulmaLighten(variables.$link-dark,20%),55%)} !important;
     }

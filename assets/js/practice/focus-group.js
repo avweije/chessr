@@ -242,7 +242,7 @@ export class FocusBoardGroup {
         this.elements.practiceButton.addEventListener("click", e => {
             // Dispatch a custom event, group or manager can catch it
             this.parent.dispatchEvent(
-                new CustomEvent('focusGroup:practice', {
+                new CustomEvent('FocusGroup:practice', {
                     bubbles: true,
                     detail: {
                         group: this,

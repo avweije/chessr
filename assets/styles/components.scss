@@ -220,6 +220,16 @@ div:not(.boxed-radio-menu) > .boxed-radio {
   color: var(--color-text-default);
 }
 
+/* Icon inside boxed radio menu item with own pointer events */
+.boxed-radio-menu .boxed-radio input:not(:disabled) ~ .boxed-radio-label ~ .boxed-radio-text .icon.icon-hover {
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.boxed-radio-menu .boxed-radio input:not(:disabled):not(:checked) ~ .boxed-radio-label ~ .boxed-radio-text .icon.icon-hover:hover {
+  color: var(--color-text-default);
+}
+
 
 /* boxed radio/checkbox groups */
 .boxed-radio-group,

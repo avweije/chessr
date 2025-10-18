@@ -26,7 +26,7 @@
 			<span class="boxed-radio-text is-flex is-align-items-center">
 				Recommended
 				<sup id="repertoireRecommendedCount" data-element="yes" class="pl-1"></sup>
-				<span id="repertoireRecommendedRefresh" data-element="yes" class="icon cursor-pointer pointer-events-auto ml-1">
+				<span id="repertoireRecommendedRefresh" data-element="yes" class="icon icon-hover ml-1">
 					<i class="fa-solid fa-arrows-rotate"></i>
 				</span>
 			</span>
@@ -144,37 +144,76 @@
 			Start your practice
 		</button>
 		<button type="button" id="giveHintButton" data-element="yes" title="Hint" disabled class="is-hidden button is-primary">
-			<icon>
+			<span class="icon">
 				<i class="fa-solid fa-lightbulb"></i>
-			</icon>
+			</span>
 		</button>
+		<div class="is-contents is-hidden" id="drillModeButtons" data-element="yes">
+			<button type="button" id="drillShowAnimationButton" data-element="yes" title="Watch the move" class="button is-primary mr-1">
+				<span class="icon">
+					<i class="fa-solid fa-film"></i>
+				</span>
+			</button>
+			<button type="button" id="drillSpotTheMoveButton" data-element="yes" title="Spot the right move" class="button is-primary mr-1">
+				<span class="icon">
+					<i class="fa-solid fa-scale-unbalanced"></i>
+				</span>
+			</button>
+			<button type="button" id="drillVisualizeMoveButton" data-element="yes" title="Visualize the move" class="button is-primary">
+				<span class="icon">
+					<i class="fa-solid fa-brain"></i>
+				</span>
+			</button>
+		</div>
 		<div class="is-flex">
 			<input type="checkbox" class="is-hidden is-button-checkbox" id="showPracticeInfoButton" data-element="yes" value="1">
 			<label for="showPracticeInfoButton" title="Toggle info" class="is-hidden button is-primary ml-1">
-				<i class="fa-solid fa-circle-info"></i>
+				<span class="icon">
+					<i class="fa-solid fa-circle-info"></i>
+				</span>
 			</label>
 		</div>
 		<button type="button" id="prevMoveButton" data-element="yes" title="Previous move" disabled class="is-hidden button is-primary ml-1">
-			<i class="fa-solid fa-backward-step"></i>
+			<span class="icon">
+				<i class="fa-solid fa-backward-step"></i>
+			</span>
 		</button>
 		<button type="button" id="skipMoveButton" data-element="yes" title="Skip this move" disabled class="is-hidden button is-primary ml-1">
-			<i class="fa-solid fa-forward-step"></i>
+			<span class="icon">
+				<i class="fa-solid fa-forward-step"></i>
+			</span>
 		</button>
 		<div class="is-flex">
 			<input type="checkbox" class="is-hidden is-button-checkbox" id="focusMoveButton" data-element="yes" value="1">
 			<label for="focusMoveButton" title="Focused" class="is-hidden button is-primary ml-1">
-				<i class="fa-solid fa-thumbtack"></i>
+				<span class="icon">
+					<i class="fa-solid fa-thumbtack"></i>
+				</span>
+			</label>
+		</div>
+		<div class="is-flex">
+			<input type="checkbox" class="is-hidden is-button-checkbox" id="drillModeButton" data-element="yes" value="1">
+			<label for="drillModeButton" title="Drill Mode" class="is-hidden button is-primary ml-1">
+				<span class="icon">
+					<i class="fa-solid fa-user-graduate"></i>
+				</span>
 			</label>
 		</div>
 		<div id="analysisGameButtons" class="is-hidden is-flex ml-1">
 			<button type="button" id="analysisSaveButton" data-element="yes" title="Save to repertoire" disabled class="button is-primary">
-				<i class="fa-solid fa-floppy-disk"></i>
+				<span class="icon">
+					<i class="fa-solid fa-floppy-disk"></i>
+				</span>
 			</button>
 			<button type="button" id="analysisIgnoreButton" data-element="yes" title="Not a mistake" disabled class="button is-primary mx-1">
-				<i class="fa-solid fa-ban"></i>
+				<span class="icon">
+					<i class="fa-solid fa-ban"></i>
+				</span>
 			</button>
 			<button type="button" id="analysisDiscardButton" data-element="yes" title="Discard" disabled class="button is-primary">
-				<i class="fa-solid fa-trash"></i>
+				<span class="icon">
+					<i class="fa-solid fa-trash"></i>
+				</span>
 			</button>
 		</div>
 	</div>
@@ -234,6 +273,82 @@
 		<p class="box-header has-text-weight-semibold">Focused</p>
 		<div class="p-3">
 			<textarea id="focusMoveNotesTextarea" data-element="yes" class="textarea" placeholder="Enter your notes here..."></textarea>
+		</div>
+	</div>
+
+	<div id="drillModeContainer" data-element="yes" class="is-hidden box p-0 mb-2">
+		<p class="box-header has-text-weight-semibold">Drill Mode Excercises</p>
+		<div class="p-3">
+			<h2 class="has-text-weight-bold is-size-6 p-1">Watch the move</h2>
+			<p class="has-text-faded p-1 mb-4">
+				See each move played out in sequence. This drill helps you visualize your repertoire and build muscle memory through repetition. The smooth replay lets you focus on patterns, not calculation — making it easier to recall the right move when it counts.
+			</p>
+			<h2 class="has-text-weight-bold is-size-6 p-1">Spot the right move</h2>
+			<p class="has-text-faded p-1 mb-4">
+				See your opponent's move, then judge the response. By deciding right or wrong, you strengthen both recognition and recall. Each repetition fine-tunes your instinct for your repertoire — helping the right move feel familiar, even in complex positions.
+			</p>
+			<h2 class="has-text-weight-bold is-size-6 p-1">Visualize the move</h2>
+			<p class="has-text-faded p-1">
+				Recreate the position in your mind and imagine your next move. This drill strengthens your ability to see patterns and anticipate responses without relying on the board — training your brain to recognize key setups and recall the right move faster during practice and games.
+			</p>
+		</div>
+	</div>
+
+	<div id="drillVisualizeMoveContainer" data-element="yes" class="is-hidden box p-0 mb-2">
+		<p class="box-header has-text-weight-semibold">Visualize the move</p>
+		<div class="p-3">
+			<p class="has-text-faded p-1">
+				Recreate the position in your mind and imagine your next move. This drill strengthens your ability to see patterns and anticipate responses without relying on the board — training your brain to recognize key setups and recall the right move faster during practice and games.
+			</p>
+		</div>
+		<div class="box-caption is-flex is-flex-direction-column px-4 py-3">
+			<div class="grid grid-4auto is-gap-1 is-align-items-center">
+    			<div class="">
+      				<label class="label">Highlight squares:</label>
+    			</div>
+    			<!-- Select -->
+    			<div class="">
+      				<div class="select">
+        				<select id="drillVisualizeMoveHighlightSquaresSelect" data-element="yes">
+          					<option value="">None</option>
+          					<option value="last">Last move</option>
+          					<option value="threats">Threats to us</option>
+          					<option value="all">All pieces</option>
+          					<option value="legal">Legal moves</option>
+        				</select>
+      				</div>
+    			</div>
+				<!-- Empty Cell -->
+				<div></div>
+    			<!-- Toggle -->
+    			<div class="has-text-right">
+      				<label class="toggle">
+        				<input id="drillVisualizeMovePgnToggle" data-element="yes" type="checkbox" checked>
+        				<div class="knob"></div>
+        				<div class="toggle-label">Show PGN</div>
+      				</label>
+    			</div>
+
+  			<!-- Row 2 -->
+
+    			<!-- Label -->
+    			<div class="">
+      				<label class="label">Flash moves:</label>
+    			</div>
+    			<!-- Select spans the remaining space -->
+    			<div class="">
+      				<div class="select">
+        				<select id="drillVisualizeMoveFlashMovesSelect" data-element="yes">
+          					<option value=""></option>
+          					<option value="sequential">Sequential Fade</option>
+          					<option value="sequence">Flash Sequence</option>
+        				</select>
+      				</div>
+    			</div>
+  			</div>
+		</div>
+		<div class="p-3">
+			<p id="drillVisualizeMovePgnField" data-element="yes" class="has-text-faded is-size-6 p-1"></p>
 		</div>
 	</div>
 

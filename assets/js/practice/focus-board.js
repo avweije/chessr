@@ -58,6 +58,7 @@ export class FocusBoard {
             differences: null,
             animate: null,
             show: null,
+            drillMode: null,
             repertoire: null,
             unfocus: null
         },
@@ -229,6 +230,12 @@ export class FocusBoard {
         this.elements.buttons.show.innerHTML = '<span class="icon"><i class="fa-solid fa-eye"></i></span>';
         this.elements.buttons.show.title = 'Show the correct move';
 
+        this.elements.buttons.drillMode = document.createElement('button');
+        this.elements.buttons.drillMode.type = 'button';
+        this.elements.buttons.drillMode.className = 'button is-small';
+        this.elements.buttons.drillMode.innerHTML = '<span class="icon"><i class="fa-solid fa-user-graduate"></i></span>';
+        this.elements.buttons.drillMode.title = 'Drill this position';
+
         this.elements.buttons.repertoire = document.createElement('button');
         this.elements.buttons.repertoire.type = 'button';
         this.elements.buttons.repertoire.className = 'button is-small';
@@ -268,6 +275,7 @@ export class FocusBoard {
         bottomButtons.appendChild(accuracyTag);
         bottomButtons.appendChild(this.elements.buttons.animate);
         bottomButtons.appendChild(this.elements.buttons.show);
+        bottomButtons.appendChild(this.elements.buttons.drillMode);
         bottomButtons.appendChild(this.elements.buttons.repertoire);
         bottomButtons.appendChild(this.elements.buttons.unfocus);
 
@@ -338,6 +346,13 @@ export class FocusBoard {
         // Show button
         this.elements.buttons.show.addEventListener("click", () => {
             this.show();
+        });
+        // Drill mode button
+        this.elements.buttons.drillMode.addEventListener("click", () => {
+            // Bubble the event so the practice can pick it up
+            this.bubbleEvent('drillMode', { 
+                move: this.move
+            });
         });
         // Open in repertoire button
         this.elements.buttons.repertoire.addEventListener("click", () => {
@@ -434,7 +449,10 @@ export class FocusBoard {
 
         // If we need to remove the markers
         if (!this.isShowing) {
-            this.board.board.removeMarkers(CUSTOM_MARKER_TYPE.squareRed);
+            this.board.board.removeMarkers(MARKER_TYPE.square);
+            this.board.board.removeMarkers(CUSTOM_MARKER_TYPE.insideYellow);
+            //this.board.board.removeMarkers(CUSTOM_MARKER_TYPE.squareGreen);
+            //this.board.board.removeMarkers(CUSTOM_MARKER_TYPE.checkmark);
             return;
         }
 
@@ -457,9 +475,15 @@ export class FocusBoard {
         
         // Add the markers for all the correct moves
         for (let i=0;i<moves.length;i++) {
+            // Get the marker type
+            const markerType = i === 0 ? MARKER_TYPE.square : CUSTOM_MARKER_TYPE.insideYellow;
             // Add the move markers
-            this.board.board.addMarker(CUSTOM_MARKER_TYPE.squareRed, moves[i].from);
-            this.board.board.addMarker(CUSTOM_MARKER_TYPE.squareRed, moves[i].to);
+            this.board.board.addMarker(markerType, moves[i].from);
+            this.board.board.addMarker(markerType, moves[i].to);
+            // Add the checkmark marker for our moves
+            //if (i > 0) {
+                //this.board.board.addMarker(CUSTOM_MARKER_TYPE.checkmark, moves[i].to);
+            //}
         }
     }
 

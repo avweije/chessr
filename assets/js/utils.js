@@ -191,4 +191,11 @@ export class Utils {
     }
     return obj1;
   }
+
+  /**
+   * Pauses execution for given milliseconds.
+   */
+  static sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
 }

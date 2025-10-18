@@ -149,7 +149,6 @@ img.logo {
 
 /* fixed page header, contains navbar */
 .page-header {
-  /* fixed z-20 top-0 start-0 w-full */
   position: fixed;
   z-index: 20;
   top: 0;
@@ -158,26 +157,23 @@ img.logo {
 }
 
 nav.nav-bar {
-  /* relative page-width py-1 md:py-2 bg-tacao-100 dark:bg-slate-900 rounded-sm border border-tacao-200 dark:border-slate-700 flex rounded is-flex-wrap-wrapitems-center is-justify-content-space-between shadow-dark-mild */
   position: relative;
   width: 100%;
   height: 3rem;
   padding: 0;
   background-color: var(--color-surface-main);
-  border-radius: 0.125rem;  /* rounded-sm */
+  border-radius: 0.125rem;
   border: 1px solid #fde68a;
   display: flex;
   flex-wrap: wrap;
   align-items: stretch;
   justify-content: space-between;
   box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
-  /* If you want dark mode, use a JS class toggle or prefers-color-scheme media query */
-  /* background-color: #18181b;  dark:bg-slate-900 */
 }
 
 .dark nav.nav-bar {
-  background-color: #18181b; /* dark:bg-slate-900 */
-  border-color: #27272a; /* dark:border-slate-700 */
+  background-color: #18181b;
+  border-color: #27272a;
 }
 
 nav.nav-bar .navbar-hover-menu {
