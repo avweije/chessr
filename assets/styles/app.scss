@@ -375,3 +375,16 @@ input[list]::-webkit-calendar-picker-indicator {
 ::-webkit-scrollbar-thumb:hover {
   background-color: var(--color-surface-alt);
 }
+
+
+/* Maybe move these to another file, helpers? */
+
+.clearfix::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.float-right {
+  float: right;
+}

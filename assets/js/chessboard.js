@@ -275,9 +275,14 @@ export class MyChessBoard {
   /**
    * Enable move input on the board.
    */
-  enableMoveInput() {
+  enableMoveInput(customHandler = this.moveInputHandler.bind(this)) {
     try {
-      this.board.enableMoveInput(this.moveInputHandler.bind(this));
+      // For safety, disable first as enabling once enabled gives error
+      this.board.disableMoveInput();
+      this.board.enableMoveInput(customHandler);
+
+      console.log('Board input enabled..');
+      
     } catch (err) {
       console.warn(err);
     }
@@ -748,6 +753,9 @@ export class MyChessBoard {
    */
 
   moveInputHandler(event) {
+
+    console.log('moveInputHandler', event);
+
     switch (event.type) {
       case INPUT_EVENT_TYPE.moveInputStarted:
         return this.moveInputStarted(event);

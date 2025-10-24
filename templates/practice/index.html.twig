@@ -294,20 +294,64 @@
 		</div>
 	</div>
 
+	<div id="drillSpotMoveContainer" data-element="yes" class="is-hidden box p-0 mb-2">
+		<div class="box-header">
+			<p class="has-text-weight-semibold">Spot the move</p>
+		</div>
+		<div class="is-flex is-flex-direction-column p-3">
+			<p class="has-text-faded p-1">
+				See your opponent's move, then judge the response. By deciding right or wrong, you strengthen both recognition and recall. Each repetition fine-tunes your instinct for your repertoire — helping the right move feel familiar, even in complex positions.
+			</p>
+			<button id="drillSpotMoveStartButton" data-element="yes" type="button" 
+				class="button is-align-self-flex-end mt-2" title="Start the drill">
+				<span>Start the drill</span>
+			</button>
+		</div>
+		<div id="drillSpotMoveYesNoContainer" data-element="yes" class="is-hidden is-contents">
+			<div class="box-caption is-flex is-justify-content-center p-5">
+				<span class="title is-size-5">Is this your repertoire move?</span>
+			</div>
+			<div class="buttons is-justify-content-center p-5">
+				<button id="drillSpotMoveYesButton" data-element="yes" type="button" 
+					class="button is-medium" title="Start the drill">
+					<span>Yes</span>
+				</button>
+				<button id="drillSpotMoveNoButton" data-element="yes" type="button" 
+					class="button is-medium" title="Start the drill">
+					<span>No</span>
+				</button>
+			</div>		
+		</div>
+	</div>
+
 	<div id="drillVisualizeMoveContainer" data-element="yes" class="is-hidden box p-0 mb-2">
-		<p class="box-header has-text-weight-semibold">Visualize the move</p>
-		<div class="p-3">
+		<div class="box-header">
+			<p class="has-text-weight-semibold">Visualize the move</p>
+		</div>
+		<div class="is-flex is-flex-direction-column p-3">
 			<p class="has-text-faded p-1">
 				Recreate the position in your mind and imagine your next move. This drill strengthens your ability to see patterns and anticipate responses without relying on the board — training your brain to recognize key setups and recall the right move faster during practice and games.
 			</p>
+			<button id="drillVisualizeMoveMakeMoveButton" data-element="yes" type="button" 
+				class="button is-align-self-flex-end mt-2" title="Make the move">
+				<span>Make the move</span>
+			</button>
+			<button id="drillVisualizeMoveCancelMoveButton" data-element="yes" type="button" 
+				class="is-hidden button is-align-self-flex-end mt-2" title="Back to visualizing">
+				<span>Back to visualizing</span>
+			</button>
 		</div>
-		<div class="box-caption is-flex is-flex-direction-column px-4 py-3">
-			<div class="grid grid-4auto is-gap-1 is-align-items-center">
-    			<div class="">
-      				<label class="label">Highlight squares:</label>
-    			</div>
-    			<!-- Select -->
-    			<div class="">
+		<div class="box-caption is-flex is-flex-direction-column pl-4 pr-3 py-3">
+			<div class="is-flex is-align-items-center is-justify-content-space-between is-gap-2">
+    			<!-- Toggle -->
+      			<label class="toggle mr-3">
+        			<input id="drillVisualizeMovePgnToggle" data-element="yes" type="checkbox" checked>
+        			<div class="knob"></div>
+    				<div class="toggle-label">Show PGN</div>
+  				</label>
+				<!-- Highlight squares -->
+    			<div class="is-flex is-align-items-center is-gap-1">
+      				<label class="label m-0">Highlight squares:</label>
       				<div class="select">
         				<select id="drillVisualizeMoveHighlightSquaresSelect" data-element="yes">
           					<option value="">None</option>
@@ -317,37 +361,17 @@
           					<option value="legal">Legal moves</option>
         				</select>
       				</div>
-    			</div>
-				<!-- Empty Cell -->
-				<div></div>
-    			<!-- Toggle -->
-    			<div class="has-text-right">
-      				<label class="toggle">
-        				<input id="drillVisualizeMovePgnToggle" data-element="yes" type="checkbox" checked>
-        				<div class="knob"></div>
-        				<div class="toggle-label">Show PGN</div>
-      				</label>
-    			</div>
-
-  			<!-- Row 2 -->
-
-    			<!-- Label -->
-    			<div class="">
-      				<label class="label">Flash moves:</label>
-    			</div>
-    			<!-- Select spans the remaining space -->
-    			<div class="">
-      				<div class="select">
-        				<select id="drillVisualizeMoveFlashMovesSelect" data-element="yes">
-          					<option value=""></option>
-          					<option value="sequential">Sequential Fade</option>
-          					<option value="sequence">Flash Sequence</option>
-        				</select>
-      				</div>
+					<!-- Flash Button -->
+					<button id="drillVisualizeMoveFlashPositionButton" data-element="yes" type="button" 
+						class="button" title="Flash the position">
+						<span class="icon">
+							<i class="fa-solid fa-bolt"></i>
+						</span>
+					</button>
     			</div>
   			</div>
 		</div>
-		<div class="p-3">
+		<div class="is-flex is-align-items-center p-3">
 			<p id="drillVisualizeMovePgnField" data-element="yes" class="has-text-faded is-size-6 p-1"></p>
 		</div>
 	</div>

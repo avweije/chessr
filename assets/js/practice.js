@@ -3,7 +3,7 @@ import {
 } from "chessboard";
 import { CUSTOM_ARROW_TYPE } from "ThickerArrows";
 import { MyChess } from "chess";
-import { COLOR } from "../vendor/cm-chessboard/src/view/ChessboardView.js";
+import { COLOR, INPUT_EVENT_TYPE } from "../vendor/cm-chessboard/src/view/ChessboardView.js";
 import { MARKER_TYPE } from "../vendor/cm-chessboard/src/extensions/markers/Markers.js";
 import { Utils } from "utils";
 import { Logger } from "logger";
@@ -86,6 +86,38 @@ class Practice extends MyChessBoard {
   };
 
   hintCounter = 0;
+
+  // The drill mode variables
+  drillMode = {
+    infoText: 'Train your instincts. Select a drill to reinforce your repertoire.',
+    current: '',
+    game: null,
+    line: null,
+    lineMoves: [],
+    correctMoves: [],
+    squares: {
+      last: [],
+      threats: [],
+      all: [],
+      legal: [],
+      legalFrom: [],
+      legalTo: [],
+      ours: [],
+      correctFrom: [],
+      correctTo: {}
+    },
+    spot: {
+      incorrectLegal: [],
+      incorrectUsed: [],
+      current: 0,
+      count: 5,
+    },
+    visualize: {
+      isMakingMove: false,
+      sourceSquare: '',
+      targetSquare: '',
+    }
+  }
 
   // the analysis elements
   analysis = {
@@ -231,15 +263,31 @@ class Practice extends MyChessBoard {
     this.elements.drillVisualizeMoveButton.addEventListener("click", () => {
       this.drillVisualizeMove();
     });
+    // Spot the move listeners
+    this.elements.drillSpotMoveStartButton.addEventListener("click", () => {
+      this.drillSpotMoveStart();
+    });
+    this.elements.drillSpotMoveYesButton.addEventListener("click", () => {
+      this.drillSpotMoveYes();
+    });
+    this.elements.drillSpotMoveNoButton.addEventListener("click", () => {
+      this.drillSpotMoveNo();
+    });
     // Visualize move listeners
+    this.elements.drillVisualizeMoveMakeMoveButton.addEventListener("click", () => {
+      this.drillVisualizeMoveMakeMove();
+    });
+    this.elements.drillVisualizeMoveCancelMoveButton.addEventListener("click", () => {
+      this.drillVisualizeMoveCancelMove();
+    });
     this.elements.drillVisualizeMovePgnToggle.addEventListener("change", () => {
       this.drillVisualizeMoveTogglePgnField();
     });
     this.elements.drillVisualizeMoveHighlightSquaresSelect.addEventListener("change", () => {
       this.drillVisualizeMoveHighlightSquares();
     });
-    this.elements.drillVisualizeMoveFlashMovesSelect.addEventListener("change", () => {
-      this.drillVisualizeMoveFlashMoves();
+    this.elements.drillVisualizeMoveFlashPositionButton.addEventListener("click", () => {
+      this.drillVisualizeMoveFlashPosition();
     });
 
     // Notes textarea
@@ -2382,6 +2430,7 @@ class Practice extends MyChessBoard {
     this.elements.drillModeButtons.classList.add('is-hidden');
     // Hide the drill mode containers
     this.elements.drillModeContainer.classList.add('is-hidden');
+    this.elements.drillSpotMoveContainer.classList.add('is-hidden');
     this.elements.drillVisualizeMoveContainer.classList.add('is-hidden');
 
     // Hide the practice info
@@ -3656,12 +3705,20 @@ class Practice extends MyChessBoard {
     this.elements.infoContainer.getElementsByTagName("span")[1].innerHTML = status;
   }
 
+  hideInfo() {
+    this.elements.infoContainer.classList.add('is-hidden');
+  }
+
   // show a confirmation message
   showConfirm(status = "") {
     this.elements.infoContainer.classList.add('is-hidden');
     this.elements.warningContainer.classList.add('is-hidden');
     this.elements.confirmContainer.classList.remove('is-hidden');
     this.elements.confirmContainer.getElementsByTagName("span")[1].innerHTML = status;
+  }
+
+  hideConfirm() {
+    this.elements.confirmContainer.classList.add('is-hidden');
   }
 
   // show a warning message
@@ -3672,13 +3729,16 @@ class Practice extends MyChessBoard {
     this.elements.warningContainer.getElementsByTagName("span")[1].innerHTML = status;
   }
 
+  hideWarning() {
+    this.elements.warningContainer.classList.add('is-hidden');
+  }
+
   // show a hint message
   showHint(hint = "") {
     this.elements.hintContainer.classList.remove('is-hidden');
     this.elements.hintContainer.getElementsByTagName("span")[1].innerHTML = hint;
   }
 
-  // hide the hint messages
   hideHint() {
     this.elements.hintContainer.classList.add('is-hidden');
   }
@@ -4251,6 +4311,13 @@ class Practice extends MyChessBoard {
       // Show drill mode
       this.showDrillMode();
     } else {
+      // Remove the square listener
+      if (this.drillMode.squareSelectListenerAdded) {
+        this.elements.board.removeEventListener(this.drillSquareSelectListener);
+        this.drillMode.squareSelectListenerAdded = false;
+      }
+      // Reset the board
+      this.board.setPosition(this.game.fen(), true);
       // Go back to regular practice mode or focus moves
       if (this.type == 'focused') {
         this.toggleBoardOrOther(false);
@@ -4305,10 +4372,17 @@ class Practice extends MyChessBoard {
     this.board.removeArrows();
 
     // Reset the position
-    await this.drillResetPosition();
+    const line = await this.drillResetPosition();
+
+    // Store the line in the drill mode vars
+    this.drillMode.line = line;
+    // Get the move details for the line & the correct moves
+    this.drillGetLineMoves();
+    // Get the squares
+    this.drillModeGetSquares();
 
     // Show the info container with drill mode info
-    this.showInfo("Train your instincts. Select a drill to reinforce your repertoire.");
+    this.showInfo(this.drillMode.infoText);
 
     // Show the drill mode buttons
     this.elements.drillModeButtons.classList.remove('is-hidden');
@@ -4316,6 +4390,7 @@ class Practice extends MyChessBoard {
     // Show the drill mode container
     this.elements.drillModeContainer.classList.remove('is-hidden');
     // Hide the other drill containers
+    this.elements.drillSpotMoveContainer.classList.add('is-hidden');
     this.elements.drillVisualizeMoveContainer.classList.add('is-hidden');
   }
 
@@ -4324,6 +4399,7 @@ class Practice extends MyChessBoard {
     this.elements.drillModeButtons.classList.add('is-hidden');
     // Hide the drill mode containers
     this.elements.drillModeContainer.classList.add('is-hidden');
+    this.elements.drillSpotMoveContainer.classList.add('is-hidden');
     this.elements.drillVisualizeMoveContainer.classList.add('is-hidden');
     // Show the practice buttons
     this.elements.giveHintButton.classList.remove('is-hidden');
@@ -4349,64 +4425,124 @@ class Practice extends MyChessBoard {
   }
 
   async drillResetPosition(loadEmpty = false) {
-    // reset the game & board
-    this.game.reset();
+    // Create the game
+    this.drillMode.game = new MyChess();
     // Get the current line
     const line = this.getCurrentLine();
+
+    console.log('Reset, line:', line);
+
     // Get the FEN
     const fen = loadEmpty ? '8/8/8/8/8/8/8/8 w - - 0 1' : line.after || line.fen;
+
+    console.log(fen);
+
     // Update the board to the current position
     await this.board.setPosition(fen, true);
 
     return line;
   }
 
-  drillGetLineMoves(line, includeLast = true) {
+  drillGetLineMoves() {
 
-    console.log('drillGetLineMoves', line, includeLast);
+    console.log('drillGetLineMoves', this.drillMode.line);
 
     // Reset the game
-    if (line.initialFen !== '') {
-      this.game.load(line.initialFen);
+    if (this.drillMode.line.initialFen !== '') {
+      this.drillMode.game.load(this.drillMode.line.initialFen);
     } else {
-      this.game.reset();
+      this.drillMode.game.reset();
     }
     // Get the line moves
-    const lineMoves = [...line.line];
-    if (includeLast && line.move) lineMoves.push(line.move);
-    // Get the board moves for the line
-    const boardMoves = [];
+    const lineMoves = [...this.drillMode.line.line, this.drillMode.line.move];
+    // Get the moves for the line
+    this.drillMode.lineMoves = [];
+    this.drillMode.correctMoves = [];
+
     try {
+      // Make the line moves
       for (let j = 0; j < lineMoves.length; j++) {
-      // Safety check
+        // Safety check
         if (!lineMoves[j]) continue;
         // Make the move and get the details
-        const last = this.game.move(lineMoves[j]);
-        boardMoves.push(last);
+        const last = this.drillMode.game.move(lineMoves[j]);
+        this.drillMode.lineMoves.push(last);
+      }
+      // Make the correct moves
+      for (let j = 0; j < this.drillMode.line.moves.length; j++) {
+        // Make the move and get the details
+        const last = this.drillMode.game.move(this.drillMode.line.moves[j].move);
+        this.drillMode.correctMoves.push(last);
+        // Undo the move
+        this.drillMode.game.undo();
       }
     } catch (err) {
       console.warn(err);
     }
 
-    return boardMoves;
+    console.log(this.drillMode);
+  }
+
+  // Gather all the square collections we need to know or highlight
+  drillModeGetSquares() {
+
+    console.log('Correct moves:', this.drillMode.correctMoves);
+
+    // Store the correct from and to squares
+    this.drillMode.squares.correctFrom = this.drillMode.correctMoves.map(p => p.from);
+    this.drillMode.squares.correctTo = {};
+    this.drillMode.correctMoves.forEach(p => {
+      this.drillMode.squares.correctTo[p.from] = p.to;
+  });
+
+    // Load the game
+    this.drillMode.game.load(this.drillMode.line.after || this.drillMode.line.fen);
+    // Get the 2D board representation
+    const rep2d = this.drillMode.game.board();
+
+    // Get the last move
+    const last = this.drillMode.lineMoves[this.drillMode.lineMoves.length - 1];
+    // Store the squares
+    this.drillMode.squares.last = [last.from, last.to];
+
+    // It's our turn, get our color
+    const turn = this.drillMode.game.turn(); // w or b
+    // Get the squares with our pieces on them
+    this.drillMode.squares.ours = rep2d.flat()
+      .filter(p => p && p.square && p.color === turn)
+      .map(p => p.square);
+    
+    // Get the our squares that are attacked
+    this.drillMode.squares.threats = this.drillMode.squares.ours
+      .filter(p => this.drillMode.game.isAttacked(p, turn === 'w' ? 'b' : 'w'));
+
+    // Get the squares with pieces on them
+    this.drillMode.squares.all = rep2d.flat()
+      .filter(p => p && p.square)
+      .map(p => p.square);
+
+    // Get all legal moves
+    this.drillMode.squares.legal = this.drillMode.game.moves({ verbose: true })
+
+    // Get the from & to squares
+    this.drillMode.squares.legalFrom =
+      Array.from(new Set(this.drillMode.squares.legal.map(p => p.from)));
+    this.drillMode.squares.legalTo = 
+      Array.from(new Set(this.drillMode.squares.legal.map(p => p.to)));
+
+    console.log('DrillMode squares:', turn, this.drillMode.squares);
   }
 
   async drillShowAnimation() {
-
-    console.log('drillShowAnimation', this.practice._currentAnimatePromise);
-
     // Stop any ongoing animation
-    this.practice.stopAnimating = true;
-    // Wait for any ongoing animation to finish
-    if (this.practice._currentAnimatePromise) {
+    await this.interruptAnimation();
 
-      console.log('Waiting for ongoing animation to finish...');
+    // Show the info container with drill mode info
+    this.showInfo(this.drillMode.infoText);
+    this.hideHint();
 
-      // Call it and wait for the animation to finish
-      await this.practice._currentAnimatePromise;
-    }
-    // Animation finished
-    this.practice.stopAnimating = false;
+    // Set the drill mode vars
+    this.drillMode.current = 'animation';
 
     // Remove all markers and arrows
     this.board.removeMarkers();
@@ -4414,6 +4550,7 @@ class Practice extends MyChessBoard {
 
     // Show the drill mode container
     this.elements.drillModeContainer.classList.remove('is-hidden');
+    this.elements.drillSpotMoveContainer.classList.add('is-hidden');
     this.elements.drillVisualizeMoveContainer.classList.add('is-hidden');
 
     // Get the animation promise
@@ -4426,29 +4563,20 @@ class Practice extends MyChessBoard {
   }
 
   async drillStartAnimation() {
-    // Get the current line
-    const line = this.getCurrentLine();
     // Get the last move
-    let last = line.move ? line : null;
-    if (!last && line.line.length > 0) {
-      // Get the line moves
-      const boardMoves = this.drillGetLineMoves(line, true);
-      // The last one is the last opponent move
-      last = boardMoves.pop();
-      last.move = last.san;
-    }
+    let last = this.drillMode.lineMoves[this.drillMode.lineMoves.length - 1];
     // Get the moves
-    const moves = [last, ...line.moves];
+    const moves = [last, ...this.drillMode.line.moves];
 
-    console.log('Drill Show Animation - current line:', line, moves, this.practice.stopAnimating);
+    console.log('Drill Show Animation - current line:', this.drillMode.line, moves, this.practice.stopAnimating);
 
     // Reset the game & board
-    this.game.reset();
+    this.drillMode.game.reset();
     // Catch any exception
     try {
 
       // Animate the line
-      await this.drillAnimateLine(line, false);
+      await this.drillAnimateLine(this.drillMode.line, false);
       // Remove the markers
       this.board.removeMarkers();
       // Check for interruption
@@ -4465,7 +4593,7 @@ class Practice extends MyChessBoard {
       console.log('Before final animation', [...line.line, line.move], this.practice.stopAnimating, this.practice.lineIdx, this.practice.moveIdx);
 
       // Animate the line one last time and stay there
-      await this.drillAnimateLine(line, 1);
+      await this.drillAnimateLine(this.drillMode.line, 1);
 
     } catch (err) {
       console.warn('Error during drill animation:', err);
@@ -4482,7 +4610,7 @@ class Practice extends MyChessBoard {
       // Safety check
       if (!moves[j]) continue;
       // Load the position before the opponent move
-      this.game.load(moves[j].before || moves[j].fen);
+      this.drillMode.game.load(moves[j].before || moves[j].fen);
       // Update the board to the current position
       await this.board.setPosition(moves[j].before || moves[j].fen, true);
 
@@ -4492,7 +4620,7 @@ class Practice extends MyChessBoard {
       if (this.practice.stopAnimating) return;
 
       // Animate the move
-      let move = this.game.move(moves[j].move);
+      let move = this.drillMode.game.move(moves[j].move);
       await this.board.movePiece(move.from, move.to, true);
       // Get the marker type
       const markerType = j > 0 ? CUSTOM_MARKER_TYPE.squareGreen : MARKER_TYPE.square;
@@ -4523,18 +4651,16 @@ class Practice extends MyChessBoard {
   }
 
   async drillAnimateLine(line, includeLast = false) {
-    // Get the line moves
-    const boardMoves = this.drillGetLineMoves(line);
     // Remove the markers
     this.board.removeMarkers();
     // Finally, animate the line and stay there
-    await this.animateMoves(this.practice.lineIdx, this.practice.moveIdx, boardMoves);
+    await this.animateMoves(this.practice.lineIdx, this.practice.moveIdx, this.drillMode.lineMoves);
     // Check for interruption
     if (this.practice.stopAnimating) return;
 
     // Add the last move markers
     if (includeLast) {
-      const last = boardMoves.pop();
+      const last = this.drillMode.lineMoves[this.drillMode.lineMoves.length - 1];
       this.board.addMarker(MARKER_TYPE.square, last.from);
       this.board.addMarker(MARKER_TYPE.square, last.to);
     }
@@ -4544,6 +4670,13 @@ class Practice extends MyChessBoard {
     // Stop any ongoing animation
     await this.interruptAnimation();
 
+    // Show the info container with drill mode info
+    this.showInfo(this.drillMode.infoText);
+    this.hideHint();
+
+    // Set the drill mode vars
+    this.drillMode.current = 'spot';
+
     // Remove all markers and arrows
     this.board.removeMarkers();
     this.board.removeArrows();
@@ -4552,23 +4685,148 @@ class Practice extends MyChessBoard {
     await this.drillResetPosition();
 
     // Show the drill mode container
-    this.elements.drillModeContainer.classList.remove('is-hidden');
+    this.elements.drillSpotMoveContainer.classList.remove('is-hidden');
+    this.elements.drillModeContainer.classList.add('is-hidden');
     this.elements.drillVisualizeMoveContainer.classList.add('is-hidden');
+    // Toggle buttons
+    this.elements.drillSpotMoveStartButton.disabled = false;
+    this.elements.drillSpotMoveYesNoContainer.classList.add('is-hidden');
 
-    // Todo..
+    // Get the incorrect legal moves
+    this.drillMode.spot.incorrectLegal = this.drillMode.squares.legal.filter((sq) => {
+      return !this.drillMode.line.moves
+        .map((move) => move.move)
+        .includes(sq.san);
+    });
 
+    console.log('Incorrect legal moves:', this.drillMode.spot.incorrectLegal);
+
+  }
+
+  async drillSpotMoveStart() {
+
+    console.log(this.drillMode.line, this.drillMode.squares.legal);
+
+    // Randomize the number of incorrect moves to show before showing the correct move
+    this.drillMode.spot.count = Math.round(5 * Math.random());
+    this.drillMode.spot.current = 0;
+
+    // Disable start button
+    this.elements.drillSpotMoveStartButton.disabled = true;
+
+    // Spot the next move
+    this.drillSpotNextMove();
+  }
+
+  async drillSpotNextMove() {
+
+    console.log('Drill spot next move:', this.drillMode.spot.current, this.drillMode.spot.count);
+    let move;
+    // If we need to show the correct move
+    if (this.drillMode.spot.current === this.drillMode.spot.count) {
+      // TODO: Just get the 1st correct move for now, not sure yet how to handle multiple..
+      move = this.drillMode.correctMoves[0];
+    } else {
+      // Get the remaining incorrect legal moves
+      const remainingLegal = this.drillMode.spot.incorrectLegal
+        .filter((move) => !this.drillMode.spot.incorrectUsed.includes(move));
+    
+      // Get a random legal move
+      const moveIdx = Math.round((remainingLegal.length - 1) * Math.random());
+
+      console.log('Random move index:', moveIdx, remainingLegal.length);
+
+      // Get the move
+      move = remainingLegal[moveIdx];
+      // Add to the used moves
+      this.drillMode.spot.incorrectUsed.push(move);
+    }
+
+    console.log('Move to play:', move);
+
+    try {
+      // Remove markers
+      this.board.removeMarkers();
+      // Reset the position
+      await this.drillResetPosition();
+      // Animate the move
+      await this.board.movePiece(move.from, move.to, true);
+      // Add markers
+      this.board.addMarker(MARKER_TYPE.square, move.from);
+      this.board.addMarker(MARKER_TYPE.square, move.to);
+      // Show the info
+      this.showInfo(`I played the move <strong>${move.san}</strong> here, is this correct?`);
+      // Show the yes/no buttons
+      this.elements.drillSpotMoveYesNoContainer.classList.remove('is-hidden');
+      // Enable the buttons
+      this.elements.drillSpotMoveYesButton.disabled = false;
+      this.elements.drillSpotMoveNoButton.disabled = false;
+    } catch (err) {
+      console.warn(err);
+    }
+  }
+
+  drillSpotMoveYes() {
+    // Disable the buttons
+    this.elements.drillSpotMoveYesButton.disabled = true;
+    this.elements.drillSpotMoveNoButton.disabled = true;
+    // If this is the correct move
+    if (this.drillMode.spot.current === this.drillMode.spot.count) {
+      // Show confirm message
+      this.showConfirm("That's correct! This is your repertoire move.");
+      // Reset the excercise after a delay
+      setTimeout(() => {
+        this.drillSpotTheMove();
+      }, 5000);
+    } else {
+      // Show error message
+      this.showWarning("Incorrect. This is not your repertoire move.");
+      // Next move
+      this.drillMode.spot.current++;
+      setTimeout(() => {
+        this.drillSpotNextMove();
+      }, 2000);
+    }
+  }
+
+  drillSpotMoveNo() {
+    // Disable the buttons
+    this.elements.drillSpotMoveYesButton.disabled = true;
+    this.elements.drillSpotMoveNoButton.disabled = true;
+    // If this is the correct move
+    if (this.drillMode.spot.current === this.drillMode.spot.count) {
+      // Show error message
+      this.showWarning("Incorrect. This is actually your repertoire move.");
+      // Reset the excercise after a delay
+      setTimeout(() => {
+        this.drillSpotTheMove();
+      }, 5000);
+    } else {
+      // Show confirm message
+      this.showConfirm("That's correct! This is not your repertoire move.");
+      // Next move
+      this.drillMode.spot.current++;
+      setTimeout(() => {
+        this.drillSpotNextMove();
+      }, 2000);
+    }
   }
 
   async drillVisualizeMove() {
     // Stop any ongoing animation
     await this.interruptAnimation();
 
+    // Show the info container with drill mode info
+    this.showInfo(this.drillMode.infoText);
+    this.hideHint();
+
+    // Set the drill mode vars
+    this.drillMode.current = 'visualize';
+    this.drillMode.visualize.isMakingMove = false;
+
     // Remove all markers and arrows
     this.board.removeMarkers();
     this.board.removeArrows();
-
-    // Reset the position
-    const line = await this.drillResetPosition();
     
     // Get the moves to visualize
     const moves = [...line.line];
@@ -4583,15 +4841,215 @@ class Practice extends MyChessBoard {
     // Update the PGN field visibility
     this.drillVisualizeMoveTogglePgnField();
 
+    // Toggle the buttons
+    this.elements.drillVisualizeMoveMakeMoveButton.classList.remove('is-hidden');
+    this.elements.drillVisualizeMoveCancelMoveButton.classList.add('is-hidden');
+    // Reset the highlight select box
+    this.elements.drillVisualizeMoveHighlightSquaresSelect.value = '';
+
     // Show the visualize move container
     this.elements.drillVisualizeMoveContainer.classList.remove('is-hidden');
     this.elements.drillModeContainer.classList.add('is-hidden');
+    this.elements.drillSpotMoveContainer.classList.add('is-hidden');
 
     // Wait for a moment
     await Utils.sleep(1000);
     // Empty the board
     await this.board.setPosition('8/8/8/8/8/8/8/8 w - - 0 1', true);
   }
+
+  drillVisualizeMoveMakeMove() {
+
+    console.log('drillVisualizeMoveMakeMove');
+
+    // Start making the move
+    this.drillMode.visualize.isMakingMove = true;
+    this.drillMode.visualize.sourceSquare = '';
+    this.drillMode.visualize.targetSquare = '';
+
+    // Enable move input with our own handler
+    //this.enableMoveInput(this.drillModeMoveInputHandler.bind(this));
+
+    // Add our own listener to allow clicking on empty squares
+    if (!this.drillMode.squareSelectListenerAdded) {
+
+      console.log('********* Adding drill visualize listener..', this.drillMode.squareSelectListenerAdded);
+
+      this.elements.board.addEventListener('mousedown', this.drillSquareSelectListener.bind(this));
+      this.drillMode.squareSelectListenerAdded = true;
+    }
+
+    // Toggle the info/hint containers
+    this.hideInfo();
+    this.hideWarning();
+    this.showHint('Click on the square of the piece you want to move.');
+
+    // Toggle the buttons
+    this.elements.drillVisualizeMoveMakeMoveButton.classList.add('is-hidden');
+    this.elements.drillVisualizeMoveCancelMoveButton.classList.remove('is-hidden');
+
+  }
+
+  async drillSquareSelectListener(event) {
+
+    console.log('drillSquareSelectListener', event, this.drillMode.visualize.isMakingMove);
+
+    // If we're not making a move, return
+    if (!this.drillMode.visualize.isMakingMove) return;
+
+    // Get the square
+    const square = event.target.getAttribute("data-square")
+
+    console.log(square, this.drillMode.line, this.drillMode.visualize.sourceSquare);
+
+    // If no square, return
+    if (!square) return;
+
+    // If we are looking for the source square
+    if (this.drillMode.visualize.sourceSquare === '') {
+      // If this is not one of our squares
+      if (!this.drillMode.squares.ours.includes(square)) {
+        // Show the warning
+        this.showWarning("You don't have a piece on this square.");
+        // Add the error marker
+        this.board.addMarker(CUSTOM_MARKER_TYPE.cancel, square);
+        this.board.addMarker(CUSTOM_MARKER_TYPE.squareRed, square);
+        // Remove the markers after a timeout
+        setTimeout(() => {
+          this.board.removeMarkers(undefined, square);
+        }, 1000);
+
+        return;
+      }
+
+      // If this is not the right square
+      if (!this.drillMode.squares.correctFrom.includes(square)) {
+        // Show the warning
+        this.showWarning("That's not the right square.");
+        // Add the error marker
+        this.board.addMarker(CUSTOM_MARKER_TYPE.cancel, square);
+        this.board.addMarker(CUSTOM_MARKER_TYPE.squareRed, square);
+        // Remove the markers after a timeout
+        setTimeout(() => {
+          this.board.removeMarkers(undefined, square);
+        }, 1000);
+
+        return;
+      }
+
+      // Found the right square, mark it and continue..
+
+      // Found the source square
+      this.drillMode.visualize.sourceSquare = square;
+
+      // Add the correct marker
+      this.board.addMarker(CUSTOM_MARKER_TYPE.checkmark, square);
+      this.board.addMarker(CUSTOM_MARKER_TYPE.squareGreen, square);
+      // Remove the checkmark after a timeout
+      setTimeout(() => {
+        this.board.removeMarkers(CUSTOM_MARKER_TYPE.checkmark, square);
+      }, 1000);
+
+      // Show that it's correct
+      this.showHint('Correct! Now click on the square you want to move to.');
+      this.hideWarning();
+
+      return;
+    }
+
+    console.log('Finding target square for:', this.drillMode.visualize.sourceSquare);
+
+    // Get the to square
+    const toSquare = this.drillMode.visualize.sourceSquare 
+      ? this.drillMode.squares.correctTo[this.drillMode.visualize.sourceSquare]
+      : null;
+
+    // Safety check..
+    if (!toSquare) return;
+
+    console.log('Correct to square is:', toSquare, square);
+
+    // If this is not the correct to square
+    if (square !== toSquare) {
+        // Show the warning
+        this.showWarning("That's not the right square.");
+        return;
+    }
+
+    // Show that it's correct
+    this.showConfirm("That's it! You found the right move.");
+    this.hideHint();
+    this.hideWarning();
+
+    // Add the correct marker
+    this.board.addMarker(CUSTOM_MARKER_TYPE.checkmark, square);
+    this.board.addMarker(CUSTOM_MARKER_TYPE.squareGreen, square);
+
+    //
+    // Depends here.. if there are multiple correct moves, do something with that..
+    // If only 1.. we can pause and cancel make move or just leave it here, but stop responding to it..
+    //
+
+    // Remember the correct target square that was clicked
+    this.drillMode.visualize.targetSquare = square;
+
+    // We are no longer making a move (don't act on the listener)
+    this.drillMode.visualize.isMakingMove = false;
+    // Get the FEN position
+    const fen = this.drillMode.line.after || this.drillMode.line.fen;
+    try {
+      // We have an empty board, fade in all the pieces
+      await this.board.setPosition(fen, true);
+    } catch (err) {
+      console.warn(err);
+    }
+
+  }
+
+  async drillVisualizeMoveCancelMove() {
+    // Stop making the move
+    this.drillMode.visualize.isMakingMove = false;
+    // Toggle the info/hint containers
+    this.showInfo(this.drillMode.infoText);
+    this.hideWarning();
+    this.hideHint();
+    // Remove all markers
+    this.board.removeMarkers();
+    // Set the empty FEN
+    const emptyFen = '8/8/8/8/8/8/8/8 w - - 0 1';
+    try {
+      // Fade out pieces
+      await this.board.setPosition(emptyFen, true);
+    } catch (err) {
+      console.warn(err);
+    }
+    // Toggle the buttons
+    this.elements.drillVisualizeMoveMakeMoveButton.classList.remove('is-hidden');
+    this.elements.drillVisualizeMoveCancelMoveButton.classList.add('is-hidden');
+  }
+
+  drillModeMoveInputHandler(event) {
+
+    console.log('drillModeMoveInputHandler', event);
+  
+    return;
+
+      switch (event.type) {
+        case INPUT_EVENT_TYPE.moveInputStarted:
+          //return this.moveInputStarted(event);
+        case INPUT_EVENT_TYPE.validateMoveInput:
+         // return this.validateMoveInput(event);
+        case INPUT_EVENT_TYPE.moveInputCanceled:
+          //this.moveInputCancelled(event);
+          break;
+        case INPUT_EVENT_TYPE.moveInputFinished:
+          //this.moveInputFinished(event);
+          break;
+        case INPUT_EVENT_TYPE.movingOverSquare:
+          break;
+      }
+    }
+
 
   drillVisualizeMoveTogglePgnField() {
 
@@ -4620,116 +5078,76 @@ class Practice extends MyChessBoard {
     // Stop any ongoing animation
     await this.interruptAnimation();
 
-    // Reset the flash moves select box
-    this.elements.drillVisualizeMoveFlashMovesSelect.value = '';
-
     // Remove all markers and arrows
     this.board.removeMarkers();
     this.board.removeArrows();
-
-    // Reset the position
-    const line = await this.drillResetPosition(true);
 
     // If no highlighting, return
     if (this.elements.drillVisualizeMoveHighlightSquaresSelect.value === '') return;
 
-    // Get the line moves
-    const boardMoves = this.drillGetLineMoves(line);
+    // Get the squares we need to highlight
+    let squares = [];
+    switch (this.elements.drillVisualizeMoveHighlightSquaresSelect.value) {
+      case 'last':
+        squares = this.drillMode.squares.last;
+        break;
+      case 'threats':
+        squares = this.drillMode.squares.threats;
+        break;
+      case 'all':
+        squares = this.drillMode.squares.all;
+        break;
+      case 'legal':
+        squares = this.drillMode.squares.legalTo;
+        break;
+    }
 
-    // Todo..
+    // Mark all the squares
+    for (let i=0;i<squares.length;i++) {
+      this.board.addMarker(CUSTOM_MARKER_TYPE.squareRed, squares[i]);
+    }
   }
 
-  async drillVisualizeMoveFlashMoves() {
+  async drillVisualizeMoveFlashPosition() {
 
-    console.log('drillVisualizeMoveFlashMoves', this.elements.drillVisualizeMoveFlashMovesSelect.value);
+    console.log('drillVisualizeMoveFlashPosition');
 
     // Stop any ongoing animation
     await this.interruptAnimation();
 
-    // Reset the highlight squares select box
-    this.elements.drillVisualizeMoveHighlightSquaresSelect.value = '';
-
-    // Remove all markers and arrows
-    this.board.removeMarkers();
-    this.board.removeArrows();
-
     // Reset the position
     const line = await this.drillResetPosition(true);
 
-    // If no flashing, return
-    if (this.elements.drillVisualizeMoveFlashMovesSelect.value === '') return;
-
-    // Get the line moves
-    //const boardMoves = this.drillGetLineMoves(line);
-
     // Get the animation promise
     this.practice._currentAnimatePromise = 
-      this.drillVisualizeMoveFlashAnimate(this.elements.drillVisualizeMoveFlashMovesSelect.value, line);
+      this.drillVisualizeMoveFlashAnimate(line);
     // Call it and wait for the animation to finish
     await this.practice._currentAnimatePromise;
     // Reset the animation promise
     this.practice._currentAnimatePromise = null;
-    
-
-
-    // Todo..
   }
 
-  async drillVisualizeMoveFlashAnimate(type, line) {
-
-    // sequential
-    // sequence
+  async drillVisualizeMoveFlashAnimate(line) {
 
     // Set the empty FEN
     const emptyFen = '8/8/8/8/8/8/8/8 w - - 0 1';
+    // Get the FEN position
+    const fen = line.after || line.fen;
 
-    // Load the position
-    this.game.load(line.after || line.fen);
-    // Get the board representation
-    const boardRep = this.game.board();
-
-    console.log('drillVisualizeMoveFlashAnimate', type, line, emptyFen, boardRep);
+    console.log('drillVisualizeMoveFlashAnimate', line, emptyFen, fen);
 
     try {
-      // Empty the board
-      this.board.setPosition(emptyFen, false);
-      // Flash the pieces
-      for (let r=0;r<8;r++) {
-        for (let f=0;f<8;f++) {
-          // Skip if no piece on this square
-          const square = boardRep[r][f];
-          if (!square || !square.square) continue;
-          // Fade in the piece
-          await this.board.setPiece(square.square, square.color + square.type, true);
-          // Wait for a moment
-          await Utils.sleep(500);
-          // Check for interruption
-          if (this.practice.stopAnimating) return;
-
-          // If this is flash sequence, fade out the piece(s)
-          if (type === 'sequence') {
-            // Fade out piece(s)
-            await this.board.setPosition(emptyFen, true);
-            // Wait for a moment
-            await Utils.sleep(250);
-            // Check for interruption
-            if (this.practice.stopAnimating) return;
-          }
-        }
-      }
+      // We have an empty board, fade in all the pieces
+      await this.board.setPosition(fen, true);
       // Wait for a moment
-      await Utils.sleep(2000);
+      await Utils.sleep(1500);
       // Check for interruption
       if (this.practice.stopAnimating) return;
-      // Fade out piece(s)
+      // Fade out pieces
       await this.board.setPosition(emptyFen, true);
-      // Reset the select box
-      this.elements.drillVisualizeMoveFlashMovesSelect.value = '';
-
     } catch (err) {
       console.warn(err);
     }
-
   }
 
 
